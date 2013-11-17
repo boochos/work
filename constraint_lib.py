@@ -3,6 +3,7 @@ import maya.mel as mel
 import characterSet_lib as cs
 
 def message(what='', maya=False):
+    #print
     what = '-- ' + what + ' --'
     if maya == True:
     	mel.eval('print \"' + what + '\";')
