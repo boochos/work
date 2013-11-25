@@ -229,6 +229,24 @@ def changeRO(obj, ro):
     cmds.currentTime(current)
     cmds.autoKeyframe(state=autoK)
 
+def keyedFrames(obj):
+    animCurves = cmds.findKeyframe(obj, c=True)
+    if animCurves != None:
+        frames = []
+        for crv in animCurves:
+            framesTmp = cmds.keyframe(crv, q=True)
+            if framesTmp:
+                for frame in framesTmp:
+                    frames.append(frame)
+            else:
+                print 'no keys'
+        frames = list(set(frames))
+        frames.sort()
+        return frames
+    else:
+        message('Object ' + obj + ' has no keys')
+        return None
+
 def changeRoMulti(ro='zxy'):
 	#changes rotate order of an object to the desired order without changing the pose. tangent will bust.
 	#will use current frame range
