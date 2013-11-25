@@ -18,15 +18,22 @@ def message(what='', maya=False):
 
 def sceneName():
     sceneName = cmds.file(q=True, sn=True)
-    sceneName = sceneName.split('.')[0]
+    try:
+        sceneName = sceneName.split('.ma')[0]
+    except:
+        sceneName = sceneName.split('.mb')[0]
+    else:
+        pass
     slash = sceneName.rfind('/')
     sceneName = sceneName[slash+1:]
     return sceneName
 
 def shotPath():
     shotDir = sceneName()
+    print shotDir, '___________________________'
     if sceneName() != '':
-        shotDir = shotDir[0:shotDir.rfind('-')+5] + '/'
+        shotDir = shotDir[0:shotDir.rfind('_')] + '/'
+        print shotDir
     createDefaultPath()
     path = defaultPath() + shotDir
     if not os.path.isdir(path):
@@ -323,20 +330,26 @@ def activateSet(setList):
     max = len(setList)
     i   = 0
     for item in setList:
-        item =  qts + item + qts
-        if i == 0:
-            string = item
-        elif i != max:
-            string = string + ', ' + item
+        if item:
+            item =  qts + item + qts
+            if i == 0:
+                string = item
+            elif i != max:
+                string = string + ', ' + item
+            else:
+                string = string + item
+            i=i+1
         else:
-            string = string + item
-        i=i+1
+            print item
+            message('nothing found to activate')
     cmd = "setCurrentCharacters({" + string + "});"
     mel.eval(cmd)
 
 class GetSetOptions():
     def __init__(self):
         #attrs
+        #when 'multiple' is active as a set, active objects can be found if a connection is exists to 'set1'
+        #'set1' cannot be queried....
         self.sel = cmds.ls(sl=True)
         self.current = self.currentSet()
         self.lower = None
@@ -380,34 +393,50 @@ def smartActivateSet(next=True):
     if len(set.sel) != 0:
         if len(set.sel) > 1:
             activateSet(set.sel)
-            #print set.sel
+            print set.sel, '___here'
             return set.sel
         if set.lower:
+            print set.lower, '___there', ##problem occurs here for some reason
             if set.current == None or set.current == 'Multiple':
                 if set.upper:
+                    print 0
                     activateSet(set.upper)
-                    #print set.upper
+                    print set.upper
                     return set.upper
+                else:
+                    activateSet(set.sel)
+                    print 1
             elif set.current == set.upper:
                 if set.lower:
                     activateSet(set.lower)
-                    #print set.lower
+                    print set.lower
                     return set.lower
+                else:
+                    print 2
+                    pass
             elif set.current == set.lower:
                 if set.sel:
                     activateSet(set.sel)
-                    #print set.sel
+                    print set.sel
                     return set.sel
+                else:
+                    print 3
+                    pass
             elif set.current in set.sel:
                 if set.upper:
                     activateSet(set.upper)
-                    #print set.upper
+                    print set.upper
                     return set.upper
+                else:
+                    print 4
+                    pass
             else:
                 if set.sel:
                     activateSet(set.upper)
+                    print 5,'a'
                 else:
                     activateSet(set.sel)
+                    print 5,'b'
         else:
             if set.current == set.sel:
                 activateSet('')
@@ -462,8 +491,9 @@ def toggleMembershipToCurrentSet():
             print 'there'
             members = cmds.character(current.currentSet(), q=True)
             membersObj = []
-            for member in members:
-                membersObj.append(member.split('.')[0])
+            if members:
+                for member in members:
+                    membersObj.append(member.split('.')[0])
             membersObj = list(set(membersObj))
             if sel[0] not in membersObj:
                 cmds.character(sel[0], fe=current.currentSet())
