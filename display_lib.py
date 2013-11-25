@@ -1,5 +1,7 @@
 import maya.cmds as cmds
 import maya.mel as mel
+import constraint_lib as cn
+
 
 def message(what=''):
     mel.eval('print \"' + '-- ' + what + ' --' + '\";')
@@ -18,34 +20,67 @@ def buttonsGE():
     w = 26
     h = 24
     bg = [0.2, 0.2, 0.2]
-    c1='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)'
-    btn1 = cmds.iconTextButton('Flip_Cruves', p=p, style='textOnly', stp='python', c=c1, al='center', bgc=bg, mw=1, w=w, label='FLP')
-    cmds.formLayout( p, e=True, aoc=(btn1, 'right', w*3+3, trxB))
 
-    c2='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(preCurrent=False)'
-    btn2 = cmds.iconTextButton('Hold_Pre', p=p, style='textOnly', stp='python', c=c2, al='center', bgc=bg, mw=1,  w=w, label='-->')
-    cmds.formLayout( p, e=True, aoc=(btn2, 'right', w+3,btn1))
-    
-    c3='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv()'
-    btn3 = cmds.iconTextButton('Hold_Curves', p=p, style='textOnly', stp='python', c=c3, al='center', bgc=bg, mw=1,  w=w, label='HLD')
-    cmds.formLayout( p, e=True, aoc=(btn3, 'right', w+3,btn2))
-    
-    c4='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(postCurrent=False)'
-    btn4 = cmds.iconTextButton('Hold_Post', p=p, style='textOnly', stp='python', c=c4, al='center', bgc=bg, mw=1,  w=w, label='<--')
-    cmds.formLayout( p, e=True, aoc=(btn4, 'right', w+3,btn3))
+    flip = 'Flip_Cruves'
+    if not cmds.control(flip, ex=1):
+        c1='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)'
+        btn1 = cmds.iconTextButton(flip, p=p, style='textOnly', stp='python', c=c1, al='center', bgc=bg, mw=1, w=w, label='FLP')
+        cmds.formLayout( p, e=True, aoc=(btn1, 'right', w*3+3, trxB))
+    else:
+        #print flip
+        cmds.deleteUI(flip, control=True)
+
+    holdPre = 'Hold_Pre'
+    if not cmds.control(holdPre, ex=1):
+        c2='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(preCurrent=False)'
+        btn2 = cmds.iconTextButton(holdPre, p=p, style='textOnly', stp='python', c=c2, al='center', bgc=bg, mw=1,  w=w, label='-->')
+        cmds.formLayout( p, e=True, aoc=(btn2, 'right', w+3,btn1))
+    else:
+        #print holdPre
+        cmds.deleteUI(holdPre, control=True)
+
+    hold = 'Hold'
+    if not cmds.control(hold, ex=1):
+        c3='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv()'
+        btn3 = cmds.iconTextButton(hold, p=p, style='textOnly', stp='python', c=c3, al='center', bgc=bg, mw=1,  w=w, label='HLD')
+        cmds.formLayout( p, e=True, aoc=(btn3, 'right', w+3,btn2))
+    else:
+        #print hold
+        cmds.deleteUI(hold, control=True)
+
+    holdPost = 'Hold_Post'
+    if not cmds.control(holdPost, ex=1):
+        c4='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(postCurrent=False)'
+        btn4 = cmds.iconTextButton(holdPost, p=p, style='textOnly', stp='python', c=c4, al='center', bgc=bg, mw=1,  w=w, label='<--')
+        cmds.formLayout( p, e=True, aoc=(btn4, 'right', w+3,btn3))
+    else:
+        #print holdPost
+        cmds.deleteUI(holdPost, control=True)
+
+    scaleUp = 'Scale_Up'
+    if not cmds.control(scaleUp, ex=1):
+        c5='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(1.025)'
+        btn5 = cmds.iconTextButton(scaleUp, p=p, style='textOnly', stp='python', c=c5, al='center', bgc=bg, mw=1,  w=w, label='+')
+        cmds.formLayout( p, e=True, aoc=(btn5, 'right', w+3, btn4))
+    else:
+        #print scaleUp
+        cmds.deleteUI(scaleUp, control=True)
+
+    scaleDown = 'Scale_Down'
+    if not cmds.control(scaleDown, ex=1):
+        c6='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(0.975)'
+        btn6 = cmds.iconTextButton(scaleDown, p=p, style='textOnly', stp='python', c=c6, al='center', bgc=bg, mw=1,  w=w, label='-')
+        cmds.formLayout( p, e=True, aoc=(btn6, 'right', w+3, btn5))
+    else:
+        #print scaleDown
+        cmds.deleteUI(scaleDown, control=True)
+
     '''
     fld = cmds.textField(AC, p=p, w=w*2, h=h, tx='1.1')
     ec = "import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(float(cmds.textField(\'" + AC + "\', q=True, tx=True)))\n"
     cmds.textField(AC, e=True, p=p, ec=ec, w=w*2, h=h, tx='1.1')
-    cmds.formLayout( p, e=True, aoc=(AC, 'right', w+2, btn2))'''
-    
-    c5='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(1.025)'
-    btn5 = cmds.iconTextButton('Scale_Up', p=p, style='textOnly', stp='python', c=c5, al='center', bgc=bg, mw=1,  w=w, label='+')
-    cmds.formLayout( p, e=True, aoc=(btn5, 'right', w+3, btn4))
-
-    c6='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(0.975)'
-    btn6 = cmds.iconTextButton('Scale_Down', p=p, style='textOnly', stp='python', c=c6, al='center', bgc=bg, mw=1,  w=w, label='-')
-    cmds.formLayout( p, e=True, aoc=(btn6, 'right', w+3, btn5))
+    cmds.formLayout( p, e=True, aoc=(AC, 'right', w+2, btn2))
+    '''
 
 def toggleObjectDisplay(purpose):
 
@@ -177,6 +212,59 @@ def speed(world=True, local=True):
     else:
         message('Select an object.')
 
+def createDisAttr(sel, attr, exp):
+    '''
+    creates attr and applies expression
+    '''
+    cmds.addAttr(sel,longName=attr ,attributeType = 'float', k=True)
+    cmds.setAttr(sel + "." + attr, cb=1)
+    e = cmds.expression(o=sel, s=exp)
+
+def measureDis(obj1, obj2):
+    '''
+    math for distance between 2 objects
+    '''
+    p1 = cmds.xform(obj1, q=True, ws=True, t=True )
+    p2 = cmds.xform(obj2, q=True, ws=True, t=True )
+    v = [0,0,0]
+    v[0] = p1[0] - p2[0]
+    v[1] = p1[1] - p2[1]
+    v[2] = p1[2] - p2[2]
+    distance = v[0]*v[0] + v[1]*v[1] + v[2]*v[2]
+    from math import sqrt
+    distance = sqrt(distance)
+    return distance
+
+def distanceExp(sel, sel2, attr):
+    '''
+    builds expression string
+    '''
+    exp0 = "python \"import display_lib as dis\";\npython \"reload(dis)\";\n"
+    exp1 = sel+ "." +attr+ " = `python \"dis.measureDis('" + sel + "','" + sel2 + "')\"`;"
+    exp = exp0 + exp1
+    return exp
+
+def distance():
+    '''
+    assembles distance relationship
+    '''
+    selected = cmds.ls( sl=True )
+    if len(selected) == 2:
+        i = 1
+        for sel in selected:
+            attr = 'distance'
+            exp = distanceExp(sel, selected[i], attr)
+            if cmds.attributeQuery(attr, node=sel, ex=True) == False:
+                createDisAttr(sel, attr, exp)
+            else:
+                cmds.warning('-- Speed attr (' + attr + ') already exists. Skipping' + sel + ' ! --')
+                return None
+            if i == 1:
+                i = 0
+    else:
+        message('Select an object.')
+
+
 def deleteUserAttr(sel=None, exp=True):
     if sel == None:
         sel = cmds.ls(sl=True)
@@ -230,3 +318,23 @@ def translateManip():
 
 def clearKey():
     mel.eval('timeSliderClearKey;')
+
+
+def altFrame():
+    pnl = cmds.getPanel(withFocus=True)
+    typ = cmds.getPanel(typeOf=pnl)
+    if typ == 'modelPanel':
+        sel    = cmds.ls(sl=True)
+        locs = []
+        if sel:
+            for item in sel:
+                loc = cn.locator(obj=item, ro='zxy', X=0.01, constrain=False)[0]
+                locs.append(loc)
+            cmds.select(locs)
+            mel.eval("fitPanel -selected;")
+            cmds.delete(locs)
+            cmds.select(sel)
+        else:
+            message('select an object')
+    else:
+        mel.eval("fitPanel -selected;")
