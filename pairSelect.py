@@ -13,11 +13,18 @@ def message(what='', maya=False):
 
 class Get():
     def __init__ (self):
-        self.iconPath  = 'C:/Users/Sebastian/Documents/maya/2013-x64/prefs/icons'
-        self.iconOn    = self.iconPath + '/srv_mirSel_on_icon.xpm'
-        self.iconOff   = self.iconPath + '/srv_mirSel_off_icon.xpm'
-        self.rootPath  = "C:/Users/Sebastian/Documents/maya/scripts"
-        self.pairPath  = self.rootPath + "/faceRig_selection_pair.txt"
+        if os.name == 'nt':
+            self.iconPath  = 'C:/Users/Sebastian/Documents/maya/2013-x64/prefs/icons'
+            self.iconOn    = self.iconPath + '/srv_mirSel_on_icon.xpm'
+            self.iconOff   = self.iconPath + '/srv_mirSel_off_icon.xpm'
+            self.rootPath  = "C:/Users/Sebastian/Documents/maya/scripts"
+            self.pairPath  = self.rootPath + "/faceRig_selection_pair.txt"
+        else:
+            self.iconPath  = '/dd/home/sweber/maya/2012-x64/prefs/icons'
+            self.iconOn    = self.iconPath + '/srv_mirSel_on_icon.xpm'
+            self.iconOff   = self.iconPath + '/srv_mirSel_off_icon.xpm'
+            self.rootPath  = "/dd/home/sweber/maya/scripts"
+            self.pairPath  = self.rootPath + "/faceRig_selection_pair.txt"
 
 def nameSpace(ns = '', base=False):
     if ':' in ns:
@@ -107,6 +114,7 @@ def toggleJob():
         toggleIcon()
         message('Pair Selection OFF', maya=True)
     else:
+        print id
         killJob()
         id = cmds.scriptJob( e= ["SelectionChanged", "import pairSelect as ps\nps.job()"])
         toggleIcon()
@@ -119,7 +127,7 @@ def toggleIcon(off=False):
     controlLayouts = cmds.lsUI(controls = True)
     #interate through the layouts and find the shelves
     for control in controlLayouts:
-        if control == 'Custom' or control == 'Rendering':
+        if control == 'Custom2' or control == 'Rendering':
             children = cmds.shelfLayout(control, query = True, ca = True)
             if children:
                 for child in children:
