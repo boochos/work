@@ -3,12 +3,22 @@ import maya.mel as mel
 import characterSet_lib as cs
 
 def message(what='', maya=False):
-    #print
     what = '-- ' + what + ' --'
     if maya == True:
     	mel.eval('print \"' + what + '\";')
     else:
         print what
+
+def uiEnable(controls=['modelPanel'], toggle=True):
+    model = cmds.lsUI(panels=1)
+    ed=[]
+    for m in model:
+        if 'modelPanel' in m:
+            ed.append(m)
+    print ed
+    for p in ed:
+        cmds.control(p, e=1, m=0)
+
 
 def listX(l=[]):
     if l != None:
@@ -442,8 +452,14 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False):
                 cnR = None
             #if both cnT and cnR are not None a parent constraint can be used...
             if cnT and cnR != None:
-                cmds.delete(cnT)
-                cmds.delete(cnR)
+                try:
+                    cmds.delete(cnT)
+                except:
+                    pass
+                try:
+                    cmds.delete(cnR)
+                except:
+                    pass
                 cmds.parentConstraint(lc, item, mo=False)
             #...else use point or orient constraint. Must assume pos or rot wont be constrained or edited with new locator
             else:
@@ -465,6 +481,8 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False):
                         cmds.cutKey(lc, at=axis, cl=True, t=())
                         cmds.setAttr(lc + '.' + axis, k=False, cb=True)
                         cmds.setAttr(lc + '.' + axis, l=True)
+            cnT = None
+            cnR = None
             locs.append(lc)
         return locs
     else:
