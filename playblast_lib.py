@@ -1,6 +1,7 @@
 import os
 import maya.cmds as cmds
 import maya.mel as mel
+import subprocess
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
@@ -50,14 +51,23 @@ def sceneName(full=False):
     sceneName = cmds.file(q=True, sn=True)
     if full:
         return sceneName
-    sceneName = sceneName.split('.')[0]
+    if '.ma' in sceneName:
+        sceneName = sceneName.split('.ma')[0]
+    else:
+        sceneName = sceneName.split('.mb')[0]
     slash = sceneName.rfind('/')
     sceneName = sceneName[slash+1:]
+    print sceneName, '___'
+    if '(' in sceneName or ')' in sceneName:
+        sceneName = sceneName.replace('(','__')
+        sceneName = sceneName.replace(')','__')
     return sceneName
 
 def shotDir():
     shotDir = sceneName()
-    shotDir = shotDir[0:shotDir.rfind('-')+5] + '/'
+    #remove version number, will need to customize for every pipeline
+    shotDir = shotDir[0:shotDir.rfind('.')] + '/'
+    print shotDir, '======'
     return shotDir
 
 def createPath(path):
@@ -65,36 +75,45 @@ def createPath(path):
         os.mkdir(path)
     else:
         print "-- path:   '" + path + "'   already exists --"
-        
-def blastDir():
-    if os.name == 'nt':
-        project = cmds.workspace( q=True, rd=True )
-        scene = sceneName(full=True)
-        if project in scene:
-            return project + 'movies/'
+
+def blastDir(forceTemp=True):
+    if not forceTemp:
+        if os.name == 'nt':
+            project = cmds.workspace( q=True, rd=True )
+            scene = sceneName(full=True)
+            if project in scene:
+                if '(' in project or ')' in project:
+                    project = project.replace('(','__')
+                    project = project.replace(')','__')
+                print project
+                return project + 'movies/'
+            else:
+                message('Project likely not set', maya=True)
+                return None
+                #print project
+                #print scene
+        elif os.name == 'posix':
+            project = cmds.workspace( q=True, rd=True ).split('scenes/')[0]
+            scene = sceneName(full=True)
+            if project in scene:
+                return project + 'movies/'
+            else:
+                message('Project likely not set', maya=True)
+                return None
+                #print project
+                #print scene
         else:
-            message('Project likely not set', maya=True)
-            return None
-            #print project
-            #print scene
-    elif os.name == 'posix':
-        project = cmds.workspace( q=True, rd=True ).split('scenes/')[0]
-        scene = sceneName(full=True)
-        if project in scene:
-            return project + 'movies/'
-        else:
-            message('Project likely not set', maya=True)
-            return None
-            #print project
-            #print scene
+            mainDir = '/usr/tmp/___A___PLAYBLAST___A___/'
+            return mainDir
     else:
         mainDir = '/usr/tmp/___A___PLAYBLAST___A___/'
         return mainDir
 
-def blast(w=1280, h=720, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
+def blast(w=1024, h=584, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
     min, max = blastRange()
     w = w*x
     h = h*x
+    print '___'
     #max = max + 1 #compensating for maya clipping last frame
     if os.name == 'nt':
         i = 1
@@ -104,7 +123,17 @@ def blast(w=1280, h=720, x=1, format='qt', qlt=100, compression='H.264', offScre
             pbName = blastDir()+sceneName()
             if os.path.exists(pbName):
                 print True
-            path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            if 'image' not in format:
+                #path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+                path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            else:
+                createPath(blastDir())
+                createPath(blastDir() + shotDir())
+                path = cmds.playblast(format='image', filename=blastDir()+shotDir()+sceneName(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(min) + " -out " + str(max) + " ]"
+                print rvString
+                subprocess.Popen(rvString)
+                #cmds.currentTime(current)
     elif os.name == 'posix':
         i = 1
         if not blastDir():
@@ -113,7 +142,19 @@ def blast(w=1280, h=720, x=1, format='qt', qlt=100, compression='H.264', offScre
             pbName = blastDir()+sceneName()
             if os.path.exists(pbName):
                 print True
-            path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            if 'image' not in format:
+                path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            else:
+                createPath(path = blastDir())
+                createPath(path = blastDir() + shotDir())
+                playLo, playHi, current = getRange()
+                w = w * x
+                h = h * x
+                path = cmds.playblast(format='image', filename=blastDir()+shotDir()+sceneName(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
+                print rvString
+                os.system(rvString)
+                cmds.currentTime(current)
     else:
         createPath(path = blastDir())
         createPath(path = blastDir() + shotDir())
@@ -127,9 +168,23 @@ def blast(w=1280, h=720, x=1, format='qt', qlt=100, compression='H.264', offScre
         cmds.currentTime(current)
 
 def openLast():
-    import os
-    path = blastDir() + shotDir() + sceneName() + '.####.png'
-    print path
     playLo, playHi, current = getRange()
-    rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
-    os.system(rvString)
+    if os.name is 'nt':
+        path = blastDir() + shotDir() + sceneName() + '.####.png'
+        print path
+        rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(playLo) + " -out " + str(playHi) + " ]"
+        print rvString
+        subprocess.Popen(rvString)
+    elif os.name is 'posix':
+        try:
+            path = blastDir() + shotDir() + sceneName() + '.####.png'
+            print path
+            rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
+            os.system(rvString)
+        except:
+            print 'no success'
+    else:
+        path = blastDir() + shotDir() + sceneName() + '.####.png'
+        print path
+        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
+        os.system(rvString)
