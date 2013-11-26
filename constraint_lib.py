@@ -44,6 +44,29 @@ def matchKeyedFramesLoop():
                 matchKeyedFrames(AAA=None, BBB=None, subtractive=True)
         cmds.select(sel)
 
+def subframe():
+    sel = cmds.ls(sl=True)
+    for s in sel:
+        animCurves = cmds.findKeyframe(s, c=True)
+        if animCurves != None:
+            for crv in animCurves:
+                frames = cmds.keyframe(crv, q=True)
+                if frames:
+                    for frame in frames:
+                        rnd = round(frame, 0)
+                        if rnd != frame:
+                            message( 'removing: ' + crv + ' -- ' + str(frame))
+                            if cmds.setKeyframe(crv, time=(rnd,rnd), i=1) == 0:
+                                cmds.cutKey(crv, time=(frame,frame))
+                            else:
+                                cmds.setKeyframe(crv, time=(rnd,rnd), i=1)
+                                cmds.cutKey(crv, time=(frame,frame))
+                else:
+                    message('no keys')
+        else:
+            message('Object ' + obj + ' has no keys')
+            return None
+
 def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
     '''
     AAA = get keyed frames
