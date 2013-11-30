@@ -6,6 +6,51 @@ import constraint_lib as cn
 def message(what=''):
     mel.eval('print \"' + '-- ' + what + ' --' + '\";')
 
+def geInv():
+    ge = 'graphEditor1'
+    b = 'getTraxButton'
+    cmds.control(b, q=1, fpn=1)
+    # Result: MayaWindow|formLayout1|viewPanes|graphEditor1|formLayout37|frameLayout6|formLayout38|getTraxButton # 
+    f = 'formLayout37'
+    cmds.formLayout(f, q=1, ca=1)
+    # Result: [u'frameLayout6', u'paneLayout1'] # 
+    p = 'paneLayout1'
+    cmds.paneLayout(p, q=1, ca=1)
+    # Result: [u'graphEditor1OutlineEdForm', u'graphEditor1GraphEd'] # 
+    g = 'graphEditor1OutlineEdForm'
+    cmds.control(g, q=1, fpn=1)
+    # Result: MayaWindow|formLayout1|viewPanes|graphEditor1|formLayout37|paneLayout1|graphEditor1OutlineEdForm # 
+    g = 'MayaWindow|formLayout1|viewPanes|graphEditor1|formLayout37|paneLayout1|graphEditor1OutlineEdForm'
+    cmds.outlinerPanel(g, q=1, iu=1)
+    cmds.control(g, e=1, m=1)
+    cmds.control(g, e=1, w=0)
+    #graphEditor1OutlineEd MayaWindow|formLayout1|viewPanes|graphEditor1|formLayout37|paneLayout1|graphEditor1OutlineEdForm|formLayout39|textField5;
+    t = 'textField5'
+    cmds.control(t, e=1, m=0)
+    cmds.control(t, e=1, m=1)
+    f = 'formLayout39'
+    cmds.control(f, e=1, m=0)
+    cmds.control(f, e=1, m=1)
+    cmds.formLayout(f, q=1, ca=1)
+    # Result: [u'textField5', u'iconTextButton29'] # button and text in graph editor to replace
+    b = 'iconTextButton29'
+    cmds.control(b, e=1, m=0)
+    cmds.control(b, e=1, m=1)
+    
+    cmds.deleteUI(field, control=True) 
+    AC   = 'Amplify_Curves'
+    w = 26
+    h = 24
+    bg = [0.2, 0.2, 0.2]
+    c1='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)'
+    flip = 'Flip_Cruvess'
+    cmds.setParent(f)
+    field = cmds.textField(flip, h=20)
+    attachForm = [(field, 'left', 24), (field, 'right', 0)]
+    #attachControl = [(field, 'top', 0, heading)]
+    cmds.formLayout(f, edit=True, attachForm=attachForm)
+    #cmds.formLayout( f, e=True, aoc=(field, 'left', w*3+1, b))
+
 def buttonsGENames():
     return ['Amplify_Curves', 'Flip_Cruves', 'Hold_Curves', 'Amp_Curves']
 
@@ -25,7 +70,7 @@ def buttonsGE():
     if not cmds.control(flip, ex=1):
         c1='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)'
         btn1 = cmds.iconTextButton(flip, p=p, style='textOnly', stp='python', c=c1, al='center', bgc=bg, mw=1, w=w, label='FLP')
-        cmds.formLayout( p, e=True, aoc=(btn1, 'right', w*3+3, trxB))
+        cmds.formLayout( p, e=True, aoc=(btn1, 'right', w*3+1, trxB))
     else:
         #print flip
         cmds.deleteUI(flip, control=True)
@@ -34,7 +79,7 @@ def buttonsGE():
     if not cmds.control(holdPre, ex=1):
         c2='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(preCurrent=False)'
         btn2 = cmds.iconTextButton(holdPre, p=p, style='textOnly', stp='python', c=c2, al='center', bgc=bg, mw=1,  w=w, label='-->')
-        cmds.formLayout( p, e=True, aoc=(btn2, 'right', w+3,btn1))
+        cmds.formLayout( p, e=True, aoc=(btn2, 'right', w+1,btn1))
     else:
         #print holdPre
         cmds.deleteUI(holdPre, control=True)
@@ -43,7 +88,7 @@ def buttonsGE():
     if not cmds.control(hold, ex=1):
         c3='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv()'
         btn3 = cmds.iconTextButton(hold, p=p, style='textOnly', stp='python', c=c3, al='center', bgc=bg, mw=1,  w=w, label='HLD')
-        cmds.formLayout( p, e=True, aoc=(btn3, 'right', w+3,btn2))
+        cmds.formLayout( p, e=True, aoc=(btn3, 'right', w+1,btn2))
     else:
         #print hold
         cmds.deleteUI(hold, control=True)
@@ -52,7 +97,7 @@ def buttonsGE():
     if not cmds.control(holdPost, ex=1):
         c4='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(postCurrent=False)'
         btn4 = cmds.iconTextButton(holdPost, p=p, style='textOnly', stp='python', c=c4, al='center', bgc=bg, mw=1,  w=w, label='<--')
-        cmds.formLayout( p, e=True, aoc=(btn4, 'right', w+3,btn3))
+        cmds.formLayout( p, e=True, aoc=(btn4, 'right', w+1,btn3))
     else:
         #print holdPost
         cmds.deleteUI(holdPost, control=True)
@@ -61,7 +106,7 @@ def buttonsGE():
     if not cmds.control(scaleUp, ex=1):
         c5='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(1.025)'
         btn5 = cmds.iconTextButton(scaleUp, p=p, style='textOnly', stp='python', c=c5, al='center', bgc=bg, mw=1,  w=w, label='+')
-        cmds.formLayout( p, e=True, aoc=(btn5, 'right', w+3, btn4))
+        cmds.formLayout( p, e=True, aoc=(btn5, 'right', w+1, btn4))
     else:
         #print scaleUp
         cmds.deleteUI(scaleUp, control=True)
@@ -70,10 +115,24 @@ def buttonsGE():
     if not cmds.control(scaleDown, ex=1):
         c6='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(0.975)'
         btn6 = cmds.iconTextButton(scaleDown, p=p, style='textOnly', stp='python', c=c6, al='center', bgc=bg, mw=1,  w=w, label='-')
-        cmds.formLayout( p, e=True, aoc=(btn6, 'right', w+3, btn5))
+        cmds.formLayout( p, e=True, aoc=(btn6, 'right', w+1, btn5))
     else:
         #print scaleDown
         cmds.deleteUI(scaleDown, control=True)
+
+    fil = 'graphFilter'
+    t   = 'textField5'
+    if not cmds.control(fil, ex=1):
+        cmds.control(t, e=1, m=0)
+        f = 'formLayout39'
+        c7='import graphFilter\nreload(graphFilter)\ngraphFilter.graphEditorCMD()'
+        cmds.setParent(f)
+        field = cmds.textField(fil, h=20, cc=c7, ec=c7)
+        attachForm = [(field, 'left', 24), (field, 'right', 0)]
+        cmds.formLayout(f, edit=True, attachForm=attachForm)
+    else:
+        cmds.deleteUI(fil, control=True)
+        cmds.control(t, e=1, m=1)
 
     '''
     fld = cmds.textField(AC, p=p, w=w*2, h=h, tx='1.1')
