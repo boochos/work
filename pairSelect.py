@@ -50,22 +50,13 @@ def undoSel():
         return True
         
 def job(*args):
+    #left/right scheme
+    side = ['Lf','Rt']
     p = Get()
     pairList = []
     pair = []
     lf = True
-    #load pairs
-    for line in open(p.pairPath).readlines():
-        line = line.strip('\n')
-        if lf:
-            pair.append(line)
-            lf = False
-        else:
-            pair.append(line)
-            pairList.append(pair)
-            pair= []
-            lf = True
-    #find pairs od selection
+    #find pairs of selection
     sel = cmds.ls(sl=True)
     if len(sel) > 0:
         proceed = undoSel()
@@ -78,16 +69,40 @@ def job(*args):
             else:
                 ref = None
                 obj = sel
-            for p in pairList:
-                if obj in p:
-                    p.remove(obj)
-                    if ref:
-                        selPair = ref + ':' + p[0]
+            try:
+                #load pairs
+                for line in open(p.pairPath).readlines():
+                    line = line.strip('\n')
+                    if lf:
+                        pair.append(line)
+                        lf = False
                     else:
-                        selPair = p[0]
-                    cmds.select(selPair, tgl=True)
-                    message('Pair Selected', maya=True)
-                    break
+                        pair.append(line)
+                        pairList.append(pair)
+                        pair= []
+                        lf = True
+                for p in pairList:
+                    if obj in p:
+                        p.remove(obj)
+                        if ref:
+                            selPair = ref + ':' + p[0]
+                        else:
+                            selPair = p[0]
+                        cmds.select(selPair, tgl=True)
+                        message('Pair Selected', maya=True)
+                        break
+            except:
+                if side[0] in obj:
+                    selPair = obj.replace(side[0], side[1])
+                elif side[1] in obj:
+                    selPair = obj.replace(side[1], side[0])
+                else:
+                    return None
+                if ref:
+                    selPair = ref + ':' + selPair
+                cmds.select(selPair, tgl=True)
+                message('Pair Selected', maya=True)
+                return None
     else:
         pass
 
