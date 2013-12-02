@@ -1,8 +1,12 @@
 import maya.cmds as cmds
 import maya.mel as mel
 
-def message(what=''):
-    mel.eval('print \"' + '-- ' + what + ' --' + '\";')
+def message(what='', maya=False):
+    what = '-- ' + what + ' --'
+    if maya == True:
+        mel.eval('print \"' + what + '\";')
+    else:
+        print what
 
 class GetRange():
     def __init__(self):
@@ -18,6 +22,29 @@ start = cmds.playbackOptions(q=1,min=1)
 end = cmds.playbackOptions(q=1,max=1)
 bakeTimeWarp(objects,start,end,killWarp=True)
 '''
+
+def moveTime(left=True):
+    try:
+        if left:
+            cmds.keyframe(animation='keys', relative=1, timeChange=(0-1))
+            message('1 frame left', maya=1)
+        else:
+            cmds.keyframe(animation='keys', relative=1, timeChange=(0+1))
+            message('1 frame right', maya=1)
+    except:
+        pass
+
+
+def moveValue(up=True):
+    try:
+        if up:
+            cmds.keyframe(animation='keys', relative=1, valueChange=(0+.005))
+            message('up      ' + str(0.005), maya=1)
+        else:
+            cmds.keyframe(animation='keys', relative=1, valueChange=(0-.005))
+            message('down ' + str(0.005), maya=1)
+    except:
+        pass
 
 def bakeTimeWarp(objects,start,end,killWarp=True):
     # for each frame between start and end, query time1.outTime and time1.unwarpedTime
