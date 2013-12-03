@@ -36,33 +36,17 @@ def geInv():
     b = 'iconTextButton29'
     cmds.control(b, e=1, m=0)
     cmds.control(b, e=1, m=1)
-    
-    cmds.deleteUI(field, control=True) 
-    AC   = 'Amplify_Curves'
-    w = 26
-    h = 24
-    bg = [0.2, 0.2, 0.2]
-    c1='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)'
-    flip = 'Flip_Cruvess'
-    cmds.setParent(f)
-    field = cmds.textField(flip, h=20)
-    attachForm = [(field, 'left', 24), (field, 'right', 0)]
-    #attachControl = [(field, 'top', 0, heading)]
-    cmds.formLayout(f, edit=True, attachForm=attachForm)
-    #cmds.formLayout( f, e=True, aoc=(field, 'left', w*3+1, b))
 
 def buttonsGENames():
     return ['Amplify_Curves', 'Flip_Cruves', 'Hold_Curves', 'Amp_Curves']
 
-def geButton(name='', parent='', attach='', label='', cmd='', gap=2 ):
+def geButton(name='', parent='', attach='', label='', cmd='', gap=2, w=26, bg=[0.21, 0.21, 0.21] ):
     #"boldLabelFont", "smallBoldLabelFont", "tinyBoldLabelFont", "plainLabelFont", "smallPlainLabelFont",
     #"obliqueLabelFont", "smallObliqueLabelFont", "fixedWidthFont" and "smallFixedWidthFont"
-    w = 26
-    h = 24
-    bg = [0.2, 0.2, 0.2]
+    h = 22
     if not cmds.control(name, ex=1):
         cmd=cmd
-        btn = cmds.iconTextButton(name, p=parent, style='textOnly', stp='python', c=cmd, al='center', bgc=bg, mw=1, w=w, label=label)
+        btn = cmds.iconTextButton(name, p=parent, style='textOnly', stp='python', c=cmd, al='center', h=h, bgc=bg, mw=1, w=w, label=label)
         ac = [(btn, 'left', gap, attach)]
         attachForm = [(btn, 'bottom', 4)]
         cmds.formLayout( parent, e=True, ac=ac, attachForm=attachForm)
@@ -82,8 +66,16 @@ def geHeading(name='', parent='', attach='', label='', cmd='', gap=10 ):
         #print flip
         cmds.deleteUI(name, control=True)
 
-def geField():
-    pass
+def geField(name='', parent='', attach='', label='', cmd='', w=100, gap=10 ):
+    if not cmds.control(name, ex=1):
+        field = cmds.textField(name, tx=1.0, h=21, w=w, cc=cmd, ec=cmd)
+        ac = [(field, 'left', gap, attach)]
+        attachForm = [(field, 'left', 2), (field, 'bottom', 5)]
+        cmds.formLayout(parent, edit=True, ac=ac, attachForm=attachForm)
+        return field
+    else:
+        #print flip
+        cmds.deleteUI(name, control=True)
 
 def buttonsGE():
     
@@ -110,23 +102,24 @@ def buttonsGE():
         cmds.formLayout(p, e=1, h=28)
         cmds.control(x, e=1, m=1)
 
-    lab1 = geHeading(name='Flip', parent=p, attach=fil, label='Flip')
-    btn1 = geButton(name='Flip_Cruves', parent=p, attach=lab1, label='FLP', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)',  gap=5)
-    lab2 = geHeading(name='Hold', parent=p, attach=btn1, label='Hold')
-    btn2 = geButton(name='Hold_Pre', parent=p, attach=lab2, label='<--', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(postCurrent=False)', gap=5)
-    btn3 = geButton(name='Hold_All', parent=p, attach=btn2, label='HLD', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv()')
-    btn4 = geButton(name='Hold_Post', parent=p, attach=btn3, label='-->', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(preCurrent=False)')
-    lab3 = geHeading(name='Scale', parent=p, attach=btn4, label='Scale')
-    btn5 = geButton(name='Scale_Up', parent=p, attach=lab3, label='S', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(1.025)', gap=5)
-    btn6 = geButton(name='Scale_Down', parent=p, attach=btn5, label='s', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(0.975)')
-    lab4 = geHeading(name='Value', parent=p, attach=btn6, label='Value')
-    btn7 = geButton(name='Move_Up', parent=p, attach=lab4, label='+', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveValue(True)", gap=5)
-    btn8 = geButton(name='Move_Down', parent=p, attach=btn7, label='-', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveValue(False)")
-    lab5 = geHeading(name='Time', parent=p, attach=btn8, label='Time')
-    btn9 = geButton(name='Move_Left', parent=p, attach=lab5, label='<', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveTime(True)", gap=5)
-    btn10 = geButton(name='Move_Right', parent=p, attach=btn9, label='>', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveTime(False)")
-    lab6 = geHeading(name='Subframe', parent=p, attach=btn10, label='Subframe')
-    btn11 = geButton(name='Subframe_Out', parent=p, attach=lab6, label='X', cmd='import constraint_lib\nreload(constraint_lib)\nconstraint_lib.subframe()', gap=5)
+    item = geButton(name='Flip_Cruves', parent=p, attach=fil, label='FlipCurve', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)', w=70, gap=4, bg=[0.2, 0.5, 0.5])
+    item = geButton(name='Subframe_Out', parent=p, attach=item, label='SubframeX', cmd='import constraint_lib\nreload(constraint_lib)\nconstraint_lib.subframe()', w=70, gap=4, bg=[0.5, 0.5, 0.2])
+    item = geButton(name='Unify', parent=p, attach=item, label='UnifyKeys', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.unifyKeys()', w=70, gap=4, bg=[0.2, 0.5, 0.2])
+    item = geButton(name='BakeInfinity', parent=p, attach=item, label='BakeInfintiy', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.bakeInfinity()', w=70, gap=4, bg=[0.5, 0.2, 0.5])
+    item = geButton(name='Hold_Pre', parent=p, attach=item, label='<--', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(postCurrent=False)', gap=4, bg=[0.4, 0.2, 0.2])
+    item = geButton(name='Hold_All', parent=p, attach=item, label='Hold', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv()', w=45, gap=0, bg=[0.5, 0.2, 0.2])
+    item = geButton(name='Hold_Post', parent=p, attach=item, label='-->', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(preCurrent=False)', gap=0, bg=[0.4, 0.2, 0.2])
+    item = geHeading(name='Scale_Value', parent=p, attach=item, label='ScaleValue:')
+    item = geButton(name='Scale_Up', parent=p, attach=item, label='S', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(1.025)', gap=2,  bg=[0.1, 0.4, 0.4])
+    item = geButton(name='Scale_Down', parent=p, attach=item, label='s', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(0.975)', gap=0, bg=[0.2, 0.4, 0.4])
+    item = geHeading(name='Scale_Time', parent=p, attach=item, label='ScaleTime:')
+    item = geField(name='ScaleTimeFld', parent=p, attach=item, cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.animScale(cmds.textField('ScaleTimeFld',query=True,tx=True))",w=40, gap=4 )
+    item = geHeading(name='Value', parent=p, attach=item, label='Value:')
+    item = geButton(name='Move_Up', parent=p, attach=item, label='+', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveValue(True)", gap=2,  bg=[0.3, 0.3, 0.5])
+    item = geButton(name='Move_Down', parent=p, attach=item, label='-', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveValue(False)",  gap=0, bg=[0.3, 0.3, 0.42])
+    item = geHeading(name='Time', parent=p, attach=item, label='Time:')
+    item = geButton(name='Move_Left', parent=p, attach=item, label='<', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveTime(True)", gap=2, bg=[0.3, 0.3, 0.5])
+    item = geButton(name='Move_Right', parent=p, attach=item, label='>', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveTime(False)",  gap=0, bg=[0.3, 0.3, 0.42])
 
     '''
     fld = cmds.textField(AC, p=p, w=w*2, h=h, tx='1.1')
