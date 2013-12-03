@@ -46,26 +46,29 @@ def matchKeyedFramesLoop():
 
 def subframe():
     sel = cmds.ls(sl=True)
-    for s in sel:
-        animCurves = cmds.findKeyframe(s, c=True)
-        if animCurves != None:
-            for crv in animCurves:
-                frames = cmds.keyframe(crv, q=True)
-                if frames:
-                    for frame in frames:
-                        rnd = round(frame, 0)
-                        if rnd != frame:
-                            message( 'removing: ' + crv + ' -- ' + str(frame))
-                            if cmds.setKeyframe(crv, time=(rnd,rnd), i=1) == 0:
-                                cmds.cutKey(crv, time=(frame,frame))
-                            else:
-                                cmds.setKeyframe(crv, time=(rnd,rnd), i=1)
-                                cmds.cutKey(crv, time=(frame,frame))
-                else:
-                    message('no keys')
-        else:
-            message('Object ' + obj + ' has no keys')
-            return None
+    if sel:
+        for s in sel:
+            animCurves = cmds.findKeyframe(s, c=True)
+            if animCurves != None:
+                for crv in animCurves:
+                    frames = cmds.keyframe(crv, q=True)
+                    if frames:
+                        for frame in frames:
+                            rnd = round(frame, 0)
+                            if rnd != frame:
+                                message( 'removing: ' + crv + ' -- ' + str(frame))
+                                if cmds.setKeyframe(crv, time=(rnd,rnd), i=1) == 0:
+                                    cmds.cutKey(crv, time=(frame,frame))
+                                else:
+                                    cmds.setKeyframe(crv, time=(rnd,rnd), i=1)
+                                    cmds.cutKey(crv, time=(frame,frame))
+                    else:
+                        message('no keys')
+            else:
+                message('Object ' + obj + ' has no keys')
+                return None
+    else:
+        message('Select object', maya=1)
 
 def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
     '''
@@ -376,7 +379,7 @@ def deleteList(objects):
             typ = cmds.nodeType(obj)
             cmds.delete(obj)
             message(typ + ' | ' + obj + '  is deleted')
-            
+
 def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False):
     gRange = GetRange()
     cons = getConstraint(obj)
@@ -719,3 +722,21 @@ class AnimCrv(Key):
         for key in self.key:
             key.obj = self.obj
             key.put()
+
+def viewToggle():
+    ########################################################################
+    #   IsolateSelected in all model windows
+    ########################################################################
+    allPanels = mc.getPanel ( type = 'modelPanel' )
+    currentPanel = mc.getPanel ( withFocus = True )
+
+    # turn on isolateSelect for all modelPanels
+    for p in allPanels:
+        mc.isolateSelect ( p, state = 1 )
+
+    ########################################################################
+    #turn off isolateSelect for all model panels
+    
+    if allPanels:
+        for p in allPanels:
+            mc.isolateSelect ( p, state = 0 )
