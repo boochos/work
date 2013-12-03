@@ -46,6 +46,16 @@ def moveValue(up=True):
     except:
         pass
 
+def animScale(v):
+    try:
+        v = float(v)
+        scale_pivot  = cmds.playbackOptions(q=True, min=True)
+        cmds.scaleKey(ts=v, tp=scale_pivot)
+    except:
+        print 'didnt work'
+        return None
+    #scale_factor = 4.0389
+
 def bakeTimeWarp(objects,start,end,killWarp=True):
     # for each frame between start and end, query time1.outTime and time1.unwarpedTime
     # for each object, get each channel with at least one keyframe set
@@ -91,12 +101,6 @@ def bakeTimeWarp(objects,start,end,killWarp=True):
     if killWarp:
         timeWarp = cmds.listConnections('time1.timewarpIn_Raw')[0]
         cmds.delete(timeWarp)
-
-def animScale():
-    scale_factor = 4.0389
-    scale_pivot  = cmds.playbackOptions(q=True, min=True)
-    cmds.scaleKey(ts=scale_factor, tp=scale_pivot)
-
 
 def scaleCrv(val):
     '''
@@ -151,11 +155,11 @@ def holdCrv(postCurrent=True, preCurrent=True):
                         cmds.keyTangent( crv, inTangentType='auto', outTangentType='auto', time=(frame,frame) )
     else:
         message( 'Select curve(s) in the Graph Editor. -- Current timeline value of selected curve will be held.')
-        
+
 def keyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
+    frames = []
     if animCurves != None:
-        frames = []
         for crv in animCurves:
             framesTmp = cmds.keyframe(crv, q=True)
             for frame in framesTmp:
@@ -165,6 +169,19 @@ def keyedFrames(obj):
         return frames
     else:
         message('-- Object given has no keys --')
+        return frames
+
+def unifyKeys():
+    sel = cmds.ls(sl=1)
+    frames = []
+    for s in sel:
+        keys = keyedFrames(s)
+        if keys:
+            for frame in keys:
+                frames.append(frame)
+    for s in sel:
+        for frame in frames:
+            cmds.setKeyframe(s, i=True, t=frame)
 
 def toggleTangentLock():
     state = cmds.keyTangent(q=True, lock=True)[0]
@@ -178,3 +195,16 @@ def toggleTangentLock():
 def tangentStep(mltp=1.0001):
     angle = cmds.keyTangent( q=True, outAngle=True )[0]
     cmds.keyTangent( e=True, outAngle=angle + mltp )
+
+def bakeInfinity(sparseKeys=True, smart=True, sim=False):
+    crvs = cmds.keyframe(q=True, name=True, sl=True)
+    if crvs:
+        start     = cmds.playbackOptions(q=True, minTime=True)
+        end       = cmds.playbackOptions(q=True, maxTime=True)
+        objs = cmds.listConnections(crvs, d=True, s=False, plugs=True)
+        cmds.refresh(suspend=1)
+        cmds.bakeResults(objs, t=(start,end), simulation=True, pok=True, smart=1, sac=1)
+        cmds.refresh(suspend=0)
+        message(str(len(objs)) + ' curves baked --' + str(objs), maya=1)
+    else:
+        message('no curves are selected',maya=1)
