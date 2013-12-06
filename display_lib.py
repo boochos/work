@@ -128,13 +128,23 @@ def buttonsGE(*args):
     #bake infinity
     bkInfty = 'bakeInfinity'
     #initial variable state
+    build   = False
     p       = findControl(ann='Move Nearest Picked Key Tool', panelTyp='graphEditor', split=3)
     remove  = findControl(ann='Indicates that either text filter', panelTyp='graphEditor', split=2)
+    pnl     = cmds.getPanel(wf=True)
+    if len(p) == 1:
+        build =True
+        pnl   = 'graphEditor'
+    else:
+        if 'graphEditor' in pnl:
+            build = True
+        else:
+            cmds.warning('-- Multiple graph editors... Focus on appropriate graph editor. --')
+            return False
 
     if not cmds.control(filD, ex=1):
-        pnl = cmds.getPanel(wf=True)
-        if 'graphEditor' in pnl:
-            p  = findControl(ann='Move Nearest Picked Key Tool', panelTyp=pnl, split=3)[0]
+        if build:
+            p  = findControl(ann='Move Nearest Picked Key Tool', panelTyp=pnl, split=3)[0] #needs name of graph panel if one isnt focused !!!
             remove = findControl(ann='Indicates that either text filter', panelTyp=pnl, split=2)[0]
             cmds.control(remove, e=1, m=0)
             cmds.formLayout(p, e=1, h=52)
@@ -160,8 +170,6 @@ def buttonsGE(*args):
             item = geButton(name=sbfrm, parent=p, attach=item, label='SUBfrm_X', cmd='import constraint_lib\nreload(constraint_lib)\nconstraint_lib.subframe()', w=70, gap=20, bg=[0.5,0.5,0],ann='subframes to whole frames ')
             item = geButton(name=unfy, parent=p, attach=item, label='UNIFY', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.unifyKeys()', w=70, gap=0, bg=[0.3, 0.5, 0.3])
             item = geButton(name=bkInfty, parent=p, attach=item, label='BAKE_Infnty', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.bakeInfinity()', w=70, gap=0, bg=[0.5, 0.3, 0.4])
-        else:
-            cmds.warning('-- Graph editor not focused. Click over graph editor to focus. --')
     else:
         #clean UI
         xx = GeBtn()
