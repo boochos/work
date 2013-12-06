@@ -1,14 +1,15 @@
 import maya.cmds as cmds
 
-def graphFilterCore(attr=''):
+def graphFilterCore(attr='', panel='graphEditor1'):
     '''\n
     adds/clears filters for the default graphEditor
     '''
     #graph editor (default graphEditor supported only)
-    panel = cmds.getPanel(wf=True) #old way,
-    panel =  'graphEditor1' #account for other graphEditor names
+    #panel = cmds.getPanel(wf=True) #old way,
     #check for any filters currently being used
     c = cmds.outlinerEditor(panel + 'OutlineEd', q=True, af=True)
+    x = cmds.outlinerEditor(panel + 'OutlineEd', q=True, f=True)
+    print x, 'here'
     #if attrs arg is not empty execute, else delete filters reset filter to None
     if attr != '':
         #make new filter
