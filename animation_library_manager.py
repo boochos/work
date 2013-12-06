@@ -46,8 +46,8 @@ class AnimationToolbox(object):
                 cmds.loadPlugin('animImportExport')
             else:
                 pass
-                cmds.pluginInfo('/Applications/Autodesk/maya2009/Maya.app/Contents/MacOS/plug-ins/' + 'animImportExport.bundle', e=True, a=True)
-                cmds.loadPlugin('animImportExport')
+                #cmds.pluginInfo('/Applications/Autodesk/maya2009/Maya.app/Contents/MacOS/plug-ins/' + 'animImportExport.bundle', e=True, a=True)
+                #cmds.loadPlugin('animImportExport')
     
     #get current frame, and last playback frame
     def frameRange(self):
