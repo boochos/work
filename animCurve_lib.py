@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 import maya.mel as mel
 
-def message(what='', maya=False):
+def message(what='', maya=True):
     what = '-- ' + what + ' --'
     if maya == True:
         mel.eval('print \"' + what + '\";')
@@ -129,8 +129,10 @@ def scaleCrv(val):
         elif len(crvs) > 1:
             selKey = list(set(cmds.keyframe(crvs, q=True, vc=True, sl=True)))
             if len(selKey) == 1:
-                pvt = selKey[0]
-                message('Selected Keys from different curves have the same value, pivot = ' + str(pvt))
+                message('More than one curve selected, pivot = ' + str(pvt))
+                #feature turned off
+                #pvt = selKey[0]
+                #message('Selected Keys from different curves have the same value, pivot = ' + str(pvt))
             else:
                 message('Selected Keys have different values, pivot = ' + str(pvt))
             cmds.scaleKey(crvs, vs=val, vp=pvt)
