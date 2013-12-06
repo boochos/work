@@ -1,6 +1,7 @@
 import maya.cmds as cmds
+import display_lib as ds
 
-def graphFilterCore(attr='', panel='graphEditor1'):
+def graphFilterCore(attr='', panel=''):
     '''\n
     adds/clears filters for the default graphEditor
     '''
@@ -8,8 +9,6 @@ def graphFilterCore(attr='', panel='graphEditor1'):
     #panel = cmds.getPanel(wf=True) #old way,
     #check for any filters currently being used
     c = cmds.outlinerEditor(panel + 'OutlineEd', q=True, af=True)
-    x = cmds.outlinerEditor(panel + 'OutlineEd', q=True, f=True)
-    print x, 'here'
     #if attrs arg is not empty execute, else delete filters reset filter to None
     if attr != '':
         #make new filter
@@ -39,18 +38,19 @@ def graphFilterCore(attr='', panel='graphEditor1'):
         cmds.outlinerEditor(panel + 'OutlineEd', e=True, af=0)
         #print '---filters for ' + panel + ' cleared---'
     
-def graphFilters(attrs):
+def graphFilters(attrs, panel=''):
     '''\n
     attrs should be seperated by commas
     use * as for wildcards/shortcuts ie.(ro*X) will filter rotateX
     '''
     shortName = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']
     longName = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ', 'scaleX', 'scaleY', 'scaleZ']
+    print panel, '___panel'
     if attrs == '':
-        graphFilterCore('')
+        graphFilterCore(attr='',panel=panel)
     else:
         #clear any filters
-        graphFilterCore('')
+        graphFilterCore(attr='',panel=panel)
         #run new filters
         givenList = attrs.split(',')
         for givenName in givenList:
@@ -62,8 +62,10 @@ def graphFilters(attrs):
                 i=i+1
         #print givenList
         for attr in givenList:
-            graphFilterCore(attr)
+            graphFilterCore(attr=attr,panel=panel)
         
-def graphEditorCMD(*args):
-    attrs = cmds.textField('graphFilter', query=True, tx=True)
-    graphFilters(attrs)
+def graphEditorCMD(field=''):
+    panel = ds.findControlParent(control=field, split=5)
+    panel = panel.split('|')
+    attrs = cmds.textField(field, query=True, tx=True)
+    graphFilters(attrs, panel[len(panel)-1])
