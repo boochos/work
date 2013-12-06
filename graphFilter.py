@@ -63,9 +63,10 @@ def graphFilters(attrs, panel=''):
         #print givenList
         for attr in givenList:
             graphFilterCore(attr=attr,panel=panel)
-        
-def graphEditorCMD(field=''):
-    panel = ds.findControlParent(control=field, split=5)
+
+def graphEditorCMD():
+    ui = GeBtn()
+    panel = ds.findControlParent(control=ui.fil, split=5)
     panel = panel.split('|')
-    attrs = cmds.textField(field, query=True, tx=True)
+    attrs = cmds.textField(ui.fil, query=True, tx=True)
     graphFilters(attrs, panel[len(panel)-1])
