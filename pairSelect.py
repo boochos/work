@@ -18,7 +18,7 @@ class Get():
         scriptDir = scriptDir.partition('maya')
         scriptDir = os.path.join(scriptDir[0], scriptDir[1])
         self.rootPath = os.path.join(scriptDir, 'scripts')
-        #icons
+        #prefs
         prefDir        = cmds.internalVar(upd=1)
         #build paths
         self.iconPath  = os.path.join(prefDir,'icons')
@@ -129,7 +129,7 @@ def toggleJob():
         toggleIcon()
         message('Pair Selection OFF', maya=True)
     else:
-        print id
+        #print id
         killJob()
         id = cmds.scriptJob( e= ["SelectionChanged", "import pairSelect as ps\nps.job()"])
         toggleIcon()
@@ -142,11 +142,8 @@ def toggleIcon(off=False):
     buttons = cmds.lsUI(type='shelfButton')
     #interate through buttons to find one using appropriate images
     for btn in buttons:
-        b = cmds.shelfButton(btn, q=1, image=1)
         img = cmds.shelfButton(btn, q=1, image=1)
-        print btn, '   iteration'
-        if img == p.iconOff or img == p.iconOn:
-            print  btn, ' __ match'
+        if img in p.iconOff or img in p.iconOn:
             if off:
                 cmds.shelfButton(btn, edit = True, image = p.iconOff)
             else:
