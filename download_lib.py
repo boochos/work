@@ -13,7 +13,7 @@ import compileall as ca
 url = 'https://raw.github.com/boochos/work/master/download_lib.py'
 dir = cmds.internalVar(usd=1)
 dir = dir.partition('maya')
-dir = os.path.join(dir[0], dir[0])
+dir = os.path.join(dir[0], dir[1])
 dir = os.path.join(dir, 'scripts')
 urllib.urlretrieve(url, os.path.join(dir, 'download_lib.py'))
 ca.compile_dir(dir, force=True)
