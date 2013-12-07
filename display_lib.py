@@ -307,7 +307,8 @@ def speed(world=True, local=True):
                 if cmds.attributeQuery(attr, node=sel, ex=True) == False:
                     createSpeedAttr(sel, attr, exp)
                 else:
-                    cmds.warning('-- Speed attr (' + attr + ') already exists. Skipping' + sel + ' ! --')
+                    cmds.warning('-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --')
+                    deleteUserAttr(sel=sel, exp=True, att=attr)
                     return None
             if local == True:
                 attr = 'localSpeed'
@@ -315,7 +316,8 @@ def speed(world=True, local=True):
                 if cmds.attributeQuery(attr, node=sel, ex=True) == False:
                     createSpeedAttr(sel, attr, exp)
                 else:
-                    cmds.warning('-- Speed attr (' + attr + ') already exists. Skipping -' + sel + ' ! --')
+                    cmds.warning('-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --')
+                    deleteUserAttr(sel=sel, exp=True, att=attr)
                     return None
     else:
         message('Select an object.')
@@ -356,24 +358,33 @@ def distance():
     '''
     assembles distance relationship
     '''
+    attr = 'distance'
     selected = cmds.ls( sl=True )
     if len(selected) == 2:
         i = 1
+        #
         for sel in selected:
-            attr = 'distance'
             exp = distanceExp(sel, selected[i], attr)
             if cmds.attributeQuery(attr, node=sel, ex=True) == False:
                 createDisAttr(sel, attr, exp)
             else:
-                cmds.warning('-- Speed attr (' + attr + ') already exists. Skipping' + sel + ' ! --')
-                return None
+                message('Distance attr off')
+                try:
+                    deleteExp(sel=selected[0], attr=attr)
+                    deleteExp(sel=selected[1], attr=attr)
+                    if cmds.attributeQuery(attr, node=selected[0], ex=True) == True:
+                        cmds.deleteAttr(selected[0] + '.' + attr)
+                    if cmds.attributeQuery(attr, node=selected[1], ex=True) == True:
+                        cmds.deleteAttr(selected[1] + '.' + attr)
+                        break
+                except:
+                    pass
             if i == 1:
                 i = 0
     else:
-        message('Select an object.')
+        message('Select 2 objects to toggle distance attributes.')
 
-
-def deleteUserAttr(sel=None, exp=True):
+def deleteUserAttr(sel=None, exp=True, att=''):
     if sel == None:
         sel = cmds.ls(sl=True)
         if len(sel) != 1:
@@ -383,21 +394,34 @@ def deleteUserAttr(sel=None, exp=True):
             sel = sel[0]
     selectedAttr = cmds.channelBox('mainChannelBox', q=True, sma=True)
     userAttr = cmds.listAttr(sel, ud=True)
+    if att != '':
+        deleteExp(sel=sel, attr=att)
+        cmds.deleteAttr(sel + '.' + att)
+        message('Attribute ' + att + ' deleted')
+        return None
     if selectedAttr != None:
         for attr in selectedAttr:
-            if attr in userAttr:
-                con = cmds.listConnections(sel + '.' + attr, d=False, s=True)
-                if con != None:
-                    if exp == True:
-                        if cmds.nodeType(con[0]) =='expression':
-                            cmds.delete(con[0])
-                        else:
-                            message( 'No expression node was found.')
-                cmds.deleteAttr(sel + '.' + attr)
-            else:
-                message('Attribute ' + attr + ' is not a user defined attribute. It cannot be deleted.')
+            deleteExp(sel=sel, attr=attr)
+            cmds.deleteAttr(sel + '.' + attr)
     else:
         message('Select an attribute(s) in the channelBox.')
+
+def deleteExp(sel=None, attr=None, exp=True):
+    if sel == None:
+        sel = cmds.ls(sl=True)
+        if len(sel) != 1:
+             message('Select one object')
+             return None
+        else:
+            sel = sel[0]
+    if attr:
+        con = cmds.listConnections(sel + '.' + attr, d=False, s=True)
+        if con != None:
+            if exp == True:
+                if cmds.nodeType(con[0]) =='expression':
+                    cmds.delete(con[0])
+                else:
+                    message( 'No expression node was found.')
 
 def rotateManip():
     mode = cmds.manipRotateContext('Rotate', q=True, mode=True)
