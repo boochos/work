@@ -13,18 +13,18 @@ def message(what='', maya=False):
 
 class Get():
     def __init__ (self):
-        if os.name == 'nt':
-            self.iconPath  = 'C:/Users/Sebastian/Documents/maya/2013-x64/prefs/icons'
-            self.iconOn    = self.iconPath + '/srv_mirSel_on_icon.xpm'
-            self.iconOff   = self.iconPath + '/srv_mirSel_off_icon.xpm'
-            self.rootPath  = "C:/Users/Sebastian/Documents/maya/scripts"
-            self.pairPath  = self.rootPath + "/faceRig_selection_pair.txt"
-        else:
-            self.iconPath  = '/dd/home/sweber/maya/2012-x64/prefs/icons'
-            self.iconOn    = self.iconPath + '/srv_mirSel_on_icon.xpm'
-            self.iconOff   = self.iconPath + '/srv_mirSel_off_icon.xpm'
-            self.rootPath  = "/dd/home/sweber/maya/scripts"
-            self.pairPath  = self.rootPath + "/faceRig_selection_pair.txt"
+        #scripts
+        scriptDir = cmds.internalVar(usd=1)
+        scriptDir = scriptDir.partition('maya')
+        scriptDir = os.path.join(scriptDir[0], scriptDir[1])
+        self.rootPath = os.path.join(scriptDir, 'scripts')
+        #icons
+        prefDir        = cmds.internalVar(upd=1)
+        #build paths
+        self.iconPath  = os.path.join(prefDir,'icons')
+        self.iconOn    = os.path.join(self.iconPath , 'srv_mirSel_on_icon.xpm')
+        self.iconOff   = os.path.join(self.iconPath , 'srv_mirSel_off_icon.xpm')
+        self.pairPath  = os.path.join(self.rootPath , 'faceRig_selection_pair.txt')
 
 def nameSpace(ns = '', base=False):
     if ':' in ns:
@@ -134,25 +134,23 @@ def toggleJob():
         id = cmds.scriptJob( e= ["SelectionChanged", "import pairSelect as ps\nps.job()"])
         toggleIcon()
         message('Pair Selection ON', maya=True)
-        
+
 def toggleIcon(off=False):
     p = Get()
     global id
-    #List all the layouts in Maya
-    controlLayouts = cmds.lsUI(controls = True)
-    #interate through the layouts and find the shelves
-    for control in controlLayouts:
-        if control == 'Custom2' or control == 'Rendering':
-            children = cmds.shelfLayout(control, query = True, ca = True)
-            if children:
-                for child in children:
-                    #find that shelfButton that's using the appropriate image, then change it
-                    getImage = cmds.shelfButton(child, query = True, image = True)
-                    if getImage == p.iconOff or getImage == p.iconOn:
-                        if off:
-                            cmds.shelfButton(child, edit = True, image = p.iconOff)
-                        else:
-                            if id:
-                                cmds.shelfButton(child, edit = True, image = p.iconOn)
-                            else:
-                                cmds.shelfButton(child, edit = True, image = p.iconOff)
+    #List shelf buttons
+    buttons = cmds.lsUI(type='shelfButton')
+    #interate through buttons to find one using appropriate images
+    for btn in buttons:
+        b = cmds.shelfButton(btn, q=1, image=1)
+        img = cmds.shelfButton(btn, q=1, image=1)
+        print btn, '   iteration'
+        if img == p.iconOff or img == p.iconOn:
+            print  btn, ' __ match'
+            if off:
+                cmds.shelfButton(btn, edit = True, image = p.iconOff)
+            else:
+                if id:
+                    cmds.shelfButton(btn, edit = True, image = p.iconOn)
+                else:
+                    cmds.shelfButton(btn, edit = True, image = p.iconOff)
