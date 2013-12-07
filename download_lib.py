@@ -3,6 +3,26 @@ import maya.cmds as cmds
 import os
 import compileall as ca
 
+
+####################################################################
+#commented chunk of code should download this module and run it
+'''
+import urllib
+import os
+import compileall as ca
+url  = 'https://raw.github.com/boochos/work/master/download_lib.py'
+scriptDir = cmds.internalVar(usd=1)
+scriptDir = pathDepth(path=scriptDir, depth='maya')
+scriptDir = os.path.join(scriptDir, 'scripts')
+urllib.urlretrieve(url, os.path.join(scriptDir, 'download_lib.py'))
+ca.compile_dir(scriptDir, force=True)
+import download_lib as dl
+dl.get()
+'''
+####################################################################
+
+
+
 def pathDepth(path='', depth='maya'):
     stf    = path.partition(depth)
     result = os.path.join(stf[0], stf[1])
