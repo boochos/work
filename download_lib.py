@@ -10,12 +10,13 @@ import compileall as ca
 import urllib
 import os
 import compileall as ca
-url  = 'https://raw.github.com/boochos/work/master/download_lib.py'
-scriptDir = cmds.internalVar(usd=1)
-scriptDir = pathDepth(path=scriptDir, depth='maya')
-scriptDir = os.path.join(scriptDir, 'scripts')
-urllib.urlretrieve(url, os.path.join(scriptDir, 'download_lib.py'))
-ca.compile_dir(scriptDir, force=True)
+url = 'https://raw.github.com/boochos/work/master/download_lib.py'
+dir = cmds.internalVar(usd=1)
+dir = dir.partition('maya')
+dir = os.path.join(dir[0], dir[0])
+dir = os.path.join(dir, 'scripts')
+urllib.urlretrieve(url, os.path.join(dir, 'download_lib.py'))
+ca.compile_dir(dir, force=True)
 import download_lib as dl
 dl.get()
 '''
@@ -31,7 +32,7 @@ def pathDepth(path='', depth='maya'):
 class Depend():
     def __init__(self):
         #shelf
-        self.shelf     = 'AnimGit'
+        self.shelf = 'AnimGit'
 
 def get():
     #ONLINE_____
