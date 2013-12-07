@@ -65,7 +65,7 @@ def graphFilters(attrs, panel=''):
             graphFilterCore(attr=attr,panel=panel)
 
 def graphEditorCMD():
-    ui = GeBtn()
+    ui = ds.GeBtn()
     panel = ds.findControlParent(control=ui.fil, split=5)
     panel = panel.split('|')
     attrs = cmds.textField(ui.fil, query=True, tx=True)
