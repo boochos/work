@@ -248,7 +248,10 @@ def shapeSize(obj=None, mltp=1):
     if obj == None:
         #make a list from selection
         obj = cmds.ls(sl=True, l=True)
-        shapeSize(obj, mltp)
+        if obj:
+            shapeSize(obj, mltp)
+        else:
+            message('nothing selected')
     elif type(obj) == list:
         #no need to accomodate
         for i in obj:
