@@ -11,6 +11,7 @@ import compileall as ca
 import urllib
 import os
 import compileall as ca
+import maya.cmds as cmds
 url = 'https://raw.github.com/boochos/work/master/download_lib.py'
 dir = cmds.internalVar(usd=1)
 dir = dir.partition('maya')
