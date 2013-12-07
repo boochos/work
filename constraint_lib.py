@@ -78,9 +78,6 @@ def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
     sel = cmds.ls(sl=True)
     if sel:
         crvs = cmds.keyframe(sel[0], q=True, name=True)
-    else:
-        message('Nothing selected')
-        return None
     if crvs == None:
         message('No keys on object', maya=True)
         return None
