@@ -128,7 +128,7 @@ def get():
         cmds.shelfButton(annotation='anim is pasted to selected objects', w=wh,h=wh, image='AnimPaste.xpm', command='import animation_library_manager as alm\nreload(alm)\nancop = alm.AnimationToolbox()\nancop.animPaste()' )
         cmds.shelfButton(annotation='anim is imported from a file', w=wh,h=wh, image='AnimImport.xpm', command='import animation_library_manager as animMan\nreload(animMan)\nanimMan.animImport()' )
         cmds.shelfButton(annotation='anim is exported to a file', w=wh,h=wh, image='AnimExport.xpm', command='import animation_library_manager as animMan\nreload(animMan)\nanimMan.animExport()' )
-        cmds.shelfButton(annotation='speed attribute is added', w=wh,h=wh, imageOverlayLabel='spd', image='pythonFamily.png', command='import display_lib as ds\nreload(ds)\nds.speed(local=0)' )
+        cmds.shelfButton(annotation='speed attribute is added', w=wh,h=wh, image='kmh.xpm', command='import display_lib as ds\nreload(ds)\nds.speed(local=0)' )
         cmds.shelfButton(annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes', w=wh,h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import display_lib as dis\nreload(dis)\ndis.distance()' )
     else:
         #clean ui
