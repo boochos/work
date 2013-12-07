@@ -52,7 +52,7 @@ def get():
     'playblast_lib.py', 'spaceSwap.py', 'togglePlate.py', 'graphFilter.py']
     
     #icons
-    icons       = ['AnimCopy.png', 'animCopyPaste.png', 'constraintUI.png', 'csAdd.png', 'csEx.png',
+    icons       = ['constraintUI.png', 'csAdd.png', 'csEx.png',
     'csIm.png', 'csMbrTgl.png', 'csMinus.png', 'flush.png', 'flushUn.png', 'geBttns.png',
     'matchKeys.png', 'CT-.xpm', 'CT+.xpm', 'PrntSel.xpm', 'selStore.xpm', 'sel.xpm', 'TagSel.xpm',
     'TagUI.xpm', 'upArrow.xpm', 'MatchX.xpm', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimStore.xpm',
