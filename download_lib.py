@@ -130,7 +130,7 @@ def get():
         cmds.shelfButton(annotation='anim is exported to a file', w=wh,h=wh, image='AnimExport.xpm', command='import animation_library_manager as animMan\nreload(animMan)\nanimMan.animExport()' )
         cmds.shelfButton(annotation='speed attribute is added', w=wh,h=wh, image='kmh.xpm', command='import display_lib as ds\nreload(ds)\nds.speed(local=0)' )
         cmds.shelfButton(annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes', w=wh,h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import display_lib as dis\nreload(dis)\ndis.distance()' )
-        cmds.shelfButton(annotation='toggle image planes on selected camera', w=wh,h=wh, image='camPlateToggle.xpm', command='import togglePlate\nreload(togglePlate)\ntogglePlate.togglePlate' )
+        cmds.shelfButton(annotation='toggle image planes on selected camera', w=wh,h=wh, image='camPlateToggle.xpm', command='import togglePlate\nreload(togglePlate)\ntogglePlate.togglePlate()' )
     else:
         #clean ui
         cmds.deleteUI(shelf, control=True)
