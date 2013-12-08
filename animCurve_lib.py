@@ -233,3 +233,47 @@ def smoothKeys():
                 print avg
                 #move key
                 cmds.keyframe(crvs, vc=avg, time=(frame, frame))
+
+def smoothImproved():
+    crvs   = cmds.keyframe(q=True, name=True, sl=True)
+    frames = cmds.keyframe(crvs, q=True, sl=True)
+    size   = len(frames)
+    value  = None
+    if size > 2:
+        #first key val
+        x = cmds.keyframe(crvs, q=True, vc=True, time=(frames[0], frames[0]))[0]
+        i=1
+        for frame in frames:
+            if frame == frames[0] or frame == frames[size-1]:
+                pass
+            else:
+                print frame
+                #this itter
+                y = cmds.keyframe(crvs, q=True, vc=True, time=(frame, frame))[0]
+                #next itter
+                z = cmds.keyframe(crvs, q=True, vc=True, time=(frame, frame))[0]
+                #average
+                avg = (x+y+z)/3
+                #print avg
+                #move key
+                print frames[i-1]
+                print frames[i+1]
+                '''
+                #cmds.keyframe(crvs, vc=avg, time=(frame, frame))
+                frameRange = int((frames[i-1] - frames[i+1])*-1)
+                print frameRange
+                valueRange = x-z
+                print valueRange
+                increment = valueRange/frameRange
+                print increment
+                incMulti = int((frames[i-1] - frame)*-1)
+                print incMulti
+                '''
+            i=i+1
+    
+    #amount of frames between 3 keys
+    #amount of value change between keys
+    #divide change by frame increments
+    #add increments to arrive at key position
+    #check against actual value
+    #do math to place towards linear path
