@@ -58,7 +58,7 @@ def get():
     'matchKeys.png', 'CT-.xpm', 'CT+.xpm', 'PrntSel.xpm', 'selStore.xpm', 'sel.xpm', 'TagSel.xpm',
     'TagUI.xpm', 'upArrow.xpm', 'MatchX.xpm', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimStore.xpm',
     'AnimImport.xpm', 'AnimExport.xpm', 'animCopyPaste.xpm', 'AnimCopy.xpm', 'rvBlast.png', 'sel.png',
-    'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.xpm']
+    'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.xpm', 'kmh.xpm']
     
     #shelf
     shelfBttns  = ['']
@@ -88,9 +88,9 @@ def get():
             print url
             home = os.path.join(scriptDir, lib)
             print home
-            urllib.urlretrieve(url, home)
+            #urllib.urlretrieve(url, home)
         #compile modules
-        ca.compile_dir(scriptDir, force=True)
+        #ca.compile_dir(scriptDir, force=True)
         #get icons
         for icon in icons:
             url  = urlIcons + '/' + icon
@@ -130,6 +130,7 @@ def get():
         cmds.shelfButton(annotation='anim is exported to a file', w=wh,h=wh, image='AnimExport.xpm', command='import animation_library_manager as animMan\nreload(animMan)\nanimMan.animExport()' )
         cmds.shelfButton(annotation='speed attribute is added', w=wh,h=wh, image='kmh.xpm', command='import display_lib as ds\nreload(ds)\nds.speed(local=0)' )
         cmds.shelfButton(annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes', w=wh,h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import display_lib as dis\nreload(dis)\ndis.distance()' )
+        cmds.shelfButton(annotation='toggle image planes on selected camera', w=wh,h=wh, image='camPlateToggle.xpm', command='import togglePlate\nreload(togglePlate)\ntogglePlate.togglePlate' )
     else:
         #clean ui
         cmds.deleteUI(shelf, control=True)
