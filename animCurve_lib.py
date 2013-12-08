@@ -44,6 +44,7 @@ def moveValue(up=True):
             cmds.keyframe(animation='keys', relative=1, valueChange=(0-.005))
             message('down ' + str(0.005), maya=1)
     except:
+        message( 'didnt work')
         pass
 
 def animScale(v):
@@ -52,7 +53,7 @@ def animScale(v):
         scale_pivot  = cmds.playbackOptions(q=True, min=True)
         cmds.scaleKey(ts=v, tp=scale_pivot)
     except:
-        print 'didnt work'
+        message( 'didnt work')
         return None
     #scale_factor = 4.0389
 
@@ -210,3 +211,25 @@ def bakeInfinity(sparseKeys=True, smart=True, sim=False):
         message(str(len(objs)) + ' curves baked --' + str(objs), maya=1)
     else:
         message('no curves are selected',maya=1)
+
+def smoothKeys():
+    crvs   = cmds.keyframe(q=True, name=True, sl=True)
+    frames = cmds.keyframe(crvs, q=True, sl=True)
+    size   = len(frames)
+    value  = None
+    if size > 2:
+        #first key val
+        x = cmds.keyframe(crvs, q=True, vc=True, time=(frames[0], frames[0]))[0]
+        for frame in frames:
+            if frame == frames[0] or frame == frames[size-1]:
+                pass
+            else:
+                #this itter
+                y = cmds.keyframe(crvs, q=True, vc=True, time=(frame, frame))[0]
+                #next itter
+                z = cmds.keyframe(crvs, q=True, vc=True, time=(frame, frame))[0]
+                #average
+                avg = (x+y+z)/3
+                print avg
+                #move key
+                cmds.keyframe(crvs, vc=avg, time=(frame, frame))
