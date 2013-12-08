@@ -179,7 +179,7 @@ class CSUI(object):
     def populateShortcuts(self):
         if not os.path.exists(self.shortcutsFile):
             self.shortcuts.append(['Home', os.environ['HOME']])
-            self.shortcuts.append(['Desktop', os.path.join(os.environ['USERPROFILE'],'Desktop')])
+            #self.shortcuts.append(['Desktop', os.path.join(os.environ['USERPROFILE'],'Desktop')])
             self.shortcuts.append(['Selection Sets', os.path.join(os.environ['HOME'],ss.defaultPath())])
             cs.createDefaultPath()
         else:
