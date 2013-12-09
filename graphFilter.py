@@ -7,7 +7,7 @@ def graphFilterCore(attr='', panel=''):
     '''
     #check for any filters currently being used
     c  = cmds.outlinerEditor(panel + 'OutlineEd', q=True, af=True)
-    cf = None
+    cf = ''
     #if attrs arg is not empty execute, else delete filters reset filter to None
     if attr != '':
         #make new filter
