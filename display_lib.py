@@ -144,6 +144,7 @@ def buttonsGE(*args):
             item = geButton(name=ui.sbfrm, parent=p, attach=item, label='SUBfrm_X', cmd='import constraint_lib\nreload(constraint_lib)\nconstraint_lib.subframe()', w=70, gap=20, bg=[0.5,0.5,0],ann='subframes to whole frames ')
             item = geButton(name=ui.unfy, parent=p, attach=item, label='UNIFY', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.unifyKeys()', w=70, gap=0, bg=[0.3, 0.5, 0.3])
             item = geButton(name=ui.bkInfty, parent=p, attach=item, label='BAKE_Infnty', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.bakeInfinity()', w=70, gap=0, bg=[0.5, 0.3, 0.4])
+            item = geButton(name=ui.smth, parent=p, attach=item, label='SMOOTH', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.smoothKeys()', w=70, gap=0, bg=[0.3, 0.3, 0.4])
     else:
         #clean UI
         d  = ui.__dict__
@@ -189,6 +190,8 @@ class GeBtn():
         self.unfy    = 'unifyKeys'
         #bake infinity
         self.bkInfty = 'bakeInfinity'
+        #smooth keys
+        self.smth  = 'smoothKeys'
 
 def toggleObjectDisplay(purpose):
 
