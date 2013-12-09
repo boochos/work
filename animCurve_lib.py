@@ -214,43 +214,43 @@ def bakeInfinity(sparseKeys=True, smart=True, sim=False):
 
 def smoothKeys(weight=1.0):
     crvs   = cmds.keyframe(q=True, name=True, sl=True)
-    frames = cmds.keyframe(crvs, q=True, sl=True)
-    print frames, ' frames'
-    size   = len(frames)
-    value  = None
-    rvrs   = False
-    if size > 2:
-        #first key val
-        #x = cmds.keyframe(crvs, q=True, vc=True, time=(frames[0], frames[0]))[0]
-        i=0
-        for frame in frames:
-            if frame == frames[0] or frame == frames[size-1]:
-                pass
-            else:
-                #previous itter
-                x = cmds.keyframe(crvs, q=True, vc=True, time=(frames[i-1], frames[i-1]))[0]
-                #this itter
-                y = cmds.keyframe(crvs, q=True, vc=True, time=(frame, frame))[0]
-                #next itter
-                z = cmds.keyframe(crvs, q=True, vc=True, time=(frames[i+1], frames[i+1]))[0]
-                #frame range between keys
-                frameRange = int((frames[i-1] - frames[i+1])*-1)
-                #value range between keys, account for negative
-                valueRange = x-z
-                #force positive
-                if valueRange < 0:
-                    valueRange = valueRange*-1
-                #find increments
-                inc = valueRange/frameRange
-                #how many increments to add
-                mlt = int((frames[i-1] - frame)*-1)
-                #add up increments
-                keyPos = inc*mlt
-                #final value to add/subtract from previous key
-                #operation depends on x relative to z value
-                if x < z:
-                    val = x + keyPos
+    for crv in crvs:
+        frames = cmds.keyframe(crv, q=True, sl=True)
+        size   = len(frames)
+        value  = None
+        rvrs   = False
+        if size > 2:
+            #first key val
+            #x = cmds.keyframe(crvs, q=True, vc=True, time=(frames[0], frames[0]))[0]
+            i=0
+            for frame in frames:
+                if frame == frames[0] or frame == frames[size-1]:
+                    pass
                 else:
-                    val = x - keyPos
-                cmds.keyframe(crvs, vc=val, time=(frame, frame))
-            i=i+1
+                    #previous itter
+                    x = cmds.keyframe(crv, q=True, vc=True, time=(frames[i-1], frames[i-1]))[0]
+                    #this itter
+                    y = cmds.keyframe(crv, q=True, vc=True, time=(frame, frame))[0]
+                    #next itter
+                    z = cmds.keyframe(crv, q=True, vc=True, time=(frames[i+1], frames[i+1]))[0]
+                    #frame range between keys
+                    frameRange = int((frames[i-1] - frames[i+1])*-1)
+                    #value range between keys, account for negative
+                    valueRange = x-z
+                    #force positive
+                    if valueRange < 0:
+                        valueRange = valueRange*-1
+                    #find increments
+                    inc = valueRange/frameRange
+                    #how many increments to add
+                    mlt = int((frames[i-1] - frame)*-1)
+                    #add up increments
+                    keyPos = inc*mlt
+                    #final value to add/subtract from previous key
+                    #operation depends on x relative to z value
+                    if x < z:
+                        val = x + keyPos
+                    else:
+                        val = x - keyPos
+                    cmds.keyframe(crv, vc=val, time=(frame, frame))
+                i=i+1
