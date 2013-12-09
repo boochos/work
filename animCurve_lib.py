@@ -212,7 +212,7 @@ def bakeInfinity(sparseKeys=True, smart=True, sim=False):
     else:
         message('no curves are selected',maya=1)
 
-def smoothImproved():
+def smoothKeys():
     crvs   = cmds.keyframe(q=True, name=True, sl=True)
     frames = cmds.keyframe(crvs, q=True, sl=True)
     size   = len(frames)
