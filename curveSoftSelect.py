@@ -6,6 +6,7 @@ import math
 #global job id
 idV    = None
 idS    = None
+idUndo = False
 #global vars
 glVal  = []
 glFrm  = []
@@ -22,65 +23,96 @@ def message(what='', maya=False):
         print what
 
 def jobValue(*args):
-    #local curves
-    lcCrv   = cmds.keyframe(q=True, name=True, sl=True)
-    lcVal   = []
-    #set
-    global glCrv
-    if not glCrv or glCrv != lcCrv: #set globals
-        #set local
-        glCrv = lcCrv
-    if glCrv == lcCrv: #continue
-        c = 0
-        for crv in lcCrv:
-            frames     = cmds.keyframe(crv, q=True, sl=True)
-            startFrame = frames[0]
-            endFrame   = frames[len(frames)-1]
-            frames     = [startFrame, endFrame]
-            print '__________________________________________________________________'
-            print frames, '___frames'
-            #iterators for correct list positions in global vars
-            v = 0
-            side = ['l', 'r']
-            for frame in frames:
-                print frame, '__ left right frame ittr'
-                lcVal  = cmds.keyframe(crv, q=True, vc=True, time=(frame, frame))[0]
-                glval  = glVal[c][v]
-                if glval != lcVal:
-                    print glval, '__global ', lcVal, '__local '
-                    offset = glval - lcVal
-                    if offset < 0:
-                        offset = offset*-1
-                    framesBlend = neibors(crv=crv, splitFrame=frame, drop=5, direction=side[v])
-                    #needs to be start at 1, 0 is the first position, full weight
-                    b = 1
-                    for f in framesBlend:
-                        print f, '__blend frame ittr'
-                        if f != frame:
-                            if v == 0:
-                                blnd = blendWeight2(framesBlend, b)[1]
-                                print blnd, '____start'
-                            else:
-                                blnd = blendWeight2(framesBlend, b)[0]
-                                print blnd, '____end'
-                            val  = cmds.keyframe(crv, q=True, vc=True, time=(f, f))[0]
-                            if glval < lcVal:
-                                cmds.keyframe(crv, vc=val+(offset*blnd), time=(f, f))
-                            elif glval > lcVal:
-                                cmds.keyframe(crv, vc=val-(offset*blnd), time=(f, f))
-                        b=b+1
-                    #reset global, stops loop from running!!!
-                    glVal[c][v] = lcVal
-                    message('did math')
-                    message('\n\n')
-                else:
-                    print '________________________value variable is the same'
-                v=v+1
-            c=c+1
-    else:
-        message('_____________________________________________________nothing to act on')
+    que = cmds.undoInfo(q=1,un=1)
+    #only run if undo que has a keyframe -edit entry
+    if 'keyframe -edit' in que:
+        #local curves
+        lcCrv   = cmds.keyframe(q=True, name=True, sl=True)
+        lcVal   = []
+        #set
+        global glCrv
+        if not glCrv or glCrv != lcCrv: #set globals
+            #set local
+            glCrv = lcCrv
+        if glCrv == lcCrv: #continue
+            c = 0
+            for crv in lcCrv:
+                frames     = cmds.keyframe(crv, q=True, sl=True)
+                startFrame = frames[0]
+                endFrame   = frames[len(frames)-1]
+                frames     = [startFrame, endFrame]
+                print '__________________________________________________________________'
+                print frames, '___frames'
+                #iterators for correct list positions in global vars
+                v = 0
+                side = ['l', 'r']
+                for frame in frames:
+                    print frame, '__ left right frame ittr'
+                    lcVal  = cmds.keyframe(crv, q=True, vc=True, time=(frame, frame))[0]
+                    glval  = glVal[c][v]
+                    if glval != lcVal:
+                        print glval, '__global ', lcVal, '__local '
+                        offset = glval - lcVal
+                        if offset < 0:
+                            offset = offset*-1
+                        framesBlend = neibors(crv=crv, splitFrame=frame, drop=5, direction=side[v])
+                        #needs to be start at 1, 0 is the first position, full weight
+                        b = 1
+                        for f in framesBlend:
+                            print f, '__blend frame ittr'
+                            if f != frame:
+                                if v == 0:
+                                    blnd = blendWeight2(framesBlend, b)[1]
+                                    print blnd, '____start'
+                                else:
+                                    blnd = blendWeight2(framesBlend, b)[0]
+                                    print blnd, '____end'
+                                val  = cmds.keyframe(crv, q=True, vc=True, time=(f, f))[0]
+                                if glval < lcVal:
+                                    cmds.keyframe(crv, vc=val+(offset*blnd), time=(f, f))
+                                elif glval > lcVal:
+                                    cmds.keyframe(crv, vc=val-(offset*blnd), time=(f, f))
+                            b=b+1
+                        #reset global, stops loop from running!!!
+                        glVal[c][v] = lcVal
+                        message('did math')
+                        message('\n\n')
+                    else:
+                        print '________________________value variable is the same'
+                    v=v+1
+                c=c+1
+        else:
+            message('_____________________________________________________nothing to act on')
 
-def killValueJob():
+def jobUndo(*args):
+    #need to reset globals if an undo is detected
+    killValueJob()
+    activateValueJob()
+
+def killUndoJob(*args):
+    global idUndo
+    print idUndo, '___killing undo job'
+    getJobs = cmds.scriptJob(lj=True)
+    #print getJobs
+    jobs = []
+    for job in getJobs:
+        if "jobUndo()" in job:
+            #print job, '______________ undo job'
+            jobs.append(job.split(':')[0])
+    if len(jobs) > 0:
+        for job in jobs:
+            cmds.scriptJob(kill=int(job), force=True)
+    global idUndo
+    idUndo = None
+    message('Undo script OFF', maya=True)
+
+def activateUndoJob(*args):
+    global idUndo
+    idUndo = cmds.scriptJob( e= ["Undo", "import curveSoftSelect as css\ncss.jobUndo()"])
+    print idUndo
+    message('Undo script ON', maya=True)
+
+def killValueJob(*args):
     global idV
     print idV, '___killing value job'
     getJobs = cmds.scriptJob(lj=True)
@@ -88,6 +120,7 @@ def killValueJob():
     jobs = []
     for job in getJobs:
         if "jobValue()" in job:
+            #print job, '______________ value job'
             jobs.append(job.split(':')[0])
     if len(jobs) > 0:
         for job in jobs:
@@ -97,7 +130,7 @@ def killValueJob():
     globalReset()
     message('Value script OFF', maya=True)
 
-def activateValueJob():
+def activateValueJob(*args):
     global idV
     print idV, '___activate'
     #print idV
@@ -121,7 +154,7 @@ def jobSel(*args):
         killValueJob()
         print 'killed value'
 
-def killSelJob():
+def killSelJob(*args):
     getJobs = cmds.scriptJob(lj=True)
     #print getJobs
     jobs = []
@@ -132,11 +165,12 @@ def killSelJob():
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
 
-def toggleSelJob():
+def toggleSelJob(*args):
     global idS
     if idS:
         killSelJob()
         killValueJob()
+        killUndoJob()
         cmds.scriptJob( kill=idS, force=True)
         idS = None
         #toggleIcon()
@@ -144,13 +178,15 @@ def toggleSelJob():
         globalReset()
     else:
         #print idS
+        killUndoJob()
         killSelJob()
         idS = cmds.scriptJob( e= ["SelectionChanged", "import curveSoftSelect as css\ncss.jobSel()"])
         jobSel()
+        activateUndoJob()
         #toggleIcon()
         message('Soft key Selection ON', maya=True)
 
-def globalReset():
+def globalReset(*args):
     global glFrm
     glFrm = []
     global glVal
@@ -161,7 +197,7 @@ def globalReset():
     glPlg = None
     print '___reset globals'
 
-def globalInitiate():
+def globalInitiate(*args):
     global glCrv
     global glVal
     global glFrm
@@ -180,12 +216,12 @@ def globalInitiate():
         glVal.append(valTmp)
         frmTmp = []
         valTmp = []
-    print glCrv
-    print glVal
-    print glFrm
+    #print glCrv
+    #print glVal
+    #print glFrm
     print '___initiate globals'
 
-def plug():
+def plug(*args):
     crvs   = cmds.keyframe(q=True, name=True, sl=True)
     if crvs:
         global glPlg
@@ -196,14 +232,21 @@ def plug():
 
 def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
     '''
-    drop should consider frame bounderies and find keys within, not keyframes on either side
+    drop should consider frame boundaries and find keys within, not keyframes on either side
     '''
     frames = cmds.keyframe(crv, q=True)
     start  = []
     end    = []
     result = []
+    if direction == 'l':
+        dropoff = splitFrame - drop, '___dropoff'
+    else:
+        dropoff = splitFrame + drop, '___dropoff'
+    print dropoff
     i = 0
     for frame in frames:
+        if frame >= dropoff:
+            print frame, '___________qualifies'
         if frame == splitFrame:
             if direction == 'l':
                 start = frames[i-drop:i]
