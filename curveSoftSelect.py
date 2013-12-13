@@ -37,26 +37,32 @@ def jobValue(*args):
             startFrame = frames[0]
             endFrame   = frames[len(frames)-1]
             frames     = [startFrame, endFrame]
+            print '__________________________________________________________________'
             print frames, '___frames'
             #iterators for correct list positions in global vars
             v = 0
             side = ['l', 'r']
             for frame in frames:
+                print frame, '__ left right frame ittr'
                 lcVal  = cmds.keyframe(crv, q=True, vc=True, time=(frame, frame))[0]
                 glval  = glVal[c][v]
                 if glval != lcVal:
-                    print glval, lcVal, '__here'
+                    print glval, '__global ', lcVal, '__local '
                     offset = glval - lcVal
                     if offset < 0:
                         offset = offset*-1
                     framesBlend = neibors(crv=crv, splitFrame=frame, drop=5, direction=side[v])
-                    b = 0
+                    #needs to be start at 1, 0 is the first position, full weight
+                    b = 1
                     for f in framesBlend:
+                        print f, '__blend frame ittr'
                         if f != frame:
                             if v == 0:
-                                blnd = blendWeight2(framesBlend, b, 0, 0.1)[1]
+                                blnd = blendWeight2(framesBlend, b)[1]
+                                print blnd, '____start'
                             else:
-                                blnd = blendWeight2(framesBlend, b, 0, 0.1)[0]
+                                blnd = blendWeight2(framesBlend, b)[0]
+                                print blnd, '____end'
                             val  = cmds.keyframe(crv, q=True, vc=True, time=(f, f))[0]
                             if glval < lcVal:
                                 cmds.keyframe(crv, vc=val+(offset*blnd), time=(f, f))
@@ -66,16 +72,17 @@ def jobValue(*args):
                     #reset global, stops loop from running!!!
                     glVal[c][v] = lcVal
                     message('did math')
+                    message('\n\n')
                 else:
-                    print '________________________else'
+                    print '________________________value variable is the same'
                 v=v+1
             c=c+1
     else:
-        message('nothing to act on')
+        message('_____________________________________________________nothing to act on')
 
 def killValueJob():
     global idV
-    print idV, '___kill'
+    print idV, '___killing value job'
     getJobs = cmds.scriptJob(lj=True)
     #print getJobs
     jobs = []
@@ -100,7 +107,7 @@ def activateValueJob():
         globalInitiate()
         message('Value script ON', maya=True)
     else:
-        print 'nothing selected'
+        print 'nothing selected ____coudn\'t activate'
 
 def jobSel(*args):
     #local curves
@@ -139,6 +146,7 @@ def toggleSelJob():
         #print idS
         killSelJob()
         idS = cmds.scriptJob( e= ["SelectionChanged", "import curveSoftSelect as css\ncss.jobSel()"])
+        jobSel()
         #toggleIcon()
         message('Soft key Selection ON', maya=True)
 
@@ -187,6 +195,9 @@ def plug():
         pass
 
 def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
+    '''
+    drop should consider frame bounderies and find keys within, not keyframes on either side
+    '''
     frames = cmds.keyframe(crv, q=True)
     start  = []
     end    = []
@@ -200,7 +211,7 @@ def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
                     result.append(f)
                 return result
             else:
-                end   = frames[i:i+drop]
+                end   = frames[i+1:i+drop+1]
                 for f in end:
                     result.append(f)
                 print result
@@ -209,7 +220,7 @@ def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
         else:
             i = i + 1
 
-def blendWeight2(List, i, function, falloff):
+def blendWeight2(List, i, function=2, falloff=0.0):
     '''
     Arguments:\n
         List = list of objects
@@ -230,10 +241,14 @@ def blendWeight2(List, i, function, falloff):
     '''
     weight = [None,None]
     decay = 0
+    #orig
+    #numOfPoints = len(List)-1
+    #new
+    numOfPoints = len(List)+1
+
 
     if function == 0:
         #Ease Out
-        numOfPoints = len(List)-1
         iDegree = 90/numOfPoints
         if falloff > 0.0 and falloff <= 1.0:
             decay = falloff/numOfPoints
@@ -247,7 +262,6 @@ def blendWeight2(List, i, function, falloff):
         return weight
     elif function == 1:
         #Ease In
-        numOfPoints = len(List)-1
         iDegree = 90/numOfPoints
         if falloff > 0.0 and falloff <= 1.0:
             decay = falloff/numOfPoints
@@ -261,14 +275,12 @@ def blendWeight2(List, i, function, falloff):
         return weight
     elif function == 2:
         #Ease Out Ease In
-        numOfPoints = len(List)-1
         iDegree = 180/numOfPoints
         weight[0] = (math.cos(math.radians(iDegree*i)) * 0.5) + 0.5
         weight[1] = 1 - weight[0]
         return weight
     elif function == 3:
         #Ease In Ease Out
-        numOfPoints = len(List)-1
         iDegree = 180/numOfPoints
         weight[1] = (math.sin(math.radians(iDegree*i)) * 0.5) + 0.5
         weight[0] = 1 - weight[1]
