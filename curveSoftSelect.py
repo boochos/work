@@ -2,8 +2,10 @@ import os
 import maya.cmds as cmds
 import maya.mel as mel
 import math
+import display_lib as ds
 
 #global job id
+idB    = None
 idV    = None
 idS    = None
 idUndo = False
@@ -193,7 +195,7 @@ def toggleSelJob(*args):
         killUndoJob()
         cmds.scriptJob( kill=idS, force=True)
         idS = None
-        #toggleIcon()
+        toggleButton()
         message('Soft key Selection OFF', maya=True)
         globalReset()
     else:
@@ -203,7 +205,7 @@ def toggleSelJob(*args):
         idS = cmds.scriptJob( e= ["SelectionChanged", "import curveSoftSelect as css\ncss.jobSel()"])
         jobSel()
         activateUndoJob()
-        #toggleIcon()
+        toggleButton()
         message('Soft key Selection ON', maya=True)
 
 def globalReset(*args):
@@ -215,7 +217,7 @@ def globalReset(*args):
     glCrv = []
     global glPlg
     glPlg = None
-    print '___reset globals'
+    #print '___reset globals'
 
 def globalInitiate(*args):
     global glCrv
@@ -249,6 +251,25 @@ def plug(*args):
         return glPlg
     else:
         pass
+
+def toggleButton(off=False):
+    reload(ds)
+    ui = ds.GeBtn()
+    #sftSel
+    global idB
+    #List shelf buttons
+    buttons = cmds.lsUI(type='button')
+    #interate through buttons to find one using appropriate images
+    for btn in buttons:
+        if ui.sftSel in btn:
+            if idB:
+                #turn off
+                cmds.button(btn, edit = True, bgc = [0.38, 0.38, 0.38])
+                idB = False
+            else:
+                #turn on
+                cmds.button(btn, edit = True, bgc = [0.3, 0.35, 0.5])
+                idB = True
 
 def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
     '''
@@ -295,7 +316,6 @@ def blendWeight2(numOfPoints=1, i=1, function=2, falloff=0.0):
     #numOfPoints = len(List)-1
     #new
     numOfPoints = numOfPoints+1
-
 
     if function == 0:
         #Ease Out
