@@ -40,7 +40,8 @@ def jobValue(*args):
             c = 0
             for crv in lcCrv:
                 frames     = cmds.keyframe(crv, q=True, sl=True)
-                drop = len(frames)
+                #drop = len(frames)
+                drop = 5
                 if drop == 1:
                     func = [0,1]
                 else:
