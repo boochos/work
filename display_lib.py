@@ -117,6 +117,7 @@ def buttonsGE(*args):
             return False
     #build
     if not cmds.control(ui.filD, ex=1):
+        bgc = [0.38,0.38,0.38]
         if build:
             p  = findControl(ann='Move Nearest Picked Key Tool', panelTyp=pnl, split=3)[0]
             remove = findControl(ann='Indicates that either text filter', panelTyp=pnl, split=2)[0]
@@ -141,10 +142,11 @@ def buttonsGE(*args):
             item = geButton(name=ui.movTmRt, parent=p, attach=item, label='>', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveTime(False)",  gap=0, bg=[0.2, 0.3, 0.5],ann='move keys/curves to the right')
             item = geHeading(name=ui.sclTmTx, parent=p, attach=item, label='SCALE TIME', w=65)
             item = geField(name=ui.sclTmBy, parent=p, attach=item, cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.animScale(cmds.textField('scaleTimeBy',query=True,tx=True))",w=40, gap=2, tx=1.0, ann='Scale selected curves from the first frame of playback' )
-            item = geButton(name=ui.sbfrm, parent=p, attach=item, label='SUBfrm_X', cmd='import constraint_lib\nreload(constraint_lib)\nconstraint_lib.subframe()', w=70, gap=20, bg=[0.5,0.5,0],ann='subframes to whole frames ')
-            item = geButton(name=ui.unfy, parent=p, attach=item, label='UNIFY', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.unifyKeys()', w=70, gap=0, bg=[0.3, 0.5, 0.3])
-            item = geButton(name=ui.bkInfty, parent=p, attach=item, label='BAKE_Infnty', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.bakeInfinity()', w=70, gap=0, bg=[0.5, 0.3, 0.4])
-            item = geButton(name=ui.smth, parent=p, attach=item, label='SMOOTH', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.smoothKeys()', w=70, gap=0, bg=[0.3, 0.3, 0.4])
+            item = geButton(name=ui.sftSel, parent=p, attach=item, label='SOFT_Sel', cmd='import curveSoftSelect\ncurveSoftSelect.toggleSelJob()', w=70, gap=20, bg=bgc)
+            item = geButton(name=ui.sbfrm, parent=p, attach=item, label='SUBfrm_X', cmd='import constraint_lib\nreload(constraint_lib)\nconstraint_lib.subframe()', w=70, gap=0, bg=bgc,ann='subframes to whole frames ')
+            item = geButton(name=ui.unfy, parent=p, attach=item, label='UNIFY', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.unifyKeys()', w=70, gap=0, bg=bgc)
+            item = geButton(name=ui.bkInfty, parent=p, attach=item, label='BAKE_Infnty', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.bakeInfinity()', w=70, gap=0, bg=bgc)
+            item = geButton(name=ui.smth, parent=p, attach=item, label='SMOOTH', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.smoothKeys()', w=70, gap=0, bg=bgc)
     else:
         #clean UI
         d  = ui.__dict__
@@ -192,6 +194,8 @@ class GeBtn():
         self.bkInfty = 'bakeInfinity'
         #smooth keys
         self.smth  = 'smoothKeys'
+        #soft seleft
+        self.sftSel  = 'softSelKeys'
 
 def toggleObjectDisplay(purpose):
 
