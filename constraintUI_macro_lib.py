@@ -17,13 +17,8 @@ class CSUI(object):
         self.windowName                   = 'CN Tools'
         #execute
         self.cleanUI()
-        self.gui()import maya.cmds  as cmds
-import constraintUI_micro_lib as ui
-import constraint_lib as cn
-import maya.mel as mel
+        self.gui()
 
-reload(cn)
-reload(ui)
 
 class CSUI(object):
     '''
