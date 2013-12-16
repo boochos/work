@@ -88,9 +88,9 @@ def get():
             print url
             home = os.path.join(scriptDir, lib)
             print home
-            #urllib.urlretrieve(url, home)
+            urllib.urlretrieve(url, home)
         #compile modules
-        #ca.compile_dir(scriptDir, force=True)
+        ca.compile_dir(scriptDir, force=True)
         #get icons
         for icon in icons:
             url  = urlIcons + '/' + icon
