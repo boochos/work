@@ -50,7 +50,7 @@ def get():
     'selectionUI_macro_lib.py', 'zero.py', 'autoTangent.mel', 'oaSmoothKeys.mel',
     'pairSelect.py', 'animCurve_lib.py', 'animCopyPaste_lib.py', 'animation_library_manager.py',
     'anim_lib.py', 'ui_micro_lib.py', 'sys_lib.py', 'faceRig_selection_pair.txt',
-    'playblast_lib.py', 'spaceSwap.py', 'togglePlate.py', 'graphFilter.py', curveSoftSelect.py]
+    'playblast_lib.py', 'spaceSwap.py', 'togglePlate.py', 'graphFilter.py', 'curveSoftSelect.py']
     
     #icons
     icons       = ['constraintUI.png', 'csAdd.png', 'csEx.png',
