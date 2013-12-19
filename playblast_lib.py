@@ -109,7 +109,7 @@ def blastDir(forceTemp=True):
         mainDir = '/usr/tmp/___A___PLAYBLAST___A___/'
         return mainDir
 
-def blast(w=1024, h=584, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
+def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
     min, max = blastRange()
     w = w*x
     h = h*x
