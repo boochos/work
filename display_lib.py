@@ -459,7 +459,7 @@ def clearKey():
     mel.eval('timeSliderClearKey;')
 
 
-def altFrame():
+def altFrame(*args):
     pnl = cmds.getPanel(withFocus=True)
     typ = cmds.getPanel(typeOf=pnl)
     if typ == 'modelPanel':
@@ -477,3 +477,8 @@ def altFrame():
             message('select an object')
     else:
         mel.eval("fitPanel -selected;")
+
+def polyToggle():
+    pnl = cmds.getPanel(wf=1)
+    st  = cmds.modelEditor(pnl, q=1, polymeshes=1)
+    cmds.modelEditor(pnl, e=1, polymeshes=(not st))

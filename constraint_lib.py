@@ -449,7 +449,7 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False):
         for item in sel:
             #setup locator
             lc = cmds.spaceLocator(name=item + '__BAKE__')[0]
-            locSize(lc, X=4)
+            locSize(lc, X=2)
             cmds.setAttr(lc + '.sx', k=False, cb=True)
             cmds.setAttr(lc + '.sy', k=False, cb=True)
             cmds.setAttr(lc + '.sz', k=False, cb=True)
