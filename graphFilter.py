@@ -55,8 +55,20 @@ def graphFilters(attrs, panel=''):
             graphFilterCore(attr=attr,panel=panel)
 
 def graphEditorCMD():
-    ui = ds.GeBtn()
+    ui    = ds.GeBtn()
     panel = ds.findControlParent(control=ui.fil, split=5)
     panel = panel.split('|')
     attrs = cmds.textField(ui.fil, query=True, tx=True)
     graphFilters(attrs, panel[len(panel)-1])
+
+def toggleExpand():
+    ui    = ds.GeBtn()
+    panel = ds.findControlParent(control=ui.fil, split=5)
+    panel = panel.split('|')
+    panel = panel[len(panel)-1]
+    geOut = panel + 'OutlineEd'
+    state = cmds.outlinerEditor(geOut, q=1, xc=1 )
+    if state:
+        cmds.outlinerEditor(geOut, e=1, xc=0 )
+    else:
+        cmds.outlinerEditor(geOut, e=1, xc=1 )

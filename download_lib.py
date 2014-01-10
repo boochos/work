@@ -47,7 +47,7 @@ def get():
     libs        = ['characterSet_lib.py', 'characterUI_macro_lib.py', 'constraint_lib.py',
     'constraintUI_macro_lib.py', 'constraintUI_micro_lib.py', 'display_lib.py',
     'key_anim_lib.py', 'lists_lib.py', 'selection.py', 'selectionSet_lib.py',
-    'selectionUI_macro_lib.py', 'zero.py', 'autoTangent.mel', 'pairSelect.py', 
+    'selectionUI_macro_lib.py', 'zero.py', 'autoTangent.mel', 'pairSelect.py',
     'animCurve_lib.py', 'animCopyPaste_lib.py', 'animation_library_manager.py',
     'anim_lib.py', 'ui_micro_lib.py', 'sys_lib.py', 'faceRig_selection_pair.txt',
     'playblast_lib.py', 'togglePlate.py', 'graphFilter.py', 'curveSoftSelect.py']
@@ -88,16 +88,16 @@ def get():
             print url
             home = os.path.join(scriptDir, lib)
             print home
-            urllib.urlretrieve(url, home)
+            #########urllib.urlretrieve(url, home)
         #compile modules
-        ca.compile_dir(scriptDir, force=True)
+        ########ca.compile_dir(scriptDir, force=True)
         #get icons
         for icon in icons:
             url  = urlIcons + '/' + icon
             print url
             home = os.path.join(iconDir, icon)
             print home
-            urllib.urlretrieve(url, home)
+            ########urllib.urlretrieve(url, home)
         #build ui
         cmds.setParent(shelfPrnt)
         cmds.shelfLayout(shelf)

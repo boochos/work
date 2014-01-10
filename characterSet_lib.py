@@ -387,6 +387,18 @@ def currentSet():
         else:
             return None
 
+def currentSet2():
+    ge = 'graphEditor1OutlineEd'
+    sel = cmds.ls(sl=1)
+    cmds.select(cl=1)
+    #shows selectionConnection object, populates ge
+    geL = cmds.outlinerEditor(ge, q=1, mlc=1)
+    #active sets
+    result = cmds.selectionConnection(geL, q=1, obj=1)
+    if sel:
+        cmds.select(sel)
+    return result
+
 def smartActivateSet(next=True):
     set = GetSetOptions()
     #script will error when activateSet() returns {None} for .upper or .lower

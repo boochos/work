@@ -107,7 +107,7 @@ def buttonsGE(*args):
     remove  = findControl(ann='Indicates that either text filter', panelTyp='graphEditor', split=2)
     pnl     = cmds.getPanel(wf=True)
     if len(p) == 1:
-        build =True
+        build = True
         pnl   = 'graphEditor'
     else:
         if 'graphEditor' in pnl:
@@ -147,6 +147,7 @@ def buttonsGE(*args):
             item = geButton(name=ui.unfy, parent=p, attach=item, label='UNIFY', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.unifyKeys()', w=70, gap=0, bg=bgc)
             item = geButton(name=ui.bkInfty, parent=p, attach=item, label='BAKE_Infnty', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.bakeInfinity()', w=70, gap=0, bg=bgc)
             item = geButton(name=ui.smth, parent=p, attach=item, label='SMOOTH', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.smoothKeys()', w=70, gap=0, bg=bgc)
+            item = geButton(name=ui.expTgl, parent=p, attach=item, label='EXPAND', cmd='import graphFilter\nreload(graphFilter)\ngraphFilter.toggleExpand()', w=70, gap=0, bg=bgc)
     else:
         #clean UI
         d  = ui.__dict__
@@ -196,6 +197,8 @@ class GeBtn():
         self.smth  = 'smoothKeys'
         #soft seleft
         self.sftSel  = 'softSelKeys'
+        #expand toggleGeo
+        self.expTgl = 'expandAttrToggle'
 
 def toggleObjectDisplay(purpose):
 
