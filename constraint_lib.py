@@ -16,6 +16,7 @@ def uiEnable(controls=['modelPanel'], toggle=True):
         if 'modelPanel' in m:
             ed.append(m)
     print ed
+    state = cmds.control(ed, q=1, m=1)
     for p in ed:
         cmds.control(p, e=1, m=0)
 

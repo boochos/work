@@ -36,7 +36,7 @@ class Depend():
         #shelf
         self.shelf = 'AnimGit'
 
-def get():
+def get(refresh=False):
     #ONLINE_____
     
     #online repos
@@ -88,22 +88,26 @@ def get():
             print url
             home = os.path.join(scriptDir, lib)
             print home
-            #########urllib.urlretrieve(url, home)
+            if refresh:
+                urllib.urlretrieve(url, home)
         #compile modules
-        ########ca.compile_dir(scriptDir, force=True)
+        if refresh:
+            ca.compile_dir(scriptDir, force=True)
         #get icons
         for icon in icons:
             url  = urlIcons + '/' + icon
             print url
             home = os.path.join(iconDir, icon)
             print home
-            ########urllib.urlretrieve(url, home)
+            if refresh:
+                urllib.urlretrieve(url, home)
         #build ui
         cmds.setParent(shelfPrnt)
         cmds.shelfLayout(shelf)
         cmds.setParent(shelf)
         wh = 35
         #build buttons
+        cmds.shelfButton(label='FRSH', annotation='refresh AnimGit shelf', w=wh,h=wh, image='save++_icon.xpm', command='import download_lib as dl\nreload(dl)\ndl.get(refresh=True)\nreload(dl)\ndl.get(refresh=False)' )
         cmds.shelfButton(label='save ++', annotation='save ++', w=wh,h=wh, image='save++_icon.xpm', command='cmds.sphere()' )
         cmds.shelfButton(label='print selection',annotation='print selection', w=wh,h=wh, image='PrntSel.xpm', command='sl.prnt()' )
         cmds.shelfButton(label='temporarily save selection', annotation='temporarily save selection', w=wh,h=wh, image='selStore.xpm', command='import selection as sel\nsl = sel.Sel()' )

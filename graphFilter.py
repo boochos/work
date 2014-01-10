@@ -1,5 +1,13 @@
 import maya.cmds as cmds
 import display_lib as ds
+import maya.mel as mel
+
+def message(what='', maya=True):
+    what = '-- ' + what + ' --'
+    if maya == True:
+        mel.eval('print \"' + what + '\";')
+    else:
+        print what
 
 def graphFilterCore(attr='', panel=''):
     '''\n
@@ -68,7 +76,8 @@ def toggleExpand():
     panel = panel[len(panel)-1]
     geOut = panel + 'OutlineEd'
     state = cmds.outlinerEditor(geOut, q=1, xc=1 )
+    cmds.outlinerEditor(geOut, e=1, xc=(not state) )
     if state:
-        cmds.outlinerEditor(geOut, e=1, xc=0 )
+        message('expand connections OFF -- reselect to see changes')
     else:
-        cmds.outlinerEditor(geOut, e=1, xc=1 )
+        message('expand connections ON -- reselect to see changes')
