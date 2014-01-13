@@ -20,6 +20,7 @@ dir = os.path.join(dir, 'scripts')
 urllib.urlretrieve(url, os.path.join(dir, 'download_lib.py'))
 ca.compile_dir(dir, force=True)
 import download_lib as dl
+reload(dl)
 dl.shelfRefresh(getAll=True)
 '''
 ####################################################################
@@ -39,10 +40,9 @@ class Depend():
 
 def shelfRefresh(getAll=False):
     if getAll:
-        get(getScripts=1, getButtons=0, compileAll=0)
+        get(getScripts=1, getButtons=1, compileAll=1)
     shelfRename()
     shelfBuild()
-    dp = Depend()
     shelfDeleteWin()
 
 def shelfDeleteWin():
