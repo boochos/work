@@ -27,7 +27,7 @@ class CSUI(object):
         self.windowName                   = 'SelectionSetManager'
         self.shortcutsFile                = '/var/tmp/custom_info.txt'
         self.shortcuts                    = []
-        self.actionLabel                  = 'export'
+        self.actionLabel                  = 'create'
         self.dirStr                       = ' / '
         self.par                          = ''
         self.mem                          = ''
@@ -130,14 +130,14 @@ class CSUI(object):
         attachControl      = [(self.selectionForm.form,'left',5, self.previewForm.form)]
         cmds.formLayout(self.mainModularForm, edit=True, attachForm=attachForm, attachControl= attachControl)
         #buttons
-        addMaster          = ui.Button(name='addMaster', label='Create Master -- Create directory', cmd=self.cmdAddMaster, parent=self.selectionForm.form, moveUp=moveUp*0)
-        addLimbMaster      = ui.Button(name='addLimbMaster', label='Create Set -- Create file', cmd=self.cmdAddSet, parent=self.selectionForm.form, moveUp=moveUp*1)
-        addLimbMember      = ui.Button(name='addMember', label='Add Member -- Edit file', cmd=self.cmdAddMember, parent=self.selectionForm.form, moveUp=moveUp*2)
+        #addMaster          = ui.Button(name='addMaster', label='Create Master -- Create directory', cmd=self.cmdAddMaster, parent=self.selectionForm.form, moveUp=moveUp*0)
+        #addLimbMaster      = ui.Button(name='addLimbMaster', label='Create Set -- Create file', cmd=self.cmdAddSet, parent=self.selectionForm.form, moveUp=moveUp*1)
+        addLimbMember      = ui.Button(name='addMember', label='Add Member -- Edit file', cmd=self.cmdAddMember, parent=self.selectionForm.form, moveUp=moveUp*0)
         removeMember       = ui.Button(name='removeMember', label='Remove Member -- Edit file', cmd=self.cmdRemoveMember, parent=self.previewForm.form,  moveUp=moveUp*0)
         #scrolledit
         attachForm         = [(self.previewForm.scroll,'bottom',moveUp*1)]
         cmds.formLayout(self.previewForm.form, edit=True, attachForm=attachForm)
-        attachForm         = [(self.selectionForm.scroll,'bottom',moveUp*3)]
+        attachForm         = [(self.selectionForm.scroll,'bottom',moveUp*1)]
         cmds.formLayout(self.selectionForm.form, edit=True, attachForm=attachForm)
         
         global scroll

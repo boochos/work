@@ -24,7 +24,7 @@ class Get():
         self.iconPath  = os.path.join(prefDir,'icons')
         self.iconOn    = os.path.join(self.iconPath , 'srv_mirSel_on_icon.xpm')
         self.iconOff   = os.path.join(self.iconPath , 'srv_mirSel_off_icon.xpm')
-        self.pairPath  = os.path.join(self.rootPath , 'faceRig_selection_pair.txt')
+        self.pairPath  = os.path.join(self.rootPath , 'pairSelectList.txt')
 
 def nameSpace(ns = '', base=False):
     if ':' in ns:
