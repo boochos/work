@@ -20,7 +20,7 @@ dir = os.path.join(dir, 'scripts')
 urllib.urlretrieve(url, os.path.join(dir, 'download_lib.py'))
 ca.compile_dir(dir, force=True)
 import download_lib as dl
-dl.get()
+dl.shelfRefresh(getAll=True)
 '''
 ####################################################################
 
@@ -53,7 +53,8 @@ def shelfDeleteWin():
 
 def shelfRename(*args):
     dp = Depend()
-    cmds.renameUI(dp.shelf, dp.old)
+    if cmds.control(dp.shelf, q=1, ex=1):
+        cmds.renameUI(dp.shelf, dp.old)
 
 def shelfBuild(*args):
     shelfDir  = cmds.internalVar(ush=1)
