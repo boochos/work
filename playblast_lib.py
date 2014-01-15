@@ -2,6 +2,8 @@ import os
 import maya.cmds as cmds
 import maya.mel as mel
 import subprocess
+from functools import partial
+from subprocess import call
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
@@ -188,3 +190,210 @@ def openLast():
         print path
         rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
         os.system(rvString)
+
+
+def blastWin():
+    rootDir = '/var/tmp/___A___PLAYBLAST___A___'
+    suf = '_PB'
+    winName = 'window'+ suf
+    if not cmds.window(winName, q=1, ex=1):
+        win = cmds.window(winName, rtf=1)
+        f1 = cmds.formLayout('mainForm' + suf)
+        field        = cmds.textField('defaultPath1', text=rootDir)
+        cmds.formLayout(f1, e=1, af=(field, 'top', 10))
+        cmds.formLayout(f1, e=1, af=(field, 'left', 5))
+        cmds.formLayout(f1, e=1, af=(field, 'right', 5))
+
+        scrollBar       = 16
+        scrollBarOffset = 50
+        scrollLayout = cmds.scrollLayout('scroll' + suf, horizontalScrollBarThickness=scrollBar, verticalScrollBarThickness=scrollBar, cr=1)
+        cmds.formLayout(f1, e=1, af=(scrollLayout, 'bottom', 0))
+        cmds.formLayout(f1, e=1, af=(scrollLayout, 'top', scrollBarOffset))
+        cmds.formLayout(f1, e=1, af=(scrollLayout, 'left', 0))
+        cmds.formLayout(f1, e=1, af=(scrollLayout, 'right', 0))
+        height    = 100
+        col0      = 20
+        col1      = 200
+        col2      = 300
+        col3      = 50
+        width     = col1+col2+col3
+        wAdd      = scrollBar+10
+        blastDirs = getBlasts(rootDir)
+        f2 = cmds.formLayout('subForm' + suf, h=height*len(blastDirs), w=width, bgc=[0.17,0.17,0.17])
+        #print f2
+
+        i=0
+        ann = ''
+        for blastDir in blastDirs:
+            cmds.setParent(f2)
+            annNew = buildRow(rootDir, blastDir, offset=i, height=height, parent=f2, col=[col0,col1,col2,col3], ann=ann)
+            ann = annNew
+            i=i+height
+        cmds.window(win, e=1, w=width+wAdd, h=(height*5)+scrollBarOffset)
+        cmds.showWindow()
+    else:
+        cmds.deleteUI(winName)
+        blastWin()
+
+def buildRow(rootDir='', blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10], ann=''):
+
+    #stuff
+    allCols = col[0] + col[1] + col[2] + col[3]
+    path = os.path.join(rootDir, blastDir)
+    imageRange = getImageRange(path)
+    imageName  = getImageName(path)
+
+    #iconSize
+    icon = getIcon(path)
+    w, h = getIconSize(icon)
+
+    #row form
+    f   = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2])
+    newAnn = f + '__' + str(offset)
+    cmds.formLayout(parent, e=1, af=(f, 'top', offset))
+    cmds.formLayout(parent, e=1, af=(f, 'left', 0))
+    cmds.formLayout(parent, e=1, af=(f, 'right', 0))
+
+    #update previous ann
+    #need name of this form in previous row iteration
+    ann = ann.split('__')[0]
+    if ann:
+        cmds.formLayout(ann, e=1, ann=newAnn)
+
+    #checkbox
+    chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0])
+    cmds.formLayout(f, e=1, af=(chkBx, 'top', height))
+    cmds.formLayout(f, e=1, af=(chkBx, 'left', 0))
+
+    #icon
+    cmdI = 'partial( openSelected, rootDir = rootDir, blastDir = blastDir )'
+    iconH = col[1]*(h/w)
+    iconW = col[1]
+    if iconH > height:
+        iconH = height
+        iconW = iconH*(w/h)
+    iconBtn = cmds.iconTextButton(blastDir + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir, w=iconW, h=iconH)
+    cmds.formLayout(f, e=1, af=(iconBtn, 'bottom', 0))
+    cmds.formLayout(f, e=1, af=(iconBtn, 'top', 0))
+    cmds.formLayout(f, e=1, af=(iconBtn, 'left', col[0]))
+
+    #meta
+    pt    = 'Blast Path:  ' + path + '\n'
+    sc    = 'Scene Name:  ' + blastDir + '\n'
+    im    = 'Image Name:  ' + imageName + '\n'
+    di    = 'Dimensions:  ' + str(w) + ' x ' + str(h) + '\n'
+    fr    = 'From: ' + str(imageRange[0]) + '  To:  ' + str(imageRange[1]) + '\n'
+    le    = 'Length: ' + str(imageRange[1]-imageRange[0])
+    label = pt+sc+im+di+fr+le
+
+    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path),
+    l=label, h=height, align='left', bgc = [0.2,0.2,0.2])
+    cmds.formLayout(f, e=1, af=(metaBtn, 'bottom', 0))
+    cmds.formLayout(f, e=1, af=(metaBtn, 'top', 0))
+    cmds.formLayout(f, e=1, af=(metaBtn, 'left',col[1]+col[0]))
+    cmds.formLayout(f, e=1, af=(metaBtn, 'right', col[3]))
+
+    #delete
+    cmds.setParent(f)
+    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(\'%s\')" % (f), l='DELETE', w=col[3], h=height, bgc = [0.4,0.4,0.4], ann=ann)
+    cmds.formLayout(f, e=1, af=(delBtn, 'bottom', 0))
+    cmds.formLayout(f, e=1, af=(delBtn, 'top', 0))
+    cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
+    return f
+
+def removeRow(rowForm=''):
+    ann = cmds.formLayout(rowForm, q=1, ann=1)
+    print ann
+    ann = ann.split('__')[0]
+    if len(ann.split('__')) > 1:
+        offset = int(ann.split('__')[1])
+    else:
+        offset = 0
+    parents = rowForm.split('|')
+    row = parents[len(parents)-1]
+    print row
+    parent = rowForm.split('|' + row)[0]
+    print parent
+    cmds.setParent(parents[len(parents)-4])
+    cmds.formLayout(ann, af=(parent, 'top', offset-100))
+    cmds.deleteUI(rowForm)
+
+def getIcon(path=''):
+    images = os.listdir(str(path))
+    icon = os.path.join(path, images[0])
+    #print icon
+    return icon
+
+def getIconSize(path=''):
+    dim = subprocess.Popen(["identify","-format","\"%w,%h\"",path], stdout=subprocess.PIPE).communicate()[0]
+    s = dim.split(',')
+    w = float(s[0].split('"')[1])
+    h = float(s[1].split('"')[0])
+    return w, h
+
+def getImageRange(path=''):
+    images = os.listdir(str(path))
+    start  = float(images[0].split('.')[1])
+    end    = float(images[len(images)-1].split('.')[1])
+    return start, end
+
+def getImageName(path=''):
+    images = os.listdir(str(path))
+    im = images[0].split('.')
+    name = im[0] + '.*.' + im[2]
+    return name
+
+def openSelected(rootDir='', blastDir=''):
+    #playLo, playHi, current = getRange()
+    path = os.path.join(rootDir, blastDir)
+    print '___'
+    if os.name is 'nt':
+        #path = path + sceneName() + '.####.png'
+        #print path
+        #rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(playLo) + " -out " + str(playHi) + " ]"
+        #print rvString
+        pass
+        subprocess.Popen(rvString)
+    elif os.name is 'posix':
+        try:
+            #path = path + sceneName() + '.####.png'
+            #print path
+            #rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
+            rvString = 'rv ' + '[ ' + path + ' ]' ' &'
+            print rvString, '  here'
+            os.system(rvString)
+        except:
+            #print rvString
+            print 'no success'
+    else:
+        #path = path + sceneName() + '.####.png'
+        #print path
+        pass
+        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
+        os.system(rvString)
+
+def getBlasts(path):
+    #Make sure the path exists and access is permitted
+    if os.path.isdir(path) and os.access(path, os.R_OK):
+        #Populate the directories and non-directories for organization
+        dirs    = []
+        nonDir  = []
+        #list the files in the path
+        files   = os.listdir(str(path))
+        if len(files) > 0:
+            #Sort the directory list based on the names in lowercase
+            #This will error if 'u' objects are fed into a list
+            files.sort(key=str.lower)
+            #pick out the directories
+            for i in files:
+                if i[0] != '.':
+                    if os.path.isdir(os.path.join(path, i)):
+                        dirs.append(i)
+                    else:
+                        nonDir.append(i)
+            #Add the directories first
+            return dirs
+            '''
+            for i in dirs:
+                cmds.textScrollList(self.browseForm.scroll, edit=True, append=self.dirStr + i)
+                '''
