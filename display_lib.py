@@ -125,7 +125,7 @@ def buttonsGE(*args):
             cmds.formLayout(p, e=1, h=52)
             cmds.setParent(p)
             #build
-            item = geButton(name=ui.filD, parent=p, label='::', cmd="import display_lib\nreload(display_lib)\ndisplay_lib.geFieldTx('tr*,ro*')", gap=2, w=15,bg=[0.2, 0.3, 0.5],ann="add default channel filter: tr*,ro*")
+            item = geButton(name=ui.filD, parent=p, label='::', cmd="import display_lib\nreload(display_lib)\ndisplay_lib.geFieldTx('tx,ty,tz,rx,ry,rz')", gap=2, w=15,bg=[0.2, 0.3, 0.5],ann="add default channel filter: tr*,ro*")
             item = geField(name=ui.fil, parent=p, attach=item, cmd="import graphFilter\nreload(graphFilter)\ngraphFilter.graphEditorCMD()",w=185, gap=2, ann="add channel filters by name and/or wildcards: 't*X'")
             item = geButton(name=ui.hldPre, parent=p, attach=item, label='<--', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(postCurrent=False)', gap=5, bg=[0.4, 0.2, 0.2],ann='hold value of selected curve to the left')
             item = geButton(name=ui.hldAll, parent=p, attach=item, label='HOLD', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv()', w=45, gap=0, bg=[0.5, 0.2, 0.2], ann='hold value of selected curve')
