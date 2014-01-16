@@ -73,7 +73,9 @@ def shelfBuild(*args):
         cmds.shelfButton(label='temporarily save selection', annotation='temporarily save selection', w=wh,h=wh, image='selStore.xpm', command='import selection as sel\nsl = sel.Sel()' )
         cmds.shelfButton(label='select saved selection',annotation='select saved selection', w=wh,h=wh, image='sel.xpm', command='sl.select()' )
         cmds.shelfButton(label='select pair script job',annotation='select pair script job', w=wh,h=wh, image='srv_mirSel_off_icon.xpm', command='import pairSelect as ps\nps.toggleJob()' )
+        cmds.shelfButton(label='manage playblasts in temp folder', annotation='playblast Manager', w=wh,h=wh, image='playBlastMan.xpm', command='import playblast_lib\nreload(playblast_lib)\nplayblast_lib.blastWin()' )
         cmds.shelfButton(label='playblast',annotation='playblast', w=wh,h=wh, image='rvBlast.png', command="import playblast_lib as pb\nreload(pb)\npb.blast(x=1, format='image', qlt=100, compression='png', offScreen=True )" )
+        cmds.shelfButton(label='toggle image planes on selected camera', annotation='toggle image planes on selected camera', w=wh,h=wh, image='camPlateToggle.xpm', command='import togglePlate\nreload(togglePlate)\ntogglePlate.togglePlate()' )
         cmds.shelfButton(label='controller size +',annotation='controller size +', w=wh,h=wh, image='CT+.xpm', command='import display_lib as ds\nreload(ds)\nds.shapeSize(mltp=1.1)' )
         cmds.shelfButton(label='controller size -', annotation='controller size -', w=wh,h=wh, image='CT-.xpm', command='import display_lib as ds\nreload(ds)\nds.shapeSize(mltp=0.9)' )
         cmds.shelfButton(label='character set import ui',annotation='character set import ui', w=wh,h=wh, image='csIm.png', command='import characterUI_macro_lib as csUI\nreload(csUI)\ncsUI.CSUI()' )
@@ -94,8 +96,6 @@ def shelfBuild(*args):
         cmds.shelfButton(label='anim is exported to a file', annotation='anim is exported to a file', w=wh,h=wh, image='AnimExport.xpm', command='import animation_library_manager as alm\nreload(alm)\nanEx = alm.AnimationToolbox()\nanEx.animExport()' )
         cmds.shelfButton(label='speed attribute is added', annotation='speed attribute is added', w=wh,h=wh, image='kmh.xpm', command='import display_lib as ds\nreload(ds)\nds.speed(local=0)' )
         cmds.shelfButton(label='select 2 objects', annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes', w=wh,h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import display_lib as dis\nreload(dis)\ndis.distance()' )
-        cmds.shelfButton(label='toggle image planes on selected camera', annotation='toggle image planes on selected camera', w=wh,h=wh, image='camPlateToggle.xpm', command='import togglePlate\nreload(togglePlate)\ntogglePlate.togglePlate()' )
-        cmds.shelfButton(label='manage playblasts in temp folder', annotation='playblast Manager', w=wh,h=wh, image='playBlastMan.xpm', command='import playblast_lib\nreload(playblast_lib)\playblast_lib.blastWin()' )
     else:
         #clean ui
         cmds.deleteUI(dp.shelf, control=True)

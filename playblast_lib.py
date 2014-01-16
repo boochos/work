@@ -16,7 +16,7 @@ def message(what='', maya=False):
         print what
 
 def getDefaultPath():
-    return '/usr/tmp/___A___PLAYBLAST___A___/'
+    return '/var/tmp/___A___PLAYBLAST___A___/'
 
 def getRange():
     min = cmds.playbackOptions(q=True, minTime=True)
@@ -71,17 +71,13 @@ def sceneName(full=False):
 
 def shotDir():
     shotDir = sceneName()
-    #remove version number, will need to customize for every pipeline
     shotDir = shotDir + '/'
-    #print shotDir, '======'
     return shotDir
 
 def shotDir2(idx=7):
     shotDir = sceneName(full=1)
     shotDir = shotDir.split('/')[idx]
-    #remove version number, will need to customize for every pipeline
     shotDir = shotDir + '/'
-    #print shotDir, '======'
     return shotDir
 
 def createPath(path):
@@ -120,15 +116,12 @@ def blastDir(forceTemp=True):
         else:
             return getDefaultPath()
     else:
-        print '  temp'
         return getDefaultPath()
 
 def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
     min, max = blastRange()
     w = w*x
     h = h*x
-    #print '___'
-    #max = max + 1 #compensating for maya clipping last frame
     if os.name == 'nt':
         i = 1
         if not blastDir():
@@ -139,7 +132,7 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
             if os.path.exists(pbName):
                 print True
             if 'image' not in format:
-                #path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+                path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
                 path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
                 createPath(blastDir())
@@ -189,13 +182,23 @@ def blastWin():
     suf = '_PB'
     winName = 'PB_Man'
     if not cmds.window(winName, q=1, ex=1):
+        #window
         win = cmds.window(winName, rtf=1)
         f1 = cmds.formLayout('mainForm' + suf)
+        cmds.showWindow()
+        #text field
         field        = cmds.textField('defaultPath1', text=rootDir)
-        cmds.formLayout(f1, e=1, af=(field, 'top', 10))
+        cmds.formLayout(f1, e=1, af=(field, 'top', 5))
         cmds.formLayout(f1, e=1, af=(field, 'left', 5))
         cmds.formLayout(f1, e=1, af=(field, 'right', 5))
-
+        cmds.refresh(f=1)
+        #refresh button
+        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()')
+        attachForm = [(refBtn,'top', 5, field)]
+        cmds.formLayout(f1, edit=True, attachControl=attachForm)
+        cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
+        cmds.formLayout(f1, e=1, af=(refBtn, 'right', 5))
+        #scroll
         scrollBar       = 16
         scrollBarOffset = 50
         scrollLayout = cmds.scrollLayout('scroll' + suf, horizontalScrollBarThickness=scrollBar, verticalScrollBarThickness=scrollBar, cr=1)
@@ -203,6 +206,9 @@ def blastWin():
         cmds.formLayout(f1, e=1, af=(scrollLayout, 'top', scrollBarOffset))
         cmds.formLayout(f1, e=1, af=(scrollLayout, 'left', 0))
         cmds.formLayout(f1, e=1, af=(scrollLayout, 'right', 0))
+        cmds.refresh(f=1)
+        #row setup
+        offset    = 0
         height    = 100
         col0      = 20
         col1      = 200
@@ -212,27 +218,47 @@ def blastWin():
         wAdd      = scrollBar+10
         blastDirs = getBlastDirs(rootDir)
         f2 = cmds.formLayout('subForm' + suf, h=height*len(blastDirs), w=width, bgc=[0.17,0.17,0.17])
+        cmds.refresh(f=1)
         #print f2
 
-        i=0
-        ann = ''
+        #build rows
+        j=0
+        num = len(blastDirs)-1
         for blastDir in blastDirs:
             cmds.setParent(f2)
-            annNew = buildRow(blastDir, offset=i, height=height, parent=f2, col=[col0,col1,col2,col3], ann=ann)
-            ann = annNew
-            i=i+height
+            if j == 0:
+                attach = ''
+            else:
+                attach = blastDirs[j-1]
+            if j >= num:
+                below = ''
+            else:
+                below = blastDirs[j+1]
+            buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
+            j=j+1
+            cmds.refresh(f=1)
         cmds.window(win, e=1, w=width+wAdd, h=(height*5)+scrollBarOffset)
-        cmds.showWindow()
+        cmds.refresh(f=1)
+        #cmds.showWindow()
     else:
         cmds.deleteUI(winName)
         blastWin()
 
-def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10], ann=''):
+def convertPathToRow(row, path):
+    r = row.split('|')
+    r = r[len(r)-1]
+    p = path.split('/')
+    p = p[len(p)-1]
+    newRow = row.replace(r,p)
+    return newRow
+
+def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10], attachRow='', belowRow=''):
 
     #stuff
     allCols = col[0] + col[1] + col[2] + col[3]
-    #path = os.path.join(rootDir, blastDir)
     path = blastDir
+
+    #
     blastDir = blastDir.split('/')
     blastDir = blastDir[len(blastDir)-1]
     imageRange = getImageRange(path)
@@ -243,17 +269,17 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     w, h = getIconSize(icon)
 
     #row form
-    f   = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2])
-    newAnn = f + '__' + str(offset)
+    f         = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2])
+    if attachRow:
+        attachRow = convertPathToRow(f, attachRow) + '_RowForm'
+    if belowRow:
+        belowRow  = convertPathToRow(f, belowRow) + '_RowForm'
     cmds.formLayout(parent, e=1, af=(f, 'top', offset))
     cmds.formLayout(parent, e=1, af=(f, 'left', 0))
     cmds.formLayout(parent, e=1, af=(f, 'right', 0))
-
-    #update previous ann
-    #need name of this form in previous row iteration
-    ann = ann.split('__')[0]
-    if ann:
-        cmds.formLayout(ann, e=1, ann=newAnn)
+    if attachRow:
+        attachForm = [(f,'top',offset, attachRow)]
+        cmds.formLayout(parent, edit=True, attachControl=attachForm)
 
     #checkbox
     chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0])
@@ -291,28 +317,64 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
 
     #delete
     cmds.setParent(f)
-    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(\'%s\')" % (f), l='DELETE', w=col[3], h=height, bgc = [0.4,0.4,0.4], ann=ann)
+    st = getString(strings=[f, attachRow, belowRow])
+    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc = [0.4,0.4,0.4])
     cmds.formLayout(f, e=1, af=(delBtn, 'bottom', 0))
     cmds.formLayout(f, e=1, af=(delBtn, 'top', 0))
     cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
     return f
 
-def removeRow(rowForm=''):
-    ann = cmds.formLayout(rowForm, q=1, ann=1)
-    print ann
-    ann = ann.split('__')[0]
-    if len(ann.split('__')) > 1:
-        offset = int(ann.split('__')[1])
-    else:
-        offset = 0
-    parents = rowForm.split('|')
-    row = parents[len(parents)-1]
-    print row
-    parent = rowForm.split('|' + row)[0]
-    print parent
-    cmds.setParent(parents[len(parents)-4])
-    cmds.formLayout(ann, af=(parent, 'top', offset-100))
-    cmds.deleteUI(rowForm)
+def getString(strings=[]):
+    s = ''
+    i = 0
+    mx = len(strings)-1
+    for string in strings:
+        if i == 0:
+            s = "\'%s\'" % string
+            s = s + ','
+        elif i < mx:
+            s = s + "\'%s\'" % string
+            s = s + ','
+        else:
+            s = s + "\'%s\'" % string
+        i=i+1
+    return s
+
+def removeRow(row='', attachRow='', belowRow=''):
+    cmds.deleteUI(row)
+    #shift lower rows
+    updateRows(row, attachRow, belowRow)
+    
+def updateRows(row='', attachRow='', belowRow=''):
+    if attachRow:
+        parent = attachRow.split('|')[3]
+        if belowRow:
+            attachForm = [(belowRow,'top',0, attachRow)]
+            cmds.formLayout(parent, edit=True, attachControl=attachForm)
+        #print parent
+    updateRowCmd(row, attachRow, belowRow)
+
+def updateRowCmd(row='', attachRow='', belowRow=''):
+    #attach
+    if attachRow:
+        attachDel = findDeleteControl(attachRow)
+        cmdA = cmds.button(attachDel, q=1, c=1)
+        #from attachRow cmd replace 'row' with belowRow
+        cmdA = cmdA.replace(row, belowRow)
+        cmds.button(attachDel, e=1, c=cmdA)
+    #below
+    if belowRow:
+        belowDel = findDeleteControl(belowRow)
+        cmdB = cmds.button(belowDel, q=1, c=1)
+        #from belowRow cmd replace 'row' with attachRow
+        cmdB = cmdB.replace(row, attachRow)
+        cmds.button(belowDel, e=1, c=cmdB)
+
+def findDeleteControl(row=''):
+    childs = cmds.formLayout(row, q=1, ca=1)
+    for child in childs:
+        if 'Delete' in child:
+            return child
 
 def getIcon(path=''):
     images = os.listdir(str(path))
@@ -341,21 +403,13 @@ def getImageName(path=''):
     return name
 
 def openSelected(path=''):
-    #playLo, playHi, current = getRange()
-    #path = os.path.join(rootDir, blastDir)
-    print '___'
     if os.name is 'nt':
-        #path = path + sceneName() + '.####.png'
-        #print path
-        #rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(playLo) + " -out " + str(playHi) + " ]"
+        rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(playLo) + " -out " + str(playHi) + " ]"
         #print rvString
         pass
         subprocess.Popen(rvString)
     elif os.name is 'posix':
         try:
-            #path = path + sceneName() + '.####.png'
-            #print path
-            #rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
             rvString = 'rv ' + '[ ' + path + ' ]' ' &'
             print rvString, '  here'
             os.system(rvString)
@@ -363,7 +417,7 @@ def openSelected(path=''):
             #print rvString
             print 'no success'
     else:
-        #path = path + sceneName() + '.####.png'
+        path = path + sceneName() + '.####.png'
         #print path
         pass
         rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
@@ -393,11 +447,9 @@ def getBlastDirs(path=''):
         for shot in shots:
             mtime = lambda f: os.stat(os.path.join(shot, f)).st_mtime
             contents  = list(sorted(os.listdir(shot), key=mtime))
-            print contents
+            #print contents
             if len(contents) > 0:
-                #Sort the directory list based on the names in lowercase
                 #This will error if 'u' objects are fed into a list
-                #files.sort(key=str.lower)
                 #pick out the directories
                 for i in contents:
                     if i[0] != '.':
