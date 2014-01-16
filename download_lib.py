@@ -95,6 +95,7 @@ def shelfBuild(*args):
         cmds.shelfButton(label='speed attribute is added', annotation='speed attribute is added', w=wh,h=wh, image='kmh.xpm', command='import display_lib as ds\nreload(ds)\nds.speed(local=0)' )
         cmds.shelfButton(label='select 2 objects', annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes', w=wh,h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import display_lib as dis\nreload(dis)\ndis.distance()' )
         cmds.shelfButton(label='toggle image planes on selected camera', annotation='toggle image planes on selected camera', w=wh,h=wh, image='camPlateToggle.xpm', command='import togglePlate\nreload(togglePlate)\ntogglePlate.togglePlate()' )
+        cmds.shelfButton(label='manage playblasts in temp folder', annotation='playblast Manager', w=wh,h=wh, image='playBlastMan.xpm', command='import playblast_lib\nreload(playblast_lib)\playblast_lib.blastWin()' )
     else:
         #clean ui
         cmds.deleteUI(dp.shelf, control=True)
