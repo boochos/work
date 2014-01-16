@@ -48,7 +48,7 @@ def shelfRefresh(getAll=False):
 def shelfDeleteWin():
     win = cmds.window('DELETE_OLD_SHELF', w=200, h=40)
     cmds.columnLayout( columnAttach=('both', 1), columnAlign=('center'), adjustableColumn=True, rowSpacing=10, columnWidth=250 )
-    cmds.button('deleteButtonShelf', c="cmds.deleteUI('AnimGit_old', control=True)\ncmds.deleteUI('DELETE_OLD_SHELF', control=True)", l='DELETE OLD SHELF', w=150, h=100)
+    cmds.button('deleteButtonShelf', c="import maya.cmds as cmds\ncmds.deleteUI('AnimGit_old', control=True)\ncmds.deleteUI('DELETE_OLD_SHELF', control=True)", l='DELETE OLD SHELF', w=150, h=100)
     cmds.showWindow(win)
 
 def shelfRename(*args):
@@ -114,8 +114,8 @@ def get(getScripts=False, getButtons=False, compileAll=False):
     'key_anim_lib.py', 'lists_lib.py', 'selection.py', 'selectionSet_lib.py',
     'selectionUI_macro_lib.py', 'zero.py', 'autoTangent.mel', 'pairSelect.py',
     'animCurve_lib.py', 'animCopyPaste_lib.py', 'animation_library_manager.py',
-    'anim_lib.py', 'ui_micro_lib.py', 'sys_lib.py', 'faceRig_selection_pair.txt',
-    'playblast_lib.py', 'togglePlate.py', 'graphFilter.py', 'curveSoftSelect.py']
+    'anim_lib.py', 'ui_micro_lib.py', 'sys_lib.py', 'playblast_lib.py', 'togglePlate.py',
+    'graphFilter.py', 'curveSoftSelect.py', 'pairSelectList.txt']
     
     #icons
     icons       = ['constraintUI.png', 'csAdd.png', 'csEx.png',
