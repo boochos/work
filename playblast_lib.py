@@ -5,6 +5,7 @@ import subprocess
 from functools import partial
 from subprocess import call
 import datetime
+import shutil
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
@@ -269,7 +270,7 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     w, h = getIconSize(icon)
 
     #row form
-    f         = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2])
+    f         = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2], ann=path)
     if attachRow:
         attachRow = convertPathToRow(f, attachRow) + '_RowForm'
     if belowRow:
@@ -340,8 +341,11 @@ def getString(strings=[]):
         i=i+1
     return s
 
-def removeRow(row='', attachRow='', belowRow=''):
+def removeRow(row='', attachRow='', belowRow='', deleteDir=True):
+    path = cmds.formLayout(row, q=1, ann=1)
     cmds.deleteUI(row)
+    if deleteDir:
+        shutil.rmtree(path)
     #shift lower rows
     updateRows(row, attachRow, belowRow)
     
