@@ -192,17 +192,23 @@ def blastWin():
         cmds.showWindow()
         #text field
         #field        = cmds.textField('defaultPath1', text=rootDir)
-        field        = cmds.text('defaultPath1', label='Default Path:    ' + rootDir, align='left')
+        field        = cmds.text('defaultPath1', label=' Default Path:    ' + rootDir, align='left')
         cmds.formLayout(f1, e=1, af=(field, 'top', 5))
         cmds.formLayout(f1, e=1, af=(field, 'left', 5))
         cmds.formLayout(f1, e=1, af=(field, 'right', 5))
         cmds.refresh(f=1)
         #refresh button
-        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=22)
+        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=24, bgc=[0.2, 0.4, 0.3])
         attachForm = [(refBtn,'top', 2, field)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
         cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
         cmds.formLayout(f1, e=1, af=(refBtn, 'right', 5))
+        #flush button
+        flushBtn = cmds.button('flush' + suf, l='DELETE ALL', c='import playblast_lib as pb\nreload(pb)\npb.flushDefaultDir()', h=18, bgc=[0.5, 0.2, 0.2])
+        attachForm = [(flushBtn,'top', 6, refBtn)]
+        cmds.formLayout(f1, edit=True, attachControl=attachForm)
+        cmds.formLayout(f1, e=1, af=(flushBtn, 'left', 5))
+        cmds.formLayout(f1, e=1, af=(flushBtn, 'right', 5))
         #wipe button
 
         #compare button
@@ -329,11 +335,17 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     #delete
     cmds.setParent(f)
     st = getString(strings=[f, attachRow, belowRow])
-    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc = [0.4,0.4,0.4])
+    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc=[0.4, 0.2, 0.2])
     cmds.formLayout(f, e=1, af=(delBtn, 'bottom', 0))
     cmds.formLayout(f, e=1, af=(delBtn, 'top', 0))
     cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
     return f
+
+def flushDefaultDir(*args):
+    path = getDefaultPath()
+    shutil.rmtree(path)
+    createPath(path)
+    
 
 def getString(strings=[]):
     s = ''
