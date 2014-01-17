@@ -19,6 +19,9 @@ def message(what='', maya=False):
 def getDefaultPath():
     return '/var/tmp/___A___PLAYBLAST___A___/'
 
+def getDefaultHeight():
+    return 100
+
 def getRange():
     min = cmds.playbackOptions(q=True, minTime=True)
     max = cmds.playbackOptions(q=True, maxTime=True)
@@ -194,8 +197,8 @@ def blastWin():
         cmds.formLayout(f1, e=1, af=(field, 'right', 5))
         cmds.refresh(f=1)
         #refresh button
-        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()')
-        attachForm = [(refBtn,'top', 5, field)]
+        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=22)
+        attachForm = [(refBtn,'top', 2, field)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
         cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
         cmds.formLayout(f1, e=1, af=(refBtn, 'right', 5))
@@ -210,37 +213,38 @@ def blastWin():
         cmds.refresh(f=1)
         #row setup
         offset    = 0
-        height    = 100
+        height    = getDefaultHeight()
         col0      = 20
         col1      = 200
         col2      = 300
         col3      = 50
         width     = col1+col2+col3
         wAdd      = scrollBar+10
+        #status
         blastDirs = getBlastDirs(rootDir)
-        f2 = cmds.formLayout('subForm' + suf, h=height*len(blastDirs), w=width, bgc=[0.17,0.17,0.17])
-        cmds.refresh(f=1)
-        #print f2
-
-        #build rows
-        j=0
-        num = len(blastDirs)-1
-        for blastDir in blastDirs:
-            cmds.setParent(f2)
-            if j == 0:
-                attach = ''
-            else:
-                attach = blastDirs[j-1]
-            if j >= num:
-                below = ''
-            else:
-                below = blastDirs[j+1]
-            buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
-            j=j+1
+        if blastDirs:
+            f2 = cmds.formLayout('subForm' + suf, h=height*len(blastDirs), w=width, bgc=[0.17,0.17,0.17])
             cmds.refresh(f=1)
-        cmds.window(win, e=1, w=width+wAdd, h=(height*5)+scrollBarOffset)
-        cmds.refresh(f=1)
-        #cmds.showWindow()
+            #print f2
+
+            #build rows
+            j=0
+            num = len(blastDirs)-1
+            for blastDir in blastDirs:
+                cmds.setParent(f2)
+                if j == 0:
+                    attach = ''
+                else:
+                    attach = blastDirs[j-1]
+                if j >= num:
+                    below = ''
+                else:
+                    below = blastDirs[j+1]
+                buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
+                j=j+1
+                cmds.refresh(f=1)
+            cmds.window(win, e=1, w=width+wAdd, h=(height*5)+scrollBarOffset)
+            cmds.refresh(f=1)
     else:
         cmds.deleteUI(winName)
         blastWin()
@@ -259,9 +263,10 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     allCols = col[0] + col[1] + col[2] + col[3]
     path = blastDir
 
-    #
+    #parse row name from directory path
     blastDir = blastDir.split('/')
     blastDir = blastDir[len(blastDir)-1]
+    
     imageRange = getImageRange(path)
     imageName  = getImageName(path)
 
@@ -284,8 +289,8 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
 
     #checkbox
     chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0])
-    cmds.formLayout(f, e=1, af=(chkBx, 'top', height))
-    cmds.formLayout(f, e=1, af=(chkBx, 'left', 0))
+    cmds.formLayout(f, e=1, af=(chkBx, 'top', height/2-8))
+    cmds.formLayout(f, e=1, af=(chkBx, 'left', 5))
 
     #icon
     cmdI = 'partial( openSelected, path = path )'
@@ -300,14 +305,14 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     cmds.formLayout(f, e=1, af=(iconBtn, 'left', col[0]))
 
     #meta
-    pt    = path + '\n'
-    sc    = 'Scene Name:  ' + blastDir + '\n'
+    pt    = '.../' + path.split(getDefaultPath())[1] + '\n'
+    #sc    = 'Scene Name:  ' + blastDir + '\n'
     im    = 'Image Name:  ' + imageName + '\n'
-    di    = 'Dimensions:  ' + str(w) + ' x ' + str(h) + '\n'
-    fr    = 'From: ' + str(imageRange[0]) + '  To:  ' + str(imageRange[1]) + '\n'
-    le    = 'Length: ' + str(imageRange[1]-imageRange[0]+1) + '\n'
+    di    = 'Dimensions:  ' + str(int(w)) + ' x ' + str(int(h)) + '\n'
+    fr    = 'Range: ' + str(int(imageRange[0])) + '  -  ' + str(int(imageRange[1])) + '\n'
+    le    = 'Length: ' + str(int(imageRange[1]-imageRange[0]+1)) + '\n'
     dt    = 'Date:  ' + getDirectoryDate(path)
-    label = pt+sc+im+di+fr+le+dt
+    label = pt+im+di+fr+le+dt
 
     metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path),
     l=label, h=height, align='left', bgc = [0.2,0.2,0.2])
@@ -357,6 +362,12 @@ def updateRows(row='', attachRow='', belowRow=''):
             cmds.formLayout(parent, edit=True, attachControl=attachForm)
         #print parent
     updateRowCmd(row, attachRow, belowRow)
+    #update height scroll, form
+    num = getBlastDirs(getDefaultPath())
+    num = len(num)
+    num = getDefaultHeight() * num
+    cmds.formLayout(parent, e=1, h=num)
+    
 
 def updateRowCmd(row='', attachRow='', belowRow=''):
     #attach
@@ -464,3 +475,6 @@ def getBlastDirs(path=''):
                 for d in reversed(dirs):
                     sortedDir.append(d)
         return sortedDir
+    else:
+        createPath(path)
+        return None
