@@ -191,7 +191,8 @@ def blastWin():
         f1 = cmds.formLayout('mainForm' + suf)
         cmds.showWindow()
         #text field
-        field        = cmds.textField('defaultPath1', text=rootDir)
+        #field        = cmds.textField('defaultPath1', text=rootDir)
+        field        = cmds.text('defaultPath1', label='Default Path:    ' + rootDir, align='left')
         cmds.formLayout(f1, e=1, af=(field, 'top', 5))
         cmds.formLayout(f1, e=1, af=(field, 'left', 5))
         cmds.formLayout(f1, e=1, af=(field, 'right', 5))
@@ -202,9 +203,13 @@ def blastWin():
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
         cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
         cmds.formLayout(f1, e=1, af=(refBtn, 'right', 5))
+        #wipe button
+
+        #compare button
+        
         #scroll
         scrollBar       = 16
-        scrollBarOffset = 50
+        scrollBarOffset = 75
         scrollLayout = cmds.scrollLayout('scroll' + suf, horizontalScrollBarThickness=scrollBar, verticalScrollBarThickness=scrollBar, cr=1)
         cmds.formLayout(f1, e=1, af=(scrollLayout, 'bottom', 0))
         cmds.formLayout(f1, e=1, af=(scrollLayout, 'top', scrollBarOffset))
