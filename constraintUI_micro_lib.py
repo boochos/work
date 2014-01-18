@@ -3,7 +3,7 @@
 import maya.cmds  as cmds
 import maya.mel   as mel
 #import pymel.core as pm
-import characterSet_lib as cs
+#import characterSet_lib as cs
 #import ast
 reload(cs)
 
@@ -34,12 +34,13 @@ class Action(object):
         self.c7            = ''
         self.c8            = ''
         self.c9            = ''
-        self.c10            = ''
-        self.c11            = ''
+        self.c10           = ''
+        self.c11           = ''
+        self.c12           = ''
         self.label         = label
         self.cmdAction     = cmdAction
         self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5, self.actionButton6,
-                            self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9, self.c10, self.c11]
+                            self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12]
         self.h             = h
         self.w             = w
         self.heightForm    = 30
@@ -62,13 +63,14 @@ class Action(object):
         self.c1 = cmds.checkBox( label='On Existing Frames', v=True )
         self.c2 = cmds.checkBox( label='Remove Constraint', v=True )
         self.c3 = cmds.checkBox( label='Timeline Range' )
-        self.c4 = cmds.checkBox( label='Simulation' )
+        self.c4 = cmds.checkBox( label='Simulation', v=True )
         self.actionButton2 = cmds.button(self.actionButton2, label='Place Locator', c=self.cmdAction)
         self.c5 = cmds.checkBox( label='Constrain To Selection' )
         self.actionButton3 = cmds.button(self.actionButton3, label='Bake To Locator', c=self.cmdAction)
         self.c6 = cmds.checkBox( label='On Existing Frames', v=True )
         self.c7 = cmds.checkBox( label='Translation', v=True )
         self.c8 = cmds.checkBox( label='Rotation', v=True )
+        self.c12 = cmds.checkBox( label='Simulation', v=True )
         self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction)
         self.actionButton5 = cmds.button(self.actionButton5, label='Parent Constraint', c=self.cmdAction)
         self.c9 = cmds.checkBox( label='Offset', v=True )

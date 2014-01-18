@@ -9,17 +9,18 @@ def message(what='', maya=False):
     else:
         print what
 
-def uiEnable(controls=['modelPanel'], toggle=True):
-    model = cmds.lsUI(panels=1)
+def uiEnable(controls='modelPanel', toggle=True):
+    model = cmds.lsUI(panels=1, long=True)
     ed=[]
     for m in model:
-        if 'modelPanel' in m:
+        if controls in m:
             ed.append(m)
-    print ed
-    state = cmds.control(ed, q=1, m=1)
+    state = cmds.control(ed[0], q=1, m=1)
     for p in ed:
-        cmds.control(p, e=1, m=0)
-
+        if cmds.modelPanel(p, q=1, ex=1):
+            r = cmds.modelEditor(p, q=1, p=1)
+            if r:
+                cmds.control(p, e=1, m=not state)
 
 def listX(l=[]):
     if l != None:
@@ -254,7 +255,7 @@ class reConnect():
             except:
                 message('Failed Connection -- ' + self.pairs[key] + ' -- to -- ' + key)
 
-def updateConstrainedCurves(obj=None):
+def updateConstrainedCurves(obj=None, sim=False):
     if obj == None:
         obj = cmds.ls(sl=True)
         if len(obj) != 1:
@@ -274,7 +275,7 @@ def updateConstrainedCurves(obj=None):
     rcc = reConnect(obj)
     #bake attributes driven by pairBlend
     objAttrs = getDrivenAttrsByNodeType(obj)
-    bakeConstrained(objAttrs, sparseKeys=True, removeConstraint=False, timeLine=False)
+    bakeConstrained(objAttrs, sparseKeys=True, removeConstraint=False, timeLine=False, sim=False)
     #reconnect constraint/pairBlend
     rcc.connect()
     for state in blndAttrState:
@@ -383,6 +384,8 @@ def deleteList(objects):
             message(typ + ' | ' + obj + '  is deleted')
 
 def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False):
+    if sim:
+        uiEnable()
     gRange = GetRange()
     cons = getConstraint(obj)
     blndAttr = getBlendAttr(obj, delete=False)
@@ -414,6 +417,8 @@ def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False,
                     cmds.cutKey(obj, t=(key,key))
         else:
             message("Baked! Didn't create sparseKeys. Object had no keys.")
+    if sim:
+        uiEnable()
 
 def bakeConstrainedSelection(sparseKeys=True, removeConstraint=True, timeLine=False, sim=False):
     sel = cmds.ls(sl=True)
@@ -428,7 +433,7 @@ def locSize(lc, X=0.5):
     for axs in axis:
         cmds.setAttr(lc + 'Shape.localScale' + axs, X)
 
-def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False):
+def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False, sim=False):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -437,7 +442,7 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False):
     deletes constraint
     constrains controller to locator
     '''
-    #bake from timeline  and selection 
+    #bake from timeline  and selection
     sel = cmds.ls(sl=True)
     pos = ['tx','ty','tz']
     rot = ['rx','ry','rz']
@@ -467,7 +472,7 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False):
                 cnR = cmds.orientConstraint(item, lc, mo=False)
             #bake locator in frame range
             matchKeyedFrames(item, lc)
-            bakeConstrained(lc, sparseKeys=False, removeConstraint=False, timeLine=timeLine)
+            bakeConstrained(lc, sparseKeys=False, removeConstraint=False, timeLine=timeLine, sim=sim)
             if sparseKeys == True:
                 matchKeyedFrames(item, lc)
             if p == False:
@@ -724,21 +729,3 @@ class AnimCrv(Key):
         for key in self.key:
             key.obj = self.obj
             key.put()
-
-def viewToggle():
-    ########################################################################
-    #   IsolateSelected in all model windows
-    ########################################################################
-    allPanels = mc.getPanel ( type = 'modelPanel' )
-    currentPanel = mc.getPanel ( withFocus = True )
-
-    # turn on isolateSelect for all modelPanels
-    for p in allPanels:
-        mc.isolateSelect ( p, state = 1 )
-
-    ########################################################################
-    #turn off isolateSelect for all model panels
-    
-    if allPanels:
-        for p in allPanels:
-            mc.isolateSelect ( p, state = 0 )
