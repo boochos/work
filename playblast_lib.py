@@ -98,6 +98,9 @@ def createPath(path):
         print "-- path:   '" + path + "'   already exists --"
 
 def blastDir(forceTemp=True):
+    '''
+    forceTemp = use get default function to force a specified location, otherwise standard maya locations are used
+    '''
     if not forceTemp:
         if os.name == 'nt':
             project = cmds.workspace( q=True, rd=True )
@@ -130,10 +133,14 @@ def blastDir(forceTemp=True):
         return getDefaultPath()
 
 def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
+    '''
+    rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
+    '''
     min, max = blastRange()
     w = w*x
     h = h*x
     if os.name == 'nt':
+        #windows os
         i = 1
         if not blastDir():
             message('Set project', maya=True)
@@ -154,6 +161,7 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
                 subprocess.Popen(rvString)
                 #cmds.currentTime(current)
     elif os.name == 'posix':
+        # could be linux or mac os
         i = 1
         if not blastDir():
             message('Set project', maya=True)
@@ -176,6 +184,7 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
                 os.system(rvString)
                 cmds.currentTime(current)
     else:
+        #? whatever else, doesnt get used much and will likely break...
         createPath(path = blastDir())
         createPath(path = blastDir() + shotDir2())
         playLo, playHi, current = getRange()
@@ -352,9 +361,15 @@ def flushDefaultDir(*args):
     path = getDefaultPath()
     shutil.rmtree(path)
     createPath(path)
-    
+
+def getChecked(*args):
+    #collect checked rows if any else spit out message    
+    pass    
 
 def getString(strings=[]):
+    '''
+    convert vars to hard coded strings for button commands 
+    '''
     s = ''
     i = 0
     mx = len(strings)-1
@@ -391,7 +406,6 @@ def updateRows(row='', attachRow='', belowRow=''):
     num = len(num)
     num = getDefaultHeight() * num
     cmds.formLayout(parent, e=1, h=num)
-    
 
 def updateRowCmd(row='', attachRow='', belowRow=''):
     #attach
