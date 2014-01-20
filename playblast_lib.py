@@ -394,8 +394,9 @@ def removeRow(row='', attachRow='', belowRow='', deleteDir=True):
     updateRows(row, attachRow, belowRow)
     
 def updateRows(row='', attachRow='', belowRow=''):
+    parent = row.split('|')[3]
     if attachRow:
-        parent = attachRow.split('|')[3]
+        #parent = attachRow.split('|')[3]
         if belowRow:
             attachForm = [(belowRow,'top',0, attachRow)]
             cmds.formLayout(parent, edit=True, attachControl=attachForm)
@@ -405,7 +406,10 @@ def updateRows(row='', attachRow='', belowRow=''):
     num = getBlastDirs(getDefaultPath())
     num = len(num)
     num = getDefaultHeight() * num
-    cmds.formLayout(parent, e=1, h=num)
+    if num:
+        cmds.formLayout(parent, e=1, h=num)
+    else:
+        cmds.formLayout(parent, e=1, h=1)
 
 def updateRowCmd(row='', attachRow='', belowRow=''):
     #attach
