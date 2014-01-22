@@ -9,7 +9,7 @@ import shutil
 
 #rgb gl color guide ## http://prideout.net/archive/colors.php
 #http://www.tweaksoftware.com/static/documentation/rv/current/html/rv_manual.html
-#layers = inputs in square brackets are layers 
+#layers = inputs in square brackets are layers
 # -wipe = wipe view items
 # -layout 'row' = side by side
 
@@ -52,7 +52,7 @@ def sound():
         return fileName
     else:
         return None
-        
+
 def blastRange():
     blast = selRange()
     min = 0
@@ -96,6 +96,16 @@ def createPath(path):
         os.mkdir(path)
     else:
         print "-- path:   '" + path + "'   already exists --"
+    return path
+
+def createBlastPath(suffix=''):
+    '''
+    tie in with Bates blast module
+    '''
+    createPath(path = blastDir())
+    createPath(path = blastDir() + shotDir2())
+    path = createPath(path = blastDir() + shotDir2()+ sceneName()) + suffix + '/' + sceneName()
+    return path
 
 def blastDir(forceTemp=True):
     '''
@@ -172,13 +182,11 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
             if 'image' not in format:
                 path = cmds.playblast(format=format, filename=shotDir2()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
-                createPath(path = blastDir())
-                createPath(path = blastDir() + shotDir2())
-                createPath(path = blastDir() + shotDir2()+ sceneName())
+                createBlastPath('_Russian')
                 playLo, playHi, current = getRange()
                 w = w * x
                 h = h * x
-                path = cmds.playblast(format='image', filename=blastDir()+shotDir2()+sceneName()+ '/' +sceneName(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                path = cmds.playblast(format='image', filename=createBlastPath(''), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
                 rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
                 print rvString
                 os.system(rvString)
@@ -214,13 +222,13 @@ def blastWin():
         cmds.formLayout(f1, e=1, af=(field, 'right', 5))
         cmds.refresh(f=1)
         #refresh button
-        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=24, bgc=[0.196, 0.804, 0.196])
+        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=24, bgc=[0.3, 0.3, 0.3])
         attachForm = [(refBtn,'top', 2, field)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
         cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
         cmds.formLayout(f1, e=1, af=(refBtn, 'right', 5))
         #flush button
-        flushBtn = cmds.button('flush' + suf, l='DELETE ALL', c='import playblast_lib as pb\nreload(pb)\npb.flushDefaultDir()', h=18, bgc=[0.863, 0.078, 0.235])
+        flushBtn = cmds.button('flush' + suf, l='DELETE ALL', c='import playblast_lib as pb\nreload(pb)\npb.flushDefaultDir()', h=18, bgc=[0.804, 0.361, 0.361])
         attachForm = [(flushBtn,'top', 6, refBtn)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
         cmds.formLayout(f1, e=1, af=(flushBtn, 'left', 5))
@@ -228,7 +236,7 @@ def blastWin():
         #wipe button
 
         #compare button
-        
+
         #scroll
         scrollBar       = 16
         scrollBarOffset = 75
@@ -293,7 +301,7 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     #parse row name from directory path
     blastDir = blastDir.split('/')
     blastDir = blastDir[len(blastDir)-1]
-    
+
     imageRange = getImageRange(path)
     imageName  = getImageName(path)
 
@@ -351,7 +359,7 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     #delete
     cmds.setParent(f)
     st = getString(strings=[f, attachRow, belowRow])
-    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc=[0.863, 0.078, 0.235])
+    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc=[0.500, 0.361, 0.361])
     cmds.formLayout(f, e=1, af=(delBtn, 'bottom', 0))
     cmds.formLayout(f, e=1, af=(delBtn, 'top', 0))
     cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
@@ -363,12 +371,12 @@ def flushDefaultDir(*args):
     createPath(path)
 
 def getChecked(*args):
-    #collect checked rows if any else spit out message    
-    pass    
+    #collect checked rows if any else spit out message
+    pass
 
 def getString(strings=[]):
     '''
-    convert vars to hard coded strings for button commands 
+    convert vars to hard coded strings for button commands
     '''
     s = ''
     i = 0
@@ -392,7 +400,7 @@ def removeRow(row='', attachRow='', belowRow='', deleteDir=True):
         shutil.rmtree(path)
     #shift lower rows
     updateRows(row, attachRow, belowRow)
-    
+
 def updateRows(row='', attachRow='', belowRow=''):
     parent = row.split('|')[3]
     if attachRow:
