@@ -435,6 +435,30 @@ def updateRowCmd(row='', attachRow='', belowRow=''):
         cmdB = cmdB.replace(row, attachRow)
         cmds.button(belowDel, e=1, c=cmdB)
 
+def updateDelCmd(*args):
+    '''
+    use to change delete cmd from confirm to delete
+    '''
+    pass
+
+def deleteCmd():
+    '''
+    delete command, confrim command for deleting rows
+    '''
+    pass
+
+def confirmCmd():
+    '''
+    confrim cmd, default cmd for delete buttons
+    '''
+    pass
+
+def detectCompatibleStructure():
+    '''
+    check default dir structure for compatibility
+    '''
+    pass
+    
 def findDeleteControl(row=''):
     childs = cmds.formLayout(row, q=1, ca=1)
     for child in childs:
