@@ -5,7 +5,7 @@ import maya.mel   as mel
 #import pymel.core as pm
 #import characterSet_lib as cs
 #import ast
-reload(cs)
+#reload(cs)
 
 def message(what=''):
     mm.eval('print \"' + '-- ' + what + ' --' + '\";')
