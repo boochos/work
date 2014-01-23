@@ -197,11 +197,11 @@ def keyedFrames(obj):
         message('Object ' + obj + ' has no keys')
         return None
 
-def constraintRig(*args):
+def constraintRig(bake=False):
     #store selection
     sel = cmds.ls(sl=True)
     #place 3 locators on selection
-    loc1 = locator(obj=sel[0], constrain=False, X=1)
+    loc1 = locator(obj=sel[0], constrain=False, X=1) #add option to bake with matching keys
     loc2 = locator(obj=sel[1], constrain=False, X=1)
     spin = locator(obj=sel[1], constrain=False, X=1)
     #rename
@@ -562,6 +562,7 @@ def locSize(lc, X=0.5):
     axis = ['X','Y','Z']
     for axs in axis:
         cmds.setAttr(lc + 'Shape.localScale' + axs, X)
+        cmds.setAttr(lc + '.scale' + axs, X)
 
 def attrStrings(pos=True, rot=True, period=True):
     p = ['tx','ty','tz']
