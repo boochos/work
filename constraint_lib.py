@@ -521,7 +521,7 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False, sim=Fal
     else:
         cmds.warning('Select an object. Selection will be constrainted to a locator with the same anim.')
 
-def locator(obj=None, ro='zxy', X=0.01, constrain=True):
+def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False):
     locs = []
     plc = '__PLACE__'
     if obj != None:
@@ -548,14 +548,14 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True):
         locs.append(loc)
     return locs
 
-def locatorOnSelection(ro='zxy', X=0.01, constrain=True):
+def locatorOnSelection(ro='zxy', X=0.01, constrain=True, , toSelection=False):
     sel = cmds.ls(sl=True)
     locs = []
     if len(sel) != 0:
         for item in sel:
-            locs.append(locator(obj=item, ro=ro, X=X, constrain=constrain)[0])
+            locs.append(locator(obj=item, ro=ro, X=X, constrain=constrain, , toSelection=toSelection)[0])
     else:
-        locs.append(locator(ro=ro, X=X, constrain=False))
+        locs.append(locator(ro=ro, X=X, constrain=False , toSelection=toSelection))
     return locs
 
 def locSize(lc, X=0.5):
@@ -637,19 +637,21 @@ def stick(offset=True):
     else:
         cmds.warning('      #    Stick to world = Select 1 object.       #    Stick to 2nd selection = Select 2 objects.')
 
-def unStick():
+def unStick(sparseKeys=True, timeLine=False):
     #needs work
     activeSet = cs.GetSetOptions()
     sel = cmds.ls(sl=True)
     gRange = GetRange()
     cons = getConstraint(sel)
     if activeSet.current:
+        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=True)
         #bakeConstrained(activeSet.current, sparseKeys=False, removeConstraint=True, timeLine=False, sim=False)
-        cmds.bakeResults( activeSet.current, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
+        #cmds.bakeResults( activeSet.current, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
         
     else:
+        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=True)
         #bakeConstrainedSelection(sparseKeys=False, removeConstraint=True, timeLine=False, sim=False)
-        cmds.bakeResults( sel, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
+        #cmds.bakeResults( sel, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
     #delete associated objects
     blndAttr = getBlendAttr(sel, delete=True)
     cmds.delete(cons)
