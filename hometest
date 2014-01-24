@@ -1,0 +1,11 @@
+#check for file
+import os
+path = 'C:\VFX\Accounting'
+contents = os.listdir(path)
+file = False
+for i in contents:
+    if not os.path.isdir(os.path.join(path, i)):
+        print i
+        file = True
+        break
+
