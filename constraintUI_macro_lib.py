@@ -2,15 +2,17 @@ import maya.cmds  as cmds
 import constraintUI_micro_lib as ui
 import constraint_lib as cn
 import maya.mel as mel
+import anim_lib as al
 
+reload(al)
 reload(cn)
-reload(ui)
+#reload(ui)
 
 class CSUI(object):
     '''
     Build CharacterSet UI
     '''
-    def __init__(self, columnWidth=100):
+    def __init__(self, columnWidth=80):
         #external
         self.columnWidth                  = columnWidth
         #internal
@@ -27,15 +29,16 @@ class CSUI(object):
 
     def gui(self):
         #window
-        self.win = cmds.window(self.windowName, w=100)
+        self.win = cmds.window(self.windowName, w=self.columnWidth, rtf=1)
         #action
-        self.actionColumn = ui.Action('action', cmdAction='', label='')
+        self.actionColumn = ui.Action('action', cmdAction='', label='', w=self.columnWidth)
         cmds.button(self.actionColumn.actionButton1, e=True, c=self.cmdBake)
         cmds.button(self.actionColumn.actionButton2, e=True, c=self.cmdPlace)
         cmds.button(self.actionColumn.actionButton3, e=True, c=self.cmdBakeToLoc)
         cmds.button(self.actionColumn.actionButton4, e=True, c=self.cmdMatchKeys)
         cmds.button(self.actionColumn.actionButton5, e=True, c=self.cmdConstrain)
         cmds.button(self.actionColumn.actionButton6, e=True, c=self.cmdA2B)
+        cmds.button(self.actionColumn.actionButton7, e=True, c=self.cmdRO)
 
         cmds.showWindow(self.win)
 
@@ -105,3 +108,7 @@ class CSUI(object):
         import anim_lib as anim
         reload(anim)
         anim.matchObj()
+
+    def cmdRO(self, *args):
+        t1 = cmds.optionMenuGrp(self.actionColumn.opt1, q=True, v=True)
+        al.changeRoMulti(ro=t1)

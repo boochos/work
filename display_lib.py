@@ -1,6 +1,7 @@
 import maya.cmds as cmds
 import maya.mel as mel
 import constraint_lib as cn
+reload(cn)
 
 
 def message(what='', maya=True):
@@ -470,7 +471,7 @@ def altFrame(*args):
         locs = []
         if sel:
             for item in sel:
-                loc = cn.locator(obj=item, ro='zxy', X=0.01, constrain=False)[0]
+                loc = cn.locator(obj=item, ro='zxy', X=0.35, constrain=False)[0]
                 locs.append(loc)
             cmds.select(locs)
             mel.eval("fitPanel -selected;")

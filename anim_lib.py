@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import maya.mel as mel
+import constraint_lib as cn
 #import place_lib as place
 #import util_lib as util
 #import lists_lib as lists
@@ -200,6 +201,7 @@ def nonKey(obj):
 def changeRO(obj, ro):
     '''
     '''
+    cn.uiEnable(controls='modelPanel', toggle=True)
     r = getRange()
     autoK = cmds.autoKeyframe(q=True, state=True)
     cmds.autoKeyframe(state=False)
@@ -228,6 +230,7 @@ def changeRO(obj, ro):
     '''
     cmds.currentTime(current)
     cmds.autoKeyframe(state=autoK)
+    cn.uiEnable(controls='modelPanel', toggle=True)
 
 def keyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
@@ -250,7 +253,6 @@ def keyedFrames(obj):
 def changeRoMulti(ro='zxy'):
 	#changes rotate order of an object to the desired order without changing the pose. tangent will bust.
 	#will use current frame range
-	#assumes you have/want a key on every frame
     sel = cmds.ls(sl=True)
     for item in sel:
         changeRO(item, ro=ro)

@@ -98,11 +98,14 @@ def job(*args):
                 selPair = obj.replace(side[1], side[0])
             else:
                 return None
-            if ref:
-                selPair = ref + ':' + selPair
-            cmds.select(selPair, tgl=True)
-            message('Pair Selected', maya=True)
-            return None
+            try:
+                if ref:
+                    selPair = ref + ':' + selPair
+                cmds.select(selPair, tgl=True)
+                message('Pair Selected', maya=True)
+                return None
+            except:
+                pass
     else:
         pass
 

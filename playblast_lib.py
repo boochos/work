@@ -142,7 +142,7 @@ def blastDir(forceTemp=True):
     else:
         return getDefaultPath()
 
-def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
+def blast(w=2094, h=1716, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
@@ -265,6 +265,7 @@ def blastWin():
             #build rows
             j=0
             num = len(blastDirs)-1
+            #print blastDirs
             for blastDir in blastDirs:
                 cmds.setParent(f2)
                 if j == 0:
@@ -275,6 +276,7 @@ def blastWin():
                     below = ''
                 else:
                     below = blastDirs[j+1]
+                #print blastDir
                 buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
                 j=j+1
                 cmds.refresh(f=1)
@@ -325,7 +327,7 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     #checkbox
     chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0])
     cmds.formLayout(f, e=1, af=(chkBx, 'top', height/2-8))
-    cmds.formLayout(f, e=1, af=(chkBx, 'left', 5))
+    cmds.formLayout(f, e=1, af=(chkBx, 'left', 4))
 
     #icon
     cmdI = 'partial( openSelected, path = path )'
@@ -338,6 +340,14 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     cmds.formLayout(f, e=1, af=(iconBtn, 'bottom', 0))
     cmds.formLayout(f, e=1, af=(iconBtn, 'top', 0))
     cmds.formLayout(f, e=1, af=(iconBtn, 'left', col[0]))
+
+    #delete
+    cmds.setParent(f)
+    st = getString(strings=[f, attachRow, belowRow])
+    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc=[0.500, 0.361, 0.361])
+    cmds.formLayout(f, e=1, af=(delBtn, 'bottom', 0))
+    cmds.formLayout(f, e=1, af=(delBtn, 'top', 0))
+    cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
 
     #meta
     pt    = '.../' + path.split(getDefaultPath())[1] + '\n'
@@ -356,13 +366,6 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     cmds.formLayout(f, e=1, af=(metaBtn, 'left',col[1]+col[0]))
     cmds.formLayout(f, e=1, af=(metaBtn, 'right', col[3]))
 
-    #delete
-    cmds.setParent(f)
-    st = getString(strings=[f, attachRow, belowRow])
-    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc=[0.500, 0.361, 0.361])
-    cmds.formLayout(f, e=1, af=(delBtn, 'bottom', 0))
-    cmds.formLayout(f, e=1, af=(delBtn, 'top', 0))
-    cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
     return f
 
 def flushDefaultDir(*args):
@@ -528,6 +531,7 @@ def getBlastDirs(path=''):
     if os.path.isdir(path) and os.access(path, os.R_OK):
         #shot dirs
         shots = getShotDirs(path)
+        #print shots, '  shots'
         #Populate the directories and non-directories for organization
         dirs      = []
         nonDir    = []
@@ -547,7 +551,10 @@ def getBlastDirs(path=''):
                         else:
                             nonDir.append(i)
                 for d in reversed(dirs):
-                    sortedDir.append(d)
+                    if d not in sortedDir:
+                        sortedDir.append(d)
+        #ww = lambda f: os.stat(dirs).st_mtime
+        #www = sorted(dirs, key=mtime)
         return sortedDir
     else:
         createPath(path)

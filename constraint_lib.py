@@ -548,12 +548,12 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False):
         locs.append(loc)
     return locs
 
-def locatorOnSelection(ro='zxy', X=0.01, constrain=True, , toSelection=False):
+def locatorOnSelection(ro='zxy', X=0.01, constrain=True, toSelection=False):
     sel = cmds.ls(sl=True)
     locs = []
     if len(sel) != 0:
         for item in sel:
-            locs.append(locator(obj=item, ro=ro, X=X, constrain=constrain, , toSelection=toSelection)[0])
+            locs.append(locator(obj=item, ro=ro, X=X, constrain=constrain, toSelection=toSelection)[0])
     else:
         locs.append(locator(ro=ro, X=X, constrain=False , toSelection=toSelection))
     return locs
