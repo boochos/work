@@ -1,8 +1,10 @@
 #establish
-loc sizes
-aim vectors
-distance mid to tip
-4 objects selected
+X   = loc sizes
+aim = aim vectors
+up  = up vectors
+dis = distance mid to tip
+mlt = offset multiplier
+#4 objects selected
 obj[0] = tip control
 obj[1] = mid control
 obj[2] = base control
