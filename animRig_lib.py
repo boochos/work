@@ -202,12 +202,12 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     locB = controllerToLocator(objBase, p=False, r=True, sparseKeys=True, timeLine=False, sim=True, size=0.1)[0]
     locB = cmds.rename(locB, locB.replace('BAKE', 'BASE'))
     locs.append(locB)
-    print locB
+    #print locB
     #place up locator on location B
     locUp = locator(obj=objBase, ro='zxy', X=size, constrain=False, toSelection=False)[0]
     locUp = cmds.rename(locUp, locUp.replace('PLACE', 'UP'))
     #locs.append(locUp)
-    print locUp
+    #print locUp
     #parent up locator, move up in ty, unparent
     cmds.parent(locUp, locB)
     cmds.setAttr(locUp + '.ty', 5)
@@ -240,7 +240,7 @@ def parentRig(bake=False):
     cmds.parentConstraint(sel[0], offset, mo=True)
     cmds.select(sel[0], offset)
     matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
-    bakeConstrained(offset, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
+    bakeConstrained(offset, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
     #create final rig constraints
     constrainEnabled(offset, sel[0], mo=True)
     #cmds.parentConstraint(offset, sel[0], mo=True)
