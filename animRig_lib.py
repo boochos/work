@@ -193,7 +193,7 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     locA = locator(obj=objAim, ro='zxy', X=size, constrain=True, toSelection=True)[0]
     locA = cmds.rename(locA, locA.replace('PLACE', 'AIM'))
     locs.append(locA)
-    print locA
+    #print locA
     #bake locator A
     bakeConstrained(locA, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
     #match keys
