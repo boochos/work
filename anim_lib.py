@@ -332,55 +332,6 @@ def shapeSize(obj=None, mltp=1):
             		if 'SharedAttr' not in node:
             		    cmds.scale( mltp, mltp, mltp, node + '.cv[*]')
 
-def scaleCrv(val):
-    '''
-    -Scale selected Graph Editor curves with given value.
-    -Pivot derived from selection - get selected keys of curves, if values are the same, the assumption is made to pivot from that position, otherwise pivot defaults to 0.
-    '''
-    #get curves of selected keys
-    crvs = cmds.keyframe(q=True, name=True, sl=True)
-    pvt = 0
-    if len(crvs) == 1:
-        #keys selected from one curve
-        selKey_1 = cmds.keyframe(crvs, q=True, vc=True, sl=True)
-        selKey_2 = list(set(cmds.keyframe(crvs, q=True, vc=True, sl=True)))
-        if len(selKey_1) != len(selKey_2):
-            #multiple keys selected, same value, pivot = 0
-            cmds.scaleKey(crvs, vs=val, vp=pvt)
-        elif len(selKey_1) == 1:
-            #single key selected, pivot = selKey
-            pvt = selKey_1[0]
-            cmds.scaleKey(crvs, vs=val, vp=pvt)
-        else:
-            #multiple keys selected, pivot = 0
-            cmds.scaleKey(crvs, vs=val, vp=pvt)
-    else:
-        #keys selected from multiple curves
-        selKey = list(set(cmds.keyframe(crvs, q=True, vc=True, sl=True)))
-        if len(selKey) == 1:
-            #multiple keys have same value, pivot = selKey
-            pvt = selKey[0]
-        cmds.scaleKey(crvs, vs=val, vp=pvt)
-
-def holdCrv(postCurrent=True, preCurrent=True):
-    crvs = cmds.keyframe(q=True, name=True, sl=True)
-    if crvs != None:
-        current = getRange()[2]
-        for crv in crvs:
-            frames = cmds.keyframe(crv, q=True, tc=True)
-            val = cmds.keyframe(crv, q=True, eval=True, t=(current,current))[0]
-            for frame in frames:
-                if postCurrent == True:
-                    if frame >= current:
-                        cmds.keyframe(crv, vc=val, t=(frame,frame))
-                        cmds.keyTangent( crv, inTangentType='auto', outTangentType='auto', time=(frame,frame) )
-                if preCurrent == True:
-                    if frame <= current:
-                        cmds.keyframe(crv, vc=val, t=(frame,frame))
-                        cmds.keyTangent( crv, inTangentType='auto', outTangentType='auto', time=(frame,frame) )
-    else:
-        print '-- Select a curve --'
-
 def toggleRes():
     sel = cmds.ls(sl=True)
     c = ':c_master_CTRL.'

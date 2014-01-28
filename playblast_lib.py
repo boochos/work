@@ -142,7 +142,7 @@ def blastDir(forceTemp=True):
     else:
         return getDefaultPath()
 
-def blast(w=2094, h=1716, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
+def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
@@ -400,7 +400,13 @@ def removeRow(row='', attachRow='', belowRow='', deleteDir=True):
     path = cmds.formLayout(row, q=1, ann=1)
     cmds.deleteUI(row)
     if deleteDir:
+        #remove scene dir
         shutil.rmtree(path)
+        #check if shot dir is empty, delete if it is
+        shot = path.split('/' + path.split('/')[len(path.split('/'))-1])[0]
+        contents = os.listdir(shot)
+        if not contents:
+            shutil.rmtree(shot)
     #shift lower rows
     updateRows(row, attachRow, belowRow)
 
@@ -456,12 +462,45 @@ def confirmCmd():
     '''
     pass
 
-def detectCompatibleStructure():
-    '''
-    check default dir structure for compatibility
-    '''
-    pass
-    
+def detectCompatibleStructure(path=''):
+    root = getContentsType(path, directory=1)
+    if root:
+        for r in root:
+            shot = getContentsType(r, directory=1)
+            if shot:
+                for s in shot:
+                    scene = getContentsType(s, directory=0)
+                    if scene:
+                        return None
+                    else:
+                        #rebuild
+                        pass
+            else:
+                #rebuild
+                pass
+    else:
+        #rebuild
+        pass
+
+    createPath(path)
+    return None
+
+def getContentsType(path='', directory=False):
+    d = not directory
+    fullPaths = []
+    if os.path.isdir(path) and os.access(path, os.R_OK):
+        #check for files, no files should exist
+        pathContents = os.listdir(path)
+        for c in pathContents:
+            fp = os.path.join(path,c)
+            fullPaths.append(fp)
+            if  os.path.isdir(fp) == d:
+                #file found
+                message('wrong type found:   ' + fp)
+                #rebuild directory
+                return None
+        return fullPaths
+
 def findDeleteControl(row=''):
     childs = cmds.formLayout(row, q=1, ca=1)
     for child in childs:

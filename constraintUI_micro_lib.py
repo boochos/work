@@ -47,13 +47,16 @@ class Action(object):
         self.s4            = ''
         self.s5            = ''
         self.opt1          = ''
+        self.col1          = ''
+        self.r1            = ''
+        self.r2            = ''
         self.label         = label
         self.cmdAction     = cmdAction
-        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.opt1 ]
+        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.opt1, self.col1, self.r1, self.r2 ]
         self.h             = h
         self.w             = w
         self.heightForm    = 30
-        self.sepH          = 20
+        self.sepH          = 15
         self.sepStl        = 'in'
         #self.cleanUI()
         self.buildColumn()
@@ -82,6 +85,12 @@ class Action(object):
         self.c7 = cmds.checkBox( label='Translation', v=True )
         self.c8 = cmds.checkBox( label='Rotation', v=True )
         self.c12 = cmds.checkBox( label='Simulation', v=True )
+        #rotate order
+        self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=[0.5,0.5,0.5])
+        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', w=self.w, cw=[1, self.w])
+        ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
+        for o in ro:
+            cmds.menuItem(o)
         self.s1 = cmds.separator( height=self.sepH, style=self.sepStl )
         #match things
         self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=[0.5,0.5,0.5])
@@ -89,7 +98,10 @@ class Action(object):
         #random
         self.s5 = cmds.separator( height=self.sepH, style=self.sepStl )
         self.actionButton2 = cmds.button(self.actionButton2, label='Place Locator', c=self.cmdAction, bgc=[0.5,0.5,0.5])
-        self.c5 = cmds.checkBox( label='Constrain To Selection' )
+        self.c5 = cmds.checkBox( label='Constrain to' )
+        self.col1 = cmds.radioCollection()
+        self.r1 = cmds.radioButton( label='  selection', sl=1 )
+        self.r2 = cmds.radioButton( label='  reverse' )
         #self.s2 = cmds.separator( height=self.sepH, style=self.sepStl )
         #constrain
         self.actionButton5 = cmds.button(self.actionButton5, label='Parent Constraint', c=self.cmdAction, bgc=[0.5,0.5,0.5])
@@ -97,12 +109,4 @@ class Action(object):
         self.c10 = cmds.checkBox( label='Translation', v=True )
         self.c11 = cmds.checkBox( label='Rotation', v=True )
         #self.s3 = cmds.separator( height=self.sepH, style=self.sepStl )
-        #rotate order
-        self.s4 = cmds.separator( height=self.sepH, style=self.sepStl )
-        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', w=self.w, cw=[1, self.w])
-        ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
-        for o in ro:
-            cmds.menuItem(o)
-        #self.actionField1 = cmds.textField(self.actionField1, text='xzy')
-        self.actionButton7 = cmds.button(self.actionButton7, label='Change Rotate Order', c=self.cmdAction, bgc=[0.5,0.5,0.5])
         #sticky ,...

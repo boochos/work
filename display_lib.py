@@ -365,12 +365,15 @@ def distanceExp(sel, sel2, attr):
     exp = exp0 + exp1
     return exp
 
-def distance():
+def distance(obj1=None, obj2=None):
     '''
     assembles distance relationship
     '''
     attr = 'distance'
-    selected = cmds.ls( sl=True )
+    if not obj1:
+        selected = cmds.ls( sl=True )
+    else:
+        selected = [obj1, obj2]
     if len(selected) == 2:
         i = 1
         #

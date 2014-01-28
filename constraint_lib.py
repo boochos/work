@@ -77,12 +77,13 @@ def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
     AAA = get keyed frames
     BBB = put keyed frames
     '''
-    sel = cmds.ls(sl=True)
-    if sel:
-        crvs = cmds.keyframe(sel[0], q=True, name=True)
-    if crvs == None:
-        message('No keys on object', maya=True)
-        return None
+    if AAA==None and BBB==None:
+        sel = cmds.ls(sl=True)
+        if sel:
+            crvs = cmds.keyframe(sel[0], q=True, name=True)
+        if crvs == None:
+            message('No keys on object', maya=True)
+            return None
     if AAA==None and BBB==None:
         if len(sel) == 2:
             AAA = sel[0]
@@ -196,31 +197,6 @@ def keyedFrames(obj):
     else:
         message('Object ' + obj + ' has no keys')
         return None
-
-def constraintRig(bake=False):
-    #store selection
-    sel = cmds.ls(sl=True)
-    #place 3 locators on selection
-    loc1 = locator(obj=sel[0], constrain=False, X=1) #add option to bake with matching keys
-    loc2 = locator(obj=sel[1], constrain=False, X=1)
-    spin = locator(obj=sel[1], constrain=False, X=1)
-    #rename
-    offset = cmds.rename(loc1, sel[0] + '__OFFSET')
-    spin = cmds.rename(spin, sel[0] + '__SPIN')
-    root = cmds.rename(loc2, sel[0] + '__ROOT')
-    cmds.parent(offset, spin)
-    cmds.parent(spin, root)
-    cmds.parentConstraint(sel[1], root, mo=True)
-    #bake anim to offset loc
-    cmds.parentConstraint(sel[0], offset, mo=True)
-    cmds.select(sel[0], offset)
-    matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
-    bakeConstrained(offset, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
-    #create final rig constraints
-    constrainEnabled(offset, sel[0], mo=True)
-    #cmds.parentConstraint(offset, sel[0], mo=True)
-    locSize(root, X=0.1)
-    cmds.select(offset)
 
 class reConnect():
     '''
@@ -383,9 +359,10 @@ def deleteList(objects):
             cmds.delete(obj)
             message(typ + ' | ' + obj + '  is deleted')
 
-def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False):
+def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
     if sim:
-        uiEnable()
+        if uiOff:
+            uiEnable()
     gRange = GetRange()
     cons = getConstraint(obj)
     blndAttr = getBlendAttr(obj, delete=False)
@@ -418,22 +395,18 @@ def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False,
         else:
             message("Baked! Didn't create sparseKeys. Object had no keys.")
     if sim:
-        uiEnable()
+        if uiOff:
+            uiEnable()
 
-def bakeConstrainedSelection(sparseKeys=True, removeConstraint=True, timeLine=False, sim=False):
+def bakeConstrainedSelection(sparseKeys=True, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
     sel = cmds.ls(sl=True)
     if len(sel) != 0:
         for obj in sel:
-            bakeConstrained(obj, sparseKeys=sparseKeys, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim)
+            bakeConstrained(obj, sparseKeys=sparseKeys, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim, uiOff=uiOff)
     else:
         cmds.warning('Select constrained object(s)')
 
-def locSize(lc, X=0.5):
-    axis = ['X','Y','Z']
-    for axs in axis:
-        cmds.setAttr(lc + 'Shape.localScale' + axs, X)
-
-def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False, sim=False):
+def controllerToLocator(obj=None, p=True, r=True, sparseKeys=True, timeLine=False, sim=False, size=1.0, uiOff=True, color=07):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -443,7 +416,13 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False, sim=Fal
     constrains controller to locator
     '''
     #bake from timeline  and selection
-    sel = cmds.ls(sl=True)
+    if not obj:
+        sel = cmds.ls(sl=True)
+    else:
+        if type(obj) != list:
+            sel = [obj]
+        else:
+            sel = obj
     pos = ['tx','ty','tz']
     rot = ['rx','ry','rz']
     posSkp = []
@@ -455,7 +434,8 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False, sim=Fal
         for item in sel:
             #setup locator
             lc = cmds.spaceLocator(name=item + '__BAKE__')[0]
-            locSize(lc, X=2)
+            locSize(lc, X=size)
+            objColor(lc, color=color)
             cmds.setAttr(lc + '.sx', k=False, cb=True)
             cmds.setAttr(lc + '.sy', k=False, cb=True)
             cmds.setAttr(lc + '.sz', k=False, cb=True)
@@ -472,7 +452,7 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False, sim=Fal
                 cnR = cmds.orientConstraint(item, lc, mo=False)
             #bake locator in frame range
             matchKeyedFrames(item, lc)
-            bakeConstrained(lc, sparseKeys=False, removeConstraint=False, timeLine=timeLine, sim=sim)
+            bakeConstrained(lc, sparseKeys=False, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
             if sparseKeys == True:
                 matchKeyedFrames(item, lc)
             if p == False:
@@ -521,11 +501,12 @@ def controllerToLocator(p=True, r=True, sparseKeys=True, timeLine=False, sim=Fal
     else:
         cmds.warning('Select an object. Selection will be constrainted to a locator with the same anim.')
 
-def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False):
+def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07):
     locs = []
     plc = '__PLACE__'
     if obj != None:
-        lc = cmds.spaceLocator(name=obj + plc)[0]
+        lc = cmds.spaceLocator(name=obj + suffix)[0]
+        objColor(lc, color)
         print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
         cmds.setAttr(lc + '.sy', k=False, cb=True)
@@ -540,29 +521,36 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False):
         cmds.setAttr(lc + '.rotateOrder', roo)
         cmds.xform(lc, roo=ro )
         if constrain == True:
-            cmds.parentConstraint(obj, lc, mo=True)
+            if toSelection:
+                cmds.parentConstraint(obj, lc, mo=True)
+            else:
+                cmds.parentConstraint(lc, obj, mo=True)
     else:
         loc = cmds.spaceLocator()[0]
         cmds.xform(loc, roo=ro )
-        loc = cmds.rename(loc, 'locator' + plc)
+        loc = cmds.rename(loc, 'locator' + suffix)
         locs.append(loc)
     return locs
 
-def locatorOnSelection(ro='zxy', X=0.01, constrain=True, toSelection=False):
+def locatorOnSelection(ro='zxy', X=0.01, constrain=True, toSelection=False, color=07):
     sel = cmds.ls(sl=True)
     locs = []
     if len(sel) != 0:
         for item in sel:
-            locs.append(locator(obj=item, ro=ro, X=X, constrain=constrain, toSelection=toSelection)[0])
+            locs.append(locator(obj=item, ro=ro, X=X, constrain=constrain, toSelection=toSelection, color=color)[0])
     else:
-        locs.append(locator(ro=ro, X=X, constrain=False , toSelection=toSelection))
+        locs.append(locator(ro=ro, X=X, constrain=False , toSelection=toSelection, color=color))
     return locs
 
 def locSize(lc, X=0.5):
     axis = ['X','Y','Z']
     for axs in axis:
         cmds.setAttr(lc + 'Shape.localScale' + axs, X)
-        cmds.setAttr(lc + '.scale' + axs, X)
+        #cmds.setAttr(lc + '.scale' + axs, X)
+
+def objColor(obj='', color=07):
+    cmds.setAttr(obj + '.overrideEnabled', 1)
+    cmds.setAttr(obj + '.overrideColor', color)
 
 def attrStrings(pos=True, rot=True, period=True):
     p = ['tx','ty','tz']
@@ -732,3 +720,5 @@ class AnimCrv(Key):
         for key in self.key:
             key.obj = self.obj
             key.put()
+
+    

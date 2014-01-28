@@ -6,7 +6,7 @@ import anim_lib as al
 
 reload(al)
 reload(cn)
-#reload(ui)
+reload(ui)
 
 class CSUI(object):
     '''
@@ -42,21 +42,6 @@ class CSUI(object):
 
         cmds.showWindow(self.win)
 
-    def cmdImport(self, *args):
-        selFile = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
-        if selFile and '.chr' in selFile[0]:
-            path = path = os.path.join(self.path, selFile[0])
-            prefix = cmds.textField(self.prefixForm.field, q=True, tx=True)
-            try:
-                ns = cmds.textScrollList(self.namespaceForm.scroll, q=True, si=True)[0]
-            except:
-                ns = ''
-            dic = self.buildDict()
-            if dic:
-                cs.importFile(path, prefix=prefix, ns=ns, rp=dic)
-        else:
-            self.message('Click a file with   \'.chr\'   extension')
-
     def cmdBake(self, *args):
         import constraint_lib as cn
         reload(cn)
@@ -69,8 +54,15 @@ class CSUI(object):
     def cmdPlace(self,*args):
         import constraint_lib as cn
         reload(cn)
+        sl=False
         v5 = cmds.checkBox(self.actionColumn.c5, q=True, v=True)
-        cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5)
+        if v5:
+            btn = cmds.radioCollection(self.actionColumn.col1, q=True, sl=True)
+            lab = cmds.radioButton(btn, q=True, l=True)
+            if 'Selection' in lab:
+                sl = True
+        print sl, '========='
+        cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
 
     def cmdBakeToLoc(self,*args):
         import constraint_lib as cn
