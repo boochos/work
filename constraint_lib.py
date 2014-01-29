@@ -113,20 +113,21 @@ def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
         for attr in created:
             cmds.setKeyframe(BBB + '.' + attr, v=1)
     #add keys to BBB from AAA
-    for frame in framesAdd:
-        cmds.setKeyframe(BBB, i=True, t=frame)
-    if subtractive == True:
-        #remove keys from BBB, which AAA doesnt have
-        min = framesAdd[0]
-        max = framesAdd[len(framesAdd)-1]
-        framesRem = keyedFrames(BBB)
-        for frame in framesRem:
-            if frame not in framesAdd:
-                cmds.cutKey(BBB, t=(frame,frame))
-    #check if current frame should be keyed
-    current = cmds.currentTime(q=True)
-    if current not in framesAdd:
-        cmds.cutKey(BBB, t=(current,current))
+    if framesAdd:
+        for frame in framesAdd:
+            cmds.setKeyframe(BBB, i=True, t=frame)
+        if subtractive == True:
+            #remove keys from BBB, which AAA doesnt have
+            min = framesAdd[0]
+            max = framesAdd[len(framesAdd)-1]
+            framesRem = keyedFrames(BBB)
+            for frame in framesRem:
+                if frame not in framesAdd:
+                    cmds.cutKey(BBB, t=(frame,frame))
+        #check if current frame should be keyed
+        current = cmds.currentTime(q=True)
+        if current not in framesAdd:
+            cmds.cutKey(BBB, t=(current,current))
 
 class GetRange():
     def __init__(self):
