@@ -51,7 +51,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
     cmds.setAttr(midUp + '.visibility', 0)
     cmds.parent(midUp, mid)
     cmds.setAttr(midUp + '.ty', offset*mlt)
-    cmds.parent(midUp, master)
+    #cmds.parent(midUp, mid)
     cmds.parentConstraint(obj[1], midUp, mo=1)
     cn.bakeConstrained(midUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[1], BBB=midUp, subtractive=True)
@@ -95,14 +95,14 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
     return gr
 
 def switchLHand(*args):
-
+    mlt = 3.0
     thumb = [
     'chappieAnimationRig:l_handThumb2_CTRL',
     'chappieAnimationRig:l_handThumb1_CTRL',
     'chappieAnimationRig:l_handThumb_CTRL',
     'chappieAnimationRig:l_handThumbBase_CTRL'
     ]
-    th = fingerRig(name='Lthumb', obj=thumb, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    th = fingerRig(name='Lthumb', obj=thumb, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     index = [
     'chappieAnimationRig:l_handFingerA2Fk_CTRL',
@@ -110,7 +110,7 @@ def switchLHand(*args):
     'chappieAnimationRig:l_handFingerA0Fk_CTRL',
     'chappieAnimationRig:l_handIk_CTRL'
     ]
-    ind = fingerRig(name='Lindex', obj=index, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    ind = fingerRig(name='Lindex', obj=index, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     middle = [
     'chappieAnimationRig:l_handFingerB2Fk_CTRL',
@@ -118,7 +118,7 @@ def switchLHand(*args):
     'chappieAnimationRig:l_handFingerB0Fk_CTRL',
     'chappieAnimationRig:l_handIk_CTRL'
     ]
-    mid = fingerRig(name='Lmiddle', obj=middle, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    mid = fingerRig(name='Lmiddle', obj=middle, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     ring = [
     'chappieAnimationRig:l_handFingerC2Fk_CTRL',
@@ -126,7 +126,7 @@ def switchLHand(*args):
     'chappieAnimationRig:l_handFingerC0Fk_CTRL',
     'chappieAnimationRig:l_handIk_CTRL'
     ]
-    rin = fingerRig(name='Lring', obj=ring, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    rin = fingerRig(name='Lring', obj=ring, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     pinky = [
     'chappieAnimationRig:l_handFingerD2Fk_CTRL',
@@ -134,19 +134,20 @@ def switchLHand(*args):
     'chappieAnimationRig:l_handFingerD0Fk_CTRL',
     'chappieAnimationRig:l_handIk_CTRL'
     ]
-    pin = fingerRig(name='Lpinky', obj=pinky, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    pin = fingerRig(name='Lpinky', obj=pinky, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     #group
     cmds.group( th, ind, mid, rin, pin, n='__LEFT_HAND__' )
 
 def switchRHand(*args):
+    mlt = 3.0
     thumb = [
     'chappieAnimationRig:r_handThumb2_CTRL',
     'chappieAnimationRig:r_handThumb1_CTRL',
     'chappieAnimationRig:r_handThumb_CTRL',
     'chappieAnimationRig:r_handThumbBase_CTRL'
     ]
-    th = fingerRig(name='Rthumb', obj=thumb, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    th = fingerRig(name='Rthumb', obj=thumb, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     index = [
     'chappieAnimationRig:r_handFingerA2Fk_CTRL',
@@ -154,7 +155,7 @@ def switchRHand(*args):
     'chappieAnimationRig:r_handFingerA0Fk_CTRL',
     'chappieAnimationRig:r_handIk_CTRL'
     ]
-    ind = fingerRig(name='Rindex', obj=index, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    ind = fingerRig(name='Rindex', obj=index, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     middle = [
     'chappieAnimationRig:r_handFingerB2Fk_CTRL',
@@ -162,7 +163,7 @@ def switchRHand(*args):
     'chappieAnimationRig:r_handFingerB0Fk_CTRL',
     'chappieAnimationRig:r_handIk_CTRL'
     ]
-    mid = fingerRig(name='Rmiddle', obj=middle, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    mid = fingerRig(name='Rmiddle', obj=middle, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     ring = [
     'chappieAnimationRig:r_handFingerC2Fk_CTRL',
@@ -170,7 +171,7 @@ def switchRHand(*args):
     'chappieAnimationRig:r_handFingerC0Fk_CTRL',
     'chappieAnimationRig:r_handIk_CTRL'
     ]
-    rin = fingerRig(name='Rring', obj=ring, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    rin = fingerRig(name='Rring', obj=ring, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     pinky = [
     'chappieAnimationRig:r_handFingerD2Fk_CTRL',
@@ -178,7 +179,7 @@ def switchRHand(*args):
     'chappieAnimationRig:r_handFingerD0Fk_CTRL',
     'chappieAnimationRig:r_handIk_CTRL'
     ]
-    pin = fingerRig(name='Rpinky', obj=pinky, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=5.0)
+    pin = fingerRig(name='Rpinky', obj=pinky, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     #group
     cmds.group( th, ind, mid, rin, pin, n='__RIGHT_HAND__' )
