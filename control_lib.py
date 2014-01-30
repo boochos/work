@@ -30,7 +30,7 @@ def exportShape(name=''):
                 cvInfo = cmds.getAttr(shapeNode + '.cv[*]')
                 outFile   = open(path, 'w')
                 for i in range(0, len(cvInfo),1):
-                    info =  cmds.xform(shapeNode + '.cv['+ str(i) +']', query=True, os=True, t=True)
+                    info =  cmds.getAttr(shapeNode + '.cv['+ str(i) +']', query=True, os=True, t=True)
                     outFile.write('%s %s %s\n' %(info[0], info[1], info[2]))
                 outFile.close()
     else:
@@ -72,7 +72,7 @@ def importShape(name, path, scale=1.0):
                     
                 if len(cvInfo) == len(cmds.getAttr(shapeNode + '.cv[*]')):
                     for i in range(0,len(cvInfo),1):    
-                        cmds.xform(shapeNode + '.cv[' + str(i) +']',os = True, t = cvInfo[i])
+                        cmds.getAttr(shapeNode + '.cv[' + str(i) +']',os = True, t = cvInfo[i])
                 else:
                     #Curves with different CV counts are not compatible
                     message('CV count['+str(len(cmds.getAttr(shapeNode + '.cv[*]')))+'] from selected does not match import CV count['+str(len(cvInfo))+']')
