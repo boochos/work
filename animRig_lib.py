@@ -97,42 +97,42 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
 def switchLHand(*args):
     mlt = 3.0
     thumb = [
-    'chappieAnimationRig:l_handThumb2_CTRL',
-    'chappieAnimationRig:l_handThumb1_CTRL',
-    'chappieAnimationRig:l_handThumb_CTRL',
-    'chappieAnimationRig:l_handThumbBase_CTRL'
+    'l_handThumb2_CTRL',
+    'l_handThumb1_CTRL',
+    'l_handThumb_CTRL',
+    'l_handThumbBase_CTRL'
     ]
     th = fingerRig(name='Lthumb', obj=thumb, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     index = [
-    'chappieAnimationRig:l_handFingerA2Fk_CTRL',
-    'chappieAnimationRig:l_handFingerA1Fk_CTRL',
-    'chappieAnimationRig:l_handFingerA0Fk_CTRL',
-    'chappieAnimationRig:l_handIk_CTRL'
+    'l_handFingerA2Fk_CTRL',
+    'l_handFingerA1Fk_CTRL',
+    'l_handFingerA0Fk_CTRL',
+    'l_handIk_CTRL'
     ]
     ind = fingerRig(name='Lindex', obj=index, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     middle = [
-    'chappieAnimationRig:l_handFingerB2Fk_CTRL',
-    'chappieAnimationRig:l_handFingerB1Fk_CTRL',
-    'chappieAnimationRig:l_handFingerB0Fk_CTRL',
-    'chappieAnimationRig:l_handIk_CTRL'
+    'l_handFingerB2Fk_CTRL',
+    'l_handFingerB1Fk_CTRL',
+    'l_handFingerB0Fk_CTRL',
+    'l_handIk_CTRL'
     ]
     mid = fingerRig(name='Lmiddle', obj=middle, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     ring = [
-    'chappieAnimationRig:l_handFingerC2Fk_CTRL',
-    'chappieAnimationRig:l_handFingerC1Fk_CTRL',
-    'chappieAnimationRig:l_handFingerC0Fk_CTRL',
-    'chappieAnimationRig:l_handIk_CTRL'
+    'l_handFingerC2Fk_CTRL',
+    'l_handFingerC1Fk_CTRL',
+    'l_handFingerC0Fk_CTRL',
+    'l_handIk_CTRL'
     ]
     rin = fingerRig(name='Lring', obj=ring, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     pinky = [
-    'chappieAnimationRig:l_handFingerD2Fk_CTRL',
-    'chappieAnimationRig:l_handFingerD1Fk_CTRL',
-    'chappieAnimationRig:l_handFingerD0Fk_CTRL',
-    'chappieAnimationRig:l_handIk_CTRL'
+    'l_handFingerD2Fk_CTRL',
+    'l_handFingerD1Fk_CTRL',
+    'l_handFingerD0Fk_CTRL',
+    'l_handIk_CTRL'
     ]
     pin = fingerRig(name='Lpinky', obj=pinky, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
@@ -142,42 +142,42 @@ def switchLHand(*args):
 def switchRHand(*args):
     mlt = 3.0
     thumb = [
-    'chappieAnimationRig:r_handThumb2_CTRL',
-    'chappieAnimationRig:r_handThumb1_CTRL',
-    'chappieAnimationRig:r_handThumb_CTRL',
-    'chappieAnimationRig:r_handThumbBase_CTRL'
+    'r_handThumb2_CTRL',
+    'r_handThumb1_CTRL',
+    'r_handThumb_CTRL',
+    'r_handThumbBase_CTRL'
     ]
     th = fingerRig(name='Rthumb', obj=thumb, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     index = [
-    'chappieAnimationRig:r_handFingerA2Fk_CTRL',
-    'chappieAnimationRig:r_handFingerA1Fk_CTRL',
-    'chappieAnimationRig:r_handFingerA0Fk_CTRL',
-    'chappieAnimationRig:r_handIk_CTRL'
+    'r_handFingerA2Fk_CTRL',
+    'r_handFingerA1Fk_CTRL',
+    'r_handFingerA0Fk_CTRL',
+    'r_handIk_CTRL'
     ]
     ind = fingerRig(name='Rindex', obj=index, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     middle = [
-    'chappieAnimationRig:r_handFingerB2Fk_CTRL',
-    'chappieAnimationRig:r_handFingerB1Fk_CTRL',
-    'chappieAnimationRig:r_handFingerB0Fk_CTRL',
-    'chappieAnimationRig:r_handIk_CTRL'
+    'r_handFingerB2Fk_CTRL',
+    'r_handFingerB1Fk_CTRL',
+    'r_handFingerB0Fk_CTRL',
+    'r_handIk_CTRL'
     ]
     mid = fingerRig(name='Rmiddle', obj=middle, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     ring = [
-    'chappieAnimationRig:r_handFingerC2Fk_CTRL',
-    'chappieAnimationRig:r_handFingerC1Fk_CTRL',
-    'chappieAnimationRig:r_handFingerC0Fk_CTRL',
-    'chappieAnimationRig:r_handIk_CTRL'
+    'r_handFingerC2Fk_CTRL',
+    'r_handFingerC1Fk_CTRL',
+    'r_handFingerC0Fk_CTRL',
+    'r_handIk_CTRL'
     ]
     rin = fingerRig(name='Rring', obj=ring, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
     pinky = [
-    'chappieAnimationRig:r_handFingerD2Fk_CTRL',
-    'chappieAnimationRig:r_handFingerD1Fk_CTRL',
-    'chappieAnimationRig:r_handFingerD0Fk_CTRL',
-    'chappieAnimationRig:r_handIk_CTRL'
+    'r_handFingerD2Fk_CTRL',
+    'r_handFingerD1Fk_CTRL',
+    'r_handFingerD0Fk_CTRL',
+    'r_handIk_CTRL'
     ]
     pin = fingerRig(name='Rpinky', obj=pinky, size=0.2, aim=[1,0,0], u=[0,1,0], mlt=mlt)
 
