@@ -142,11 +142,14 @@ def blastDir(forceTemp=True):
     else:
         return getDefaultPath()
 
-def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True):
+def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=True):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
     min, max = blastRange()
+    if useGlobals:
+        w = cmds.getAttr( 'defaultResolution.width' )
+        h = cmds.getAttr( 'defaultResolution.height' )
     w = w*x
     h = h*x
     if os.name == 'nt':

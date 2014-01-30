@@ -9,6 +9,21 @@ def message(what='', maya=True):
     else:
         print what
 
+def createDefaultPath():
+    path = defaultPath()
+    if not os.path.isdir(path):
+        os.mkdir(path)
+        message( "path:   '" + path + "'   created")
+    else:
+        pass
+        #message("path:   '" + path + "'   exists")
+    return path
+
+def getDefaultPath():
+    user = os.path.expanduser('~')
+    mainDir = user + '/maya/contorolShapes/'
+    return mainDir
+
 def exportShape(name=''):
     '''
     #Name        :exportCurveShape
@@ -17,7 +32,7 @@ def exportShape(name=''):
     #Notes       :This is designed to only work with the Atom win 
     '''
     #get the selection
-    sel = cmds.ls(selection=True)
+    sel = cmds.ls(sl=True)
     if len(sel) == 1:
         path = os.path.join(uiPath, uiName) + '.txt'
         #if the file exists, stop here
@@ -43,7 +58,7 @@ def importShape(name, path, scale=1.0):
     #Description :Imports a curve shape based on the path and name info
     #Notes       :Function expects a .txt file
     '''
-    selection  = cmds.ls(selection=True, tr=True)
+    selection  = cmds.ls(sl=True, tr=True)
     path = path + '/' + name + '.txt' 
     #change the shape of multiple selected curves
     if len(selection) > 0:
