@@ -11,12 +11,10 @@ def message(what='', maya=True):
 
 def exportShape(name=''):
     '''
-    #-------------
     #Name        :exportCurveShape
     #Arguements  :N/A
     #Description :Exports the local transforms of the cvs on the selected curve.
     #Notes       :This is designed to only work with the Atom win 
-    #-------------
     '''
     #get the selection
     sel = cmds.ls(selection=True)
@@ -39,13 +37,11 @@ def exportShape(name=''):
 
 def importShape(name, path, scale=1.0):
     '''
-    #-------------
     #Name        :importCurveShape
     #Arguements  :<name>: str
     #            :<path>: str
     #Description :Imports a curve shape based on the path and name info
     #Notes       :Function expects a .txt file
-    #-------------
     '''
     selection  = cmds.ls(selection=True, tr=True)
     path = path + '/' + name + '.txt' 
