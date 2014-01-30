@@ -188,26 +188,20 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     locs = []
     if objAim == '':
         sel = cmds.ls(sl=1)#order = tip,base
-        objAim = sel[0]
-        objUp  = sel[1]
+        objAim   = sel[0]
+        objBase  = sel[1]
     #place locator at locale A and constrain
-    locA = locator(obj=objAim, ro='zxy', X=size, constrain=True, toSelection=True)[0]
-    locA = cmds.rename(locA, locA.replace('PLACE', 'AIM'))
+    locA = cn.locator(obj=objAim, ro='zxy', X=size, constrain=True, toSelection=True, suffix='__AIM__')[0]
     locs.append(locA)
-    #print locA
     #bake locator A
-    bakeConstrained(locA, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(locA, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
     #match keys
-    matchKeyedFrames(AAA=objAim, BBB=locA, subtractive=True)
+    cn.matchKeyedFrames(AAA=objAim, BBB=locA, subtractive=True)
     #bake locator on location B
-    locB = controllerToLocator(objBase, p=False, r=True, sparseKeys=True, timeLine=False, sim=True, size=0.1)[0]
-    locB = cmds.rename(locB, locB.replace('BAKE', 'BASE'))
+    locB = cn.controllerToLocator(objBase, p=False, r=True, sparseKeys=True, timeLine=False, sim=True, size=0.1, suffix='__BASE__')[0]
     locs.append(locB)
-    #print locB
     #place up locator on location B
-    locUp = locator(obj=objBase, ro='zxy', X=size, constrain=False, toSelection=False)[0]
-    locUp = cmds.rename(locUp, locUp.replace('PLACE', 'UP'))
-    #locs.append(locUp)
+    locUp = cn.locator(obj=objBase, ro='zxy', X=size, constrain=False, toSelection=False, suffix='__UP__')[0]
     #print locUp
     #parent up locator, move up in ty, unparent
     cmds.parent(locUp, locB)
@@ -217,8 +211,8 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     cmds.parentConstraint(objBase, locUp, mo=1)
     #parent locUp to locator A, bake up locator
     cmds.parent(locUp, locA)
-    bakeConstrained(locUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
-    matchKeyedFrames(AAA=objAim, BBB=locUp, subtractive=True)
+    cn.bakeConstrained(locUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.matchKeyedFrames(AAA=objAim, BBB=locUp, subtractive=True)
     #aim constrain Locator A to B, using up locator as up vector
     cmds.aimConstraint(locA, locB, wut='object', wuo=locUp, aim=aim, u=u, mo=1)
     return locs
@@ -227,23 +221,19 @@ def parentRig(bake=False):
     #store selection
     sel = cmds.ls(sl=True)
     #place 3 locators on selection
-    loc1 = locator(obj=sel[0], constrain=False, X=1) #add option to bake with matching keys
-    loc2 = locator(obj=sel[1], constrain=False, X=1)
-    spin = locator(obj=sel[1], constrain=False, X=1)
+    offset = cn.locator(obj=sel[0], constrain=False, X=1, suffix='__OFFSET__')[0]
+    root   = cn.locator(obj=sel[1], constrain=False, X=1, suffix='__ROOT__')[0]
+    spin   = cn.locator(obj=sel[1], constrain=False, X=1, suffix='__SPIN__')[0]
     #rename
-    offset = cmds.rename(loc1, sel[0] + '__OFFSET')
-    spin = cmds.rename(spin, sel[0] + '__SPIN')
-    root = cmds.rename(loc2, sel[0] + '__ROOT')
     cmds.parent(offset, spin)
     cmds.parent(spin, root)
     cmds.parentConstraint(sel[1], root, mo=True)
     #bake anim to offset loc
     cmds.parentConstraint(sel[0], offset, mo=True)
-    cmds.select(sel[0], offset)
-    matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
-    bakeConstrained(offset, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(offset, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
     #create final rig constraints
-    constrainEnabled(offset, sel[0], mo=True)
+    cn.constrainEnabled(offset, sel[0], mo=True)
     #cmds.parentConstraint(offset, sel[0], mo=True)
-    locSize(root, X=0.1)
+    cn.locSize(root, X=0.1)
     cmds.select(offset)

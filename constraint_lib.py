@@ -407,7 +407,7 @@ def bakeConstrainedSelection(sparseKeys=True, removeConstraint=True, timeLine=Fa
     else:
         cmds.warning('Select constrained object(s)')
 
-def controllerToLocator(obj=None, p=True, r=True, sparseKeys=True, timeLine=False, sim=False, size=1.0, uiOff=True, color=07):
+def controllerToLocator(obj=None, p=True, r=True, sparseKeys=True, timeLine=False, sim=False, size=1.0, uiOff=True, color=07, suffix='__BAKE__'):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -434,7 +434,7 @@ def controllerToLocator(obj=None, p=True, r=True, sparseKeys=True, timeLine=Fals
     if len(sel) != 0:
         for item in sel:
             #setup locator
-            lc = cmds.spaceLocator(name=item + '__BAKE__')[0]
+            lc = cmds.spaceLocator(name=item + suffix)[0]
             locSize(lc, X=size)
             objColor(lc, color=color)
             cmds.setAttr(lc + '.sx', k=False, cb=True)
@@ -523,9 +523,11 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         cmds.xform(lc, roo=ro )
         if constrain == True:
             if toSelection:
-                cmds.parentConstraint(obj, lc, mo=True)
+                constrainEnabled(obj, lc, mo=True)
+                #cmds.parentConstraint(obj, lc, mo=True)
             else:
-                cmds.parentConstraint(lc, obj, mo=True)
+                constrainEnabled(lc, obj, mo=True)
+                #cmds.parentConstraint(lc, obj, mo=True)
     else:
         loc = cmds.spaceLocator()[0]
         cmds.xform(loc, roo=ro )
@@ -575,15 +577,19 @@ def constrainEnabled(obj1, obj2, mo=True):
     allState = [tState, rState]
     if False not in allState:
         cnAll = cmds.parentConstraint(obj1, obj2, mo=mo)
+        print 'here ========='
         return cnAll
     else:
+        print 'there ========='
         result = []
         #if translates are keyable constrain locator and store constraint in cnT
         if tState == True:
+            print 1000000000
             cnT = cmds.pointConstraint(obj1, obj2, mo=mo)
             result.append(cnT)
         #if rotations are keyable constrain locator and store constraint in cnR
         if rState == True:
+            print 22222222222
             cnR = cmds.orientConstraint(obj1, obj2, mo=mo)
             result.append(cnR)
         return result[0]

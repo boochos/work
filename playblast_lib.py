@@ -251,7 +251,7 @@ def blastWin():
         height    = getDefaultHeight()
         col0      = 20
         col1      = 200
-        col2      = 300
+        col2      = 250
         col3      = 50
         width     = col1+col2+col3
         wAdd      = scrollBar+10
@@ -330,16 +330,23 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     cmds.formLayout(f, e=1, af=(chkBx, 'left', 4))
 
     #icon
+    padW = 0
+    padH = 0
     cmdI = 'partial( openSelected, path = path )'
     iconH = col[1]*(h/w)
     iconW = col[1]
     if iconH > height:
         iconH = height
         iconW = iconH*(w/h)
+        padW = int((col[1] - iconW)/2)
+    if iconW < col[0]:
+        padW = int((col[1] - iconW)/2)
+    if iconH < height:
+        padH = int((height - iconH)/2)
     iconBtn = cmds.iconTextButton(blastDir + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir, w=iconW, h=iconH)
-    cmds.formLayout(f, e=1, af=(iconBtn, 'bottom', 0))
-    cmds.formLayout(f, e=1, af=(iconBtn, 'top', 0))
-    cmds.formLayout(f, e=1, af=(iconBtn, 'left', col[0]))
+    #cmds.formLayout(f, e=1, af=(iconBtn, 'bottom', padH))
+    cmds.formLayout(f, e=1, af=(iconBtn, 'top', padH))
+    cmds.formLayout(f, e=1, af=(iconBtn, 'left', col[0] + padW))
 
     #delete
     cmds.setParent(f)
@@ -352,19 +359,22 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     #meta
     pt    = '.../' + path.split(getDefaultPath())[1] + '\n'
     #sc    = 'Scene Name:  ' + blastDir + '\n'
-    im    = 'Image Name:  ' + imageName + '\n'
+    im    = 'Name:  ' + imageName + '\n'
     di    = 'Dimensions:  ' + str(int(w)) + ' x ' + str(int(h)) + '\n'
     fr    = 'Range: ' + str(int(imageRange[0])) + '  -  ' + str(int(imageRange[1])) + '\n'
     le    = 'Length: ' + str(int(imageRange[1]-imageRange[0]+1)) + '\n'
     dt    = 'Date:  ' + getDirectoryDate(path)
     label = pt+im+di+fr+le+dt
-
+    #
     metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path),
     l=label, h=height, align='left', bgc = [0.2,0.2,0.2])
     cmds.formLayout(f, e=1, af=(metaBtn, 'bottom', 0))
     cmds.formLayout(f, e=1, af=(metaBtn, 'top', 0))
     cmds.formLayout(f, e=1, af=(metaBtn, 'left',col[1]+col[0]))
-    cmds.formLayout(f, e=1, af=(metaBtn, 'right', col[3]))
+    #cmds.formLayout(f, e=1, af=(metaBtn, 'right', col[3]))
+    #
+    attachForm = [(metaBtn,'right', 0, delBtn)]
+    cmds.formLayout(f, edit=True, attachControl=attachForm)
 
     return f
 

@@ -59,9 +59,9 @@ class CSUI(object):
         if v5:
             btn = cmds.radioCollection(self.actionColumn.col1, q=True, sl=True)
             lab = cmds.radioButton(btn, q=True, l=True)
-            if 'Selection' in lab:
+            if 'selection' in lab: #string dependant on query working, dont change UI
                 sl = True
-        print sl, '========='
+        #print sl, '========='
         cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
 
     def cmdBakeToLoc(self,*args):
