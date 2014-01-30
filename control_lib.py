@@ -10,7 +10,7 @@ def message(what='', maya=True):
     else:
         print what
 
-def exportCurveShape(name=''):
+def exportShape(name=''):
     '''
     #-------------
     #Name        :exportCurveShape
@@ -38,7 +38,7 @@ def exportCurveShape(name=''):
         message( 'Select one curve to export' )
 
 
-def importCurveShape(name, path, scale=1.0):
+def importShape(name, path, scale=1.0):
     '''
     #-------------
     #Name        :importCurveShape
