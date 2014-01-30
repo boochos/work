@@ -1,7 +1,6 @@
 import os
 import maya.cmds as cmds
-import maya.OpenMaya as OpenMaya
-import atom_miscellaneous_lib as misc
+
 
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
