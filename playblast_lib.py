@@ -68,7 +68,7 @@ def blastRange():
         max = blast[1]
     return min, max
 
-def sceneName(full=False):
+def sceneName(full=False, suffix=None):
     sceneName = cmds.file(q=True, sn=True)
     if full:
         return sceneName
@@ -82,6 +82,8 @@ def sceneName(full=False):
     if '(' in sceneName or ')' in sceneName:
         sceneName = sceneName.replace('(','__')
         sceneName = sceneName.replace(')','__')
+    if suffix:
+        sceneName = sceneName + suffix
     return sceneName
 
 def shotDir():
@@ -109,7 +111,7 @@ def createBlastPath(suffix=''):
     '''
     createPath(path = blastDir())
     createPath(path = blastDir() + shotDir2())
-    path = createPath(path = blastDir() + shotDir2()+ sceneName()) + suffix + '/' + sceneName()
+    path = createPath(blastDir() + shotDir2()+ sceneName() + suffix + '/') + sceneName() + suffix
     return path
 
 def blastDir(forceTemp=True):
@@ -192,11 +194,10 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
             if 'image' not in format:
                 path = cmds.playblast(format=format, filename=shotDir2()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
-                createBlastPath('_Russian')
                 playLo, playHi, current = getRange()
                 w = w * x
                 h = h * x
-                path = cmds.playblast(format='image', filename=createBlastPath(''), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                path = cmds.playblast(format='image', filename=createBlastPath('_Russian'), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
                 rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
                 print rvString
                 os.system(rvString)
@@ -263,7 +264,7 @@ def blastWin():
         col1      = 200
         col2      = 250
         col3      = 50
-        width     = col1+col2+col3
+        width     = col0+col1+col2+col3
         wAdd      = scrollBar+10
         #status
         detectCompatibleStructure(rootDir)
@@ -386,8 +387,8 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     dt    = getDirectoryDate(path)
     label = pt+im+di+fr+le+dt
     #
-    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path),
-    l=label, h=height, align='left', bgc = [0.2,0.2,0.2])
+    #metaBtn = cmds.button(blastDir + '_Meta', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height, w=col[2], align='left')
+    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height, align='center', fn='boldLabelFont', bgc = [0.2,0.2,0.2], w=col[2])
     cmds.formLayout(f, e=1, af=(metaBtn, 'bottom', 0))
     cmds.formLayout(f, e=1, af=(metaBtn, 'top', 0))
     cmds.formLayout(f, e=1, af=(metaBtn, 'left',col[1]+col[0]))

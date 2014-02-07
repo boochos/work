@@ -419,7 +419,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         #check if new constraint blend attr is created after keying
         new = cmds.listAttr(obj, k=True)
         created = list(set(new)-set(old))
-        if len(created) != 0:
+        if len(created):
             for attr in created:
                 cmds.setKeyframe(obj + '.' + attr, v=1)
     #print attrs
@@ -442,6 +442,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         else:
             bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
             #message('no keys')
+    cmds.keyTangent( attrs, edit=True, itt='auto', ott='auto')
     cmds.currentTime(current)
     cmds.autoKeyframe(state=autoK)
     if uiOff:
@@ -826,7 +827,7 @@ class AnimCrv(Key):
 def bakeUndo():
     que = cmds.undoInfo(q=1,un=1)
     #only run if undo que has a keyframe -edit entry
-    if 'bake' in que.lower() or 'changeRO' in que.lower() or 'changeRo' in que.lower():
+    if 'bake' in que.lower() or 'changeRO' in que.lower() or 'changeRo' in que.lower() or 'Rig' in que.lower() or 'switch' in que.lower():
         uiEnable()
         cmds.undo()
         uiEnable()

@@ -92,8 +92,10 @@ def jobValue(*args):
                                 val  = cmds.keyframe(crv, q=True, vc=True, time=(f, f))[0]
                                 if glval < lcVal:
                                     cmds.keyframe(crv, vc=val+(offset*blnd), time=(f, f))
+                                    #cmds.keyTangent( crv, edit=True, itt='auto', ott='auto', time=(f, f))
                                 elif glval > lcVal:
                                     cmds.keyframe(crv, vc=val-(offset*blnd), time=(f, f))
+                                    #cmds.keyTangent( crv, edit=True, itt='auto', ott='auto', time=(f, f))
                             b=b+1
                         #reset global, stops loop from running!!!
                         glVal[c][v] = lcVal

@@ -254,4 +254,5 @@ def smoothKeys(weight=1.0):
                         else:
                             val = x - keyPos
                         cmds.keyframe(crv, vc=val, time=(frame, frame))
+                        cmds.keyTangent( crv, edit=True, itt='auto', ott='auto', time=(frame, frame))
                     i=i+1
