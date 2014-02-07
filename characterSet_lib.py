@@ -465,7 +465,7 @@ def toggleMembershipToCurrentSet():
     current = GetSetOptions()
     current.currentSet()  #add if current == None, return message and bail
     sel = cmds.ls(sl=True)
-    print sel
+    #print sel
     output = None
     # change this to ask for selected channelBox attrs fist, if None, work with entire object
     if len(sel) == 1:
@@ -480,7 +480,7 @@ def toggleMembershipToCurrentSet():
             pass
         #object attr toggle
         if attrs != None:
-            print '__1'
+            #print '__1'
             for attr in attrs:
                 if cmds.character(obj + '.' + attr,  im=current.currentSet()) == False:
                     print attr, obj
@@ -491,7 +491,7 @@ def toggleMembershipToCurrentSet():
                     print attr, '  removed'
         #shape attr toggle
         elif shapeAttrs:
-            print '__2'
+            #print '__2'
             for attr in shapeAttrs:
                 if cmds.character(shape + '.' + attr,  im=current.currentSet()) == False:
                     cmds.character(shape + '.' + attr, fe=current.currentSet())
@@ -500,7 +500,7 @@ def toggleMembershipToCurrentSet():
                     output = cmds.character(shape + '.' + attr, rm=current.currentSet())
                     print attr, '  removed'
         else:
-            print 'there'
+            #print 'there'
             members = cmds.character(current.currentSet(), q=True)
             membersObj = []
             if members:

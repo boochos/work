@@ -24,9 +24,13 @@ def message(what='', maya=False):
         print what
 
 def getDefaultPath():
-    return '/var/tmp/___A___PLAYBLAST___A___/'
+    return '/var/tmp/rv_playblasts/'
+    #return '/var/tmp/___A___PLAYBLAST___A___/'
 
 def getDefaultHeight():
+    '''
+    relating to pb man row height
+    '''
     return 100
 
 def getRange():
@@ -95,7 +99,8 @@ def createPath(path):
     if not os.path.isdir(path):
         os.mkdir(path)
     else:
-        print "-- path:   '" + path + "'   already exists --"
+        pass
+        #print "-- path:   '" + path + "'   already exists --"
     return path
 
 def createBlastPath(suffix=''):
@@ -133,7 +138,7 @@ def blastDir(forceTemp=True):
                 return project + 'movies/'
             else:
                 message('Project likely not set', maya=True)
-                print None, '____'
+                #print None, '____'
                 return None
                 #print project, 'here'
                 #print scene, 'here'
@@ -158,10 +163,11 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
         if not blastDir():
             message('Set project', maya=True)
         else:
-            print blastDir(), '   blastdir'
+            #print blastDir(), '   blastdir'
             pbName = blastDir()+sceneName()
             if os.path.exists(pbName):
-                print True
+                #print True
+                pass
             if 'image' not in format:
                 path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
                 path = cmds.playblast(format=format, filename=blastDir()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
@@ -181,7 +187,8 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
         else:
             pbName = shotDir2()+sceneName()
             if os.path.exists(pbName):
-                print True
+                #print True
+                pass
             if 'image' not in format:
                 path = cmds.playblast(format=format, filename=shotDir2()+sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
@@ -259,7 +266,9 @@ def blastWin():
         width     = col1+col2+col3
         wAdd      = scrollBar+10
         #status
+        detectCompatibleStructure(rootDir)
         blastDirs = getBlastDirs(rootDir)
+        print blastDirs
         if blastDirs:
             f2 = cmds.formLayout('subForm' + suf, h=height*len(blastDirs), w=width, bgc=[0.17,0.17,0.17])
             cmds.refresh(f=1)
@@ -270,20 +279,28 @@ def blastWin():
             num = len(blastDirs)-1
             #print blastDirs
             for blastDir in blastDirs:
-                cmds.setParent(f2)
-                if j == 0:
-                    attach = ''
+                contents = os.listdir(blastDir)
+                if contents:
+                    cmds.setParent(f2)
+                    if j == 0:
+                        attach = ''
+                    else:
+                        attach = blastDirs[j-1]
+                    if j >= num:
+                        below = ''
+                    else:
+                        below = blastDirs[j+1]
+                    #print blastDir
+                    buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
+                    j=j+1
+                    cmds.refresh(f=1)
                 else:
-                    attach = blastDirs[j-1]
-                if j >= num:
-                    below = ''
-                else:
-                    below = blastDirs[j+1]
-                #print blastDir
-                buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
-                j=j+1
-                cmds.refresh(f=1)
-            cmds.window(win, e=1, w=width+wAdd, h=(height*5)+scrollBarOffset)
+                    #rebuild
+                    shutil.rmtree(blastDir)
+                    cmds.deleteUI(winName)
+                    blastWin()
+                    break
+            cmds.window(win, e=1, w=width+wAdd, h=(height*4)+scrollBarOffset)
             cmds.refresh(f=1)
     else:
         cmds.deleteUI(winName)
@@ -360,13 +377,13 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
 
     #meta
-    pt    = '.../' + path.split(getDefaultPath())[1] + '\n'
+    pt    = path.split(getDefaultPath())[1].split('/')[0] + '\n'
     #sc    = 'Scene Name:  ' + blastDir + '\n'
-    im    = 'Name:  ' + imageName + '\n'
-    di    = 'Dimensions:  ' + str(int(w)) + ' x ' + str(int(h)) + '\n'
-    fr    = 'Range: ' + str(int(imageRange[0])) + '  -  ' + str(int(imageRange[1])) + '\n'
-    le    = 'Length: ' + str(int(imageRange[1]-imageRange[0]+1)) + '\n'
-    dt    = 'Date:  ' + getDirectoryDate(path)
+    im    = imageName + '\n'
+    di    = str(int(w)) + ' x ' + str(int(h)) + '\n'
+    fr    = str(int(imageRange[0])) + 'f  -  ' + str(int(imageRange[1])) + 'f\n'
+    le    = str(int(imageRange[1]-imageRange[0]+1)) + ' frames\n'
+    dt    = getDirectoryDate(path)
     label = pt+im+di+fr+le+dt
     #
     metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path),
@@ -434,10 +451,13 @@ def updateRows(row='', attachRow='', belowRow=''):
     updateRowCmd(row, attachRow, belowRow)
     #update height scroll, form
     num = getBlastDirs(getDefaultPath())
-    num = len(num)
-    num = getDefaultHeight() * num
     if num:
-        cmds.formLayout(parent, e=1, h=num)
+        num = len(num)
+        num = getDefaultHeight() * num
+        if num:
+            cmds.formLayout(parent, e=1, h=num)
+        else:
+            cmds.formLayout(parent, e=1, h=1)
     else:
         cmds.formLayout(parent, e=1, h=1)
 
@@ -475,43 +495,50 @@ def confirmCmd():
     '''
     pass
 
-def detectCompatibleStructure(path=''):
-    root = getContentsType(path, directory=1)
+def detectCompatibleStructure(path='', destructive=True):
+    '''
+    structure hard coded for now:
+    ie. defaultDir/shot/sceneName
+    '''
+    rebuild = False
+    root = getContentsType(path, directory=1, destructive=True)
     if root:
         for r in root:
-            shot = getContentsType(r, directory=1)
+            #print r, '======'
+            shot = getContentsType(r, directory=1, destructive=True)
             if shot:
+                #print shot, '======'
                 for s in shot:
-                    scene = getContentsType(s, directory=0)
+                    scene = getContentsType(s, directory=0, destructive=True)
                     if scene:
+                        message('Directory structure is good')
                         return None
-                    else:
-                        #rebuild
-                        pass
-            else:
-                #rebuild
-                pass
-    else:
-        #rebuild
-        pass
 
-    createPath(path)
-    return None
-
-def getContentsType(path='', directory=False):
+def getContentsType(path='', directory=False, destructive=False):
+    '''
+    directory = True  (returns path if directory found in given path)
+    directory = False (returns path if file found in given path)
+    returns None if criteria is not met
+    '''
     d = not directory
     fullPaths = []
     if os.path.isdir(path) and os.access(path, os.R_OK):
-        #check for files, no files should exist
+        #list contents
         pathContents = os.listdir(path)
         for c in pathContents:
             fp = os.path.join(path,c)
             fullPaths.append(fp)
+            #query type
             if  os.path.isdir(fp) == d:
-                #file found
+                #wrong type found
                 message('wrong type found:   ' + fp)
-                #rebuild directory
-                return None
+                if destructive:
+                    #delete
+                    if  os.path.isdir(fp):
+                        shutil.rmtree(fp)
+                    else:
+                        os.remove(fp)
+                    message('DELETING:   ' + fp)
         return fullPaths
 
 def findDeleteControl(row=''):
@@ -522,29 +549,46 @@ def findDeleteControl(row=''):
 
 def getIcon(path=''):
     images = os.listdir(str(path))
-    icon = os.path.join(path, images[0])
-    #print icon
-    return icon
+    if images:
+        icon = os.path.join(path, images[0])
+        #print icon
+        return icon
+    else:
+        return None
 
 def getIconSize(path=''):
-    dim = subprocess.Popen(["identify","-format","\"%w,%h\"",path], stdout=subprocess.PIPE).communicate()[0]
-    s = dim.split(',')
-    w = float(s[0].split('"')[1])
-    h = float(s[1].split('"')[0])
-    return w, h
+    if path:
+        dim = subprocess.Popen(["identify","-format","\"%w,%h\"",path], stdout=subprocess.PIPE).communicate()[0]
+        s = dim.split(',')
+        w = float(s[0].split('"')[1])
+        h = float(s[1].split('"')[0])
+        return w, h
+    else:
+        return 0, 0
 
 def getImageRange(path=''):
     images = os.listdir(str(path))
-    images =  sorted(images)
-    start  = float(images[0].split('.')[1])
-    end    = float(images[len(images)-1].split('.')[1])
-    return start, end
+    if images:
+        i = 0
+        for image in images:
+            if os.path.isdir(os.path.join(path, image)):
+                images.pop(i)
+            i = i + 1
+        images =  sorted(images)
+        start  = float(images[0].split('.')[1])
+        end    = float(images[len(images)-1].split('.')[1])
+        return start, end
+    else:
+        return None
 
 def getImageName(path=''):
     images = os.listdir(str(path))
-    im = images[0].split('.')
-    name = im[0] + '.*.' + im[2]
-    return name
+    if images:
+        im = images[0].split('.')
+        name = im[0] + '.*.' + im[2]
+        return name
+    else:
+        return None
 
 def openSelected(path=''):
     if os.name is 'nt':
@@ -583,31 +627,39 @@ def getBlastDirs(path=''):
     if os.path.isdir(path) and os.access(path, os.R_OK):
         #shot dirs
         shots = getShotDirs(path)
-        #print shots, '  shots'
-        #Populate the directories and non-directories for organization
-        dirs      = []
-        nonDir    = []
-        sortedDir = []
-        #list shots in the default path
-        for shot in shots:
-            mtime = lambda f: os.stat(os.path.join(shot, f)).st_mtime
-            contents  = list(sorted(os.listdir(shot), key=mtime))
-            #print contents
-            if len(contents) > 0:
-                #This will error if 'u' objects are fed into a list
-                #pick out the directories
-                for i in contents:
-                    if i[0] != '.':
-                        if os.path.isdir(os.path.join(shot, i)):
-                            dirs.append(os.path.join(shot,i))
-                        else:
-                            nonDir.append(i)
-                for d in reversed(dirs):
-                    if d not in sortedDir:
-                        sortedDir.append(d)
-        #ww = lambda f: os.stat(dirs).st_mtime
-        #www = sorted(dirs, key=mtime)
-        return sortedDir
+        if shots:
+            #print shots, '  shots'
+            #Populate the directories and non-directories for organization
+            dirs      = []
+            nonDir    = []
+            sortedDir = []
+            #list shots in the default path
+            for shot in shots:
+                mtime = lambda f: os.stat(os.path.join(shot, f)).st_ctime
+                if os.path.isdir(shot):
+                    contents  = list(sorted(os.listdir(shot), key=mtime))
+                else:
+                    message('skipping ' + shot + '  Expected directory! DELETING!')
+                    os.remove(shot)  ####do this where inappropriate stuff is found
+                #print contents
+                if len(contents) > 0:
+                    #This will error if 'u' objects are fed into a list
+                    #pick out the directories
+                    for i in contents:
+                        if i[0] != '.':
+                            if os.path.isdir(os.path.join(shot, i)):
+                                dirs.append(os.path.join(shot,i))
+                            else:
+                                nonDir.append(i)
+                else:
+                    shutil.rmtree(shot)
+            dirs = sorted(dirs, key=mtime)
+            for i in reversed(dirs):
+                sortedDir.append(i)
+
+            return sortedDir
+        else:
+            return None
     else:
         createPath(path)
         return None

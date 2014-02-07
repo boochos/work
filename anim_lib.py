@@ -201,36 +201,30 @@ def nonKey(obj):
 def changeRO(obj, ro):
     '''
     '''
-    cn.uiEnable(controls='modelPanel', toggle=True)
-    r = getRange()
-    autoK = cmds.autoKeyframe(q=True, state=True)
-    cmds.autoKeyframe(state=False)
-    min =r[0]
-    max =r[1]
-    current = r[2]
-    i = min
-    origRO = cmds.getAttr(obj + '.rotateOrder')
-    cmds.currentTime(i)
-    cmds.currentTime(cmds.findKeyframe(which='previous'))
-    cmds.xform(obj, roo=ro)
-    keyframes = keyedFrames(obj)
-    for key in keyframes:
-        cmds.currentTime(key)
-        cmds.setAttr(obj + '.rotateOrder', origRO)
+    if cmds.getAttr(obj + '.rotateOrder', settable=1):
+        cn.uiEnable(controls='modelPanel', toggle=True)
+        r = getRange()
+        autoK = cmds.autoKeyframe(q=True, state=True)
+        cmds.autoKeyframe(state=False)
+        min =r[0]
+        max =r[1]
+        current = r[2]
+        i = min
+        origRO = cmds.getAttr(obj + '.rotateOrder')
+        cmds.currentTime(i)
+        cmds.currentTime(cmds.findKeyframe(which='previous'))
         cmds.xform(obj, roo=ro)
-        cmds.setKeyframe(obj + '.rotate')
-    '''
-    while (cmds.currentTime(q=True) != cmds.findKeyframe(which='next')):
-        #may be problematic if autokeyframe is off
-        next = cmds.currentTime(cmds.findKeyframe(which='next'))
-        cmds.setAttr(obj + '.rotateOrder', origRO)
-        cmds.xform(obj, roo=ro)
-        if cmds.currentTime(q=True) > max:
-            break
-    '''
-    cmds.currentTime(current)
-    cmds.autoKeyframe(state=autoK)
-    cn.uiEnable(controls='modelPanel', toggle=True)
+        keyframes = keyedFrames(obj)
+        for key in keyframes:
+            cmds.currentTime(key)
+            cmds.setAttr(obj + '.rotateOrder', origRO)
+            cmds.xform(obj, roo=ro)
+            cmds.setKeyframe(obj + '.rotate')
+        cmds.currentTime(current)
+        cmds.autoKeyframe(state=autoK)
+        cn.uiEnable(controls='modelPanel', toggle=True)
+    else:
+        message('FAIL. Rotate order is LOCKED or CONNECTED to a custom attribute.', maya=True)
 
 def keyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)

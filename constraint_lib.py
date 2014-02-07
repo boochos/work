@@ -97,7 +97,7 @@ def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
     #add additive or destructive
     #keyed frames on AAA
     framesAdd = keyedFrames(AAA)
-    print framesAdd
+    #print framesAdd
     #list attrs on BBB and add key
     old = cmds.listAttr(BBB, k=True)
     for attr in old:
@@ -232,6 +232,14 @@ class reConnect():
             except:
                 message('Failed Connection -- ' + self.pairs[key] + ' -- to -- ' + key)
 
+def updateConstraintOffset(obj=''):
+    #find target
+    obj2= 'chappieAnimationRig:l_elbowPV_CTRL__BAKE__'
+    #find constraint
+    con2= 'l_elbowPV_CTRL_parentConstraint1'
+    #update
+    cmds.parentConstraint(obj2, con2, e=1, maintainOffset=1)
+
 def updateConstrainedCurves(obj=None, sim=False):
     if obj == None:
         obj = cmds.ls(sl=True)
@@ -240,7 +248,7 @@ def updateConstrainedCurves(obj=None, sim=False):
             return None
         else:
             obj = cmds.ls(sl=True)[0]
-    print obj
+    #print obj
     #getBlendAttr returns list, need for loop
     blndAttrs = getBlendAttr(obj)
     blndAttrState = []
@@ -360,44 +368,133 @@ def deleteList(objects):
             cmds.delete(obj)
             message(typ + ' | ' + obj + '  is deleted')
 
-def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
+def bakeStepConstraint():
+    old = cmds.listAttr(BBB, k=True)
+    for attr in old:
+        try:
+            if cmds.setKeyframe(BBB + '.' + attr, i=True) == 0:
+                cmds.setKeyframe(BBB + '.' + attr)
+        except:
+              print 'sanity check: FAILED ATTRS ____', BBB, attr
+    #check if new constraint blend attr is created after keying
+    new = cmds.listAttr(BBB, k=True)
+    created = list(set(new)-set(old))
+    if len(created) != 0:
+        for attr in created:
+            cmds.setKeyframe(BBB + '.' + attr, v=1)
+
+def bakeStep(obj, time=(), sim=False, uiOff=False):
+    '''
+    custom bake function
+    sim = keys only, dont step through frame at a time
+    '''
+    if uiOff:
+        uiEnable(controls='modelPanel', toggle=True)
+    #r = getRange()
+    attrs   = []
+    min     = time[0]
+    max     = time[1]
+    i       = min
+    current   = cmds.currentTime(q=1)
+    keyframes = keyedFrames(obj)
+    autoK     = cmds.autoKeyframe(q=True, state=True)
+    cmds.autoKeyframe(state=False)
+    #find atttrs from constraint or pairblend
+    drivenP = getDrivenAttrsByNodeType(obj, typ='pairBlend')
+    if drivenP:
+        for attr in drivenP:
+            attrs.append(attr)
+    drivenC = getDrivenAttrsByNodeType(obj, typ='constraint')
+    if drivenC:
+        for attr in drivenC:
+            attrs.append(attr)
+        #handle blend attr, weight to one
+        old = cmds.listAttr(obj, k=True)
+        for attr in old:
+            try:
+                if cmds.setKeyframe(obj + '.' + attr, i=True) == 0:
+                    cmds.setKeyframe(obj + '.' + attr)
+            except:
+                print 'sanity check: FAILED ATTRS ____', obj, attr
+        #check if new constraint blend attr is created after keying
+        new = cmds.listAttr(obj, k=True)
+        created = list(set(new)-set(old))
+        if len(created) != 0:
+            for attr in created:
+                cmds.setKeyframe(obj + '.' + attr, v=1)
+    #print attrs
+    cmds.currentTime(i)
+    #
     if sim:
-        if uiOff:
-            uiEnable()
+        while i <= max:
+            cmds.currentTime(i)
+            #what am i keying  ???
+            for attr in attrs:
+                cmds.setKeyframe(attr)
+            i = i+1
+    else:
+        cmds.currentTime(cmds.findKeyframe(which='previous'))
+        if keyframes:
+            for key in keyframes:
+                cmds.currentTime(key)
+                for attr in attrs:
+                    cmds.setKeyframe(attr)
+        else:
+            bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
+            #message('no keys')
+    cmds.currentTime(current)
+    cmds.autoKeyframe(state=autoK)
+    if uiOff:
+        uiEnable(controls='modelPanel', toggle=True)
+
+def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
+    # add function to step through frames instead of using bake results
+    if uiOff:
+        uiEnable()
     gRange = GetRange()
     cons = getConstraint(obj)
     blndAttr = getBlendAttr(obj, delete=False)
     keyedOrig = keyedFrames(obj)
+    #print 'start baking\n'
     if timeLine == True:
         message('Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
-        cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
+        #cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
+        bakeStep(obj, time=(gRange.start,gRange.end), sim=sim)
+        #print 'done baking\n'
     else:
         if keyedOrig != None:
             message('Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
             if gRange.keyStart == gRange.keyEnd:
-                cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
+                #cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
+                bakeStep(obj, time=(gRange.start,gRange.end), sim=sim)
                 message('Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
+                #print 'done baking\n'
             else:
-                cmds.bakeResults( obj, t=(gRange.keyStart,gRange.keyEnd), simulation=sim, pok=True)
+                #cmds.bakeResults( obj, t=(gRange.keyStart,gRange.keyEnd), simulation=sim, pok=True)
+                bakeStep(obj, time=(gRange.keyStart,gRange.keyEnd), sim=sim)
                 message('Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
+                #print 'done baking\n'
         else:
             message("Target object has no keys. Can't bake to keyed timeline.  Bake range: " + str(gRange.start) + ' - ' + str(gRange.end))
-            cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
+            #cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
+            bakeStep(obj, time=(gRange.start,gRange.end), sim=sim)
+            #print 'done baking\n'
     keyedBake = keyedFrames(obj)
+    #print 'frames\n'
     eulerFilter(obj)
     if removeConstraint == True:
         deleteList(cons)
         deleteAttrList(blndAttr)
     if sparseKeys:
-        if keyedOrig != None:
+        if keyedOrig:
             for key in keyedBake:
                 if key not in keyedOrig:
                     cmds.cutKey(obj, t=(key,key))
         else:
             message("Baked! Didn't create sparseKeys. Object had no keys.")
-    if sim:
-        if uiOff:
-            uiEnable()
+    #print 'done\n'
+    if uiOff:
+        uiEnable()
 
 def bakeConstrainedSelection(sparseKeys=True, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
     sel = cmds.ls(sl=True)
@@ -577,19 +674,17 @@ def constrainEnabled(obj1, obj2, mo=True):
     allState = [tState, rState]
     if False not in allState:
         cnAll = cmds.parentConstraint(obj1, obj2, mo=mo)
-        print 'here ========='
+        #print 'here ========='
         return cnAll
     else:
-        print 'there ========='
+        #print 'there ========='
         result = []
         #if translates are keyable constrain locator and store constraint in cnT
         if tState == True:
-            print 1000000000
             cnT = cmds.pointConstraint(obj1, obj2, mo=mo)
             result.append(cnT)
         #if rotations are keyable constrain locator and store constraint in cnR
         if rState == True:
-            print 22222222222
             cnR = cmds.orientConstraint(obj1, obj2, mo=mo)
             result.append(cnR)
         return result[0]
@@ -728,4 +823,12 @@ class AnimCrv(Key):
             key.obj = self.obj
             key.put()
 
-    
+def bakeUndo():
+    que = cmds.undoInfo(q=1,un=1)
+    #only run if undo que has a keyframe -edit entry
+    if 'bake' in que.lower() or 'changeRO' in que.lower() or 'changeRo' in que.lower():
+        uiEnable()
+        cmds.undo()
+        uiEnable()
+    else:
+        cmds.undo()
