@@ -226,6 +226,57 @@ def changeRO(obj, ro):
     else:
         message('FAIL. Rotate order is LOCKED or CONNECTED to a custom attribute.', maya=True)
 
+class SpaceSwitch():
+    def __init__(self, obj):
+        self.obj  = obj
+        self.mtrx = []
+        self.keys = keyedFrames(self.obj)
+
+    def storeXform(self):
+        '''
+        store animation
+        '''
+        #make sure o
+        if self.keys:
+            current = cmds.currentTime(q=True)
+            #ui off
+            cn.uiEnable(controls='modelPanel', toggle=True)
+            #autokey state
+            autoK = cmds.autoKeyframe(q=True, state=True)
+            cmds.autoKeyframe(state=False)
+            for key in self.keys:
+                cmds.currentTime(key)
+                self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
+            #restore everything
+            cmds.currentTime(current)
+            cmds.autoKeyframe(state=autoK)
+            cn.uiEnable(controls='modelPanel', toggle=True)
+        else:
+            message('No keys.', maya=True)
+            
+    def restoreXform(self):
+        '''
+        restore animation
+        '''
+        if self.keys:
+            current = cmds.currentTime(q=True)
+            #ui off
+            cn.uiEnable(controls='modelPanel', toggle=True)
+            #autokey state
+            autoK = cmds.autoKeyframe(q=True, state=True)
+            cmds.autoKeyframe(state=False)
+            i=1
+            for key in self.keys:
+                cmds.currentTime(key)
+                cmds.xform(self.obj, m=self.mtrx[i], ws=True))
+                i = i + 1
+            #restore everything
+            cmds.currentTime(current)
+            cmds.autoKeyframe(state=autoK)
+            cn.uiEnable(controls='modelPanel', toggle=True)
+        else:
+            message('No keys.', maya=True)
+        
 def keyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
     if animCurves != None:
