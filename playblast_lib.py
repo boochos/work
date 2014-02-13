@@ -27,6 +27,9 @@ def getDefaultPath():
     return '/var/tmp/rv_playblasts/'
     #return '/var/tmp/___A___PLAYBLAST___A___/'
 
+def getWipe():
+    return 'wipe_PB'
+
 def getDefaultHeight():
     '''
     relating to pb man row height
@@ -197,8 +200,11 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
                 playLo, playHi, current = getRange()
                 w = w * x
                 h = h * x
-                path = cmds.playblast(format='image', filename=createBlastPath('_Russian'), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
-                rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
+                path = cmds.playblast(format='image', filename=createBlastPath(''), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                if path:
+                    rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #not escaped
+                else:
+                    rvString = 'rv ' + '[ ' + createBlastPath('') + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #escaped
                 print rvString
                 os.system(rvString)
                 cmds.currentTime(current)
@@ -227,25 +233,34 @@ def blastWin():
         cmds.showWindow()
         #text field
         #field        = cmds.textField('defaultPath1', text=rootDir)
-        field        = cmds.text('defaultPath1', label=' Default Path:    ' + rootDir, align='left')
+        field        = cmds.button('defaultPath1', label=rootDir, align='left', h=24, c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (rootDir))
         cmds.formLayout(f1, e=1, af=(field, 'top', 5))
         cmds.formLayout(f1, e=1, af=(field, 'left', 5))
         cmds.formLayout(f1, e=1, af=(field, 'right', 5))
         cmds.refresh(f=1)
         #refresh button
-        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=24, bgc=[0.3, 0.3, 0.3])
+        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=24)
         attachForm = [(refBtn,'top', 2, field)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
         cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
         cmds.formLayout(f1, e=1, af=(refBtn, 'right', 5))
         #flush button
-        flushBtn = cmds.button('flush' + suf, l='DELETE ALL', c='import playblast_lib as pb\nreload(pb)\npb.flushDefaultDir()', h=18, bgc=[0.804, 0.361, 0.361])
-        attachForm = [(flushBtn,'top', 6, refBtn)]
+        flushBtn = cmds.button('flush' + suf, l='DELETE ALL', c='import playblast_lib as pb\nreload(pb)\npb.flushDefaultDir()', h=16, w=100, bgc=[0.804, 0.361, 0.361])
+        attachForm = [(flushBtn,'top', 2, refBtn)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
-        cmds.formLayout(f1, e=1, af=(flushBtn, 'left', 5))
+        #cmds.formLayout(f1, e=1, af=(flushBtn, 'left', 5))
         cmds.formLayout(f1, e=1, af=(flushBtn, 'right', 5))
         #wipe button
+        #rvString = 'rv ' + '[ ___' + 'None' + '___ ]' ' &'
+        rvString = 'rv ' + ' -wipe' ' &'
+        #test proper format
+        rvString = 'rv','-wipe','-eval',';'
 
+        wipBtn = cmds.button(getWipe(), l='WIPE', c='import subprocess\nsubprocess.Popen(%s)' % (getString(strings=rvString)), h=16, w=100)
+        attachForm = [(wipBtn,'top', 2, refBtn)]
+        cmds.formLayout(f1, edit=True, attachControl=attachForm)
+        cmds.formLayout(f1, e=1, af=(wipBtn, 'left', 5))
+        #cmds.formLayout(f1, e=1, af=(wipBtn, 'right', 5))
         #compare button
 
         #scroll
@@ -333,7 +348,7 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     w, h = getIconSize(icon)
 
     #row form
-    f         = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2], ann=path)
+    f    = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2], ann=path)
     if attachRow:
         attachRow = convertPathToRow(f, attachRow) + '_RowForm'
     if belowRow:
@@ -346,13 +361,16 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
         cmds.formLayout(parent, edit=True, attachControl=attachForm)
 
     #checkbox
-    chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0])
+    chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0],
+        onc="import playblast_lib as pb\nreload(pb)\npb.addChecked(%s)" % (getString(strings=[path])),
+        ofc="import playblast_lib as pb\nreload(pb)\npb.removeChecked(%s)" % (getString(strings=[path])))
     cmds.formLayout(f, e=1, af=(chkBx, 'top', height/2-8))
     cmds.formLayout(f, e=1, af=(chkBx, 'left', 4))
 
     #icon
     padW = 0
     padH = 0
+    padBtns = 4
     cmdI = 'partial( openSelected, path = path )'
     iconH = col[1]*(h/w)
     iconW = col[1]
@@ -364,7 +382,7 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
         padW = int((col[1] - iconW)/2)
     if iconH < height:
         padH = int((height - iconH)/2)
-    iconBtn = cmds.iconTextButton(blastDir + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir, w=iconW, h=iconH)
+    iconBtn = cmds.iconTextButton(blastDir + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc = [0.13,0.13,0.13],)
     #cmds.formLayout(f, e=1, af=(iconBtn, 'bottom', padH))
     cmds.formLayout(f, e=1, af=(iconBtn, 'top', padH))
     cmds.formLayout(f, e=1, af=(iconBtn, 'left', col[0] + padW))
@@ -372,9 +390,9 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     #delete
     cmds.setParent(f)
     st = getString(strings=[f, attachRow, belowRow])
-    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height, bgc=[0.500, 0.361, 0.361])
-    cmds.formLayout(f, e=1, af=(delBtn, 'bottom', 0))
-    cmds.formLayout(f, e=1, af=(delBtn, 'top', 0))
+    delBtn  = cmds.button(blastDir + '_Delete', c= "import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height-padBtns, bgc=[0.500, 0.361, 0.361])
+    cmds.formLayout(f, e=1, af=(delBtn, 'bottom', padBtns/2))
+    cmds.formLayout(f, e=1, af=(delBtn, 'top', padBtns/2))
     cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
 
     #meta
@@ -388,9 +406,9 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     label = pt+im+di+fr+le+dt
     #
     #metaBtn = cmds.button(blastDir + '_Meta', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height, w=col[2], align='left')
-    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height, align='center', fn='boldLabelFont', bgc = [0.2,0.2,0.2], w=col[2])
-    cmds.formLayout(f, e=1, af=(metaBtn, 'bottom', 0))
-    cmds.formLayout(f, e=1, af=(metaBtn, 'top', 0))
+    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height-padBtns, align='center', fn='boldLabelFont', bgc = [0.23,0.23,0.23], w=col[2])
+    cmds.formLayout(f, e=1, af=(metaBtn, 'bottom', padBtns/2))
+    cmds.formLayout(f, e=1, af=(metaBtn, 'top', padBtns/2))
     cmds.formLayout(f, e=1, af=(metaBtn, 'left',col[1]+col[0]))
     #cmds.formLayout(f, e=1, af=(metaBtn, 'right', col[3]))
     #
@@ -404,9 +422,64 @@ def flushDefaultDir(*args):
     shutil.rmtree(path)
     createPath(path)
 
-def getChecked(*args):
-    #collect checked rows if any else spit out message
-    pass
+def addChecked(chk=''):
+    #print chk
+    c = cmds.button(getWipe(), q=True, c=True)
+    front1 = c.split(rvFront())[0]
+    front2 = rvFront()
+    front = front1 + front2
+    print front, '----'
+    back = rvBack()
+    #print back, '----'
+    mid = c.split(rvFront())[1].split(rvBack())[0]
+    print mid, '----'
+    if mid == ',': #none are have been added
+        c = front, rvOpn(), chk, rvCls(), back
+        print c[0],c[1]
+    else:
+        pass #parse
+        current = mid.split(',')
+        print current, 'current'
+    #print c
+    #cmds.button(getWipe(), e=True, c=c)
+
+def removeChecked(chk=''):
+    #try adding square brackets to both inputs
+    c = cmds.button(getWipe(), q=True, c=True)
+    print c
+    front = c.split('-wipe')[0] + rvFront()
+    print '========='
+    print front, 'front'
+    print '========='
+    '''
+    mid   = c.split('[')[1].split(']')[0]
+    mid   = mid.replace(chk, '')
+    print mid, 'mid'
+    back  = c.split(']')[1]
+    print back, 'back\n'
+    c = front + "[ " + mid + " ]" + back
+    print c
+    cmds.button(getWipe(), e=True, c=c)
+    '''
+
+def rvChk(chk=''):
+    return rvOpn(), chk, rvCls()
+
+def rvOpn():
+    return '['
+
+def rvCls():
+    return ']'
+
+def rvFront():
+    return "'rv','-wipe'"
+
+def rvBack():
+    return "'-eval',';'"
+
+def removeDoubleSpace(string=''):
+    while '  ' in string:
+        string.replace('  ', ' ')
 
 def getString(strings=[]):
     '''
@@ -418,7 +491,8 @@ def getString(strings=[]):
     for string in strings:
         if i == 0:
             s = "\'%s\'" % string
-            s = s + ','
+            if len(strings) > 1:
+                s = s + ','
         elif i < mx:
             s = s + "\'%s\'" % string
             s = s + ','
@@ -600,17 +674,18 @@ def openSelected(path=''):
     elif os.name is 'posix':
         try:
             rvString = 'rv ' + '[ ' + path + ' ]' ' &'
-            print rvString, '  here'
+            #print rvString, '  here'
+            message('Play:  ' + rvString, maya=True)
             os.system(rvString)
         except:
             #print rvString
-            print 'no success'
+            message('Failed:  ' + rvString, maya=True)
     else:
         path = path + sceneName() + '.####.png'
         #print path
         pass
         rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
-        os.system(rvString)
+        os.system.Popen(rvString)
 
 def getDirectoryDate(path=''):
     t = os.path.getmtime(path)
@@ -636,7 +711,7 @@ def getBlastDirs(path=''):
             sortedDir = []
             #list shots in the default path
             for shot in shots:
-                mtime = lambda f: os.stat(os.path.join(shot, f)).st_ctime
+                mtime = lambda f: os.stat(os.path.join(shot, f)).st_ctime #this doesnt work, remove!
                 if os.path.isdir(shot):
                     contents  = list(sorted(os.listdir(shot), key=mtime))
                 else:
@@ -654,6 +729,7 @@ def getBlastDirs(path=''):
                                 nonDir.append(i)
                 else:
                     shutil.rmtree(shot)
+            mtime = lambda f: os.path.getmtime(f)
             dirs = sorted(dirs, key=mtime)
             for i in reversed(dirs):
                 sortedDir.append(i)
