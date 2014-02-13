@@ -28,6 +28,8 @@ class Action(object):
         self.actionButton6  = name + '_actionButton6'
         self.actionField1   = name + '_actionField1'
         self.actionButton7  = name + '_actionButton7'
+        self.actionButton8  = name + '_actionButton8'
+        self.actionButton9  = name + '_actionButton9'
         self.c1            = ''
         self.c2            = ''
         self.c3            = ''
@@ -91,6 +93,10 @@ class Action(object):
         ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
         for o in ro:
             cmds.menuItem(o)
+        self.s1 = cmds.separator( height=self.sepH, style=self.sepStl )
+        #space switcher
+        self.actionButton8 = cmds.button(self.actionButton8, label='Store Xform Anim', c=self.cmdAction, bgc=[0.5,0.5,0.5])
+        self.actionButton9 = cmds.button(self.actionButton8, label='ReStore Xform Anim', c=self.cmdAction, bgc=[0.5,0.5,0.5])
         self.s1 = cmds.separator( height=self.sepH, style=self.sepStl )
         #match things
         self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=[0.5,0.5,0.5])

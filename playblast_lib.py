@@ -310,6 +310,7 @@ def blastWin():
                     buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
                     j=j+1
                     cmds.refresh(f=1)
+                    print j
                 else:
                     #rebuild
                     shutil.rmtree(blastDir)
@@ -327,7 +328,7 @@ def convertPathToRow(row, path):
     r = r[len(r)-1]
     p = path.split('/')
     p = p[len(p)-1]
-    newRow = row.replace(r,p)
+    newRow = row.replace(r,p).replace('-','_')
     return newRow
 
 def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10], attachRow='', belowRow=''):
@@ -335,10 +336,14 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     #stuff
     allCols = col[0] + col[1] + col[2] + col[3]
     path = blastDir
+    #print path
 
     #parse row name from directory path
     blastDir = blastDir.split('/')
+    shot = blastDir[len(blastDir)-2]
     blastDir = blastDir[len(blastDir)-1]
+    suf = '_RowForm__'
+    blastDir = blastDir + suf + shot
 
     imageRange = getImageRange(path)
     imageName  = getImageName(path)
@@ -348,16 +353,23 @@ def buildRow(blastDir='', offset=1,  height=1,  parent='', col=[10, 10, 10, 10],
     w, h = getIconSize(icon)
 
     #row form
-    f    = cmds.formLayout(blastDir + '_RowForm', h=height, bgc = [0.2,0.2,0.2], ann=path)
+    f    = cmds.formLayout(blastDir, h=height, bgc = [0.2,0.2,0.2], ann=path)
     if attachRow:
-        attachRow = convertPathToRow(f, attachRow) + '_RowForm'
+        #create above row name from path
+        shot = attachRow.split('/')
+        shot = suf + shot[len(shot)-2].replace('-','_')
+        attachRow = convertPathToRow(f, attachRow) + shot
     if belowRow:
-        belowRow  = convertPathToRow(f, belowRow) + '_RowForm'
+        #create below row name from path
+        shot = belowRow.split('/')
+        shot = suf + shot[len(shot)-2].replace('-','_')
+        belowRow  = convertPathToRow(f, belowRow) + shot
     cmds.formLayout(parent, e=1, af=(f, 'top', offset))
     cmds.formLayout(parent, e=1, af=(f, 'left', 0))
     cmds.formLayout(parent, e=1, af=(f, 'right', 0))
     if attachRow:
         attachForm = [(f,'top',offset, attachRow)]
+        #print parent
         cmds.formLayout(parent, edit=True, attachControl=attachForm)
 
     #checkbox

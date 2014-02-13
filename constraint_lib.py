@@ -269,7 +269,7 @@ def updateConstrainedCurves(obj=None, sim=False):
         else:
             cmds.setAttr(obj + '.' + state.attr, state.value)
 
-def eulerFilter(obj):
+def eulerFilter(obj, tangentFix=False):
     curves = cmds.keyframe(obj, q=True, name=True)
     euler = []
     for crv in curves:
@@ -277,6 +277,8 @@ def eulerFilter(obj):
             euler.append(crv)
     if len(euler) != 0:
         cmds.filterCurve(euler)
+    if tangentFix:
+        cmds.keyTangent( euler, edit=True, itt='auto', ott='auto')
 
 def getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True):
     #fails with characterSets

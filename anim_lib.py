@@ -222,6 +222,7 @@ def changeRO(obj, ro):
             cmds.setKeyframe(obj + '.rotate')
         cmds.currentTime(current)
         cmds.autoKeyframe(state=autoK)
+        cn.eulerFilter(obj, tangentFix=True)
         cn.uiEnable(controls='modelPanel', toggle=True)
     else:
         message('FAIL. Rotate order is LOCKED or CONNECTED to a custom attribute.', maya=True)
@@ -230,9 +231,12 @@ class SpaceSwitch():
     def __init__(self, obj):
         self.obj  = obj
         self.mtrx = []
+        self.pos  = []
+        self.rot  = []
         self.keys = keyedFrames(self.obj)
+        self.store()
 
-    def storeXform(self):
+    def store(self):
         '''
         store animation
         '''
@@ -246,7 +250,9 @@ class SpaceSwitch():
             cmds.autoKeyframe(state=False)
             for key in self.keys:
                 cmds.currentTime(key)
-                self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
+                #self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
+                self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
+                self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
             #restore everything
             cmds.currentTime(current)
             cmds.autoKeyframe(state=autoK)
@@ -254,7 +260,7 @@ class SpaceSwitch():
         else:
             message('No keys.', maya=True)
             
-    def restoreXform(self):
+    def restore(self):
         '''
         restore animation
         '''
@@ -265,10 +271,14 @@ class SpaceSwitch():
             #autokey state
             autoK = cmds.autoKeyframe(q=True, state=True)
             cmds.autoKeyframe(state=False)
-            i=1
+            i=0
             for key in self.keys:
                 cmds.currentTime(key)
-                cmds.xform(self.obj, m=self.mtrx[i], ws=True))
+                #cmds.xform(self.obj, m=self.mtrx[i], ws=True)
+                cmds.xform(self.obj, t=self.pos[i], ws=True)
+                cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                cmds.setKeyframe(self.obj + '.rotate')
+                cmds.setKeyframe(self.obj + '.translate')
                 i = i + 1
             #restore everything
             cmds.currentTime(current)

@@ -8,15 +8,26 @@ reload(al)
 reload(cn)
 reload(ui)
 
+def message(what='', maya=False):
+    what = '-- ' + what + ' --'
+    if maya == True:
+        mel.eval('print \"' + what + '\";')
+    else:
+        print what
+
 class CSUI(object):
     '''
     Build CharacterSet UI
     '''
+
     def __init__(self, columnWidth=80):
         #external
         self.columnWidth                  = columnWidth
         #internal
         self.windowName                   = 'CN Tools'
+        #store/restore
+        self.objX = None
+        self.anim = None
         #execute
         self.cleanUI()
         self.gui()
@@ -39,6 +50,8 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton5, e=True, c=self.cmdConstrain)
         cmds.button(self.actionColumn.actionButton6, e=True, c=self.cmdA2B)
         cmds.button(self.actionColumn.actionButton7, e=True, c=self.cmdRO)
+        cmds.button(self.actionColumn.actionButton8, e=True, c=self.cmdStore)
+        cmds.button(self.actionColumn.actionButton9, e=True, c=self.cmdRestore)
 
         cmds.showWindow(self.win)
 
@@ -104,3 +117,12 @@ class CSUI(object):
     def cmdRO(self, *args):
         t1 = cmds.optionMenuGrp(self.actionColumn.opt1, q=True, v=True)
         al.changeRoMulti(ro=t1)
+
+    def cmdStore(self, *args):
+        self.objX = cmds.ls(sl=1)[0]
+        self.anim = al.SpaceSwitch(self.objX)
+        message('Animation Stored: -- ' + self.objX, maya=True)
+
+    def cmdRestore(self, *args):
+        self.anim.restore()
+        message('Animation ReStored: -- ' + self.objX, maya=True)
