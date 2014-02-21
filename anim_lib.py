@@ -285,7 +285,6 @@ class SpaceSwitch():
                 cn.eulerFilter(self.obj, tangentFix=True)
                 i = i + 1
             #tangent fix
-            crv = getAnimCurves(self.obj)
             cn.eulerFilter(crv, tangentFix=True)
             #restore everything
             cmds.currentTime(current)
@@ -294,7 +293,7 @@ class SpaceSwitch():
         else:
             message('No keys.', maya=True)
 
-def getAnimCurves(obj='', attrs=['translateX','translateY','translateZ','rotateX','rotateY','rotateZ',]):
+def getAnimCurves(obj='', attrs=['translateX','translateY','translateZ','rotateX','rotateY','rotateZ']):
     animCurves = cmds.findKeyframe(obj, c=True)
     curves = []
     for crv in animCurves:
@@ -302,7 +301,6 @@ def getAnimCurves(obj='', attrs=['translateX','translateY','translateZ','rotateX
             if attr in crv:
                 curves.append(crv)
     return curves
-    
 
 def getKeyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
