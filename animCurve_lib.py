@@ -159,10 +159,10 @@ def holdCrv(postCurrent=True, preCurrent=True):
     else:
         message( 'Select curve(s) in the Graph Editor. -- Current timeline value of selected curve will be held.')
 
-def keyedFrames(obj):
+def getKeyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
     frames = []
-    if animCurves != None:
+    if animCurves:
         for crv in animCurves:
             framesTmp = cmds.keyframe(crv, q=True)
             for frame in framesTmp:
@@ -175,16 +175,24 @@ def keyedFrames(obj):
         return frames
 
 def unifyKeys():
-    sel = cmds.ls(sl=1)
-    frames = []
-    for s in sel:
-        keys = keyedFrames(s)
-        if keys:
-            for frame in keys:
-                frames.append(frame)
-    for s in sel:
-        for frame in frames:
-            cmds.setKeyframe(s, i=True, t=frame)
+    sel = cmds.keyframe(q=True, name=True, sl=True)
+    crvs = len(sel)
+    if sel:
+        frames = []
+        for s in sel:
+            keys = getKeyedFrames(s)
+            if keys:
+                for frame in keys:
+                    frames.append(frame)
+        for s in sel:
+            message('adding keys to --' + s + '  --to go '+ str(crvs))
+            cmds.refresh(f=1)
+            for frame in frames:
+                cmds.setKeyframe(s, i=True, t=frame)
+            crvs = crvs -1
+        message('Done, finally.')
+    else:
+        message('Select some curves in the graph editor.')
 
 def toggleTangentLock():
     state = cmds.keyTangent(q=True, lock=True)[0]

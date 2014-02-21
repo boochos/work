@@ -214,7 +214,7 @@ def changeRO(obj, ro):
         cmds.currentTime(i)
         cmds.currentTime(cmds.findKeyframe(which='previous'))
         cmds.xform(obj, roo=ro)
-        keyframes = keyedFrames(obj)
+        keyframes = getKeyedFrames(obj)
         for key in keyframes:
             cmds.currentTime(key)
             cmds.setAttr(obj + '.rotateOrder', origRO)
@@ -233,7 +233,7 @@ class SpaceSwitch():
         self.mtrx = []
         self.pos  = []
         self.rot  = []
-        self.keys = keyedFrames(self.obj)
+        self.keys = getKeyedFrames(self.obj)
         self.store()
 
     def store(self):
@@ -277,17 +277,34 @@ class SpaceSwitch():
                 #cmds.xform(self.obj, m=self.mtrx[i], ws=True)
                 cmds.xform(self.obj, t=self.pos[i], ws=True)
                 cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                #account for non-keyable rotate or translate attrs
                 cmds.setKeyframe(self.obj + '.rotate')
                 cmds.setKeyframe(self.obj + '.translate')
+                #getCurves for translate and rotate
+                crv = getAnimCurves(self.obj)
+                cn.eulerFilter(self.obj, tangentFix=True)
                 i = i + 1
+            #tangent fix
+            crv = getAnimCurves(self.obj)
+            cn.eulerFilter(crv, tangentFix=True)
             #restore everything
             cmds.currentTime(current)
             cmds.autoKeyframe(state=autoK)
             cn.uiEnable(controls='modelPanel', toggle=True)
         else:
             message('No keys.', maya=True)
-        
-def keyedFrames(obj):
+
+def getAnimCurves(obj='', attrs=['translateX','translateY','translateZ','rotateX','rotateY','rotateZ',]):
+    animCurves = cmds.findKeyframe(obj, c=True)
+    curves = []
+    for crv in animCurves:
+        for attr in attrs:
+            if attr in crv:
+                curves.append(crv)
+    return curves
+    
+
+def getKeyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
     if animCurves != None:
         frames = []

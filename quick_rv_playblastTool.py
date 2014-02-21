@@ -2,6 +2,7 @@ import maya.mel as mel
 import maya.cmds as cmds
 import os
 import subprocess
+import playblast_lib as pb
 
 
 '''
@@ -92,6 +93,15 @@ class quick_rv_playblastTool:
                 audioOffset_inSeconds = (audioOffset_attribute - startTime)/24 #assuming 24fps
 
             # launch playblast
+
+
+            #############################################
+            ## build paths for eric
+            import playblast_lib as pb
+            pth = pb.createBlastPath('')
+            ## build paths for eric
+            #############################################
+            
             tempPlayblastFolder = "/usr/tmp/rv_playblasts/"
             tempFolder = "/usr/tmp/"
             filename_raw = tempPlayblastFolder + shotName + '/' + sceneName + "scratch"

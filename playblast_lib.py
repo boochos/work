@@ -52,11 +52,31 @@ def selRange():
     else:
         return False
 
-def sound():
+def sound(path=True):
     gPlayBackSlider = mel.eval( '$tmpVar=$gPlayBackSlider' )
-    fileName = cmds.timeControl( gPlayBackSlider, q=True, sound=True )
-    if fileName:
-        return fileName
+    node = cmds.timeControl( gPlayBackSlider, q=True, sound=True )
+    if path == False:
+        return node
+    else:
+        if node:
+            fileName = cmds.sound(node, q=True, f=True)
+            if fileName:
+                return fileName
+            else:
+                return None
+        else:
+            return False
+def copySound(toPath=''):
+    '''
+    copy sound to playblast dir
+    '''
+    sndPath = sound()
+    if sndPath:
+        #print sndPath
+        sndFile = sndPath.split('/')[len(sndPath.split('/'))-1]
+        #print sndFile
+        shutil.copyfile(sndPath, os.path.join(sndPath, toPath))
+        return sndPath
     else:
         return None
 
@@ -160,6 +180,8 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
     if useGlobals:
         w = cmds.getAttr( 'defaultResolution.width' )
         h = cmds.getAttr( 'defaultResolution.height' )
+        #pa = cmds.getAttr( 'defaultResolution.pixelAspect' )
+        #h = h/pa
     w = w*x
     h = h*x
     if os.name == 'nt':
@@ -200,11 +222,21 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
                 playLo, playHi, current = getRange()
                 w = w * x
                 h = h * x
+                #sound
+                '''
+                snd = copySound(toPath=createBlastPath(''))
+                if snd:
+                    print snd
+                else:
+                    print snd
+                '''
+                #blast
                 path = cmds.playblast(format='image', filename=createBlastPath(''), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
                 if path:
                     rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #not escaped
                 else:
                     rvString = 'rv ' + '[ ' + createBlastPath('') + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #escaped
+                #play blast
                 print rvString
                 os.system(rvString)
                 cmds.currentTime(current)

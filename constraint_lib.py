@@ -275,10 +275,11 @@ def eulerFilter(obj, tangentFix=False):
     for crv in curves:
         if 'rotate' in crv.lower():
             euler.append(crv)
-    if len(euler) != 0:
+    if euler:
         cmds.filterCurve(euler)
     if tangentFix:
-        cmds.keyTangent( euler, edit=True, itt='auto', ott='auto')
+        if euler:
+            cmds.keyTangent( euler, edit=True, itt='auto', ott='auto')
 
 def getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True):
     #fails with characterSets

@@ -274,6 +274,8 @@ def importFile(path='', prefix='', ns='', cs=['old','new'], rp={None:None}):
     cs     = character set string to replace, is obsolete with "rp" attribute
     rplc   = per line in file replace string, could change to dictionary for clarity
     '''
+    #nsCurrent = cmds.namespaceInfo(currentNamespace=True)
+    #cmds.namespace(set=':')
     if os.path.isfile(path) == True:
         if prefix != '':
             prefix = prefix + '_'
@@ -290,6 +292,7 @@ def importFile(path='', prefix='', ns='', cs=['old','new'], rp={None:None}):
                     #top character
                     charName = prefix + line[2]
                     charName = cmds.character(name = charName, em = True)
+                    print charName, 
                     addNode  =  charName
                 else:
                     #sub-character set
@@ -319,6 +322,7 @@ def importFile(path='', prefix='', ns='', cs=['old','new'], rp={None:None}):
                     mel.eval("warning\"" + loadWarning  + "\";")
                 else:
                     cmds.character( line.strip('\n'), fe = addNode)
+        #cmds.namespace(set=nsCurrent)
     else:
         message('Path not found: ' + path)
 
