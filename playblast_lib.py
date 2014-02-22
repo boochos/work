@@ -66,16 +66,17 @@ def sound(path=True):
                 return None
         else:
             return False
+
 def copySound(toPath=''):
     '''
     copy sound to playblast dir
     '''
     sndPath = sound()
+    #print sndPath
     if sndPath:
-        #print sndPath
         sndFile = sndPath.split('/')[len(sndPath.split('/'))-1]
         #print sndFile
-        shutil.copyfile(sndPath, os.path.join(sndPath, toPath))
+        shutil.copyfile(sndPath, os.path.join(sndPath, os.path.join(toPath, sndFile)))
         return sndPath
     else:
         return None
@@ -128,13 +129,16 @@ def createPath(path):
         #print "-- path:   '" + path + "'   already exists --"
     return path
 
-def createBlastPath(suffix=''):
+def createBlastPath(suffix=None):
     '''
     tie in with Bates blast module
     '''
     createPath(path = blastDir())
-    createPath(path = blastDir() + shotDir2())
-    path = createPath(blastDir() + shotDir2()+ sceneName() + suffix + '/') + sceneName() + suffix
+    path = createPath(path = blastDir() + shotDir2())
+    if suffix:
+        path = createPath(blastDir() + shotDir2()+ sceneName() + suffix + '/') + sceneName() + suffix
+    else:
+        path = createPath(blastDir() + shotDir2()+ sceneName())
     return path
 
 def blastDir(forceTemp=True):
@@ -223,19 +227,23 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
                 w = w * x
                 h = h * x
                 #sound
-                '''
-                snd = copySound(toPath=createBlastPath(''))
+                snd = copySound(toPath=createBlastPath())
                 if snd:
                     print snd
                 else:
                     print snd
-                '''
                 #blast
-                path = cmds.playblast(format='image', filename=createBlastPath(''), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                path = cmds.playblast(format='image', filename=os.path.join(createBlastPath(), sceneName()), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
                 if path:
-                    rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #not escaped
+                    if snd:
+                        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &' #not escaped
+                    else:
+                        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #not escaped
                 else:
-                    rvString = 'rv ' + '[ ' + createBlastPath('') + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #escaped
+                    if snd:
+                        rvString = 'rv ' + '[ ' + createBlastPath('') + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) +  ' ' + snd + ' ]' ' &' #escaped
+                    else:
+                        rvString = 'rv ' + '[ ' + createBlastPath('') + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &' #escaped
                 #play blast
                 print rvString
                 os.system(rvString)
@@ -316,7 +324,7 @@ def blastWin():
         #status
         detectCompatibleStructure(rootDir)
         blastDirs = getBlastDirs(rootDir)
-        print blastDirs
+        #print blastDirs
         if blastDirs:
             f2 = cmds.formLayout('subForm' + suf, h=height*len(blastDirs), w=width, bgc=[0.17,0.17,0.17])
             cmds.refresh(f=1)
@@ -342,7 +350,7 @@ def blastWin():
                     buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0,col1,col2,col3], attachRow=attach, belowRow=below)
                     j=j+1
                     cmds.refresh(f=1)
-                    print j
+                    #print j
                 else:
                     #rebuild
                     shutil.rmtree(blastDir)
@@ -667,7 +675,7 @@ def findDeleteControl(row=''):
             return child
 
 def getIcon(path=''):
-    images = os.listdir(str(path))
+    images = qualifyImageSeq(path=path)
     if images:
         icon = os.path.join(path, images[0])
         #print icon
@@ -685,14 +693,9 @@ def getIconSize(path=''):
     else:
         return 0, 0
 
-def getImageRange(path=''):
-    images = os.listdir(str(path))
+def getImageRange(path='', exclude=['wav', 'aiff']):
+    images = qualifyImageSeq(path=path)
     if images:
-        i = 0
-        for image in images:
-            if os.path.isdir(os.path.join(path, image)):
-                images.pop(i)
-            i = i + 1
         images =  sorted(images)
         start  = float(images[0].split('.')[1])
         end    = float(images[len(images)-1].split('.')[1])
@@ -700,8 +703,17 @@ def getImageRange(path=''):
     else:
         return None
 
-def getImageName(path=''):
+def getAudio(path='', format=['wav', 'aiff']):
     images = os.listdir(str(path))
+    audio = []
+    for image in images:
+        for f in format:
+            if f in image:
+                #audio.append(image)
+                return os.path.join(path, image)
+
+def getImageName(path=''):
+    images = qualifyImageSeq(path=path)
     if images:
         im = images[0].split('.')
         name = im[0] + '.*.' + im[2]
@@ -709,7 +721,24 @@ def getImageName(path=''):
     else:
         return None
 
+def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
+    images = os.listdir(str(path))
+    if images:
+        i = 0
+        for image in images:
+            if os.path.isdir(os.path.join(path, image)):
+                images.pop(i)
+            for ex in exclude:
+                if ex in image:
+                    #print f, '     ======== hetre  ', image
+                    images.pop(i)
+            i = i + 1
+    return images
+
 def openSelected(path=''):
+    #audio
+    snd = getAudio(path)
+    #os
     if os.name is 'nt':
         rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(playLo) + " -out " + str(playHi) + " ]"
         #print rvString
@@ -717,7 +746,10 @@ def openSelected(path=''):
         subprocess.Popen(rvString)
     elif os.name is 'posix':
         try:
-            rvString = 'rv ' + '[ ' + path + ' ]' ' &'
+            if snd:
+                rvString = 'rv ' + '[ ' + path + ' ' + snd + ' ]' ' &'
+            else:
+                rvString = 'rv ' + '[ ' + path + ' ]' ' &'
             #print rvString, '  here'
             message('Play:  ' + rvString, maya=True)
             os.system(rvString)

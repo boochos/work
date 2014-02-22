@@ -286,7 +286,7 @@ def fixTangents(obj, attrs=['translateX','translateY','translateZ','rotateX','ro
     for crv in animCurves:
         for attr in attrs:
             if attr in crv:
-                cmds.keyTangent( euler, edit=True, itt='auto', ott='auto')
+                cmds.keyTangent( crv, edit=True, itt='auto', ott='auto')
 
 def getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True):
     #fails with characterSets
