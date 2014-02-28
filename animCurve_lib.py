@@ -176,21 +176,35 @@ def getKeyedFrames(obj):
 
 def unifyKeys():
     sel = cmds.keyframe(q=True, name=True, sl=True)
-    crvs = len(sel)
     if sel:
-        frames = []
+        crvs = len(sel)
+        #new method, less loops
+        frames = list(set(cmds.keyframe(sel, q=True)))
+        i = len(frames)
+        for frame in frames:
+            message('adding keys on frame -- ' + str(frame))
+            cmds.refresh(f=1)
+            cmds.setKeyframe(sel, i=True, t=frame)
+            i = i -1
+
+        #old method
+        #frames = []
+        '''
         for s in sel:
             keys = getKeyedFrames(s)
             if keys:
                 for frame in keys:
                     frames.append(frame)
+        '''
+        '''
         for s in sel:
-            message('adding keys to --' + s + '  --to go '+ str(crvs))
+            message('adding keys to -- ' + s + '  -- to go '+ str(crvs))
             cmds.refresh(f=1)
             for frame in frames:
                 cmds.setKeyframe(s, i=True, t=frame)
             crvs = crvs -1
-        message('Done, finally.')
+        '''
+        message('Done')
     else:
         message('Select some curves in the graph editor.')
 

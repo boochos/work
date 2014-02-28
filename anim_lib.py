@@ -368,6 +368,8 @@ def matchObj():
             cmds.xform(put, ws=True, ro=r)
             #delete
             cmds.delete(loc)
+        #reselect objects
+        cmds.select(sel)
     else:
         message('Select 2 objects.')
 

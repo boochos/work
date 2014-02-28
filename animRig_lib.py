@@ -250,9 +250,9 @@ def parentRig(bake=False):
     #store selection
     sel = cmds.ls(sl=True)
     #place 3 locators on selection
-    offset = cn.locator(obj=sel[0], constrain=False, X=1, suffix='__OFFSET__')[0]
-    root   = cn.locator(obj=sel[1], constrain=False, X=1, suffix='__ROOT__')[0]
-    spin   = cn.locator(obj=sel[1], constrain=False, X=1, suffix='__SPIN__')[0]
+    offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__')[0]
+    root   = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__')[0]
+    spin   = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__')[0]
     #rename
     cmds.parent(offset, spin)
     cmds.parent(spin, root)
@@ -265,7 +265,9 @@ def parentRig(bake=False):
     #create final rig constraints
     cn.constrainEnabled(offset, sel[0], mo=True)
     #cmds.parentConstraint(offset, sel[0], mo=True)
-    cn.locSize(root, X=0.1)
+    #cn.locSize(root, X=0.1)
     cmds.select(offset)
     #group
     cmds.group( root, n='__PARENTRIG__#' )
+    #select new control
+    cmds.select(offset)

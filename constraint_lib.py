@@ -201,7 +201,8 @@ def keyedFrames(obj):
 
 class reConnect():
     '''
-    Use to reconnect after baking animation. For now only works with pairBlends. Which means the object should be keyed and have some type of attribute driver. (ie, constraint, motion trail)
+    Use to reconnect after baking animation. For now only works with pairBlends.
+    Which means the object should be keyed and have some type of attribute driver. (ie, constraint, motion trail)
     '''
     def __init__(self, sel=''):
         self.selection       = sel
@@ -272,13 +273,14 @@ def updateConstrainedCurves(obj=None, sim=False):
 def eulerFilter(obj, tangentFix=False):
     curves = cmds.keyframe(obj, q=True, name=True)
     euler = []
-    for crv in curves:
-        if 'rotate' in crv.lower():
-            euler.append(crv)
-    if euler:
-        cmds.filterCurve(euler)
-    if tangentFix:
-        fixTangents(obj)
+    if curves:
+        for crv in curves:
+            if 'rotate' in crv.lower():
+                euler.append(crv)
+        if euler:
+            cmds.filterCurve(euler)
+        if tangentFix:
+            fixTangents(obj)
 
 def fixTangents(obj, attrs=['translateX','translateY','translateZ','rotateX','rotateY','rotateZ']):
     animCurves = cmds.findKeyframe(obj, c=True)
@@ -450,9 +452,10 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
                 for attr in attrs:
                     cmds.setKeyframe(attr)
         else:
+            message('no keys__________________________')
             bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
-            #message('no keys')
-    cmds.keyTangent( attrs, edit=True, itt='auto', ott='auto')
+    if attrs:
+        cmds.keyTangent( attrs, edit=True, itt='auto', ott='auto')
     cmds.currentTime(current)
     cmds.autoKeyframe(state=autoK)
     if uiOff:
@@ -614,7 +617,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
     locs = []
     plc = '__PLACE__'
     if obj != None:
-        lc = cmds.spaceLocator(name=obj + suffix)[0]
+        lc = cmds.spaceLocator(name=obj + 'temp')[0]
         objColor(lc, color)
         print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
@@ -622,7 +625,6 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         cmds.setAttr(lc + '.sz', k=False, cb=True)
         cmds.setAttr(lc + '.v', k=False, cb=True)
         locSize(lc, X=X)
-        locs.append(lc)
         roo = cmds.getAttr(obj + '.rotateOrder')
         r = cmds.xform(obj, q=True, ws=True, ro=True )
         t = cmds.xform(obj, q=True, ws=True, rp=True )
@@ -636,6 +638,9 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
             else:
                 constrainEnabled(lc, obj, mo=True)
                 #cmds.parentConstraint(lc, obj, mo=True)
+        newName = lc.replace('temp', suffix)
+        lc = cmds.rename(lc,newName)
+        locs.append(lc)
     else:
         loc = cmds.spaceLocator()[0]
         cmds.xform(loc, roo=ro )
@@ -655,11 +660,17 @@ def locatorOnSelection(ro='zxy', X=0.01, constrain=True, toSelection=False, colo
 
 def locSize(lc, X=0.5):
     axis = ['X','Y','Z']
+    #sketchy path building
+    if '|' in lc:
+        #print lc
+        lc = '|' + lc.split('|')[1] + lc
+        #print lc, '++++++++++++'
     for axs in axis:
         cmds.setAttr(lc + 'Shape.localScale' + axs, X)
         #cmds.setAttr(lc + '.scale' + axs, X)
 
 def objColor(obj='', color=07):
+    #print obj, '---------'
     cmds.setAttr(obj + '.overrideEnabled', 1)
     cmds.setAttr(obj + '.overrideColor', color)
 
