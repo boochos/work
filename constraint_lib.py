@@ -848,7 +848,7 @@ class AnimCrv(Key):
 def bakeUndo():
     que = cmds.undoInfo(q=1,un=1)
     #only run if undo que has a keyframe -edit entry
-    if 'bake' in que.lower() or 'changeRO' in que.lower() or 'changeRo' in que.lower() or 'Rig' in que.lower() or 'switch' in que.lower():
+    if 'bake' in que.lower() or 'changeRO' in que.lower() or 'changeRo' in que.lower() or 'Rig' in que or 'switch' in que.lower():
         uiEnable()
         cmds.undo()
         uiEnable()

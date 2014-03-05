@@ -179,7 +179,7 @@ def unifyKeys():
     if sel:
         crvs = len(sel)
         #new method, less loops
-        frames = list(set(cmds.keyframe(sel, q=True)))
+        frames = sorted(list(set(cmds.keyframe(sel, q=True))))
         i = len(frames)
         for frame in frames:
             message('adding keys on frame -- ' + str(frame))

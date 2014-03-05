@@ -184,8 +184,8 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
     if useGlobals:
         w = cmds.getAttr( 'defaultResolution.width' )
         h = cmds.getAttr( 'defaultResolution.height' )
-        #pa = cmds.getAttr( 'defaultResolution.pixelAspect' )
-        #h = h/pa
+        pa = cmds.getAttr( 'defaultResolution.pixelAspect' )
+        h = h/pa
     w = w*x
     h = h*x
     if os.name == 'nt':

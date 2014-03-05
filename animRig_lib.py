@@ -207,17 +207,17 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     #distance
     offset = ds.measureDis(obj1=objAim, obj2=objBase)
     #place locator at locale A and constrain
-    locA = cn.locator(obj=objAim, ro='zxy', X=size, constrain=True, toSelection=True, suffix='__AIM__')[0]
+    locA = cn.locator(obj=objAim, ro='zxy', constrain=True, toSelection=True, X=size*0.1, color=28, suffix='__AIM__')[0]
     locs.append(locA)
     #match keys
     cn.matchKeyedFrames(AAA=objAim, BBB=locA, subtractive=True)
     #bake locator A
-    cn.bakeConstrained(locA, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(locA, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
     #bake locator on location B
-    locB = cn.controllerToLocator(objBase, p=False, r=True, sparseKeys=True, timeLine=False, sim=True, size=0.1, suffix='__BASE__')[0]
+    locB = cn.controllerToLocator(objBase, p=False, r=True, sparseKeys=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
     locs.append(locB)
     #place up locator on location B
-    locUp = cn.locator(obj=objBase, ro='zxy', X=size, constrain=False, toSelection=False, suffix='__UP__')[0]
+    locUp = cn.locator(obj=objBase, ro='zxy', constrain=False, toSelection=False, X=size*0.5, color=29, suffix='__UP__')[0]
     #print locUp
     #parent up locator, move up in ty, unparent
     cmds.parent(locUp, locB)
@@ -227,15 +227,15 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     #parent locUp to locator A, bake up locator
     cmds.parent(locUp, locA)
     cn.matchKeyedFrames(AAA=objAim, BBB=locUp, subtractive=True)
-    cn.bakeConstrained(locUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(locUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
     #aim offset
-    locAim = cn.locator(obj=objBase, ro='zxy', X=size, constrain=False, toSelection=False, suffix='__OFFSET__')[0]
+    locAim = cn.locator(obj=objBase, ro='zxy', constrain=False, toSelection=False, X=size*1, color=15, suffix='__OFFSET__')[0]
     cmds.parent(locAim, locB)
     cmds.setAttr(locAim + '.tx', offset)
     cmds.parent(locAim, locA)
     cmds.parentConstraint(objBase, locAim, mo=1)
     cn.matchKeyedFrames(AAA=objAim, BBB=locAim, subtractive=True)
-    cn.bakeConstrained(locAim, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(locAim, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
     #delete helper
     con = cn.getConstraint(objBase, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
     cmds.delete(con, locB)
@@ -243,10 +243,15 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     cmds.aimConstraint(locAim, objBase, wut='object', wuo=locUp, aim=aim, u=u, mo=mo)
     #group
     cmds.group( locA, n='__AIMRIG__#' )
+    #select offset loc
+    cmds.select(locAim)
 
     return locs
 
 def parentRig(bake=False):
+    '''
+    sometimes adds 2 pairblends, needs to be fixed as it breaks active char set key ticks.
+    '''
     #store selection
     sel = cmds.ls(sl=True)
     #place 3 locators on selection
