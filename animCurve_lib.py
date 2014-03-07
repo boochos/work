@@ -234,7 +234,7 @@ def bakeInfinity(sparseKeys=True, smart=True, sim=False):
     else:
         message('no curves are selected',maya=1)
 
-def smoothKeys(weight=1.0):
+def smoothKeys(weight=0.5):
     crvs   = cmds.keyframe(q=True, name=True, sl=True)
     if crvs:
         for crv in crvs:
@@ -272,9 +272,27 @@ def smoothKeys(weight=1.0):
                         #final value to add/subtract from previous key
                         #operation depends on x relative to z value
                         if x < z:
+                            #print 'above'
                             val = x + keyPos
+                            #print y, '  current'
+                            #print val, '  actual'
+                            val = y - val
+                            #print val, '  dif'
+                            val = val * weight
+                            #print val, '  multip'
+                            val = y - val
+                            #print val, '  final'
                         else:
+                            #print 'below'
                             val = x - keyPos
+                            #print y, '  current'
+                            #print val, '  actual'
+                            val = y - val
+                            #print val, '  dif'
+                            val = val * weight
+                            #print val, '  multip'
+                            val = y - val
+                            #print val, '  final'
                         cmds.keyframe(crv, vc=val, time=(frame, frame))
                         cmds.keyTangent( crv, edit=True, itt='auto', ott='auto', time=(frame, frame))
                     i=i+1
