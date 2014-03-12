@@ -250,9 +250,9 @@ class SpaceSwitch():
             cmds.autoKeyframe(state=False)
             for key in self.keys:
                 cmds.currentTime(key)
-                #self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
-                self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
-                self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
+                self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
+                #self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
+                #self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
             #restore everything
             cmds.currentTime(current)
             cmds.autoKeyframe(state=autoK)
@@ -274,9 +274,9 @@ class SpaceSwitch():
             i=0
             for key in self.keys:
                 cmds.currentTime(key)
-                #cmds.xform(self.obj, m=self.mtrx[i], ws=True)
-                cmds.xform(self.obj, t=self.pos[i], ws=True)
-                cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                cmds.xform(self.obj, m=self.mtrx[i], ws=True)
+                #cmds.xform(self.obj, t=self.pos[i], ws=True)
+                #cmds.xform(self.obj, ro=self.rot[i], ws=True)
                 #account for non-keyable rotate or translate attrs
                 cmds.setKeyframe(self.obj + '.rotate')
                 cmds.setKeyframe(self.obj + '.translate')

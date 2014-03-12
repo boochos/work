@@ -52,6 +52,10 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton7, e=True, c=self.cmdRO)
         cmds.button(self.actionColumn.actionButton8, e=True, c=self.cmdStore)
         cmds.button(self.actionColumn.actionButton9, e=True, c=self.cmdRestore)
+        cmds.button(self.actionColumn.actionButton10, e=True, c=self.cmdStick)
+        cmds.button(self.actionColumn.actionButton11, e=True, c=self.cmdUnStick)
+        cmds.button(self.actionColumn.actionButton12, e=True, c=self.cmdParentRig)
+        cmds.button(self.actionColumn.actionButton13, e=True, c=self.cmdAimRig)
 
         cmds.showWindow(self.win)
 
@@ -126,3 +130,29 @@ class CSUI(object):
     def cmdRestore(self, *args):
         self.anim.restore()
         message('Animation ReStored: -- ' + self.objX, maya=True)
+
+    def cmdStick(self, *args):
+        import constraint_lib as cn
+        reload(cn)
+        self.objX = cmds.ls(sl=1)[0]
+        cn.stick(offset=True)
+        message('sticky: -- ' + self.objX, maya=True)
+
+    def cmdUnStick(self, *args):
+        import constraint_lib as cn
+        reload(cn)
+        self.objX = cmds.ls(sl=1)[0]
+        cn.unStick(sparseKeys=True, timeLine=False, sim=False)
+        message('un~sticky: -- ' + self.objX, maya=True)
+
+    def cmdParentRig(self, *args):
+        import animRig_lib as ar
+        reload(ar)
+        ar.parentRig(bake=True)
+        message('parent rig built. -- new control Selected ', maya=True)
+
+    def cmdAimRig(self, *args):
+        import animRig_lib as ar
+        reload(ar)
+        ar.aimRig( mo=False)
+        message('aimRig: -- ', maya=True)

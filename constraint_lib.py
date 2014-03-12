@@ -261,7 +261,7 @@ def updateConstrainedCurves(obj=None, sim=False):
     rcc = reConnect(obj)
     #bake attributes driven by pairBlend
     objAttrs = getDrivenAttrsByNodeType(obj)
-    bakeConstrained(objAttrs, sparseKeys=True, removeConstraint=False, timeLine=False, sim=False)
+    bakeConstrained(objAttrs, sparseKeys=True, removeConstraint=False, timeLine=False, sim=sim)
     #reconnect constraint/pairBlend
     rcc.connect()
     for state in blndAttrState:
@@ -448,9 +448,10 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         cmds.currentTime(cmds.findKeyframe(which='previous'))
         if keyframes:
             for key in keyframes:
-                cmds.currentTime(key)
-                for attr in attrs:
-                    cmds.setKeyframe(attr)
+                if key >= min and key <= max:
+                    cmds.currentTime(key)
+                    for attr in attrs:
+                        cmds.setKeyframe(attr)
         else:
             message('no keys__________________________')
             bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
@@ -750,24 +751,24 @@ def stick(offset=True):
     else:
         cmds.warning('      #    Stick to world = Select 1 object.       #    Stick to 2nd selection = Select 2 objects.')
 
-def unStick(sparseKeys=True, timeLine=False):
+def unStick(sparseKeys=True, timeLine=False, sim=False):
     #needs work
     activeSet = cs.GetSetOptions()
     sel = cmds.ls(sl=True)
     gRange = GetRange()
     cons = getConstraint(sel)
     if activeSet.current:
-        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=True)
+        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=sim)
         #bakeConstrained(activeSet.current, sparseKeys=False, removeConstraint=True, timeLine=False, sim=False)
         #cmds.bakeResults( activeSet.current, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
         
     else:
-        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=True)
+        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=sim)
         #bakeConstrainedSelection(sparseKeys=False, removeConstraint=True, timeLine=False, sim=False)
         #cmds.bakeResults( sel, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
     #delete associated objects
     blndAttr = getBlendAttr(sel, delete=True)
-    cmds.delete(cons)
+    #cmds.delete(cons)
     plugs = cmds.listConnections(sel[0] + '.message', s=False, d=True, p=True)
     if plugs != None:
         for p in plugs:
