@@ -50,7 +50,8 @@ def moveValue(up=True):
 def animScale(v):
     try:
         v = float(v)
-        scale_pivot  = cmds.playbackOptions(q=True, min=True)
+        #scale_pivot  = cmds.playbackOptions(q=True, min=True)
+        scale_pivot  = cmds.currentTime(q=True)
         cmds.scaleKey(ts=v, tp=scale_pivot)
     except:
         message( 'didnt work')

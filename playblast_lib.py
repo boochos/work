@@ -260,7 +260,7 @@ def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScre
         print rvString
         os.system(rvString)
         cmds.currentTime(current)
-    blastWin()
+    #blastWin()
 
 def blastWin():
     rootDir = getDefaultPath()

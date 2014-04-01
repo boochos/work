@@ -67,7 +67,7 @@ def subframe():
                     else:
                         message('no keys')
             else:
-                message('Object ' + obj + ' has no keys')
+                message('Object ' + s + ' has no keys')
                 return None
     else:
         message('Select object', maya=1)
@@ -848,10 +848,10 @@ class AnimCrv(Key):
 
 def bakeUndo():
     que = cmds.undoInfo(q=1,un=1)
-    #only run if undo que has a keyframe -edit entry
-    if 'bake' in que.lower() or 'changeRO' in que.lower() or 'changeRo' in que.lower() or 'Rig' in que or 'switch' in que.lower():
+    if 'bake' in que.lower() or 'changeRO' in que.lower() or 'changeRo' in que.lower() or 'aimRig' in que or 'switch' in que.lower() or 'parentRig' in que.lower():
         uiEnable()
         cmds.undo()
         uiEnable()
+        message(que)
     else:
         cmds.undo()

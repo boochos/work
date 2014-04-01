@@ -3,8 +3,8 @@ import maya.mel as mel
 import characterSet_lib as cs
 import constraint_lib as cn
 import display_lib as ds
-reload(ds)
-reload(cn)
+#reload(ds)
+#reload(cn)
 
 
 def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWorld=False):

@@ -285,7 +285,7 @@ class SpaceSwitch():
                 cn.eulerFilter(self.obj, tangentFix=True)
                 i = i + 1
             #tangent fix
-            cn.eulerFilter(crv, tangentFix=True)
+            #cn.eulerFilter(crv, tangentFix=True)
             #restore everything
             cmds.currentTime(current)
             cmds.autoKeyframe(state=autoK)

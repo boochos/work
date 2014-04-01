@@ -94,40 +94,53 @@ class Action(object):
         simu = 'Step through every frame.'
         #self.s0 = cmds.separator( height=self.sepH, style=self.sepStl )
         #bake
-        self.actionButton1 = cmds.button(self.actionButton1, label='Bake', c=self.cmdAction, bgc=red, ann='Bake selected objects if they are connected to a pairBlend node or constraint.')
+        self.actionButton1 = cmds.button(self.actionButton1, label='Bake', c=self.cmdAction, bgc=red,
+        ann='Bake selected objects if they are connected to a pairBlend node or constraint.')
         self.c1 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
-        self.c2 = cmds.checkBox( label='Remove Constraint', v=True, ann='Remove constraint after baking.\nIf off anim curves are updated and the constraint remains connected.' )
+        self.c2 = cmds.checkBox( label='Remove Constraint', v=True,
+        ann='Remove constraint after baking.\nIf off anim curves are updated and the constraint remains connected.' )
         self.c3 = cmds.checkBox( label='Timeline Range', ann=time )
         self.c4 = cmds.checkBox( label='Simulation', v=False, ann=simu )
         #rotate order
-        self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=red, ann='Change rotate order of selected Object.')
-        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', w=self.w, cw=[1, self.w], ann='Select rotate order to bake to.')
+        self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=red,
+        ann='Change rotate order of selected Object.')
+        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', w=self.w, cw=[1, self.w],
+        ann='Select rotate order to bake to.')
         ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
         for o in ro:
             cmds.menuItem(o)
         self.s1 = cmds.separator( height=self.sepH, style=self.sepStl )
         #bake to locator
-        self.actionButton3 = cmds.button(self.actionButton3, label='Bake To LOC', c=self.cmdAction, bgc=redD, ann='Bake all selected objects to a locator in world space.')
+        self.actionButton3 = cmds.button(self.actionButton3, label='Bake To LOC', c=self.cmdAction, bgc=redD,
+        ann='Bake all selected objects to a locator in world space.')
         self.c6 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
         self.c7 = cmds.checkBox( label='Translation', v=True, ann='Only bake translation attributes.\nRotation will be constrained to follow object.' )
         self.c8 = cmds.checkBox( label='Rotation', v=True, ann='Only bake rotation attributes.\nTranslation will be constrained to follow object.'  )
         self.c12 = cmds.checkBox( label='Simulation', v=False, ann=simu )
         self.s2 = cmds.separator( height=self.sepH, style=self.sepStl )
         #space switcher
-        self.actionButton8 = cmds.button(self.actionButton8, label='Store Xform Anim', c=self.cmdAction, bgc=purple, ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
-        self.actionButton9 = cmds.button(self.actionButton9, label='ReStore Xform Anim', c=self.cmdAction, bgc=purple, ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
+        self.actionButton8 = cmds.button(self.actionButton8, label='Store Xform Anim', c=self.cmdAction, bgc=purple,
+        ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
+        self.actionButton9 = cmds.button(self.actionButton9, label='ReStore Xform Anim', c=self.cmdAction, bgc=purple,
+        ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
         self.s3 = cmds.separator( height=self.sepH, style=self.sepStl )
         #match things
-        self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=green, ann='Select 2 objects.\nSecond object will be keyed on same frames as the first.\nNo animation is added, the object is just keyed.')
-        self.actionButton6 = cmds.button(self.actionButton6, label='Match Transforms', c=self.cmdAction, bgc=green, ann='Match the position of first object to second object.')
+        self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=green,
+        ann='Select 2 objects.\nSecond object will be keyed on same frames as the first.\nNo animation is added, the object is just keyed.')
+        self.actionButton6 = cmds.button(self.actionButton6, label='Match Transforms', c=self.cmdAction, bgc=green,
+        ann='Match the position of first object to second object.')
         self.s6 = cmds.separator( height=self.sepH, style=self.sepStl )
         #stick
-        self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=teal, ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
-        self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=teal, ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nConnections are broken, extra objects are deleted.')
+        self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=teal,
+        ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
+        self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=teal,
+        ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nConnections are broken, extra objects are deleted.')
         self.s4 = cmds.separator( height=self.sepH, style=self.sepStl )
         #anim Rigs
-        self.actionButton12 = cmds.button(self.actionButton12, label='Parent Rig', c=self.cmdAction, bgc=greyD, ann='A parent rig is created between 2 objects.\n Animation is preserved and transfered to a locator.\nSelect child first.\nROOT/SPIN/OFFSET')
-        self.actionButton13 = cmds.button(self.actionButton13, label='Aim Rig', c=self.cmdAction, bgc=greyD, ann='An aim rig is created between 2 objects.\n Animation is preserved and transfered to locator.\nSelect target first.\nROOT/BASE\nROOT/AIM/OFFSET\nROOT/AIM/UP')
+        self.actionButton12 = cmds.button(self.actionButton12, label='Parent Rig', c=self.cmdAction, bgc=greyD,
+        ann='A parent rig is created between 2 objects.\n Animation is preserved and transfered to a locator.\nSelect child first.\nROOT/SPIN/OFFSET')
+        self.actionButton13 = cmds.button(self.actionButton13, label='Aim Rig', c=self.cmdAction, bgc=greyD,
+        ann='An aim rig is created between 2 objects.\n Animation is preserved and transfered to locator.\nSelect target first.\nROOT/BASE\nROOT/AIM/OFFSET\nROOT/AIM/UP')
         self.s5 = cmds.separator( height=self.sepH, style=self.sepStl )
         #place loc, constain
         self.actionButton2 = cmds.button(self.actionButton2, label='Place LOC', c=self.cmdAction, bgc=blue)

@@ -346,6 +346,30 @@ def speed(world=True, local=True):
     else:
         message('Select an object.')
 
+def plotExp(sel, attr):
+    exp = "float $nextPosX = `getAttr -t (frame+1) "+sel+".rx`;\nfloat $lastPosX = `getAttr -t (frame-1) "+sel+".rx`;\nfloat $speed = abs(mag (<<"+sel+".rotateX,$lastPosX,  $nextPosX>>) );\n"+sel+"."+attr+" = $speed;"
+    return exp
+
+def createPlotAttr(sel, attr, exp):
+    cmds.addAttr(sel,longName=attr ,attributeType = 'float', k=0)
+    cmds.setAttr(sel + "." + attr, cb=1)
+    e = cmds.expression(o=sel, s=exp)
+
+def plotAttr():
+    selected = cmds.ls( sl=True )
+    if len(selected) != 0:
+        sel = selected[0]
+        attr = 'plot'
+        exp = plotExp(sel, attr)
+        if cmds.attributeQuery(attr, node=sel, ex=True) == False:
+            createPlotAttr(sel, attr, exp)
+        else:
+            cmds.warning('-- Plotted attr (' + attr + ') already exists - ' + sel + ' ! --')
+            deleteUserAttr(sel=sel, exp=True, att=attr)
+            return None
+    else:
+        message('Select an object.')
+
 def createDisAttr(sel, attr, exp):
     '''
     creates attr and applies expression
