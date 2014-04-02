@@ -284,7 +284,7 @@ def importFile(path='', prefix='', ns='', cs=['old','new'], rp={None:None}):
             if rp.keys() != [None]:
                 line = replaceInString(line, rp)
             #character and sub-character set line
-            if line.find('ParentInfo=') > -1:
+            if 'ParentInfo=' in line:
                 #print line, '--'
                 line = line.split('=')[1].strip('\n').partition('|')
                 #line = updateCS(string=line, old=cs[0], new=cs[1])
@@ -305,6 +305,7 @@ def importFile(path='', prefix='', ns='', cs=['old','new'], rp={None:None}):
                     addNode = charName
             #character set members line
             else:
+                #does not account for multiple refs in one set, like character and prop
                 if ':' in line:
                     line = updateNS(str(line), str(ns))
                     if cmds.objExists(line) == False:

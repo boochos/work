@@ -26,6 +26,8 @@ class CSUI(object):
         #internal
         self.windowName                   = 'CN Tools'
         #store/restore
+        self.objects  = []
+        self.animBucket = []
         self.objX = None
         self.anim = None
         #execute
@@ -123,13 +125,22 @@ class CSUI(object):
         al.changeRoMulti(ro=t1)
 
     def cmdStore(self, *args):
-        self.objX = cmds.ls(sl=1)[0]
-        self.anim = al.SpaceSwitch(self.objX)
-        message('Animation Stored: -- ' + self.objX, maya=True)
+        self.objects = cmds.ls(sl=1)
+        #self.objX = cmds.ls(sl=1)[0]
+        #self.anim = al.SpaceSwitch(self.objX)
+        #message('Animation Stored: -- ' + self.objX, maya=True)
+        for obj in self.objects:
+            self.animBucket.append(al.SpaceSwitch(obj))
+            message('Animation Stored: -- ' + obj, maya=True)
+            cmds.refresh(f=1)
 
     def cmdRestore(self, *args):
-        self.anim.restore()
-        message('Animation ReStored: -- ' + self.objX, maya=True)
+        for obj in self.animBucket:
+            obj.restore()
+            message('Animation ReStored: -- ' + obj.obj, maya=True)
+            cmds.refresh(f=1)
+        #self.anim.restore()
+        #message('Animation ReStored: -- ' + self.objX, maya=True)
 
     def cmdStick(self, *args):
         import constraint_lib as cn
