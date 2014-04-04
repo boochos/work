@@ -125,6 +125,7 @@ class CSUI(object):
         al.changeRoMulti(ro=t1)
 
     def cmdStore(self, *args):
+        self.animBucket = []
         self.objects = cmds.ls(sl=1)
         #self.objX = cmds.ls(sl=1)[0]
         #self.anim = al.SpaceSwitch(self.objX)

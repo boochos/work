@@ -434,7 +434,12 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         if len(created):
             for attr in created:
                 cmds.setKeyframe(obj + '.' + attr, v=1)
-    #print attrs
+    if not attrs:
+        message('No PAIRBLEND or CONSTRAINT found. Creating a new locator to bake.')
+        loc = locatorOnSelection(ro='zxy', X=1.0, constrain=True, toSelection=True)[0]
+        bakeStep(loc, time=(time[0], time[1]), sim=True, uiOff=uiOff)
+        return None
+    #
     cmds.currentTime(i)
     #
     if sim:
@@ -455,6 +460,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         else:
             message('no keys__________________________')
             bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
+            return None
     if attrs:
         cmds.keyTangent( attrs, edit=True, itt='auto', ott='auto')
     cmds.currentTime(current)
@@ -620,7 +626,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
     if obj != None:
         lc = cmds.spaceLocator(name=obj + 'temp')[0]
         objColor(lc, color)
-        print lc
+        #print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
         cmds.setAttr(lc + '.sy', k=False, cb=True)
         cmds.setAttr(lc + '.sz', k=False, cb=True)
