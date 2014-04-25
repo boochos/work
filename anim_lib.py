@@ -260,10 +260,13 @@ class SpaceSwitch():
         else:
             message('No keys.', maya=True)
             
-    def restore(self):
+    def restore(self, useSelected=False):
         '''
         restore animation
         '''
+        if useSelected:
+            self.obj = cmds.ls(sl=1)[0]
+    
         if self.keys:
             current = cmds.currentTime(q=True)
             #ui off

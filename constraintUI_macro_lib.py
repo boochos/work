@@ -54,6 +54,7 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton7, e=True, c=self.cmdRO)
         cmds.button(self.actionColumn.actionButton8, e=True, c=self.cmdStore)
         cmds.button(self.actionColumn.actionButton9, e=True, c=self.cmdRestore)
+        cmds.button(self.actionColumn.actionButton14, e=True, c=self.cmdRestoreToSelected)
         cmds.button(self.actionColumn.actionButton10, e=True, c=self.cmdStick)
         cmds.button(self.actionColumn.actionButton11, e=True, c=self.cmdUnStick)
         cmds.button(self.actionColumn.actionButton12, e=True, c=self.cmdParentRig)
@@ -142,6 +143,11 @@ class CSUI(object):
             cmds.refresh(f=1)
         #self.anim.restore()
         #message('Animation ReStored: -- ' + self.objX, maya=True)
+
+    def cmdRestoreToSelected(self, *args):
+        self.animBucket[0].restore(useSelected=True)
+        message('Animation ReStored: -- ' + obj.obj, maya=True)
+        cmds.refresh(f=1)
 
     def cmdStick(self, *args):
         import constraint_lib as cn

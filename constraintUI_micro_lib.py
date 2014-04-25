@@ -34,6 +34,7 @@ class Action(object):
         self.actionButton11  = name + '_actionButton11'
         self.actionButton12  = name + '_actionButton12'
         self.actionButton13  = name + '_actionButton13'
+        self.actionButton14  = name + '_actionButton14'
         self.c1            = ''
         self.c2            = ''
         self.c3            = ''
@@ -59,7 +60,7 @@ class Action(object):
         self.r2            = ''
         self.label         = label
         self.cmdAction     = cmdAction
-        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13,self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
+        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14,self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
         self.h             = h
         self.w             = w
         self.heightForm    = 30
@@ -88,6 +89,7 @@ class Action(object):
         green = [0.2, 0.5, 0.0]
         teal = [0.0,0.5,0.5]
         purple = [0.35, 0.35, 0.5]
+        purple2 = [0.28, 0.28, 0.39]
         orange = [0.5, 0.35, 0.0]
         existing = 'Will only bake on existing frames.\nTurn off to get a key on every frame.'
         time = 'Force timeline range to be baked.\nOtherwise range is gathered in this priority:\nUse selected range\nUse range from animation, if any\nUse range from timeline.'
@@ -123,6 +125,8 @@ class Action(object):
         ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
         self.actionButton9 = cmds.button(self.actionButton9, label='ReStore Xform Anim', c=self.cmdAction, bgc=purple,
         ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
+        self.actionButton14 = cmds.button(self.actionButton14, label='ReStore to Selected', c=self.cmdAction, bgc=purple2,
+        ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Override - Restore animation to selected object.')
         self.s3 = cmds.separator( height=self.sepH, style=self.sepStl )
         #match things
         self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=green,
