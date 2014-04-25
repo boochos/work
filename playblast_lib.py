@@ -176,7 +176,7 @@ def blastDir(forceTemp=True):
     else:
         return getDefaultPath()
 
-def blast(w=1920, h=789, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=True):
+def blast(w=2094, h=858, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=False):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
