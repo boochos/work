@@ -35,12 +35,12 @@ class Action(object):
         self.actionButton12  = name + '_actionButton12'
         self.actionButton13  = name + '_actionButton13'
         self.actionButton14  = name + '_actionButton14'
-        self.c1            = ''
+        #self.c1            = ''
         self.c2            = ''
         self.c3            = ''
         self.c4            = ''
         self.c5            = ''
-        self.c6            = ''
+        #self.c6            = ''
         self.c7            = ''
         self.c8            = ''
         self.c9            = ''
@@ -60,7 +60,7 @@ class Action(object):
         self.r2            = ''
         self.label         = label
         self.cmdAction     = cmdAction
-        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14,self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
+        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14, self.c2, self.c3, self.c4, self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
         self.h             = h
         self.w             = w
         self.heightForm    = 30
@@ -98,11 +98,11 @@ class Action(object):
         #bake
         self.actionButton1 = cmds.button(self.actionButton1, label='Bake', c=self.cmdAction, bgc=red,
         ann='Bake selected objects if they are connected to a pairBlend node or constraint.')
-        self.c1 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
+        #self.c1 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
         self.c2 = cmds.checkBox( label='Remove Constraint', v=True,
         ann='Remove constraint after baking.\nIf off anim curves are updated and the constraint remains connected.' )
         self.c3 = cmds.checkBox( label='Timeline Range', ann=time )
-        self.c4 = cmds.checkBox( label='Simulation', v=False, ann=simu )
+        self.c4 = cmds.checkBox( label='On All Frames', v=False, ann=simu )
         #rotate order
         self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=red,
         ann='Change rotate order of selected Object.')
@@ -115,10 +115,10 @@ class Action(object):
         #bake to locator
         self.actionButton3 = cmds.button(self.actionButton3, label='Bake To LOC', c=self.cmdAction, bgc=redD,
         ann='Bake all selected objects to a locator in world space.')
-        self.c6 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
+        #self.c6 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
         self.c7 = cmds.checkBox( label='Translation', v=True, ann='Only bake translation attributes.\nRotation will be constrained to follow object.' )
         self.c8 = cmds.checkBox( label='Rotation', v=True, ann='Only bake rotation attributes.\nTranslation will be constrained to follow object.'  )
-        self.c12 = cmds.checkBox( label='Simulation', v=False, ann=simu )
+        self.c12 = cmds.checkBox( label='On All Frames', v=False, ann=simu )
         self.s2 = cmds.separator( height=self.sepH, style=self.sepStl )
         #space switcher
         self.actionButton8 = cmds.button(self.actionButton8, label='Store Xform Anim', c=self.cmdAction, bgc=purple,

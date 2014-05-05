@@ -65,11 +65,12 @@ class CSUI(object):
     def cmdBake(self, *args):
         import constraint_lib as cn
         reload(cn)
-        v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
+        #v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
         v2 = cmds.checkBox(self.actionColumn.c2, q=True, v=True)
         v3 = cmds.checkBox(self.actionColumn.c3, q=True, v=True)
         v4 = cmds.checkBox(self.actionColumn.c4, q=True, v=True)
-        cn.bakeConstrainedSelection(sparseKeys=v1, removeConstraint=v2, timeLine=v3, sim=v4)
+        #cn.bakeConstrainedSelection(sparseKeys=v1, removeConstraint=v2, timeLine=v3, sim=v4)
+        cn.bakeConstrainedSelection( removeConstraint=v2, timeLine=v3, sim=v4)
 
     def cmdPlace(self,*args):
         import constraint_lib as cn
@@ -87,11 +88,12 @@ class CSUI(object):
     def cmdBakeToLoc(self,*args):
         import constraint_lib as cn
         reload(cn)
-        v6 = cmds.checkBox(self.actionColumn.c6, q=True, v=True)
+        #v6 = cmds.checkBox(self.actionColumn.c6, q=True, v=True)
         v7 = cmds.checkBox(self.actionColumn.c7, q=True, v=True)
         v8 = cmds.checkBox(self.actionColumn.c8, q=True, v=True)
         v12 = cmds.checkBox(self.actionColumn.c12, q=True, v=True)
-        cn.controllerToLocator(p=v7, r=v8, sparseKeys=v6, timeLine=False, sim=v12)
+        #cn.controllerToLocator(p=v7, r=v8, sparseKeys=v6, timeLine=False, sim=v12)
+        cn.controllerToLocator(p=v7, r=v8, timeLine=False, sim=v12)
 
     def cmdMatchKeys(self, *args):
         import constraint_lib as cn
@@ -146,7 +148,7 @@ class CSUI(object):
 
     def cmdRestoreToSelected(self, *args):
         self.animBucket[0].restore(useSelected=True)
-        message('Animation ReStored: -- ' + obj.obj, maya=True)
+        message('Animation ReStored: -- ' + self.animBucket[0].obj, maya=True)
         cmds.refresh(f=1)
 
     def cmdStick(self, *args):
@@ -160,7 +162,7 @@ class CSUI(object):
         import constraint_lib as cn
         reload(cn)
         self.objX = cmds.ls(sl=1)[0]
-        cn.unStick(sparseKeys=True, timeLine=False, sim=False)
+        cn.unStick(timeLine=False, sim=False)
         message('un~sticky: -- ' + self.objX, maya=True)
 
     def cmdParentRig(self, *args):

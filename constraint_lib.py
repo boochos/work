@@ -261,7 +261,7 @@ def updateConstrainedCurves(obj=None, sim=False):
     rcc = reConnect(obj)
     #bake attributes driven by pairBlend
     objAttrs = getDrivenAttrsByNodeType(obj)
-    bakeConstrained(objAttrs, sparseKeys=True, removeConstraint=False, timeLine=False, sim=sim)
+    bakeConstrained(objAttrs, removeConstraint=False, timeLine=False, sim=sim)
     #reconnect constraint/pairBlend
     rcc.connect()
     for state in blndAttrState:
@@ -462,13 +462,14 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
             bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
             return None
     if attrs:
-        cmds.keyTangent( attrs, edit=True, itt='auto', ott='auto')
+        #add option to only correct tangents of baked frames
+        cmds.keyTangent( attrs, edit=True, itt='auto', ott='auto', time=(time[0], time[1]))
     cmds.currentTime(current)
     cmds.autoKeyframe(state=autoK)
     if uiOff:
         uiEnable(controls='modelPanel', toggle=True)
 
-def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
+def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
     # add function to step through frames instead of using bake results
     if uiOff:
         uiEnable()
@@ -479,25 +480,21 @@ def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False,
     #print 'start baking\n'
     if timeLine == True:
         message('Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
-        #cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
         bakeStep(obj, time=(gRange.start,gRange.end), sim=sim)
         #print 'done baking\n'
     else:
         if keyedOrig != None:
             message('Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
             if gRange.keyStart == gRange.keyEnd:
-                #cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
                 bakeStep(obj, time=(gRange.start,gRange.end), sim=sim)
                 message('Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
                 #print 'done baking\n'
             else:
-                #cmds.bakeResults( obj, t=(gRange.keyStart,gRange.keyEnd), simulation=sim, pok=True)
                 bakeStep(obj, time=(gRange.keyStart,gRange.keyEnd), sim=sim)
                 message('Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
                 #print 'done baking\n'
         else:
             message("Target object has no keys. Can't bake to keyed timeline.  Bake range: " + str(gRange.start) + ' - ' + str(gRange.end))
-            #cmds.bakeResults( obj, t=(gRange.start,gRange.end), simulation=sim, pok=True)
             bakeStep(obj, time=(gRange.start,gRange.end), sim=sim)
             #print 'done baking\n'
     keyedBake = keyedFrames(obj)
@@ -506,6 +503,7 @@ def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False,
     if removeConstraint == True:
         deleteList(cons)
         deleteAttrList(blndAttr)
+    '''
     if sparseKeys:
         if keyedOrig:
             for key in keyedBake:
@@ -513,19 +511,20 @@ def bakeConstrained(obj, sparseKeys=True, removeConstraint=True, timeLine=False,
                     cmds.cutKey(obj, t=(key,key))
         else:
             message("Baked! Didn't create sparseKeys. Object had no keys.")
+            '''
     #print 'done\n'
     if uiOff:
         uiEnable()
 
-def bakeConstrainedSelection(sparseKeys=True, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
+def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, uiOff=True):
     sel = cmds.ls(sl=True)
     if len(sel) != 0:
         for obj in sel:
-            bakeConstrained(obj, sparseKeys=sparseKeys, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim, uiOff=uiOff)
+            bakeConstrained(obj, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim, uiOff=uiOff)
     else:
         cmds.warning('Select constrained object(s)')
 
-def controllerToLocator(obj=None, p=True, r=True, sparseKeys=True, timeLine=False, sim=False, size=1.0, uiOff=True, color=07, suffix='__BAKE__'):
+def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1.0, uiOff=True, color=07, suffix='__BAKE__'):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -571,8 +570,8 @@ def controllerToLocator(obj=None, p=True, r=True, sparseKeys=True, timeLine=Fals
                 cnR = cmds.orientConstraint(item, lc, mo=False)
             #bake locator in frame range
             matchKeyedFrames(item, lc)
-            bakeConstrained(lc, sparseKeys=False, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
-            if sparseKeys == True:
+            bakeConstrained(lc, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
+            if sim != True:
                 matchKeyedFrames(item, lc)
             if p == False:
                 if cnT != None:
@@ -757,21 +756,17 @@ def stick(offset=True):
     else:
         cmds.warning('      #    Stick to world = Select 1 object.       #    Stick to 2nd selection = Select 2 objects.')
 
-def unStick(sparseKeys=True, timeLine=False, sim=False):
+def unStick( timeLine=False, sim=False):
     #needs work
     activeSet = cs.GetSetOptions()
     sel = cmds.ls(sl=True)
     gRange = GetRange()
     cons = getConstraint(sel)
     if activeSet.current:
-        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=sim)
-        #bakeConstrained(activeSet.current, sparseKeys=False, removeConstraint=True, timeLine=False, sim=False)
-        #cmds.bakeResults( activeSet.current, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
+        bakeConstrainedSelection( removeConstraint=True, timeLine=timeLine, sim=sim)
         
     else:
-        bakeConstrainedSelection(sparseKeys=sparseKeys, removeConstraint=True, timeLine=timeLine, sim=sim)
-        #bakeConstrainedSelection(sparseKeys=False, removeConstraint=True, timeLine=False, sim=False)
-        #cmds.bakeResults( sel, t=(gRange.selStart,gRange.selEnd), simulation=False, pok=True)
+        bakeConstrainedSelection( removeConstraint=True, timeLine=timeLine, sim=sim)
     #delete associated objects
     blndAttr = getBlendAttr(sel, delete=True)
     #cmds.delete(cons)
