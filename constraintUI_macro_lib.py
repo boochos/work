@@ -161,8 +161,9 @@ class CSUI(object):
     def cmdUnStick(self, *args):
         import constraint_lib as cn
         reload(cn)
+        v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
         self.objX = cmds.ls(sl=1)[0]
-        cn.unStick(timeLine=False, sim=False)
+        cn.unStick(timeLine=False, sim=v1)
         message('un~sticky: -- ' + self.objX, maya=True)
 
     def cmdParentRig(self, *args):

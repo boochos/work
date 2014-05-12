@@ -1,6 +1,7 @@
 import maya.cmds as cmds
 import display_lib as ds
 import maya.mel as mel
+import animCurve_lib as ac
 
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
@@ -70,6 +71,9 @@ def graphEditorCMD():
     graphFilters(attrs, panel[len(panel)-1])
 
 def toggleExpand():
+    gs = ac.GraphSelection()
+    cmds.select(clear=True)
+    cmds.refresh(f=True)
     ui    = ds.GeBtn()
     panel = ds.findControlParent(control=ui.fil, split=5)
     panel = panel.split('|')
@@ -81,3 +85,4 @@ def toggleExpand():
         message('expand connections OFF -- reselect to see changes')
     else:
         message('expand connections ON -- reselect to see changes')
+    gs.reselect()

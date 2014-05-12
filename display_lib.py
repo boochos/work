@@ -3,6 +3,7 @@ import maya.mel as mel
 import constraint_lib as cn
 import os
 from subprocess import call
+import animCurve_lib as ac
 reload(cn)
 
 
@@ -508,6 +509,7 @@ def altFrame(*args):
     typ = cmds.getPanel(typeOf=pnl)
     if typ == 'modelPanel':
         sel    = cmds.ls(sl=True)
+        gs = ac.GraphSelection()
         locs = []
         if sel:
             for item in sel:
@@ -516,7 +518,7 @@ def altFrame(*args):
             cmds.select(locs)
             mel.eval("fitPanel -selected;")
             cmds.delete(locs)
-            cmds.select(sel)
+            gs.reselect()
         else:
             message('select an object')
     else:

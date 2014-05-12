@@ -297,3 +297,25 @@ def smoothKeys(weight=0.5):
                         cmds.keyframe(crv, vc=val, time=(frame, frame))
                         cmds.keyTangent( crv, edit=True, itt='auto', ott='auto', time=(frame, frame))
                     i=i+1
+
+class GraphSelection():
+    def __init__(self):
+        self.selection = cmds.ls(sl=True)
+        self.crvs = cmds.keyframe(q=True, name=True, sl=True)
+        self.pack = []
+        if self.crvs:
+            for item in self.crvs:
+                cr   = []
+                cr.append(item)
+                cr.append(cmds.keyframe(item, q=True, sl=True))
+                self.pack.append(cr)
+
+    def reselect(self, objects=True):
+        if objects:
+            if self.selection:
+                sel = cmds.ls(sl=True)
+                if sel != self.selection:
+                    cmds.select(self.selection)
+        if self.pack:
+            for cr in self.pack:
+                cmds.selectKey(cr[0], add=True, time=(cr[1][0], cr[1][len(cr[1])-1]))

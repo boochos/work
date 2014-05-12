@@ -285,6 +285,7 @@ def blastWin():
         cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
         cmds.formLayout(f1, e=1, af=(refBtn, 'right', 5))
         #flush button
+        '''
         flushBtn = cmds.button('flush' + suf, l='DELETE ALL', c='import playblast_lib as pb\nreload(pb)\npb.flushDefaultDir()', h=16, w=100, bgc=[0.804, 0.361, 0.361])
         attachForm = [(flushBtn,'top', 2, refBtn)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
@@ -302,6 +303,7 @@ def blastWin():
         cmds.formLayout(f1, e=1, af=(wipBtn, 'left', 5))
         #cmds.formLayout(f1, e=1, af=(wipBtn, 'right', 5))
         #compare button
+        '''
 
         #scroll
         scrollBar       = 16

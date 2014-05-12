@@ -35,7 +35,7 @@ class Action(object):
         self.actionButton12  = name + '_actionButton12'
         self.actionButton13  = name + '_actionButton13'
         self.actionButton14  = name + '_actionButton14'
-        #self.c1            = ''
+        self.c1            = ''
         self.c2            = ''
         self.c3            = ''
         self.c4            = ''
@@ -60,7 +60,7 @@ class Action(object):
         self.r2            = ''
         self.label         = label
         self.cmdAction     = cmdAction
-        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14, self.c2, self.c3, self.c4, self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
+        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14, self.c1, self.c2, self.c3, self.c4, self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
         self.h             = h
         self.w             = w
         self.heightForm    = 30
@@ -92,7 +92,7 @@ class Action(object):
         purple2 = [0.28, 0.28, 0.39]
         orange = [0.5, 0.35, 0.0]
         existing = 'Will only bake on existing frames.\nTurn off to get a key on every frame.'
-        time = 'Force timeline range to be baked.\nOtherwise range is gathered in this priority:\nUse selected range\nUse range from animation, if any\nUse range from timeline.'
+        time = 'Force timeline range to be baked.\nOtherwise range is gathered in this priority:\n-Use selected range\n-Use range from animation, if any\n-Use range from timeline.'
         simu = 'Step through every frame.'
         #self.s0 = cmds.separator( height=self.sepH, style=self.sepStl )
         #bake
@@ -100,7 +100,7 @@ class Action(object):
         ann='Bake selected objects if they are connected to a pairBlend node or constraint.')
         #self.c1 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
         self.c2 = cmds.checkBox( label='Remove Constraint', v=True,
-        ann='Remove constraint after baking.\nIf off anim curves are updated and the constraint remains connected.' )
+        ann='Remove constraint after baking.\nIf off, anim curves are updated and the constraint remains connected.' )
         self.c3 = cmds.checkBox( label='Timeline Range', ann=time )
         self.c4 = cmds.checkBox( label='On All Frames', v=False, ann=simu )
         #rotate order
@@ -138,7 +138,8 @@ class Action(object):
         self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=teal,
         ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
         self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=teal,
-        ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nConnections are broken, extra objects are deleted.')
+        ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
+        self.c1 = cmds.checkBox( label='On All Frames', v=False, ann=existing )
         self.s4 = cmds.separator( height=self.sepH, style=self.sepStl )
         #anim Rigs
         self.actionButton12 = cmds.button(self.actionButton12, label='Parent Rig', c=self.cmdAction, bgc=greyD,

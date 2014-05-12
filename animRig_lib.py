@@ -26,7 +26,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
     if not baseWorld:
         cmds.parent(base, master)
     #cmds.parentConstraint(obj[2], base, mo=1)
-    cn.bakeConstrained(base, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(base, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[2], BBB=base, subtractive=True)
 
     #base up
@@ -36,14 +36,14 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
     cmds.setAttr(baseUp + '.ty', offset*mlt)
     cmds.parent(baseUp, master)
     cmds.parentConstraint(obj[2], baseUp, mo=1)
-    cn.bakeConstrained(baseUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(baseUp, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[2], BBB=baseUp, subtractive=True)
 
     #mid base
     mid = cn.locator(obj=obj[1], ro='zxy', X=size, constrain=True, toSelection=True, suffix='__MID__')[0]
     cmds.parent(mid, master)
     #cmds.parentConstraint(obj[1], mid, mo=1)
-    cn.bakeConstrained(mid, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(mid, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[1], BBB=mid, subtractive=True)
 
     #mid up
@@ -53,7 +53,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
     cmds.setAttr(midUp + '.ty', offset*mlt)
     #cmds.parent(midUp, mid)
     cmds.parentConstraint(obj[1], midUp, mo=1)
-    cn.bakeConstrained(midUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(midUp, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[1], BBB=midUp, subtractive=True)
 
     #tip base, tip target, tip up
@@ -67,7 +67,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
     cmds.setAttr(tipTarget + '.tx', offset )
     cmds.parent(tipTarget, w=1)
     cmds.parentConstraint(tip, tipTarget, mo=1)
-    cn.bakeConstrained(tipTarget, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(tipTarget, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[0], BBB=tipTarget, subtractive=True)
 
     #3 loc (tip up)
@@ -76,12 +76,12 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1,0,0], u=[0,1,0], mlt=1.0, baseWo
     cmds.parent(tipUp, tipTarget)
     cmds.setAttr(tipUp + '.ty', offset*mlt)
     cmds.parentConstraint(tip, tipUp, mo=1)
-    cn.bakeConstrained(tipUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(tipUp, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[0], BBB=tipUp, subtractive=True)
 
     #loc 1 (tip base)
     cmds.parent(tip, tipTarget)
-    cn.bakeConstrained(tip, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(tip, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(AAA=obj[0], BBB=tip, subtractive=True)
 
     #aim constraints
@@ -212,9 +212,9 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     #match keys
     cn.matchKeyedFrames(AAA=objAim, BBB=locA, subtractive=True)
     #bake locator A
-    cn.bakeConstrained(locA, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
+    cn.bakeConstrained(locA, removeConstraint=True, timeLine=False, sim=False)
     #bake locator on location B
-    locB = cn.controllerToLocator(objBase, p=False, r=True, sparseKeys=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
+    locB = cn.controllerToLocator(objBase, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
     locs.append(locB)
     #place up locator on location B
     locUp = cn.locator(obj=objBase, ro='zxy', constrain=False, toSelection=False, X=size*0.5, color=29, suffix='__UP__')[0]
@@ -227,7 +227,7 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     #parent locUp to locator A, bake up locator
     cmds.parent(locUp, locA)
     cn.matchKeyedFrames(AAA=objAim, BBB=locUp, subtractive=True)
-    cn.bakeConstrained(locUp, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
+    cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
     #aim offset
     locAim = cn.locator(obj=objBase, ro='zxy', constrain=False, toSelection=False, X=size*1, color=15, suffix='__OFFSET__')[0]
     cmds.parent(locAim, locB)
@@ -235,7 +235,7 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1,0,0], u=[0,1,0], tipOffset=1.
     cmds.parent(locAim, locA)
     cmds.parentConstraint(objBase, locAim, mo=1)
     cn.matchKeyedFrames(AAA=objAim, BBB=locAim, subtractive=True)
-    cn.bakeConstrained(locAim, sparseKeys=True, removeConstraint=True, timeLine=False, sim=False)
+    cn.bakeConstrained(locAim, removeConstraint=True, timeLine=False, sim=False)
     #delete helper
     con = cn.getConstraint(objBase, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
     cmds.delete(con, locB)
@@ -265,7 +265,7 @@ def parentRig(bake=False):
     #bake anim to offset loc
     cmds.parentConstraint(sel[0], offset, mo=True)
     cn.matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
-    cn.bakeConstrained(offset, sparseKeys=True, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(offset, removeConstraint=True, timeLine=False, sim=True)
     #cn.matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
     #create final rig constraints
     cn.constrainEnabled(offset, sel[0], mo=True)
