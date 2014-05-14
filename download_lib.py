@@ -116,7 +116,7 @@ def get(getScripts=False, getButtons=False, compileAll=False):
     urlIcons    = 'https://raw.github.com/boochos/shelfIcons/master'
     
     #libs
-    libs        = ['characterSet_lib.py', 'characterUI_macro_lib.py', 'constraint_lib.py',
+    libs        = ['download_lib.py', 'characterSet_lib.py', 'characterUI_macro_lib.py', 'constraint_lib.py',
     'constraintUI_macro_lib.py', 'constraintUI_micro_lib.py', 'display_lib.py',
     'key_anim_lib.py', 'lists_lib.py', 'selection.py', 'selectionSet_lib.py',
     'selectionUI_macro_lib.py', 'zero.py', 'autoTangent.mel', 'pairSelect.py',
