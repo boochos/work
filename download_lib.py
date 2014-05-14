@@ -25,7 +25,14 @@ dl.shelfRefresh(getAll=True)
 '''
 ####################################################################
 
-
+def message(what='', maya=False):
+    what = '-- ' + what + ' --'
+    global tell
+    tell = what
+    if maya == True:
+        mel.eval('print \"' + what + '\";')
+    else:
+        print what
 
 def pathDepth(path='', depth='maya'):
     stf    = path.partition(depth)
@@ -115,7 +122,7 @@ def get(getScripts=False, getButtons=False, compileAll=False):
     'selectionUI_macro_lib.py', 'zero.py', 'autoTangent.mel', 'pairSelect.py',
     'animCurve_lib.py', 'animCopyPaste_lib.py', 'animation_library_manager.py',
     'anim_lib.py', 'ui_micro_lib.py', 'sys_lib.py', 'playblast_lib.py', 'togglePlate.py',
-    'graphFilter.py', 'curveSoftSelect.py', 'pairSelectList.txt', 'animRig_lib.py']
+    'graphFilter.py', 'curveSoftSelect.py', 'pairSelectList.txt']
     
     #icons
     icons       = ['constraintUI.png', 'csAdd.png', 'csEx.png',
@@ -147,11 +154,14 @@ def get(getScripts=False, getButtons=False, compileAll=False):
         if getScripts:
             print url
             print home
+            os.remove(home)
+            message('downloading -- ' + home)
+            cmds.refresh()
             urllib.urlretrieve(url, home)
     #compile modules
     if compileAll:
         ca.compile_dir(scriptDir, force=True)
-        print 'compile_______________________'
+        message('compile_______________________')
     #get icons
     for icon in icons:
         url  = urlIcons + '/' + icon
@@ -160,4 +170,6 @@ def get(getScripts=False, getButtons=False, compileAll=False):
         if getButtons:
             print url
             print home
+            message('downloading -- ' + home)
+            cmds.refresh()
             urllib.urlretrieve(url, home)
