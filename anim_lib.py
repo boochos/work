@@ -344,18 +344,24 @@ def matchObj():
     if len(sel) == 2:
         #collect get
         get = sel[1]
+        '''
         roo = cmds.getAttr(get + '.rotateOrder')
         r = cmds.xform(get, q=True, ws=True, ro=True )
         t = cmds.xform(get, q=True, ws=True, t=True )
+        '''
+        mtrx = cmds.xform(get, q=True, m=True, ws=True)
         #collect put
         put = sel[0]
-        origRO = cmds.xform(put, q=True, roo=True)
+        #origRO = cmds.xform(put, q=True, roo=True)
         try:
             #put
+            '''
             cmds.setAttr(put + '.rotateOrder', roo)
             cmds.xform(put, ws=True, t=t)
             cmds.xform(put, ws=True, ro=r)
             cmds.xform(put, roo=origRO)
+            '''
+            cmds.xform(put, m=mtrx, ws=True)
         except:
             #intermediate object
             loc = cmds.spaceLocator(name='getSpace_deleteMe')[0]
