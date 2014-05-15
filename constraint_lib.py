@@ -234,13 +234,20 @@ class reConnect():
                 message('Failed Connection -- ' + self.pairs[key] + ' -- to -- ' + key)
 
 def updateConstraintOffset(obj=''):
+    #currently assuming list is being fed with one object
+    obj = obj[0]
     #find constraint
     con= getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)[0]
     #find target
-    driver = getDrivers(con, typ='transform', plugs=False) #lists [constrained object, constraint, driving object]
+    driver = []
+    drivers = getDrivers(con, typ='transform', plugs=False) #lists [constrained object, constraint, driving object] not in this order
+    for item in drivers:
+        if item != con and item != obj:
+            print item, obj, con
+            driver.append(item)
     print driver
     #update
-    cmds.parentConstraint(driver[2], con, e=1, maintainOffset=1)
+    cmds.parentConstraint(driver[0], con, e=1, maintainOffset=1)
     message('Offset Updated -- ' + con, maya=1)
 
 def updateConstrainedCurves(obj=None, sim=False):
