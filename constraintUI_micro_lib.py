@@ -35,6 +35,7 @@ class Action(object):
         self.actionButton12  = name + '_actionButton12'
         self.actionButton13  = name + '_actionButton13'
         self.actionButton14  = name + '_actionButton14'
+        self.actionButton15  = name + '_actionButton15'
         self.c1            = ''
         self.c2            = ''
         self.c3            = ''
@@ -47,6 +48,7 @@ class Action(object):
         self.c10           = ''
         self.c11           = ''
         self.c12           = ''
+        self.c13           = ''
         self.s0            = ''
         self.s1            = ''
         self.s2            = ''
@@ -60,7 +62,7 @@ class Action(object):
         self.r2            = ''
         self.label         = label
         self.cmdAction     = cmdAction
-        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14, self.c1, self.c2, self.c3, self.c4, self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
+        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14, self.actionButton15, self.c1, self.c2, self.c3, self.c4, self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.c13, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
         self.h             = h
         self.w             = w
         self.heightForm    = 30
@@ -147,13 +149,16 @@ class Action(object):
         self.actionButton13 = cmds.button(self.actionButton13, label='Aim Rig', c=self.cmdAction, bgc=greyD,
         ann='An aim rig is created between 2 objects.\n Animation is preserved and transfered to locator.\nSelect target first.\nROOT/BASE\nROOT/AIM/OFFSET\nROOT/AIM/UP')
         self.s5 = cmds.separator( height=self.sepH, style=self.sepStl )
+        #update constraint offset
+        self.actionButton15 = cmds.button(self.actionButton15, label='Constraint Offset Edit', c=self.cmdAction, bgc=blue)
+        self.s2 = cmds.separator( height=self.sepH, style=self.sepStl )
         #place loc, constain
         self.actionButton2 = cmds.button(self.actionButton2, label='Place LOC', c=self.cmdAction, bgc=blue)
         self.c5 = cmds.checkBox( label='Constrain to', v=True, ann='Use constraint option.' )
         self.col1 = cmds.radioCollection()
         self.r1 = cmds.radioButton( label='  selection', sl=1, ann='Constrain new locator to selection.' )
         self.r2 = cmds.radioButton( label='  reverse', ann='Constrain selection to new locator.' )
-        #self.s2 = cmds.separator( height=self.sepH, style=self.sepStl )
+        self.c13 = cmds.checkBox( label='Match Keys', v=True, ann='Will add keys on the same frames as source object.' )
         #constrain
         self.actionButton5 = cmds.button(self.actionButton5, label='Parent Constraint', c=self.cmdAction, bgc=blue)
         self.c9 = cmds.checkBox( label='Offset', v=True )

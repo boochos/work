@@ -1,6 +1,5 @@
 import urllib
 import maya.cmds as cmds
-import maya.mel as mel
 import os
 import compileall as ca
 
@@ -156,13 +155,13 @@ def get(getScripts=False, getButtons=False, compileAll=False):
             print url
             print home
             os.remove(home)
-            message('downloading -- ' + home, maya=1)
+            message('downloading -- ' + home)
             cmds.refresh()
             urllib.urlretrieve(url, home)
     #compile modules
     if compileAll:
         ca.compile_dir(scriptDir, force=True)
-        message('compile_______________________', maya=1)
+        message('compile_______________________')
     #get icons
     for icon in icons:
         url  = urlIcons + '/' + icon
@@ -171,6 +170,6 @@ def get(getScripts=False, getButtons=False, compileAll=False):
         if getButtons:
             print url
             print home
-            message('downloading -- ' + home, maya=1)
+            message('downloading -- ' + home)
             cmds.refresh()
             urllib.urlretrieve(url, home)

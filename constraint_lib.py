@@ -97,7 +97,7 @@ def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
     #add additive or destructive
     #keyed frames on AAA
     framesAdd = keyedFrames(AAA)
-    #print framesAdd
+    print framesAdd
     #list attrs on BBB and add key
     old = cmds.listAttr(BBB, k=True)
     for attr in old:
@@ -234,12 +234,14 @@ class reConnect():
                 message('Failed Connection -- ' + self.pairs[key] + ' -- to -- ' + key)
 
 def updateConstraintOffset(obj=''):
-    #find target
-    obj2= 'chappieAnimationRig:l_elbowPV_CTRL__BAKE__'
     #find constraint
-    con2= 'l_elbowPV_CTRL_parentConstraint1'
+    con= getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)[0]
+    #find target
+    driver = getDrivers(con, typ='transform', plugs=False) #lists [constrained object, constraint, driving object]
+    print driver
     #update
-    cmds.parentConstraint(obj2, con2, e=1, maintainOffset=1)
+    cmds.parentConstraint(driver[2], con, e=1, maintainOffset=1)
+    message('Offset Updated -- ' + con, maya=1)
 
 def updateConstrainedCurves(obj=None, sim=False):
     if obj == None:

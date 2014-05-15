@@ -59,6 +59,7 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton11, e=True, c=self.cmdUnStick)
         cmds.button(self.actionColumn.actionButton12, e=True, c=self.cmdParentRig)
         cmds.button(self.actionColumn.actionButton13, e=True, c=self.cmdAimRig)
+        cmds.button(self.actionColumn.actionButton15, e=True, c=self.cmdUpdateConstraintOffset)
 
         cmds.showWindow(self.win)
 
@@ -75,15 +76,20 @@ class CSUI(object):
     def cmdPlace(self,*args):
         import constraint_lib as cn
         reload(cn)
+        sel = cmds.ls(sl=1)
         sl=False
         v5 = cmds.checkBox(self.actionColumn.c5, q=True, v=True)
+        v13 = cmds.checkBox(self.actionColumn.c13, q=True, v=True)
         if v5:
             btn = cmds.radioCollection(self.actionColumn.col1, q=True, sl=True)
             lab = cmds.radioButton(btn, q=True, l=True)
             if 'selection' in lab: #string dependant on query working, dont change UI
                 sl = True
         #print sl, '========='
-        cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
+        locs = cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
+        if v13:
+            for loc in locs:
+                cn.matchKeyedFrames(AAA=sel[0], BBB=loc, subtractive=True)
 
     def cmdBakeToLoc(self,*args):
         import constraint_lib as cn
@@ -177,3 +183,6 @@ class CSUI(object):
         reload(ar)
         ar.aimRig( mo=False)
         message('aimRig: -- ', maya=True)
+
+    def cmdUpdateConstraintOffset(self, *args):
+        cn.updateConstraintOffset(obj=cmds.ls(sl=1))
