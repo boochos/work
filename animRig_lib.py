@@ -265,7 +265,7 @@ def parentRig(bake=False):
     #bake anim to offset loc
     cmds.parentConstraint(sel[0], offset, mo=True)
     cn.matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
-    cn.bakeConstrained(offset, removeConstraint=True, timeLine=False, sim=True)
+    cn.bakeConstrained(offset, removeConstraint=True, timeLine=False, sim=False)
     #cn.matchKeyedFrames(AAA=sel[0], BBB=offset, subtractive=True)
     #create final rig constraints
     cn.constrainEnabled(offset, sel[0], mo=True)

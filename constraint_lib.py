@@ -10,12 +10,21 @@ def message(what='', maya=False):
         print what
 
 def uiEnable(controls='modelPanel', toggle=True):
-    model = cmds.lsUI(panels=1, long=True)
+    model = cmds.lsUI(panels=True, l=True)
     ed=[]
     for m in model:
+        print m
         if controls in m:
             ed.append(m)
-    state = cmds.control(ed[0], q=1, m=1)
+    #ed sometimes contains modelPanels that arent attached to anything, use loop with try to filter them out
+    state = False
+    for item in ed:
+        try:
+            state = cmds.control(item, q=1, m=1)
+            print item
+            break
+        except:
+            pass
     for p in ed:
         if cmds.modelPanel(p, q=1, ex=1):
             r = cmds.modelEditor(p, q=1, p=1)
