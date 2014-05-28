@@ -154,7 +154,8 @@ def get(getScripts=False, getButtons=False, compileAll=False):
         if getScripts:
             print url
             print home
-            os.remove(home)
+            if os.path.isdir(home):
+                os.remove(home)
             message('downloading -- ' + home)
             cmds.refresh()
             urllib.urlretrieve(url, home)
