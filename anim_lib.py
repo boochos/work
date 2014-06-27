@@ -443,40 +443,43 @@ def toggleRes():
         cmds.setAttr(name + c + attrLo, 0)
 
 def distributeKeys(count=3.0, destructive=True):
-    #gather info
-    autoK     = cmds.autoKeyframe(q=True, state=True)
     sel       = cmds.ls(sl=1)
-    frames    = getKeyedFrames(sel)
-    #process start/end of loop
-    framesNew = []
-    rng       = cn.GetRange()
-    if rng.selection:
-        for f in frames:
-            if f >= rng.keyStart and f <= rng.keyEnd:
-                framesNew.append(f)
-        frames = framesNew
-    #
-    print frames
-    lastFrame = frames[len(frames)-1]
-    step      = frames[0]
-    i         = frames[0]
-    cut       = []
-    #turn off autokey
-    cmds.autoKeyframe(state=False)
-    #process keys
-    while i < lastFrame:
-        if i == step:
-            cmds.setKeyframe(sel, i=True, t=step)
-            step = step + count
-        else:
-            if i in frames:
-                cut.append(i)
-        i = i+1
-    #remove keys is destructive
-    if destructive:
-        print cut, '_________'
-        if cut:
-            for frame in cut:
-                cmds.cutKey(sel, clear=1, time=(frame, frame))
-    #restore autokey
-    cmds.autoKeyframe(state=autoK)
+    if sel:
+        #gather info
+        autoK     = cmds.autoKeyframe(q=True, state=True)
+        frames    = getKeyedFrames(sel)
+        #process start/end of loop
+        framesNew = []
+        rng       = cn.GetRange()
+        if rng.selection:
+            for f in frames:
+                if f >= rng.keyStart and f <= rng.keyEnd:
+                    framesNew.append(f)
+            frames = framesNew
+        #
+        print frames
+        lastFrame = frames[len(frames)-1]
+        step      = frames[0]
+        i         = frames[0]
+        cut       = []
+        #turn off autokey
+        cmds.autoKeyframe(state=False)
+        #process keys
+        while i < lastFrame:
+            if i == step:
+                cmds.setKeyframe(sel, i=True, t=step)
+                step = step + count
+            else:
+                if i in frames:
+                    cut.append(i)
+            i = i+1
+        #remove keys is destructive
+        if destructive:
+            #print cut, '_________'
+            if cut:
+                for frame in cut:
+                    cmds.cutKey(sel, clear=1, time=(frame, frame))
+        #restore autokey
+        cmds.autoKeyframe(state=autoK)
+    else:
+        message('Select one or more objects',maya=1)

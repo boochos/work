@@ -189,9 +189,9 @@ class CSUI(object):
         import anim_lib as al
         reload(al)
         fld1 = cmds.textField(self.actionColumn.actionField1, q=1, tx=1)
-        print fld1
-        al.distributeKeys(count=float(fld1))
-        message('distribute keys on ' , maya=True)
+        v14 = cmds.checkBox(self.actionColumn.c14, q=True, v=True)
+        al.distributeKeys(count=float(fld1), destructive=v14)
+        #message('distribute keys on ' , maya=True)
 
     def cmdUpdateConstraintOffset(self, *args):
         cn.updateConstraintOffset(obj=cmds.ls(sl=1))
