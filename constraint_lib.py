@@ -13,7 +13,7 @@ def uiEnable(controls='modelPanel', toggle=True):
     model = cmds.lsUI(panels=True, l=True)
     ed=[]
     for m in model:
-        print m
+        #print m
         if controls in m:
             ed.append(m)
     #ed sometimes contains modelPanels that arent attached to anything, use loop with try to filter them out
@@ -21,7 +21,7 @@ def uiEnable(controls='modelPanel', toggle=True):
     for item in ed:
         try:
             state = cmds.control(item, q=1, m=1)
-            print item
+            #print item
             break
         except:
             pass
@@ -150,6 +150,7 @@ class GetRange():
         self.setStartEnd()
         self.keyStart  = 0
         self.keyEnd    = 0
+        self.selection = False
         self.keyedFrames()
         #Has to be last
         self.selRange()
@@ -163,6 +164,7 @@ class GetRange():
             self.selEnd = sel[1]
             self.keyStart = sel[0]
             self.keyEnd = sel[1]
+            self.selection = True
 
     def setStartEnd(self):
         if self.selStart != 0:

@@ -36,6 +36,7 @@ class Action(object):
         self.actionButton13  = name + '_actionButton13'
         self.actionButton14  = name + '_actionButton14'
         self.actionButton15  = name + '_actionButton15'
+        self.actionButton16  = name + '_actionButton16'
         self.c1            = ''
         self.c2            = ''
         self.c3            = ''
@@ -56,13 +57,14 @@ class Action(object):
         self.s4            = ''
         self.s5            = ''
         self.s6            = ''
+        self.s7            = ''
         self.opt1          = ''
         self.col1          = ''
         self.r1            = ''
         self.r2            = ''
         self.label         = label
         self.cmdAction     = cmdAction
-        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14, self.actionButton15, self.c1, self.c2, self.c3, self.c4, self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.c13, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.opt1, self.col1, self.r1, self.r2 ]
+        self.ui            = [self.form, self.opt,self.actionButton1, self.actionButton2, self.actionButton3, self.actionButton4, self.actionButton5,            self.actionButton6, self.actionField1, self.actionButton7, self.actionButton8, self.actionButton9,self.actionButton10, self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14, self.actionButton15, self.actionButton16, self.c1, self.c2, self.c3, self.c4, self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.c13, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.s7, self.opt1, self.col1, self.r1, self.r2 ]
         self.h             = h
         self.w             = w
         self.heightForm    = 30
@@ -164,3 +166,7 @@ class Action(object):
         self.c9 = cmds.checkBox( label='Offset', v=True )
         self.c10 = cmds.checkBox( label='Translation', v=True )
         self.c11 = cmds.checkBox( label='Rotation', v=True )
+        self.s7 = cmds.separator( height=self.sepH, style=self.sepStl )
+        #distribute keys
+        self.actionButton16 = cmds.button(self.actionButton16, label='Distribute Keys', c=self.cmdAction, bgc=grey)
+        self.actionField1 = cmds.textField(self.actionField1, tx=5.0)

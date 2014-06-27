@@ -25,7 +25,7 @@ dl.shelfRefresh(getAll=True)
 '''
 ####################################################################
 
-def message(what='', maya=False):
+def message(what='', maya=True):
     what = '-- ' + what + ' --'
     global tell
     tell = what

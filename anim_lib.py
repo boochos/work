@@ -236,6 +236,20 @@ class SpaceSwitch():
         self.keys = getKeyedFrames(self.obj)
         self.store()
 
+        '''
+        min
+        max
+        selStart
+        selEnd
+        start
+        end
+        current
+        keyStart
+        keyEnd
+        '''
+        self.rng = cn.GetRange()
+       
+
     def store(self):
         '''
         store animation
@@ -276,16 +290,18 @@ class SpaceSwitch():
             cmds.autoKeyframe(state=False)
             i=0
             for key in self.keys:
-                cmds.currentTime(key)
-                cmds.xform(self.obj, m=self.mtrx[i], ws=True)
-                #cmds.xform(self.obj, t=self.pos[i], ws=True)
-                #cmds.xform(self.obj, ro=self.rot[i], ws=True)
-                #account for non-keyable rotate or translate attrs
-                cmds.setKeyframe(self.obj + '.rotate')
-                cmds.setKeyframe(self.obj + '.translate')
-                #getCurves for translate and rotate
-                crv = getAnimCurves(self.obj)
-                cn.eulerFilter(self.obj, tangentFix=True)
+                if key >= self.rng.keyStart and key <= self.rng.keyEnd:
+                    message(str(key))
+                    cmds.currentTime(key)
+                    cmds.xform(self.obj, m=self.mtrx[i], ws=True)
+                    #cmds.xform(self.obj, t=self.pos[i], ws=True)
+                    #cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                    #account for non-keyable rotate or translate attrs
+                    cmds.setKeyframe(self.obj + '.rotate')
+                    cmds.setKeyframe(self.obj + '.translate')
+                    #getCurves for translate and rotate
+                    crv = getAnimCurves(self.obj)
+                    cn.eulerFilter(self.obj, tangentFix=True)
                 i = i + 1
             #tangent fix
             #cn.eulerFilter(crv, tangentFix=True)
@@ -425,3 +441,42 @@ def toggleRes():
     else:
         cmds.setAttr(name + c + attrHi, 1)
         cmds.setAttr(name + c + attrLo, 0)
+
+def distributeKeys(count=3.0, destructive=True):
+    #gather info
+    autoK     = cmds.autoKeyframe(q=True, state=True)
+    sel       = cmds.ls(sl=1)
+    frames    = getKeyedFrames(sel)
+    #process start/end of loop
+    framesNew = []
+    rng       = cn.GetRange()
+    if rng.selection:
+        for f in frames:
+            if f >= rng.keyStart and f <= rng.keyEnd:
+                framesNew.append(f)
+        frames = framesNew
+    #
+    print frames
+    lastFrame = frames[len(frames)-1]
+    step      = frames[0]
+    i         = frames[0]
+    cut       = []
+    #turn off autokey
+    cmds.autoKeyframe(state=False)
+    #process keys
+    while i < lastFrame:
+        if i == step:
+            cmds.setKeyframe(sel, i=True, t=step)
+            step = step + count
+        else:
+            if i in frames:
+                cut.append(i)
+        i = i+1
+    #remove keys is destructive
+    if destructive:
+        print cut, '_________'
+        if cut:
+            for frame in cut:
+                cmds.cutKey(sel, clear=1, time=(frame, frame))
+    #restore autokey
+    cmds.autoKeyframe(state=autoK)

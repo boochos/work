@@ -60,6 +60,7 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton12, e=True, c=self.cmdParentRig)
         cmds.button(self.actionColumn.actionButton13, e=True, c=self.cmdAimRig)
         cmds.button(self.actionColumn.actionButton15, e=True, c=self.cmdUpdateConstraintOffset)
+        cmds.button(self.actionColumn.actionButton16, e=True, c=self.cmdDistributeKeys)
 
         cmds.showWindow(self.win)
 
@@ -183,6 +184,14 @@ class CSUI(object):
         reload(ar)
         ar.aimRig( mo=False)
         message('aimRig: -- ', maya=True)
+
+    def cmdDistributeKeys(self, *args):
+        import anim_lib as al
+        reload(al)
+        fld1 = cmds.textField(self.actionColumn.actionField1, q=1, tx=1)
+        print fld1
+        al.distributeKeys(count=float(fld1))
+        message('distribute keys on ' , maya=True)
 
     def cmdUpdateConstraintOffset(self, *args):
         cn.updateConstraintOffset(obj=cmds.ls(sl=1))
