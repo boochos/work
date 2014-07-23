@@ -45,14 +45,14 @@ def matchKeyedFramesLoop():
     sel = cmds.ls(sl=True)
     if len(sel) == 1:
         #one object selected, add same key on all curves
-        matchKeyedFrames(AAA=None, BBB=None, subtractive=True)
+        matchKeyedFrames(A=None, B=None, subtractive=True)
     else:
         #2 objects
         obj1 = sel[0]
         for item in sel:
             if item != obj1:
                 cmds.select(obj1, item)
-                matchKeyedFrames(AAA=None, BBB=None, subtractive=True)
+                matchKeyedFrames(A=None, B=None, subtractive=True)
         cmds.select(sel)
 
 def subframe():
@@ -81,62 +81,63 @@ def subframe():
     else:
         message('Select object', maya=1)
 
-def matchKeyedFrames(AAA=None, BBB=None, subtractive=True):
+def matchKeyedFrames(A=None, B=None, subtractive=True):
     '''
-    AAA = get keyed frames
-    BBB = put keyed frames
+    A = get keyed frames
+    B = put keyed frames
     '''
-    if AAA==None and BBB==None:
+    if A==None and B==None:
         sel = cmds.ls(sl=True)
         if sel:
             crvs = cmds.keyframe(sel[0], q=True, name=True)
         if crvs == None:
             message('No keys on object', maya=True)
             return None
-    if AAA==None and BBB==None:
+    if A==None and B==None:
         if len(sel) == 2:
-            AAA = sel[0]
-            BBB = sel[1]
+            A = sel[0]
+            B = sel[1]
         elif len(sel) == 1:
-            AAA = sel[0]
-            BBB = sel[0]
+            A = sel[0]
+            B = sel[0]
         else:
             message('Select 1 or 2 objects. Second object will get matching timeline keys.')
             return None
     #add additive or destructive
-    #keyed frames on AAA
-    framesAdd = keyedFrames(AAA)
+    #keyed frames on A
+    framesAdd = keyedFrames(A)
     print framesAdd
-    #list attrs on BBB and add key
-    old = cmds.listAttr(BBB, k=True)
-    for attr in old:
-        try:
-            if cmds.setKeyframe(BBB + '.' + attr, i=True) == 0:
-                cmds.setKeyframe(BBB + '.' + attr)
-        except:
-              print 'sanity check: FAILED ATTRS ____', BBB, attr
-    #check if new constraint blend attr is created after keying
-    new = cmds.listAttr(BBB, k=True)
-    created = list(set(new)-set(old))
-    if len(created) != 0:
-        for attr in created:
-            cmds.setKeyframe(BBB + '.' + attr, v=1)
-    #add keys to BBB from AAA
+    if framesAdd:
+        #list attrs on B and add key
+        old = cmds.listAttr(B, k=True)
+        for attr in old:
+            try:
+                if cmds.setKeyframe(B + '.' + attr, i=True) == 0:
+                    cmds.setKeyframe(B + '.' + attr)
+            except:
+                print 'sanity check: FAILED ATTRS ____', B, attr
+        #check if new constraint blend attr is created after keying
+        new = cmds.listAttr(B, k=True)
+        created = list(set(new)-set(old))
+        if len(created) != 0:
+            for attr in created:
+                cmds.setKeyframe(B + '.' + attr, v=1)
+    #add keys to B from A
     if framesAdd:
         for frame in framesAdd:
-            cmds.setKeyframe(BBB, i=True, t=frame)
+            cmds.setKeyframe(B, i=True, t=frame)
         if subtractive == True:
-            #remove keys from BBB, which AAA doesnt have
+            #remove keys from B, which A doesnt have
             min = framesAdd[0]
             max = framesAdd[len(framesAdd)-1]
-            framesRem = keyedFrames(BBB)
+            framesRem = keyedFrames(B)
             for frame in framesRem:
                 if frame not in framesAdd:
-                    cmds.cutKey(BBB, t=(frame,frame))
+                    cmds.cutKey(B, t=(frame,frame))
         #check if current frame should be keyed
         current = cmds.currentTime(q=True)
         if current not in framesAdd:
-            cmds.cutKey(BBB, t=(current,current))
+            cmds.cutKey(B, t=(current,current))
 
 class GetRange():
     def __init__(self):
@@ -401,19 +402,19 @@ def deleteList(objects):
             message(typ + ' | ' + obj + '  is deleted')
 
 def bakeStepConstraint():
-    old = cmds.listAttr(BBB, k=True)
+    old = cmds.listAttr(B, k=True)
     for attr in old:
         try:
-            if cmds.setKeyframe(BBB + '.' + attr, i=True) == 0:
-                cmds.setKeyframe(BBB + '.' + attr)
+            if cmds.setKeyframe(B + '.' + attr, i=True) == 0:
+                cmds.setKeyframe(B + '.' + attr)
         except:
-              print 'sanity check: FAILED ATTRS ____', BBB, attr
+              print 'sanity check: FAILED ATTRS ____', B, attr
     #check if new constraint blend attr is created after keying
-    new = cmds.listAttr(BBB, k=True)
+    new = cmds.listAttr(B, k=True)
     created = list(set(new)-set(old))
     if len(created) != 0:
         for attr in created:
-            cmds.setKeyframe(BBB + '.' + attr, v=1)
+            cmds.setKeyframe(B + '.' + attr, v=1)
 
 def bakeStep(obj, time=(), sim=False, uiOff=False):
     '''

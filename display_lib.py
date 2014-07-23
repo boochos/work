@@ -15,15 +15,17 @@ def message(what='', maya=True):
         print what
 
 def witCamDir():
+    app = "nautilus"
     fyl = cmds.file(q=True, sn=True).split('sequences')[1].split('/')
     seq = fyl[1]
     sht = fyl[3]
-    witRoot = '/data/jobs/CHP/reference/shots/'
+    witRoot = '/data/jobs/CHP/reference/onSetData/witnessCams/'
+    call([app, witRoot])
+    '''
     wit = 'Witcam'
     path = os.path.join(os.path.join(witRoot, os.path.join(seq,sht)),wit)
     if os.path.isdir(path):
-        app = "nautilus"
-        call([app, path])
+        call([app, path])'''
 
 def findControl(ann='', panelTyp='', split=3):
     #split = which parent in full path to return
