@@ -194,22 +194,23 @@ def blast( w=2094, h=858, x=1, format='qt', qlt=100, compression='H.264', offScr
         if not blastDir():
             message( 'Set project', maya=True )
         else:
-            #print blastDir(), '   blastdir'
             pbName = blastDir( forceTemp=False ) + sceneName()
             if os.path.exists( pbName ):
                 #print True
                 pass
             if 'image' not in format:
                 path = cmds.playblast( format=format, filename=blastDir( forceTemp=False ) + sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h )
-                path = cmds.playblast( format=format, filename=blastDir( forceTemp=False ) + sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h )
             else:
                 createPath( blastDir( forceTemp=False ) )
+                #forcing qt blast
+                path = cmds.playblast( format='qt', filename=blastDir( forceTemp=False ) + sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression='H.264', width=1920, height=1080 )
+                '''
                 createPath( blastDir( forceTemp=False ) + shotDir() )
                 path = cmds.playblast( format='image', filename=blastDir( forceTemp=False ) + shotDir() + sceneName(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h )
                 #rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(min) + " -out " + str(max) + " ]"
                 #print rvString
                 #subprocess.Popen(rvString)
-                #cmds.currentTime(current)
+                '''
     elif os.name == 'posix':
         # could be linux or mac os
         i = 1
