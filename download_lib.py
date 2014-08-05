@@ -124,7 +124,7 @@ def get( getScripts=False, getButtons=False, compileAll=False ):
     'selectionUI_macro_lib.py', 'zero.py', 'autoTangent.mel', 'pairSelect.py',
     'animCurve_lib.py', 'animCopyPaste_lib.py', 'animation_library_manager.py',
     'anim_lib.py', 'ui_micro_lib.py', 'sys_lib.py', 'playblast_lib.py', 'togglePlate.py',
-    'graphFilter.py', 'curveSoftSelect.py', 'pairSelectList.txt', 'animRig_lib.py']
+    'graphFilter.py', 'curveSoftSelect.py', 'pairSelectList.txt', 'animRig_lib.py', 'clipPickle_lib.py']
 
     #icons
     icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',

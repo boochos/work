@@ -25,9 +25,11 @@ class Key():
         self.outAngle = None
         self.lock = None
         self.offset = offset
-        self.getKeys()
+        self.getKey()
 
-    def getKeys( self ):
+    #pretty sure these defs should be in the Attribute class
+
+    def getKey( self ):
         index = cmds.keyframe( self.obj, q=True, time=( self.frame, self.frame ), at=self.attr, indexValue=True )[0]
         self.value = cmds.keyframe( self.obj, q=True, index=( index, index ), at=self.attr, valueChange=True )[0]
         self.inAngle = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, inAngle=True )[0]
@@ -38,7 +40,7 @@ class Key():
         self.outWeight = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, outWeight=True )[0]
         self.lock = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, lock=True )[0]
 
-    def putKeys( self ):
+    def putKey( self ):
         cmds.setKeyframe( self.obj, at=self.attr, time=( self.frame + self.offset, self.frame + self.offset ), value=self.value )
         cmds.keyTangent( self.obj, edit=True, time=( self.frame + self.offset, self.frame + self.offset ), attribute=self.attr,
         inTangentType=self.inTangentType, outTangentType=self.outTangentType, inWeight=self.inWeight,
@@ -46,6 +48,9 @@ class Key():
 
 class Attribute( Key ):
     def __init__( self, obj, attr, offset=0 ):
+        '''
+        add get/put keys from Key class to this one
+        '''
         self.obj = obj
         self.name = attr
         self.crv = cmds.findKeyframe( self.obj, at=self.name, c=True )
@@ -53,16 +58,18 @@ class Attribute( Key ):
         self.key = []
         self.value = cmds.getAttr( self.obj + '.' + self.name )
         self.offset = offset
+        self.preInfinity = None
+        self.postInfinity = None
         self.qualify()
 
     def qualify( self ):
         if self.crv != None:
             if len( self.crv ) == 1:
                 self.crv = self.crv[0]
-                self.getKeyedFrames()
-                self.getKeyAttributes()
+                self.getFrames()
+                self.getKeys()
 
-    def getKeyedFrames( self ):
+    def getFrames( self ):
         if self.crv != None:
             framesTmp = cmds.keyframe( self.crv, q=True )
             for frame in framesTmp:
@@ -70,60 +77,79 @@ class Attribute( Key ):
             self.frames = list( set( self.frames ) )
             self.frames.sort()
 
-    def getKeyAttributes( self ):
+    def getKeys( self ):
         for frame in self.frames:
             a = Key( self.obj, self.name, frame )
             self.key.append( a )
-    '''
-    def build( self, replace=True ):
-        if replace == True:
-            self.crv = cmds.findKeyframe( self.obj, at=self.name, c=True )
-            if self.crv:
-                cmds.delete( self.crv )
-        for key in self.key:
-            key.obj = self.obj
-            key.put()'''
+
 
 class Obj( Attribute ):
     def __init__( self, obj, offset=0 ):
         self.name = obj
         self.offset = offset
-        self.attribute = []
-        self.getCurve()
+        self.attributes = []
+        self.getAttribute()
 
-    def getCurve( self ):
-        keyable = cmds.listAttr( self.name, k=True )
+    def getAttribute( self ):
+        keyable = cmds.listAttr( self.name, k=True, s=True )
         for k in keyable:
             a = Attribute( self.name, k )
-            self.attribute.append( a )
+            self.attributes.append( a )
 
-    def putCurve( self ):
-        for attr in self.attribute:
+    def putAttribute( self ):
+        '''
+        need to incorporate infinity status
+        '''
+        for attr in self.attributes:
             if len( attr.key ) > 0:
                 for k in attr.key:
+                    k.obj = self.name
                     k.offset = self.offset
-                    k.putKeys()
+                    k.putKey()
             else:
                 cmds.setAttr( self.name + '.' + attr.name, attr.value )
 
 class Clip( Obj ):
-    def __init__( self, offset=0 ):
+    def __init__( self, name='', offset=0, ns=None, comment='' ):
+        '''
+        can use to copy and paste animation
+        '''
         self.sel = cmds.ls( sl=True )
-        self.object = []
+        self.user = ''
+        self.start = 0
+        self.end = 0
+        self.length = 0
+        self.comment = comment
+        self.date = ''
+        self.name = ''
+        self.objects = []
         self.offset = offset
+        self.ns = ns
         self.getClip()
 
     def getClip( self ):
         for obj in self.sel:
             a = Obj( obj )
-            self.object.append( a )
+            self.objects.append( a )
+
+    def getClipStats( self ):
+        start = 0.0
+        end = 0.0
+        length = 0.0
+        user = ''
 
     def putClip( self ):
-        for obj in self.object:
+        autoKey = cmds.autoKeyframe( q=True, state=True )
+        cmds.autoKeyframe( state=False )
+        for obj in self.objects:
+            if self.ns:
+                obj.name = self.ns + ':' + obj.name.split( ':' )[1]
             obj.offset = self.offset
-            obj.putCurve()
+            obj.putAttribute()
+        cmds.autoKeyframe( state=autoKey )
 
-def clipSave( name='', path='' ):
+
+def clipSave( name='', path='', comments='' ):
     '''
     save clip to file
     '''
@@ -133,7 +159,7 @@ def clipSave( name='', path='' ):
     pickle.dump( clp, fileObject )
     fileObject.close()
 
-def clipOpen():
+def clipOpen( path='' ):
     '''
     open clip form file
     '''
@@ -142,13 +168,26 @@ def clipOpen():
     clp = pickle.load( fileObject )
     return clp
 
-def clipApply( offset=0 ):
+def clipApply( offset=0, ns=None ):
     '''
-    apply animation
+    apply animation from file
     '''
     clp = clipOpen()
+    clp.ns = ns
     clp.offset = offset
     clp.putClip()
+
+def clipRemap( offset=0 ):
+    '''
+    apply animation with new namespace from selection
+    '''
+    sel = cmds.ls( sl=True )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0]
+            clipApply( offset=offset, ns=ns )
+    else:
+        clipApply()
 
 def clipPath( name='' ):
     path = clipTempPath()
