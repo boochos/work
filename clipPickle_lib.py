@@ -149,11 +149,11 @@ class Clip( Obj ):
         cmds.autoKeyframe( state=autoKey )
 
 
-def clipSave( name='', path='', comments='' ):
+def clipSave( name='clipTemp.clip', path='', comments='' ):
     '''
     save clip to file
     '''
-    path = clipPath( name='clipTemp.clip' )
+    path = clipPath( name=name )
     clp = Clip()
     fileObject = open( path, 'wb' )
     pickle.dump( clp, fileObject )
