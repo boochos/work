@@ -3,7 +3,7 @@ import json, time, re
 import glob, itertools
 import re
 import datetime
-
+from pymel.core import *
 
 class Clip():
     def __init__( self ):

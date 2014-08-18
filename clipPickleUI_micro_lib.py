@@ -142,7 +142,7 @@ class Action( object ):
         cmds.formLayout( self.form, edit=True, attachForm=attachForm )
 
     def buildCancel( self ):
-        self.cancelButton = cmds.button( self.cancelButton, label='CLOSE', c=self.cmdCancel )
+        self.cancelButton = cmds.button( self.cancelButton, label='IMPORT', c=self.cmdCancel )
         attachForm = [( self.cancelButton, 'bottom', 0 )]
         attachControl = [( self.cancelButton, 'right', 5, self.actionButton )]
         cmds.formLayout( self.form, edit=True, attachForm=attachForm, attachControl=attachControl )

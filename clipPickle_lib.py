@@ -115,10 +115,10 @@ class Clip( Obj ):
         can use to copy and paste animation
         '''
         self.sel = cmds.ls( sl=True )
-        self.user = ''
-        self.start = 0
-        self.end = 0
-        self.length = 0
+        self.user = os.path.expanduser( '~' )
+        self.start = None
+        self.end = None
+        self.length = None
         self.comment = comment
         self.date = ''
         self.name = ''
@@ -126,21 +126,40 @@ class Clip( Obj ):
         self.offset = offset
         self.ns = ns
         self.getClip()
+        self.getStartEndLength()
 
     def getClip( self ):
         for obj in self.sel:
             a = Obj( obj )
             self.objects.append( a )
 
-    def getClipStats( self ):
-        start = 0.0
-        end = 0.0
-        length = 0.0
-        user = ''
+    def getStartEndLength( self ):
+        frames = []
+        for obj in self.objects:
+            for attr in obj.attributes:
+                if len( attr.key ) > 0:
+                    for k in attr.key:
+                        frames.append( k.frame )
+        frames = sorted( list( set( frames ) ) )
+        self.start = frames[0]
+        self.end = frames[len( frames ) - 1]
+        self.length = self.end - self.start + 1
+        print self.start
+        print self.end
+        print self.length
 
-    def putClip( self ):
+    def putClip( self, atCurrentFrame=True ):
         autoKey = cmds.autoKeyframe( q=True, state=True )
         cmds.autoKeyframe( state=False )
+        #current
+        if atCurrentFrame:
+            current = cmds.currentTime( q=True )
+            if self.start > current:
+                self.offset = current - self.start
+            else:
+                self.offset = ( ( self.start - current ) * -1.0 ) + 0.0
+            print self.offset
+        #put
         for obj in self.objects:
             if self.ns:
                 obj.name = self.ns + ':' + obj.name.split( ':' )[1]
@@ -148,13 +167,12 @@ class Clip( Obj ):
             obj.putAttribute()
         cmds.autoKeyframe( state=autoKey )
 
-
-def clipSave( name='clipTemp.clip', path='', comments='' ):
+def clipSave( name='clipTemp.clip', path='', comment='' ):
     '''
     save clip to file
     '''
     path = clipPath( name=name )
-    clp = Clip()
+    clp = Clip( comment=comment )
     fileObject = open( path, 'wb' )
     pickle.dump( clp, fileObject )
     fileObject.close()
@@ -163,21 +181,20 @@ def clipOpen( path='' ):
     '''
     open clip form file
     '''
-    path = clipPath( name='clipTemp.clip' )
     fileObject = open( path, 'r' )
     clp = pickle.load( fileObject )
     return clp
 
-def clipApply( offset=0, ns=None ):
+def clipApply( path='', offset=0, ns=None ):
     '''
     apply animation from file
     '''
-    clp = clipOpen()
+    clp = clipOpen( path=path )
     clp.ns = ns
-    clp.offset = offset
+    #clp.offset = offset
     clp.putClip()
 
-def clipRemap( offset=0 ):
+def clipRemap( path='', offset=0 ):
     '''
     apply animation with new namespace from selection
     '''
@@ -185,7 +202,7 @@ def clipRemap( offset=0 ):
     if sel:
         if ':' in sel[0]:
             ns = sel[0].split( ':' )[0]
-            clipApply( offset=offset, ns=ns )
+            clipApply( path=path, offset=offset, ns=ns )
     else:
         clipApply()
 
@@ -199,5 +216,5 @@ def clipPath( name='' ):
 
 def clipTempPath():
     user = os.path.expanduser( '~' )
-    path = user + '/maya/clipExport/'
+    path = user + '/maya/clipLibrary/'
     return path
