@@ -8,7 +8,7 @@ import ast
 reload( cs )
 
 def message( what='' ):
-    mm.eval( 'print \"' + '-- ' + what + ' --' + '\";' )
+    mel.eval( 'print \"' + '-- ' + what + ' --' + '\";' )
     #print "\n"
 
 class Form( object ):

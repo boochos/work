@@ -187,24 +187,6 @@ def unifyKeys():
             cmds.refresh( f=1 )
             cmds.setKeyframe( sel, i=True, t=frame )
             i = i - 1
-
-        #old method
-        #frames = []
-        '''
-        for s in sel:
-            keys = getKeyedFrames(s)
-            if keys:
-                for frame in keys:
-                    frames.append(frame)
-        '''
-        '''
-        for s in sel:
-            message('adding keys to -- ' + s + '  -- to go '+ str(crvs))
-            cmds.refresh(f=1)
-            for frame in frames:
-                cmds.setKeyframe(s, i=True, t=frame)
-            crvs = crvs -1
-        '''
         message( 'Done' )
     else:
         message( 'Select some curves in the graph editor.' )
@@ -229,7 +211,7 @@ def bakeInfinity( sparseKeys=True, smart=True, sim=False ):
         end = cmds.playbackOptions( q=True, maxTime=True )
         objs = cmds.listConnections( crvs, d=True, s=False, plugs=True )
         cmds.refresh( suspend=1 )
-        cmds.bakeResults( objs, t=( start, end ), simulation=True, pok=True, smart=1, sac=1 )
+        cmds.bakeResults( objs, t=( start, end ), simulation=True, pok=True, smart=1, sac=1, sampleBy=1.0 )
         cmds.refresh( suspend=0 )
         message( str( len( objs ) ) + ' curves baked --' + str( objs ), maya=1 )
     else:
@@ -299,22 +281,25 @@ def smoothKeys( weight=0.5 ):
                     i = i + 1
 
 def subframe():
+    frames = None
     animCurves = cmds.keyframe( q=True, name=True, sl=True )
     for crv in animCurves:
         frames = cmds.keyframe( crv, q=True )
-        if frames:
-            for frame in frames:
-                rnd = round( frame, 0 )
-                if rnd != frame:
-                    message( 'removing: ' + crv + ' -- ' + str( frame ) )
-                    cmds.refresh( f=1 )
-                    if cmds.setKeyframe( crv, time=( rnd, rnd ), i=1 ) == 0:
-                        cmds.cutKey( crv, time=( frame, frame ) )
-                    else:
-                        cmds.setKeyframe( crv, time=( rnd, rnd ), i=1 )
-                        cmds.cutKey( crv, time=( frame, frame ) )
-        else:
-            message( 'no keys' )
+    if frames:
+        for frame in frames:
+            print frame
+            rnd = round( frame, 0 )
+            print rnd
+            if rnd != frame:
+                message( 'removing: ' + 'key' + ' -- ' + str( frame ) )
+                cmds.refresh( f=1 )
+                if cmds.setKeyframe( animCurves, time=( rnd, rnd ), i=1 ) == 0:
+                    cmds.cutKey( animCurves, time=( frame, frame ) )
+                else:
+                    cmds.setKeyframe( animCurves, time=( rnd, rnd ), i=1 )
+                    cmds.cutKey( animCurves, time=( frame, frame ) )
+    else:
+        message( 'no keys' )
 
 
 class GraphSelection():

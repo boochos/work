@@ -141,14 +141,16 @@ class Clip( Obj ):
                     for k in attr.key:
                         frames.append( k.frame )
         frames = sorted( list( set( frames ) ) )
-        self.start = frames[0]
-        self.end = frames[len( frames ) - 1]
-        self.length = self.end - self.start + 1
+        if frames:
+            self.start = frames[0]
+            self.end = frames[len( frames ) - 1]
+            self.length = self.end - self.start + 1
         print self.start
         print self.end
         print self.length
 
     def putClip( self, atCurrentFrame=True ):
+        #doesnt work if either no anim curves or object has no namespace
         autoKey = cmds.autoKeyframe( q=True, state=True )
         cmds.autoKeyframe( state=False )
         #current
