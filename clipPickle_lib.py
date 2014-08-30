@@ -107,7 +107,8 @@ class Obj( Attribute ):
                     k.offset = self.offset
                     k.putKey()
             else:
-                cmds.setAttr( self.name + '.' + attr.name, attr.value )
+                if not cmds.getAttr(self.name + '.' + attr.name, l=True):
+                    cmds.setAttr( self.name + '.' + attr.name, attr.value )
 
 class Clip( Obj ):
     def __init__( self, name='', offset=0, ns=None, comment='' ):
