@@ -30,6 +30,7 @@ class Key():
     #pretty sure these defs should be in the Attribute class
 
     def getKey( self ):
+        print self.obj, self.attr, self.frame, self.value
         index = cmds.keyframe( self.obj, q=True, time=( self.frame, self.frame ), at=self.attr, indexValue=True )[0]
         self.value = cmds.keyframe( self.obj, q=True, index=( index, index ), at=self.attr, valueChange=True )[0]
         self.inAngle = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, inAngle=True )[0]
@@ -110,26 +111,40 @@ class Obj( Attribute ):
                 if not cmds.getAttr(self.name + '.' + attr.name, l=True):
                     cmds.setAttr( self.name + '.' + attr.name, attr.value )
 
-class Clip( Obj ):
-    def __init__( self, name='', offset=0, ns=None, comment='' ):
+class ClipLayer( Obj ):
+    def __init__( self, sel=[], name=None, offset=0, ns=None, comment='' ):
         '''
         can use to copy and paste animation
         '''
-        self.sel = cmds.ls( sl=True )
+        self.sel = sel
         self.user = os.path.expanduser( '~' )
         self.start = None
         self.end = None
         self.length = None
         self.comment = comment
         self.date = ''
-        self.name = ''
+        #self.name = name
         self.objects = []
         self.offset = offset
         self.ns = ns
-        self.getClip()
+        #layer attrs
+        self.name = name
+        self.mute = None
+        self.solo = None
+        self.lock = None
+        self.ghost = None
+        self.ghostColor = None
+        self.override = None
+        self.passthrough = None
+        self.weight = None #can be animated
+        self.rotationAccumulationMode = None
+        self.scaleAccumulationMode = None
+        #
+        self.getObject()
+        self.getLayerAttrs()
         self.getStartEndLength()
 
-    def getClip( self ):
+    def getObject( self ):
         for obj in self.sel:
             a = Obj( obj )
             self.objects.append( a )
@@ -146,11 +161,21 @@ class Clip( Obj ):
             self.start = frames[0]
             self.end = frames[len( frames ) - 1]
             self.length = self.end - self.start + 1
-        print self.start
-        print self.end
-        print self.length
 
-    def putClip( self, atCurrentFrame=True ):
+    def getLayerAttrs(self):
+        if self.name:
+            self.mute =  cmds.getAttr(self.name + '.mute')
+            self.solo = cmds.getAttr(self.name + '.solo')
+            self.lock = cmds.getAttr(self.name + '.lock')
+            self.ghost = cmds.getAttr(self.name + '.ghost')
+            self.ghostColor = cmds.getAttr(self.name + '.ghostColor')
+            self.override = cmds.getAttr(self.name + '.override')
+            self.passthrough = cmds.getAttr(self.name + '.passthrough')
+            self.weight = cmds.getAttr(self.name + '.weight')
+            self.rotationAccumulationMode = cmds.getAttr(self.name + '.rotationAccumulationMode')
+            self.scaleAccumulationMode = cmds.getAttr(self.name + '.scaleAccumulationMode')
+
+    def putObjects( self, atCurrentFrame=True ):
         #doesnt work if either no anim curves or object has no namespace
         autoKey = cmds.autoKeyframe( q=True, state=True )
         cmds.autoKeyframe( state=False )
@@ -170,12 +195,113 @@ class Clip( Obj ):
             obj.putAttribute()
         cmds.autoKeyframe( state=autoKey )
 
+    def putLayerAttrs(self):
+        self.mute =  cmds.setAttr(self.name + '.mute', self.mute )
+        self.solo = cmds.setAttr(self.name + '.solo', self.solo)
+        self.lock = cmds.setAttr(self.name + '.lock' , self.lock)
+        self.ghost = cmds.setAttr(self.name + '.ghost', self.ghost)
+        self.ghostColor = cmds.setAttr(self.name + '.ghostColor', self.ghostColor)
+        self.override = cmds.setAttr(self.name + '.override', self.override)
+        self.passthrough = cmds.setAttr(self.name + '.passthrough', self.passthrough)
+        self.weight = cmds.setAttr(self.name + '.weight', self.weight)
+        self.rotationAccumulationMode = cmds.setAttr(self.name + '.rotationAccumulationMode', self.rotationAccumulationMode)
+        self.scaleAccumulationMode = cmds.setAttr(self.name + '.scaleAccumulationMode', self.scaleAccumulationMode)
+
+class Clip( ClipLayer ):
+    def __init__( self, name='', offset=0, ns=None, comment='' ):
+        self.sel = cmds.ls( sl=True )
+        self.user = os.path.expanduser( '~' )
+        self.start = None
+        self.end = None
+        self.length = None
+        self.comment = comment
+        self.date = ''
+        self.name = name
+        self.layers = []
+        self.existingLayers = None
+        self.offset = offset
+        self.ns = ns
+        self.getLayers()
+
+    def getLayers(self):
+        self.existingLayers = cmds.ls(type='animLayer') #should consider reversing order
+        layerMembers = []
+        if self.existingLayers:
+            for layer in self.existingLayers:
+                #collect objects in layer
+                currentlayer = []
+                connected = cmds.listConnections(layer, s=1, d=0, t='transform')
+                if connected:
+                    print layer, '    has members', connected
+                    objects = list(set(connected))
+                    if objects:
+                        for s in self.sel:
+                            if s in objects:
+                                currentlayer.append(s)
+                                layerMembers.append(s)
+                    #create clip
+                    self.setLayer(layer)
+                    print currentlayer, '    current'
+                    clp = ClipLayer( name=layer, sel=currentlayer, comment=self.comment )
+                    #append to self.layers
+                    self.layers.append(clp)
+                else:
+                    print layer, '     no members'
+            #build object list for objects not in anim layer
+            nonLayerMemebers = list(set(self.sel). difference(layerMembers))
+            if nonLayerMemebers:
+                clp = ClipLayer( sel=nonLayerMemebers, comment=self.comment )
+                #append to self.layers
+                self.layers.append(clp)
+        else:
+            #no anim layers, create clip
+            clp = ClipLayer( sel=self.sel, comment=self.comment )
+            self.layers.append(clp)
+
+    def setLayer(self, l=None):
+        #all off
+        existingLayers = cmds.ls(type='animLayer')
+        if existingLayers:
+            for ex in existingLayers:
+                cmds.animLayer(ex, e=True, sel=False)
+            #set 'l' as active layer
+            if l:
+                cmds.animLayer(l, e=True, sel=True)
+
+    def putLayers(self):
+        clash = '__CLASH__'
+        existingLayers = cmds.ls(type='animLayer')
+        for layer in self.layers:
+            if not layer.name:
+                layer.putObjects()
+            else:
+                if not cmds.animLayer(layer.name, q=True, ex=True):
+                    #create layer
+                    cmds.animLayer(layer.name)
+                else:
+                    if not cmds.animLayer(clash + layer.name, q=True, ex=True):
+                        cmds.animLayer(clash + layer.name)
+                    else:
+                        message('Layer ' + layer.name + ' already exists')
+                        break
+                #set layer attrs
+                layer.putLayerAttrs()
+                #set layer to current
+                self.setLayer(l=layer.name)
+                #add objects
+                #print layer.sel, '000000000000000'
+                cmds.select(layer.sel)
+                cmds.animLayer(layer.name, e=True, aso=True)
+                #add animation
+                layer.putObjects()
+
 def clipSave( name='clipTemp.clip', path='', comment='' ):
     '''
     save clip to file
     '''
     path = clipPath( name=name )
-    clp = Clip( comment=comment )
+    clp = Clip( name=name.split('.')[0], comment=comment )
+    print clp.name
     fileObject = open( path, 'wb' )
     pickle.dump( clp, fileObject )
     fileObject.close()
@@ -195,7 +321,7 @@ def clipApply( path='', offset=0, ns=None ):
     clp = clipOpen( path=path )
     clp.ns = ns
     #clp.offset = offset
-    clp.putClip()
+    clp.putLayers()
 
 def clipRemap( path='', offset=0 ):
     '''
@@ -207,7 +333,7 @@ def clipRemap( path='', offset=0 ):
             ns = sel[0].split( ':' )[0]
             clipApply( path=path, offset=offset, ns=ns )
     else:
-        clipApply()
+        clipApply(path=path)
 
 def clipPath( name='' ):
     path = clipTempPath()
