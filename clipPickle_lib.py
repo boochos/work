@@ -240,10 +240,11 @@ class Clip( Layer ):
                         if s in objects:
                             currentlayer.append( s )
                             layerMembers.append( s )
-                    self.setActiveLayer( layer )    #create clip
-                    #build class
-                    clp = Layer( name=layer, sel=currentlayer, comment=self.comment )
-                    self.layers.append( clp )    #append to self.layers
+                    if currentlayer:
+                        self.setActiveLayer( layer )    #create clip
+                        #build class
+                        clp = Layer( name=layer, sel=currentlayer, comment=self.comment )
+                        self.layers.append( clp )    #append to self.layers
                 else:
                     print layer, '     no members'
             self.setActiveLayer( l=self.rootLayer )
@@ -290,8 +291,9 @@ class Clip( Layer ):
                 #set layer to current
                 self.setActiveLayer( l=layer.name )
                 #add objects
-                cmds.select( layer.sel )
-                cmds.animLayer( layer.name, e=True, aso=True )
+                if layer.sel:
+                    cmds.select( layer.sel )
+                    cmds.animLayer( layer.name, e=True, aso=True )
                 #add animation
                 layer.putObjects()
 
