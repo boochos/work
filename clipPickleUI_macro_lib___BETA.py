@@ -1,40 +1,37 @@
 import maya.cmds  as cmds
-import constraintUI_micro_lib as ui
-import constraint_lib as cn
 import maya.mel as mel
 import anim_lib as al
-import os, sys, sys_lib, fnmatch
+import os
 from subprocess import call
 import subprocess
 import clipPickleUI_micro_lib___BETA as ui
 import clipPickle_lib as cp
 import time
 
-reload(al)
-reload(cn)
-reload(ui)
-reload(cp)
+reload( al )
+reload( ui )
+reload( cp )
 
-def message(what='', maya=False):
+def message( what='', maya=False ):
     what = '-- ' + what + ' --'
     if maya == True:
-        mel.eval('print \"' + what + '\";')
+        mel.eval( 'print \"' + what + '\";' )
     else:
         print what
 
-class CPUI(object):
+class CPUI( object ):
     '''
     Build CharacterSet UI
     '''
 
-    def __init__(self, columnWidth=80):
+    def __init__( self, columnWidth=80 ):
         #external
-        self.columnWidth                  = columnWidth
+        self.columnWidth = columnWidth
         #internal
-        self.windowName                   = 'Clip Manager'
-        self.path=os.path.expanduser( '~' ) + '/maya/clipLibrary/'
+        self.windowName = 'Clip Manager'
+        self.path = os.path.expanduser( '~' ) + '/maya/clipLibrary/'
         #store/restore
-        self.objects  = []
+        self.objects = []
         self.animBucket = []
         self.objX = None
         self.anim = None
@@ -42,23 +39,23 @@ class CPUI(object):
         self.cleanUI()
         self.gui()
 
-    def cleanUI(self, *args):
+    def cleanUI( self, *args ):
         try:
-            cmds.deleteUI(self.windowName)
+            cmds.deleteUI( self.windowName )
         except:
             pass
 
-    def gui(self):
+    def gui( self ):
         #window
-        self.win = cmds.window(self.windowName, w=self.columnWidth, rtf=1)
+        self.win = cmds.window( self.windowName, w=self.columnWidth, rtf=1 )
         #action
-        self.control = ui.Action('clipAction', cmdAction='', label='', w=self.columnWidth)
-        cmds.button(self.control.button1, e=True, c=self.cmdExport, h=40)
-        cmds.button(self.control.button2, e=True, c=self.cmdImport)
-        cmds.button(self.control.button3, e=True, c=self.cmdImport, h=40)
-        cmds.textScrollList(self.control.scroll1, e=True, sc=self.populatePreview)
+        self.control = ui.Action( 'clipAction', cmdAction='', label='', w=self.columnWidth )
+        cmds.button( self.control.button1, e=True, c=self.cmdExport, h=40 )
+        cmds.button( self.control.button2, e=True, c=self.cmdImport )
+        cmds.button( self.control.button3, e=True, c=self.cmdImport, h=40 )
+        cmds.textScrollList( self.control.scroll1, e=True, sc=self.populatePreview )
 
-        cmds.showWindow(self.win)
+        cmds.showWindow( self.win )
         self.populateClipList()
 
     def cmdExport( self, *args ):
@@ -131,11 +128,11 @@ class CPUI(object):
 
     def populateInfo( self ):
         #len()
-        print self.clip.layers[2].name, '__________________'
-        self.clip.layers[2].getStartEndLength()
-        cmds.text( self.control.heading5, edit=True, label='     ' + str( self.clip.layers[2].comment ) )
-        cmds.text( self.control.heading7, edit=True, label='     ' + str( self.clip.layers[2].end ) )
-        cmds.text( self.control.heading9, edit=True, label='     ' + str( self.clip.layers[2].start ) )
+        print self.clip.layers[0].name, '__________________'
+        self.clip.layers[0].getStartEndLength()
+        cmds.text( self.control.heading5, edit=True, label='     ' + str( self.clip.layers[0].comment ) )
+        cmds.text( self.control.heading7, edit=True, label='     ' + str( self.clip.layers[0].end ) )
+        cmds.text( self.control.heading9, edit=True, label='     ' + str( self.clip.layers[0].start ) )
         cmds.text( self.control.heading11, edit=True, label=str( self.clip.end ) )
         cmds.text( self.control.heading13, edit=True, label=str( self.clip.length ) )
         cmds.text( self.control.heading15, edit=True, label=str( self.clip.start ) )
