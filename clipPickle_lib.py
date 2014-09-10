@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import maya.mel as mel
+import time, getpass
 import pickle, os
 
 def message( what='', maya=True ):
@@ -12,12 +13,15 @@ def message( what='', maya=True ):
         print what
 
 class Key():
-    def __init__( self, obj, attr, frame, offset=0 ):
+    def __init__( self, obj, attr, frame, offset=0, weightedTangents=None ):
         #dont think this currently accounts for weighted tangents
         self.obj = obj
         self.attr = attr
         self.frame = frame
         self.value = None
+        self.crv = None
+        self.weightedTangents = weightedTangents
+        self.weightLock = False
         self.inTangentType = None
         self.inWeight = None
         self.inAngle = None
@@ -31,23 +35,30 @@ class Key():
     #pretty sure these defs should be in the Attribute class
 
     def getKey( self ):
-        #print self.obj, self.attr, self.frame, self.value, '_____________get shit'
         index = cmds.keyframe( self.obj, q=True, time=( self.frame, self.frame ), at=self.attr, indexValue=True )[0]
         self.value = cmds.keyframe( self.obj, q=True, index=( index, index ), at=self.attr, valueChange=True )[0]
         self.inAngle = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, inAngle=True )[0]
         self.outAngle = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, outAngle=True )[0]
         self.inTangentType = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, inTangentType=True )[0]
         self.outTangentType = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, outTangentType=True )[0]
-        self.inWeight = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, inWeight=True )[0]
-        self.outWeight = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, outWeight=True )[0]
         self.lock = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, lock=True )[0]
+        if self.weightedTangents:
+            self.weightLock = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, weightLock=True )[0]
+            self.inWeight = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, inWeight=True )[0]
+            self.outWeight = cmds.keyTangent( self.obj, q=True, time=( self.frame, self.frame ), attribute=self.attr, outWeight=True )[0]
 
     def putKey( self ):
-        #print self.obj, self.attr, self.frame, self.value, '_____________setting shit'
+        #set key, creates curve node
         cmds.setKeyframe( self.obj, at=self.attr, time=( self.frame + self.offset, self.frame + self.offset ), value=self.value, shape=False )
+        #update curve name, set curve type, set weights
+        self.crv = cmds.findKeyframe( self.obj, at=self.attr, c=True )[0]
+        cmds.setAttr( self.crv + '.weightedTangents', self.weightedTangents )
+        if  self.weightedTangents:
+            cmds.keyTangent( self.obj, edit=True, time=( self.frame + self.offset, self.frame + self.offset ), attribute=self.attr, weightLock=self.weightLock,
+            inWeight=self.inWeight, outWeight=self.outWeight)
+        #set rest of key attributes
         cmds.keyTangent( self.obj, edit=True, time=( self.frame + self.offset, self.frame + self.offset ), attribute=self.attr,
-        inTangentType=self.inTangentType, outTangentType=self.outTangentType, inWeight=self.inWeight,
-        outWeight=self.outWeight, inAngle=self.inAngle, outAngle=self.outAngle, lock=self.lock )
+        inTangentType=self.inTangentType, outTangentType=self.outTangentType, inAngle=self.inAngle, outAngle=self.outAngle, lock=self.lock )
 
 class Attribute( Key ):
     def __init__( self, obj, attr, offset=0 ):
@@ -59,22 +70,30 @@ class Attribute( Key ):
         self.crv = cmds.findKeyframe( self.obj, at=self.name, c=True )
         #print self.crv
         self.frames = []
-        self.key = []
+        self.keys = []
         self.value = cmds.getAttr( self.obj + '.' + self.name )
         self.offset = offset
         self.preInfinity = None
         self.postInfinity = None
-        self.qualify()
+        self.weightedTangents = None
+        self.getCurve()
 
-    def qualify( self ):
+    def getCurve( self ):
         if self.crv != None:
             if len( self.crv ) == 1:
                 self.crv = self.crv[0]
+                self.getCurveAttrs()
                 self.getFrames()
                 self.getKeys()
 
+    def getCurveAttrs(self):
+        self.preInfinity = cmds.getAttr( self.crv + '.preInfinity'  )
+        self.postInfinity = cmds.getAttr( self.crv + '.postInfinity' )
+        self.weightedTangents = cmds.getAttr(self.crv + '.weightedTangents')
+
     def getFrames( self ):
         if self.crv != None:
+            self.getCurveAttrs()
             framesTmp = cmds.keyframe( self.crv, q=True )
             for frame in framesTmp:
                 self.frames.append( frame )
@@ -83,9 +102,27 @@ class Attribute( Key ):
 
     def getKeys( self ):
         for frame in self.frames:
-            a = Key( self.obj, self.name, frame )
-            self.key.append( a )
+            a = Key( self.obj, self.name, frame, weightedTangents=self.weightedTangents )
+            self.keys.append( a )
 
+    def putCurve(self):
+        if self.keys:
+            print len(self.keys)
+            for k in self.keys:
+                k.obj = self.obj
+                k.offset = self.offset
+                k.crv = self.crv
+                k.putKey()
+            self.putCurveAttrs()
+        else:
+            if not cmds.getAttr( self.obj + '.' + self.name, l=True ):
+                cmds.setAttr( self.obj + '.' + self.name, self.value )
+
+    def putCurveAttrs(self):
+        #need to update curve name, isnt the same as stored, depends on how curves and layers are ceated
+        self.crv = cmds.findKeyframe( self.obj, at=self.name, c=True )[0]
+        cmds.setAttr( self.crv + '.preInfinity', self.preInfinity  )
+        cmds.setAttr( self.crv + '.postInfinity', self.postInfinity )
 
 class Obj( Attribute ):
     def __init__( self, obj, offset=0 ):
@@ -95,24 +132,18 @@ class Obj( Attribute ):
         self.getAttribute()
 
     def getAttribute( self ):
+        #currently does not include enums
         keyable = cmds.listAttr( self.name, k=True, s=True )
         for k in keyable:
             a = Attribute( self.name, k )
             self.attributes.append( a )
 
     def putAttribute( self ):
-        '''
-        need to incorporate infinity status
-        '''
         for attr in self.attributes:
-            if len( attr.key ) > 0:
-                for k in attr.key:
-                    k.obj = self.name
-                    k.offset = self.offset
-                    k.putKey()
-            else:
-                if not cmds.getAttr( self.name + '.' + attr.name, l=True ):
-                    cmds.setAttr( self.name + '.' + attr.name, attr.value )
+            attr.obj = self.name
+            attr.offset = self.offset
+            attr.putCurve()
+
 
 class Layer( Obj ):
     def __init__( self, sel=[], name=None, offset=0, ns=None, comment='' ):
@@ -153,8 +184,8 @@ class Layer( Obj ):
         frames = []
         for obj in self.objects:
             for attr in obj.attributes:
-                if len( attr.key ) > 0:
-                    for k in attr.key:
+                if len( attr.keys ) > 0:
+                    for k in attr.keys:
                         frames.append( k.frame )
         frames = sorted( list( set( frames ) ) )
         if frames:
@@ -171,7 +202,7 @@ class Layer( Obj ):
             self.ghostColor = cmds.getAttr( self.name + '.ghostColor' )
             self.override = cmds.getAttr( self.name + '.override' )
             self.passthrough = cmds.getAttr( self.name + '.passthrough' )
-            self.weight = cmds.getAttr( self.name + '.weight' )
+            self.weight = Attribute( self.name, 'weight' )
             self.rotationAccumulationMode = cmds.getAttr( self.name + '.rotationAccumulationMode' )
             self.scaleAccumulationMode = cmds.getAttr( self.name + '.scaleAccumulationMode' )
 
@@ -196,33 +227,42 @@ class Layer( Obj ):
         cmds.autoKeyframe( state=autoKey )
 
     def putLayerAttrs( self ):
-        self.mute = cmds.setAttr( self.name + '.mute', self.mute )
-        self.solo = cmds.setAttr( self.name + '.solo', self.solo )
-        self.lock = cmds.setAttr( self.name + '.lock' , self.lock )
-        self.ghost = cmds.setAttr( self.name + '.ghost', self.ghost )
-        self.ghostColor = cmds.setAttr( self.name + '.ghostColor', self.ghostColor )
-        self.override = cmds.setAttr( self.name + '.override', self.override )
-        self.passthrough = cmds.setAttr( self.name + '.passthrough', self.passthrough )
-        self.weight = cmds.setAttr( self.name + '.weight', self.weight )
-        self.rotationAccumulationMode = cmds.setAttr( self.name + '.rotationAccumulationMode', self.rotationAccumulationMode )
-        self.scaleAccumulationMode = cmds.setAttr( self.name + '.scaleAccumulationMode', self.scaleAccumulationMode )
+        cmds.setAttr( self.name + '.mute', self.mute )
+        cmds.setAttr( self.name + '.solo', self.solo )
+        cmds.setAttr( self.name + '.lock' , self.lock )
+        cmds.setAttr( self.name + '.ghost', self.ghost )
+        cmds.setAttr( self.name + '.ghostColor', self.ghostColor )
+        cmds.setAttr( self.name + '.override', self.override )
+        cmds.setAttr( self.name + '.passthrough', self.passthrough )
+        self.weight.putCurve()
+        cmds.setAttr( self.name + '.rotationAccumulationMode', self.rotationAccumulationMode )
+        cmds.setAttr( self.name + '.scaleAccumulationMode', self.scaleAccumulationMode )
 
 class Clip( Layer ):
     def __init__( self, name='', offset=0, ns=None, comment='' ):
         self.sel = cmds.ls( sl=True )
-        self.user = os.path.expanduser( '~' )
+        self.name = name
+        self.comment = comment
+        self.source = None
+        self.user = getpass.getuser()
+        self.date = time.strftime("%c")
+        #
         self.start = None
         self.end = None
         self.length = None
-        self.comment = comment
-        self.date = ''
-        self.name = name
         self.layers = []    #list of class objects
         self.layerNames = None
         self.rootLayer = None
         self.offset = offset
         self.ns = ns
+        #
         self.getLayers()
+        self.getClipAttrs()
+
+    def getClipAttrs(self):
+        #scene name
+        sceneName = cmds.file( q=True, sn=True )
+        self.source = sceneName[sceneName.rfind( '/' ) + 1:]
 
     def getLayers( self ):
         #get layers in scene
@@ -243,6 +283,7 @@ class Clip( Layer ):
                     if currentlayer:
                         self.setActiveLayer( layer )    #create clip
                         #build class
+                        #print layer, '_________'
                         clp = Layer( name=layer, sel=currentlayer, comment=self.comment )
                         self.layers.append( clp )    #append to self.layers
                 else:
@@ -252,7 +293,7 @@ class Clip( Layer ):
             self.layers.append( clp )
         else:
             #no anim layers, create single layer class
-            clp = Layer( sel=self.sel, comment=self.comment )
+            clp = Layer( name=None,sel=self.sel, comment=self.comment )
             self.layers.append( clp )
 
     def setActiveLayer( self, l=None ):

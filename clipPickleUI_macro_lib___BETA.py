@@ -119,23 +119,59 @@ class CPUI( object ):
 
     def populatePreview( self ):
         path = os.path.join( self.path, cmds.textScrollList( self.control.scroll1, query=True, si=True )[0] )
+        print path
         self.clip = cp.clipOpen( path )
         '''
         for obj in self.clip.objects:
             cmds.textScrollList( self.previewForm.scroll, edit=True, append=self.format( obj.name ) )
         '''
+        self.populateLayers()
         self.populateInfo()
 
+    def populateLayers(self):
+        cmds.textScrollList( self.control.scroll3, edit=True, ra=True )
+        print self.clip.layers
+        for layer in self.clip.layers:
+            print layer.name, '___'
+            if layer.name:
+                cmds.textScrollList( self.control.scroll3, edit=True, append=layer.name )
+            else:
+                cmds.textScrollList( self.control.scroll3, edit=True, append='(Root)' )
+
     def populateInfo( self ):
-        #len()
-        print self.clip.layers[0].name, '__________________'
-        self.clip.layers[0].getStartEndLength()
-        cmds.text( self.control.heading5, edit=True, label='     ' + str( self.clip.layers[0].comment ) )
-        cmds.text( self.control.heading7, edit=True, label='     ' + str( self.clip.layers[0].end ) )
-        cmds.text( self.control.heading9, edit=True, label='     ' + str( self.clip.layers[0].start ) )
-        cmds.text( self.control.heading11, edit=True, label=str( self.clip.end ) )
-        cmds.text( self.control.heading13, edit=True, label=str( self.clip.length ) )
-        cmds.text( self.control.heading15, edit=True, label=str( self.clip.start ) )
-        cmds.text( self.control.heading17, edit=True, label=str( self.clip.start ) )
-        cmds.text( self.control.heading19, edit=True, label=str( self.clip.start ) )
-        cmds.text( self.control.heading21, edit=True, label=str( self.clip.start ) )
+        if self.clip.comment:
+            cmds.text( self.control.heading5, edit=True, label='     ' + str( self.clip.comment ) )
+        else:
+            cmds.text( self.control.heading5, edit=True, label='')
+        if self.clip.source:
+            cmds.text( self.control.heading7, edit=True, label='     ' + str( self.clip.source ) )
+        else:
+            cmds.text( self.control.heading7, edit=True, label='')
+        if self.clip.user:
+            cmds.text( self.control.heading9, edit=True, label='     ' + str( self.clip.user ) )
+        else:
+            cmds.text( self.control.heading9, edit=True, label='')
+        if self.clip.date:
+            cmds.text( self.control.heading11, edit=True, label='     ' + str( self.clip.date ) )
+        else:
+            cmds.text( self.control.heading11, edit=True, label='' )
+        if self.clip.length:
+            cmds.text( self.control.heading13, edit=True, label='     ' + str( self.clip.length ) )
+        else:
+            cmds.text( self.control.heading13, edit=True, label='' )
+        if self.clip.start:
+            cmds.text( self.control.heading15, edit=True, label='     ' + str( self.clip.start ) )
+        else:
+            cmds.text( self.control.heading15, edit=True, label='' )
+        if self.clip.start:
+            cmds.text( self.control.heading17, edit=True, label='     ' + str( self.clip.start ) )
+        else:
+            cmds.text( self.control.heading17, edit=True, label='' )
+        if self.clip.start:
+            cmds.text( self.control.heading19, edit=True, label='     ' + str( self.clip.start ) )
+        else:
+            cmds.text( self.control.heading19, edit=True, label='' )
+        if self.clip.start:
+            cmds.text( self.control.heading21, edit=True, label='     ' + str( self.clip.start ) )
+        else:
+            cmds.text( self.control.heading21, edit=True, label='' )
