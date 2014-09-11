@@ -134,6 +134,7 @@ class Obj( Attribute ):
     def getAttribute( self ):
         #currently does not include enums
         keyable = cmds.listAttr( self.name, k=True, s=True )
+        print keyable
         for k in keyable:
             a = Attribute( self.name, k )
             self.attributes.append( a )
@@ -375,6 +376,8 @@ def clipRemap( path='', offset=0 ):
         if ':' in sel[0]:
             ns = sel[0].split( ':' )[0]
             clipApply( path=path, offset=offset, ns=ns )
+        else:
+            clipApply( path=path, offset=offset )
     else:
         clipApply( path=path )
 
