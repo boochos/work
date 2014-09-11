@@ -207,7 +207,7 @@ class Layer( Obj ):
             self.rotationAccumulationMode = cmds.getAttr( self.name + '.rotationAccumulationMode' )
             self.scaleAccumulationMode = cmds.getAttr( self.name + '.scaleAccumulationMode' )
 
-    def putObjects( self, atCurrentFrame=False ):
+    def putObjects( self, atCurrentFrame=True ):
         #doesnt work if either no anim curves or object has no namespace
         autoKey = cmds.autoKeyframe( q=True, state=True )
         cmds.autoKeyframe( state=False )
