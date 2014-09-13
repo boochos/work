@@ -76,6 +76,7 @@ class Attribute( Key ):
         self.preInfinity = None
         self.postInfinity = None
         self.weightedTangents = None
+        self.baked = False
         self.getCurve()
 
     def getCurve( self ):
@@ -134,10 +135,16 @@ class Obj( Attribute ):
     def getAttribute( self ):
         #currently does not include enums
         keyable = cmds.listAttr( self.name, k=True, s=True )
+        non_keyable = cmds.listAttr( sel, cb=True ) #cb non keyable
         print keyable
         for k in keyable:
             a = Attribute( self.name, k )
             self.attributes.append( a )
+
+    def getDrivenAttribute(self):
+        #collect constrained, setDriven, expression attrs
+        #create
+        pass
 
     def putAttribute( self ):
         for attr in self.attributes:
@@ -168,7 +175,7 @@ class Layer( Obj ):
         self.ghostColor = None
         self.override = None
         self.passthrough = None
-        self.weight = None    #can be animated, add Key class
+        self.weight = None
         self.rotationAccumulationMode = None    #test if enums work
         self.scaleAccumulationMode = None
         #
@@ -208,7 +215,6 @@ class Layer( Obj ):
             self.scaleAccumulationMode = cmds.getAttr( self.name + '.scaleAccumulationMode' )
 
     def putObjects( self, atCurrentFrame=False ):
-        #doesnt work if either no anim curves or object has no namespace
         autoKey = cmds.autoKeyframe( q=True, state=True )
         cmds.autoKeyframe( state=False )
         #current
