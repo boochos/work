@@ -108,16 +108,19 @@ class Attribute( Key ):
 
     def putCurve(self):
         if self.keys:
-            print len(self.keys)
+            #print len(self.keys)
             for k in self.keys:
                 k.obj = self.obj
                 k.offset = self.offset
                 k.crv = self.crv
-                k.putKey()
-            self.putCurveAttrs()
+                #make sure attr is not locked
+                if not cmds.getAttr( self.obj + '.' + self.name, l=True ): 
+                    k.putKey()
+                    self.putCurveAttrs()
         else:
-            if not cmds.getAttr( self.obj + '.' + self.name, l=True ):
-                cmds.setAttr( self.obj + '.' + self.name, self.value )
+            if cmds.objExists(self.obj + '.' + self.name):
+                if not cmds.getAttr( self.obj + '.' + self.name, l=True ):
+                    cmds.setAttr( self.obj + '.' + self.name, self.value )
 
     def putCurveAttrs(self):
         #need to update curve name, isnt the same as stored, depends on how curves and layers are ceated
@@ -135,8 +138,8 @@ class Obj( Attribute ):
     def getAttribute( self ):
         #currently does not include enums
         keyable = cmds.listAttr( self.name, k=True, s=True )
-        non_keyable = cmds.listAttr( sel, cb=True ) #cb non keyable
-        print keyable
+        non_keyable = cmds.listAttr( self.name, cb=True ) #cb non keyable
+        #print keyable
         for k in keyable:
             a = Attribute( self.name, k )
             self.attributes.append( a )
@@ -214,7 +217,7 @@ class Layer( Obj ):
             self.rotationAccumulationMode = cmds.getAttr( self.name + '.rotationAccumulationMode' )
             self.scaleAccumulationMode = cmds.getAttr( self.name + '.scaleAccumulationMode' )
 
-    def putObjects( self, atCurrentFrame=False ):
+    def putObjects( self, atCurrentFrame=True ):
         autoKey = cmds.autoKeyframe( q=True, state=True )
         cmds.autoKeyframe( state=False )
         #current
@@ -224,11 +227,12 @@ class Layer( Obj ):
                 self.offset = current - self.start
             else:
                 self.offset = ( ( self.start - current ) * -1.0 ) + 0.0
-            print self.offset
+            #print self.offset
         #put
         for obj in self.objects:
             if self.ns:
                 obj.name = self.ns + ':' + obj.name.split( ':' )[1]
+            #if cmds.objExists(obj.name):
             obj.offset = self.offset
             obj.putAttribute()
         cmds.autoKeyframe( state=autoKey )
@@ -317,6 +321,7 @@ class Clip( Layer ):
         #restore layers from class
         clash = '__CLASH__'
         for layer in self.layers:
+            layer.ns = self.ns
             sceneLayers = cmds.ls( type='animLayer' )
             sceneRootLayer = cmds.animLayer( q=True, root=True )
             #print layer.name

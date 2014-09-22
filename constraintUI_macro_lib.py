@@ -88,9 +88,11 @@ class CSUI(object):
                 sl = True
         #print sl, '========='
         locs = cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
+        i=0
         if v13:
             for loc in locs:
-                cn.matchKeyedFrames(A=sel[0], B=loc, subtractive=True)
+                cn.matchKeyedFrames(A=sel[i], B=loc, subtractive=True)
+                i=i+1
 
     def cmdBakeToLoc(self,*args):
         import constraint_lib as cn
