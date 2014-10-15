@@ -32,7 +32,7 @@ class Key():
         self.offset = offset
         self.getKey()
 
-    #pretty sure these defs should be in the Attribute class
+    # pretty sure these defs should be in the Attribute class
 
     def getKey( self ):
         index = cmds.keyframe( self.obj, q=True, time=( self.frame, self.frame ), at=self.attr, indexValue=True )[0]
@@ -50,15 +50,20 @@ class Key():
     def putKey( self ):
         #set key, creates curve node
         cmds.setKeyframe( self.obj, at=self.attr, time=( self.frame + self.offset, self.frame + self.offset ), value=self.value, shape=False )
-        #update curve name, set curve type, set weights
+        #update curve name, set curve type
         self.crv = cmds.findKeyframe( self.obj, at=self.attr, c=True )[0]
         cmds.setAttr( self.crv + '.weightedTangents', self.weightedTangents )
-        if  self.weightedTangents:
-            cmds.keyTangent( self.obj, edit=True, time=( self.frame + self.offset, self.frame + self.offset ), attribute=self.attr, weightLock=self.weightLock,
-            inWeight=self.inWeight, outWeight=self.outWeight)
         #set rest of key attributes
         cmds.keyTangent( self.obj, edit=True, time=( self.frame + self.offset, self.frame + self.offset ), attribute=self.attr,
         inTangentType=self.inTangentType, outTangentType=self.outTangentType, inAngle=self.inAngle, outAngle=self.outAngle, lock=self.lock )
+        # weights, doing this last sets the weights correctly for some reason
+        if  self.weightedTangents:
+            cmds.keyTangent( self.obj, edit=True, time=( self.frame + self.offset, self.frame + self.offset ), attribute=self.attr, weightLock=self.weightLock,
+            inWeight=self.inWeight, outWeight=self.outWeight)
+        else:
+            # print 'no weights on curve'
+            pass
+
 
 class Attribute( Key ):
     def __init__( self, obj, attr, offset=0 ):
@@ -68,7 +73,7 @@ class Attribute( Key ):
         self.obj = obj
         self.name = attr
         self.crv = cmds.findKeyframe( self.obj, at=self.name, c=True )
-        #print self.crv
+        # print self.crv
         self.frames = []
         self.keys = []
         self.value = cmds.getAttr( self.obj + '.' + self.name )
@@ -269,6 +274,8 @@ class Clip( Layer ):
         #
         self.getLayers()
         self.getClipAttrs()
+        
+        'test' #bla
 
     def getClipAttrs(self):
         #scene name
@@ -353,6 +360,10 @@ class Clip( Layer ):
 def clipSave( name='clipTemp.clip', path='', comment='' ):
     '''
     save clip to file
+    clip directory didnt get made in patricias example, import broke things, need selective import, need overwrite import including merge
+    download script didnt import new libs.
+    add options to save and import specific ranges
+    import only specific layers and objects
     '''
     path = clipPath( name=name )
     clp = Clip( name=name.split( '.' )[0], comment=comment )
@@ -397,7 +408,7 @@ def clipPath( name='' ):
     if os.path.isdir( path ):
         return os.path.join( path, name )
     else:
-        os.mkdir( path, 0777 )
+        os.mkdir( path)
         return os.path.join( path, name )
 
 def clipTempPath():
