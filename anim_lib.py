@@ -149,7 +149,7 @@ def locSize(lc, X=0.5):
 
 def locator(ro='zxy', size=0.1, constrain=False):
     locs = []
-    sel = cmds.ls(sl=True)
+    sel = cmds.ls(sl=True, fl=True)
     if len(sel) > 0:
         for item in sel:
             lc = cmds.spaceLocator(name=item + '__PLACE__')[0]
@@ -360,7 +360,7 @@ def keyHi(v=0):
 def matchObj():
     # queries dont work correctly when constraints, pairBlends and characterSets get involved
     # objs
-    sel = cmds.ls(sl=True)
+    sel = cmds.ls(sl=True, fl=True)
     if len(sel) == 2:
         # collect get
         get = sel[1]
@@ -403,7 +403,7 @@ def matchObj():
         message('Select 2 objects.')
 
 def selectFngrs(R=False):
-    sel = cmds.ls(sl=True)
+    sel = cmds.ls(sl=True, fl=True)
     ref = sel[0].split(':')[0]
     cmds.select(clear=True)
     for item in lists.fingers:
@@ -447,7 +447,7 @@ def toggleRes():
         cmds.setAttr(name + c + attrLo, 0)
 
 def distributeKeys(count=3.0, destructive=True):
-    sel = cmds.ls(sl=1)
+    sel = cmds.ls(sl=1, fl=True)
     rng = cn.GetRange()
     if sel:
         # gather info
@@ -496,7 +496,7 @@ def distributeKeys(count=3.0, destructive=True):
         message('Select one or more objects', maya=1)
 
 def panelOnSelection():
-    sel = cmds.ls(sl=1)
+    sel = cmds.ls(sl=1, fl=True)
     if len(sel) == 4:
         p = cmds.polyPlane(w=1, h=1, sx=1, sy=1, ax=(0, 1, 0), cuv=2, ch=1)[0]
         # vtx = cmds.polyEvaluate(p, v=1)

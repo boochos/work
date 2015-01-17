@@ -1,7 +1,8 @@
 import maya.cmds as cmds
 import maya.mel as mel
 import characterSet_lib as cs
-
+import hijack_lib as hj
+reload(hj)
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
@@ -307,7 +308,7 @@ def updateConstrainedCurves(obj=None, sim=False):
     for attr in blndAttrs:
         blndAttrState.append(AnimCrv(obj, attr.split('.')[1]))
     # print blndAttrState
-    #state = AnimCrv(obj, getBlendAttr(obj)[0].split('.')[1])
+    # state = AnimCrv(obj, getBlendAttr(obj)[0].split('.')[1])
     # connection class
     rcc = reConnect(obj)
     # bake attributes driven by pairBlend
@@ -465,7 +466,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
     '''
     if uiOff:
         uiEnable(controls='modelPanel', toggle=True)
-    #r = getRange()
+    # r = getRange()
     attrs = []
     min = time[0]
     max = time[1]
@@ -679,7 +680,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
                 except:
                     pass
                 cmds.parentConstraint(lc, item, mo=False)
-            #...else use point or orient constraint. Must assume pos or rot wont be constrained or edited with new locator
+            # ...else use point or orient constraint. Must assume pos or rot wont be constrained or edited with new locator
             else:
                 if cnT != None:
                     # in this state it is assumed a translates are keyable, a
@@ -712,6 +713,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
 
 def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07):
     locs = []
+    roo = None
     plc = '__PLACE__'
     if obj != None:
         lc = cmds.spaceLocator(name=obj + 'temp')[0]
@@ -722,19 +724,27 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         cmds.setAttr(lc + '.sz', k=False, cb=True)
         cmds.setAttr(lc + '.v', k=False, cb=True)
         locSize(lc, X=X)
-        roo = cmds.getAttr(obj + '.rotateOrder')
-        r = cmds.xform(obj, q=True, ws=True, ro=True)
-        t = cmds.xform(obj, q=True, ws=True, rp=True)
+        if '.' in obj:
+            roo = cmds.getAttr(obj + '.rotateOrder')
+        else:
+            roo = 0
+        if '.' in obj:
+            t = cmds.pointPosition(obj)
+            r = 0.0, 0.0, 0.0
+            print t
+        else:
+            r = cmds.xform(obj, q=True, ws=True, ro=True)
+            t = cmds.xform(obj, q=True, ws=True, rp=True)
         cmds.xform(lc, t=t, ro=r)
         cmds.setAttr(lc + '.rotateOrder', roo)
         cmds.xform(lc, roo=ro)
         if constrain == True:
             if toSelection:
                 constrainEnabled(obj, lc, mo=True)
-                #cmds.parentConstraint(obj, lc, mo=True)
+                # cmds.parentConstraint(obj, lc, mo=True)
             else:
                 constrainEnabled(lc, obj, mo=True)
-                #cmds.parentConstraint(lc, obj, mo=True)
+                # cmds.parentConstraint(lc, obj, mo=True)
         newName = lc.replace('temp', suffix)
         lc = cmds.rename(lc, newName)
         locs.append(lc)
@@ -743,7 +753,12 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         cmds.xform(loc, roo=ro)
         loc = cmds.rename(loc, 'locator' + suffix)
         locs.append(loc)
+    hj.hijackAttrs(locs[0], locs[0], 'overrideColor', 'color', set=True, default=None)
     return locs
+
+def objColorHijack(obj=''):
+    cmds.setAttr(obj + '.overrideEnabled', 1)
+    cmds.setAttr(obj + '.overrideColor', 1)
 
 
 def locatorOnSelection(ro='zxy', X=0.01, constrain=True, toSelection=False, color=07):
@@ -768,7 +783,7 @@ def locSize(lc, X=0.5):
         # print lc, '++++++++++++'
     for axs in axis:
         cmds.setAttr(lc + 'Shape.localScale' + axs, X)
-        #cmds.setAttr(lc + '.scale' + axs, X)
+        # cmds.setAttr(lc + '.scale' + axs, X)
 
 
 def objColor(obj='', color=07):

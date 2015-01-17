@@ -17,10 +17,32 @@ def message(what='', maya=True):
     else:
         print what
 
+def uiEnable(controls='modelPanel', toggle=True):
+    model = cmds.lsUI(panels=True, l=True)
+    ed = []
+    for m in model:
+        # print m
+        if controls in m:
+            ed.append(m)
+    # ed sometimes contains modelPanels that arent attached to anything, use
+    # loop with try to filter them out
+    state = False
+    for item in ed:
+        try:
+            state = cmds.control(item, q=1, m=1)
+            # print item
+            break
+        except:
+            pass
+    for p in ed:
+        if cmds.modelPanel(p, q=1, ex=1):
+            r = cmds.modelEditor(p, q=1, p=1)
+            if r:
+                cmds.control(p, e=1, m=not state)
 
 class Key():
 
-    def __init__(self, obj, attr, crv, frame, offset=0, weightedTangents=None):
+    def __init__(self, obj, attr, crv, frame, offset=0, weightedTangents=None, auto=True):
         # dont think this currently accounts for weighted tangents
         self.obj = obj
         self.attr = attr
@@ -37,7 +59,8 @@ class Key():
         self.outAngle = None
         self.lock = None
         self.offset = offset
-        self.getKey()
+        if auto:
+            self.getKey()
 
     def getKey(self):
         # print self.obj
@@ -70,23 +93,36 @@ class Key():
         # set key, creates curve node
         # print self.obj, self.attr, self.frame, self.offset, self.value,
         # '_____________________________'
-        cmds.setKeyframe(self.obj, at=self.attr, time=(
+        s = cmds.setKeyframe(self.obj, at=self.attr, time=(
             self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False)
-        # update curve name, set curve type, set weights
-        self.crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
-        cmds.keyframe(self.crv, time=(self.frame + self.offset, self.frame +
-                                      self.offset), valueChange=self.value)  # correction, hacky, should fix
-        cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
-        cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
-                        inTangentType=self.inTangentType, outTangentType=self.outTangentType, inAngle=self.inAngle, outAngle=self.outAngle, lock=self.lock)
-        if self.weightedTangents:
-            cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock,
-                            inWeight=self.inWeight, outWeight=self.outWeight)
+        if s:
+            # update curve name, set curve type, set weights
+            self.crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
+            cmds.keyframe(self.crv, time=(self.frame + self.offset, self.frame +
+                                          self.offset), valueChange=self.value)  # correction, hacky, should fix
+            cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
+            cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
+                            inTangentType=self.inTangentType, outTangentType=self.outTangentType)
+            if self.lock:
+                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), lock=self.lock)
+            if self.inAngle:
+                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), inAngle=self.inAngle)
+            if self.outAngle:
+                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
+            if self.weightedTangents:
+                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock,)
+                if self.inWeight:
+                    cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), inWeight=self.inWeight)
+                if self.outWeight:
+                    cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
+        else:
+            pass
+            # message('Unable to add animation to ' + self.obj + '.' + self.attr)
 
 
 class Attribute(Key):
 
-    def __init__(self, obj, attr, offset=0):
+    def __init__(self, obj, attr, offset=0, auto=True):
         '''
         add get/put keys from Key class to this one
         '''
@@ -102,7 +138,8 @@ class Attribute(Key):
         self.postInfinity = None
         self.weightedTangents = None
         self.baked = False
-        self.getCurve()
+        if auto:
+            self.getCurve()
 
     def getCurve(self):
         if self.crv != None:
@@ -154,9 +191,11 @@ class Attribute(Key):
     def putCurveAttrs(self):
         # need to update curve name, isnt the same as stored, depends on how
         # curves and layers are ceated
-        self.crv = cmds.findKeyframe(self.obj, at=self.name, c=True)[0]
-        cmds.setAttr(self.crv + '.preInfinity', self.preInfinity)
-        cmds.setAttr(self.crv + '.postInfinity', self.postInfinity)
+        self.crv = cmds.findKeyframe(self.obj, at=self.name, c=True)
+        if self.crv:
+            self.crv = self.crv[0]
+            cmds.setAttr(self.crv + '.preInfinity', self.preInfinity)
+            cmds.setAttr(self.crv + '.postInfinity', self.postInfinity)
 
 
 class Obj(Attribute):
@@ -166,22 +205,101 @@ class Obj(Attribute):
         # print self.name, '_______name__'
         self.offset = offset
         self.attributes = []
+        self.attributesDriven = []
+        self.getAllDriven()
         self.getAttribute()
+        self.getBakedAttribute()
 
     def getAttribute(self):
-        keyable = cmds.listAttr(self.name, k=True, s=True)
+        keyable = cmds.listAttr(self.name, k=True, s=True)  # if lattice point is selected, returning list is 'attr.attr'
         # print keyable
         non_keyable = cmds.listAttr(self.name, cb=True)  # cb non keyable
         # print keyable
         if keyable:
-            for k in keyable:
-                a = Attribute(self.name, k)
-                self.attributes.append(a)
+            for attr in keyable:
+                if attr not in self.attributesDriven:
+                    # hacky -- if attr.attr format, remove first attr
+                    if '.' in attr:
+                        attr = attr.split('.')[1]
+                    a = Attribute(self.name, attr)
+                    self.attributes.append(a)
 
-    def getDrivenAttribute(self):
-        # collect constrained, setDriven, expression attrs
-        # create
-        pass
+    def getBakedAttribute(self):
+        if self.attributesDriven:
+            # turn off UI
+            uiEnable()
+            # create frame list from frame range
+            min = cmds.playbackOptions(q=True, ast=True)
+            max = cmds.playbackOptions(q=True, aet=True)
+            rng = range(int(min), int(max + 1))
+            rng = [float(i) for i in rng]
+            # instanciate class for every driven attr
+            attributesBaked = []
+            for a in self.attributesDriven:
+                attr = Attribute(self.name, a, auto=False)
+                attr.preInfinity = 0
+                attr.postInfinity = 0
+                attributesBaked.append(attr)
+            # loop through frames and add key class manually for all attrs
+            current = cmds.currentTime(q=True)
+            for frame in rng:
+                # move to frame
+                cmds.currentTime(frame)
+                for attr in attributesBaked:
+                    # get value of attribute from maya
+                    val = cmds.getAttr(self.name + '.' + attr.name)
+                    # store value in attr class, intanciate Key class
+                    k = Key(self.name, attr.name, '', frame, weightedTangents=False, auto=False)
+                    k.value = val
+                    k.inTangentType = 'auto'
+                    k.outTangentType = 'auto'
+                    attr.keys.append(k)
+            for attr in attributesBaked:
+                self.attributes.append(attr)
+            # restore current frame
+            cmds.currentTime(current)
+            # turn on UI
+            uiEnable()
+        else:
+            message('nothing to bake', maya=True)
+
+    def getDrivers(self, obj, typ='', plugs=True):
+        # Returns nodes that are driving given node
+        # typ=return only node types
+        # plugs=True will return with driving attribute(s)
+        con = cmds.listConnections(obj, d=False, s=True, t=typ, plugs=plugs)
+        if con:
+            con = list(set(con))
+        return con
+
+    def getDriven(self, obj, typ='', plugs=True):
+        # Returns nodes that are driven by given node
+        # typ=return only node types
+        # plugs=True will return with driven attribute(s)
+        con = cmds.listConnections(obj, s=False, d=True, t=typ, plugs=plugs)
+        if con:
+            con = list(set(con))
+        return con
+
+    def getDrivenAttrsByType(self, typ=''):
+        # Returns attributes of the given object which are driven by a node type
+        drivers = self.getDrivers(self.name, typ=typ, plugs=True)
+        driven = []
+        if drivers:
+            for driver in drivers:
+                driven.append(self.getDriven(driver, typ='', plugs=True)[0].split('.')[1])
+            return sorted(driven)
+        else:
+            return None
+
+    def getAllDriven(self, types=['constraint', 'pairBlend', 'expression']):
+        # set driven not supported
+        self.attributesDriven = []
+        for t in types:
+            con = self.getDrivenAttrsByType(typ=t)
+            if con:
+                for c in con:
+                    self.attributesDriven.append(c)
 
     def putAttribute(self):
         # print self.name, '__________________________putAttr'
@@ -303,7 +421,7 @@ class Layer(Obj):
 class Clip(Layer):
 
     def __init__(self, name='', comment='', poseOnly=False):
-        self.sel = cmds.ls(sl=True)
+        self.sel = cmds.ls(sl=True, fl=True)
         self.name = name
         self.comment = comment
         self.poseOnly = poseOnly
@@ -374,7 +492,8 @@ class Clip(Layer):
                     self.start = layer.start
                 if layer.end > self.end:
                     self.end = layer.end
-        self.length = self.end - self.start + 1
+        if self.start and self.end:
+            self.length = self.end - self.start + 1
 
     def setActiveLayer(self, l=None):
         # maya 2014, this does not activate layer: cmds.animLayer( ex, e=True, sel=False )
@@ -457,7 +576,7 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     need to add option to import on existing layer with same name
     add option to not apply layer settings to layers with same name
     '''
-    sel = cmds.ls(sl=1)
+    sel = cmds.ls(sl=1, fl=1)
     # set import attrs
     clp = clipOpen(path=path)
     if onCurrentFrame:
@@ -465,9 +584,9 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     if ns:
         clp = putNS(clp)
     if putObjectList:
-        clp = isolateObjects(clp, putObjectList)  # not working
+        clp = pruneObjects(clp, putObjectList)  # not working
     if putLayerList:
-        clp = isolateLayers(clp, putLayerList)  # working
+        clp = pruneLayers(clp, putLayerList)  # working
     clp.poseOnly = poseOnly  # doesn't do anything yet
     #
     clp.putLayers(mergeExistingLayers, applyLayerSettings)
@@ -549,7 +668,7 @@ def replaceNS(obj='', ns=''):
     return result
 
 
-def isolateLayers(clp, layers=[]):
+def pruneLayers(clp, layers=[]):
     # remove layers from clip that arent in 'layer' list arg
     isolated = []
     for layer in clp.layers:
@@ -559,7 +678,7 @@ def isolateLayers(clp, layers=[]):
     return clp
 
 
-def isolateObjects(clp, objects=[]):
+def pruneObjects(clp, objects=[]):
     # remove objects from clip that arent in 'objects' list arg
     for layer in clp.layers:
         isolated = []

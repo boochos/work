@@ -3,7 +3,6 @@ import maya.cmds as cmds
 import maya.mel as mel
 
 
-
 def addAttribute(objList, attrList, minimum, maximum, keyable, attrType):
     """
     #\n
@@ -54,23 +53,23 @@ def hijackVis(obj1, obj2, name='', suffix=True, default=None, mode='visibility')
     suffix   = suffix string to new attr
     mode     = 'visibility', 'dispGeometry'
     '''
-    ##create suffix
+    # #create suffix
     if suffix == True:
-    suffix = name + '_Vis'
-    addAttribute(obj2, suffix, 0, 1, False, 'long')
-    cmds.connectAttr(obj2 + '.' + suffix, obj1 + '.' + mode)
+        suffix = name + '_Vis'
+        addAttribute(obj2, suffix, 0, 1, False, 'long')
+        cmds.connectAttr(obj2 + '.' + suffix, obj1 + '.' + mode)
     else:
-    ##OLD elif suffix == False:
-    suffix = name
+        # #OLD elif suffix == False:
+        suffix = name
     if cmds.attributeQuery(suffix, node=obj2, ex=True) == True:
         cmds.connectAttr(obj2 + '.' + suffix, obj1 + '.' + mode)
     else:
         addAttribute(obj2, suffix, 0, 1, False, 'long')
         cmds.connectAttr(obj2 + '.' + suffix, obj1 + '.' + mode)
     if default != None:
-    cmds.setAttr(obj2 + '.' + suffix, default)
-    vis = obj2 + '.' + suffix
-    return vis
+        cmds.setAttr(obj2 + '.' + suffix, default)
+        vis = obj2 + '.' + suffix
+        return vis
 
 def hijackAttrs(obj1, obj2, attrOrig, attrNew, set=False, default=None):
     """\n
@@ -79,34 +78,34 @@ def hijackAttrs(obj1, obj2, attrOrig, attrNew, set=False, default=None):
     attrOrig = name of attr getting hijacked on obj1\n
     attrNew  = name of attr hijacking on obj2\n
     """
-    ENM   = None
-    SMIN  = None
-    SMAX  = None
-    MIN   = None
-    MAX   = None
-    #collect custom attrs from obj1
-    K = cmds.getAttr(obj1 +'.' + attrOrig, k=True)
-    TYP = cmds.getAttr(obj1 +'.' + attrOrig, typ=True)
+    ENM = None
+    SMIN = None
+    SMAX = None
+    MIN = None
+    MAX = None
+    # collect custom attrs from obj1
+    K = cmds.getAttr(obj1 + '.' + attrOrig, k=True)
+    TYP = cmds.getAttr(obj1 + '.' + attrOrig, typ=True)
     if TYP == 'enum':
         ENM = cmds.attributeQuery(attrOrig, node=obj1, le=True)[0]
     if cmds.attributeQuery(attrOrig, node=obj1 , sme=True) == 1:
         SMIN = cmds.attributeQuery(attrOrig, node=obj1 , smn=True)[0]
-        ##print SMIN
+        # #print SMIN
     if cmds.attributeQuery(attrOrig, node=obj1 , sme=True) == 1:
         SMAX = cmds.attributeQuery(attrOrig, node=obj1 , smx=True)[0]
-        ##print SMAX
+        # #print SMAX
     if cmds.attributeQuery(attrOrig, node=obj1 , mne=True) == 1:
         MIN = cmds.attributeQuery(attrOrig, node=obj1 , min=True)[0]
-        ##print MIN
+        # #print MIN
     if cmds.attributeQuery(attrOrig, node=obj1 , mxe=True) == 1:
         MAX = cmds.attributeQuery(attrOrig, node=obj1 , max=True)[0]
-        ##print MAX
+        # #print MAX
     L = cmds.getAttr(obj1 + '.' + attrOrig, l=True)
     CB = cmds.getAttr(obj1 + '.' + attrOrig, cb=True)
     V = cmds.getAttr(obj1 + '.' + attrOrig)
     attrState = attrOrig, K, TYP, MIN, MAX, L, CB, V, ENM
 
-    #recreate attrs on obj2 from obj1, connect attrs
+    # recreate attrs on obj2 from obj1, connect attrs
     if TYP == 'enum':
         cmds.addAttr(obj2, ln=attrNew, k=K, at=TYP, en=ENM)
         cmds.setAttr(obj2 + '.' + attrNew, V)
@@ -125,17 +124,17 @@ def hijackAttrs(obj1, obj2, attrOrig, attrNew, set=False, default=None):
         cmds.setAttr(obj2 + '.' + attrNew, cb=CB)
     cmds.setAttr(obj2 + '.' + attrNew, V)
 
-    #connect attr
+    # connect attr
     cmds.connectAttr(obj2 + '.' + attrNew, obj1 + '.' + attrOrig)
 
-    #override keyable
+    # override keyable
     if set != False:
         cmds.setAttr(obj2 + '.' + attrNew, k=False)
         cmds.setAttr(obj2 + '.' + attrNew, cb=True)
     if default != None:
-    cmds.setAttr(obj2 + '.' + attrNew, default)
-    attr = obj2 + '.' + attrNew
-    return attr
+        cmds.setAttr(obj2 + '.' + attrNew, default)
+        attr = obj2 + '.' + attrNew
+        return attr
 
 def hijackCustomAttrs(obj1, obj2):
     """\n
@@ -146,10 +145,10 @@ def hijackCustomAttrs(obj1, obj2):
     UsrAttr = cmds.listAttr(obj1, ud=True)
     hAttrs = []
     ENM = []
-    #collect custom attrs from obj1
+    # collect custom attrs from obj1
     for attr in UsrAttr:
-        K = cmds.getAttr(obj1 +'.' + attr, k=True)
-        TYP = cmds.getAttr(obj1 +'.' + attr, typ=True)
+        K = cmds.getAttr(obj1 + '.' + attr, k=True)
+        TYP = cmds.getAttr(obj1 + '.' + attr, typ=True)
         if TYP == 'enum':
             ENM = cmds.attributeQuery(attr, node=obj1, le=True)[0]
         if cmds.attributeQuery(attr, node=obj1 , mne=True) == 1:
@@ -165,7 +164,7 @@ def hijackCustomAttrs(obj1, obj2):
         V = cmds.getAttr(obj1 + '.' + attr)
         attrState = attr, K, TYP, MIN, MAX, L, CB, V, ENM
         hAttrs.append(attrState)
-    #recreate attrs on obj2 from obj1, connect attrs
+    # recreate attrs on obj2 from obj1, connect attrs
     for i in range(0, len(hAttrs), 1):
         if hAttrs[i][2] == 'enum':
             cmds.addAttr(obj2, ln=hAttrs[i][0], k=hAttrs[i][1], at=hAttrs[i][2], en=hAttrs[i][8])
@@ -199,16 +198,16 @@ def hijack(obj1, obj2, translate=True, rotate=True, scale=True, visibility=True)
     obj2 = master
     '''
     if translate == True:
-    cmds.connectAttr(obj2 + '.translateX', obj1 + '.translateX')
-    cmds.connectAttr(obj2 + '.translateY', obj1 + '.translateY')
-    cmds.connectAttr(obj2 + '.translateZ', obj1 + '.translateZ')
+        cmds.connectAttr(obj2 + '.translateX', obj1 + '.translateX')
+        cmds.connectAttr(obj2 + '.translateY', obj1 + '.translateY')
+        cmds.connectAttr(obj2 + '.translateZ', obj1 + '.translateZ')
     if rotate == True:
-    cmds.connectAttr(obj2 + '.rotateX', obj1 + '.rotateX')
-    cmds.connectAttr(obj2 + '.rotateY', obj1 + '.rotateY')
-    cmds.connectAttr(obj2 + '.rotateZ', obj1 + '.rotateZ')
+        cmds.connectAttr(obj2 + '.rotateX', obj1 + '.rotateX')
+        cmds.connectAttr(obj2 + '.rotateY', obj1 + '.rotateY')
+        cmds.connectAttr(obj2 + '.rotateZ', obj1 + '.rotateZ')
     if scale == True:
-    cmds.connectAttr(obj2 + '.scaleX', obj1 + '.scaleX')
-    cmds.connectAttr(obj2 + '.scaleY', obj1 + '.scaleY')
-    cmds.connectAttr(obj2 + '.scaleZ', obj1 + '.scaleZ')
+        cmds.connectAttr(obj2 + '.scaleX', obj1 + '.scaleX')
+        cmds.connectAttr(obj2 + '.scaleY', obj1 + '.scaleY')
+        cmds.connectAttr(obj2 + '.scaleZ', obj1 + '.scaleZ')
     if visibility == True:
-    cmds.connectAttr(obj2 + '.visibility', obj1 + '.visibility')
+        cmds.connectAttr(obj2 + '.visibility', obj1 + '.visibility')
