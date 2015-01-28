@@ -1,6 +1,7 @@
 import maya.cmds as cmds
 import maya.mel as mel
 import constraint_lib as cn
+import os
 # import place_lib as place
 # import util_lib as util
 # import lists_lib as lists
@@ -507,3 +508,38 @@ def panelOnSelection():
             j = j + 1
     else:
         message('Select 4 objects', maya=True)
+
+
+def importCurveShape(name='', scale=1.0, overRide=False):
+    path = os.path.expanduser('~') + '/maya/controlShapes/'
+    selection = cmds.ls(selection=True, tr=True)
+    path = path + '/' + name + '.txt'
+    # change the shape of multiple selected curves
+    if len(selection) > 0:
+        for sel in selection:
+            # get the shape node
+            shapeNode = cmds.listRelatives(sel, shapes=True)[0]
+            # cvInfo is populated then interated through later
+            cvInfo = []
+            if cmds.nodeType(shapeNode) == 'nurbsCurve':
+                inFile = open(path, 'r')
+                for line in inFile.readlines():
+                    # extract the position data stored in the file
+                    cvLine = line.strip('\n')
+                    cvLine = cvLine.split(' ')
+                    tmp = float(cvLine[0]) * scale, float(cvLine[1]) * scale, float(cvLine[2]) * scale
+                    cvInfo.append(tmp)
+                inFile.close()
+                # Shape the curve
+                if overRide != False:
+                    cmds.setAttr(shapeNode + '.overrideEnabled', 1)
+                    cmds.setAttr(shapeNode + '.overrideColor', overRide)
+
+                if len(cvInfo) == len(cmds.getAttr(shapeNode + '.cv[*]')):
+                    for i in range(0, len(cvInfo), 1):
+                        cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=cvInfo[i])
+                else:
+                    # Curves with different CV counts are not compatible
+                    OpenMaya.MGlobal.displayError('CV count[' + str(len(cmds.getAttr(shapeNode + '.cv[*]'))) + '] from selected does not match import CV count[' + str(len(cvInfo)) + ']')
+    else:
+        OpenMaya.MGlobal.displayError('Select a NURBS curve if you truly want to proceed...')

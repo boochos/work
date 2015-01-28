@@ -725,9 +725,9 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         cmds.setAttr(lc + '.v', k=False, cb=True)
         locSize(lc, X=X)
         if '.' in obj:
-            roo = cmds.getAttr(obj + '.rotateOrder')
-        else:
             roo = 0
+        else:
+            roo = cmds.getAttr(obj + '.rotateOrder')
         if '.' in obj:
             t = cmds.pointPosition(obj)
             r = 0.0, 0.0, 0.0
@@ -735,8 +735,8 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         else:
             r = cmds.xform(obj, q=True, ws=True, ro=True)
             t = cmds.xform(obj, q=True, ws=True, rp=True)
-        cmds.xform(lc, t=t, ro=r)
         cmds.setAttr(lc + '.rotateOrder', roo)
+        cmds.xform(lc, ws=True, t=t, ro=r)
         cmds.xform(lc, roo=ro)
         if constrain == True:
             if toSelection:
