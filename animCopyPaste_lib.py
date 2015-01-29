@@ -28,7 +28,7 @@ def animPlugin():
             cmds.pluginInfo( '/Applications/Autodesk/maya2009/Maya.app/Contents/MacOS/plug-ins/' + 'animImportExport.bundle', e=True, a=True )
             cmds.loadPlugin( 'animImportExport' )
     else:
-        message( 'Plugin Loaded' )
+        message( 'Plugin Loaded, good to go' )
 
 def animSelList():
     #make sure something is selected
