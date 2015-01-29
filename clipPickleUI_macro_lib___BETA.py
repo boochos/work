@@ -126,7 +126,8 @@ class CPUI(object):
             c7 = cmds.checkBox(self.control.c7, q=True, v=True)
             # print c7
             # import
-            cp.clipApply(path=path, ns=c5, onCurrentFrame=c1, mergeExistingLayers=c6, applyLayerSettings=c7, putLayerList=putLayerList, putObjectList=putObjectList, poseOnly=False)
+            cp.clipApply(path=path, ns=c5, onCurrentFrame=c1, mergeExistingLayers=c6, applyLayerSettings=c7, putLayerList=putLayerList, putObjectList=putObjectList,
+                         start=None, end=None)
         else:
             message('Select a clip to import.')
 
@@ -317,3 +318,7 @@ class CPUI(object):
         else:
             cmds.text( self.control.heading21, edit=True, label='' )
         '''
+
+    def progressBar(self):
+        # calculate progress bar....wont work
+        barDiv = sum(1 for line in open('/home/sebastianw/maya/clipLibrary/3rdTrakkerIn_LatticePoints.0001.clip'))

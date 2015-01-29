@@ -4,6 +4,7 @@ import time
 import getpass
 import pickle
 import os
+import json
 
 #
 
@@ -12,10 +13,11 @@ def message(what='', maya=True):
     what = '-- ' + what + ' --'
     global tell
     tell = what
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 def uiEnable(controls='modelPanel', toggle=True):
     model = cmds.lsUI(panels=True, l=True)
@@ -40,9 +42,10 @@ def uiEnable(controls='modelPanel', toggle=True):
             if r:
                 cmds.control(p, e=1, m=not state)
 
+
 class Key():
 
-    def __init__(self, obj, attr, crv, frame, offset=0, weightedTangents=None, auto=True):
+    def __init__(self, obj='', attr='', crv='', frame=0.0, offset=0, weightedTangents=None, auto=True):
         # dont think this currently accounts for weighted tangents
         self.obj = obj
         self.attr = attr
@@ -59,7 +62,14 @@ class Key():
         self.outAngle = None
         self.lock = None
         self.offset = offset
-        if auto:
+        self.auto = auto
+        '''
+        if self.auto:
+            self.getKey()
+        '''
+
+    def get(self):
+        if self.auto:
             self.getKey()
 
     def getKey(self):
@@ -116,33 +126,43 @@ class Key():
                 if self.outWeight:
                     cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
         else:
-            pass
             # message('Unable to add animation to ' + self.obj + '.' + self.attr)
+            pass
 
 
 class Attribute(Key):
 
-    def __init__(self, obj, attr, offset=0, auto=True):
+    def __init__(self, obj='', attr='', offset=0, auto=True):
         '''
         add get/put keys from Key class to this one
         '''
         self.obj = obj
         self.name = attr
-        self.crv = cmds.findKeyframe(self.obj, at=self.name, c=True)
+        self.crv = None
         # print self.crv
         self.frames = []
         self.keys = []
-        self.value = cmds.getAttr(self.obj + '.' + self.name)
+        self.value = None
         self.offset = offset
         self.preInfinity = None
         self.postInfinity = None
         self.weightedTangents = None
         self.baked = False
+        self.auto = auto
+        '''
         if auto:
+            self.getCurve()
+        '''
+
+    def get(self):
+        #
+        self.crv = cmds.findKeyframe(self.obj, at=self.name, c=True)
+        self.value = cmds.getAttr(self.obj + '.' + self.name)
+        if self.auto:
             self.getCurve()
 
     def getCurve(self):
-        if self.crv != None:
+        if self.crv:
             if len(self.crv) == 1:
                 self.crv = self.crv[0]
                 self.getCurveAttrs()
@@ -155,7 +175,7 @@ class Attribute(Key):
         self.weightedTangents = cmds.getAttr(self.crv + '.weightedTangents')
 
     def getFrames(self):
-        if self.crv != None:
+        if self.crv:
             self.getCurveAttrs()
             framesTmp = cmds.keyframe(self.crv, q=True)
             for frame in framesTmp:
@@ -167,12 +187,11 @@ class Attribute(Key):
         for frame in self.frames:
             a = Key(self.obj, self.name, self.crv, frame,
                     weightedTangents=self.weightedTangents)
+            a.get()
             self.keys.append(a)
 
     def putCurve(self):
-        # print self.obj, '________________________obj'
         if self.keys:
-            # print len(self.keys)
             for k in self.keys:
                 k.obj = self.obj
                 k.offset = self.offset
@@ -183,7 +202,6 @@ class Attribute(Key):
                         k.putKey()
                         self.putCurveAttrs()
         else:
-            # print '_______putcurve set attr'
             if cmds.objExists(self.obj + '.' + self.name):
                 if not cmds.getAttr(self.obj + '.' + self.name, l=True):
                     cmds.setAttr(self.obj + '.' + self.name, self.value)
@@ -200,21 +218,24 @@ class Attribute(Key):
 
 class Obj(Attribute):
 
-    def __init__(self, obj, offset=0):
+    def __init__(self, obj='', offset=0):
         self.name = obj
-        # print self.name, '_______name__'
         self.offset = offset
         self.attributes = []
         self.attributesDriven = []
+        '''
+        self.getAllDriven()
+        self.getAttribute()
+        self.getBakedAttribute()
+        '''
+
+    def get(self):
         self.getAllDriven()
         self.getAttribute()
         self.getBakedAttribute()
 
     def getAttribute(self):
         keyable = cmds.listAttr(self.name, k=True, s=True)  # if lattice point is selected, returning list is 'attr.attr'
-        # print keyable
-        non_keyable = cmds.listAttr(self.name, cb=True)  # cb non keyable
-        # print keyable
         if keyable:
             for attr in keyable:
                 if attr not in self.attributesDriven:
@@ -222,6 +243,7 @@ class Obj(Attribute):
                     if '.' in attr:
                         attr = attr.split('.')[1]
                     a = Attribute(self.name, attr)
+                    a.get()
                     self.attributes.append(a)
 
     def getBakedAttribute(self):
@@ -233,10 +255,11 @@ class Obj(Attribute):
             max = cmds.playbackOptions(q=True, aet=True)
             rng = range(int(min), int(max + 1))
             rng = [float(i) for i in rng]
-            # instanciate class for every driven attr
+            # instantiate class for every driven attr
             attributesBaked = []
             for a in self.attributesDriven:
                 attr = Attribute(self.name, a, auto=False)
+                attr.get()
                 attr.preInfinity = 0
                 attr.postInfinity = 0
                 attributesBaked.append(attr)
@@ -248,8 +271,9 @@ class Obj(Attribute):
                 for attr in attributesBaked:
                     # get value of attribute from maya
                     val = cmds.getAttr(self.name + '.' + attr.name)
-                    # store value in attr class, intanciate Key class
+                    # store value in attr class, instantiate Key class
                     k = Key(self.name, attr.name, '', frame, weightedTangents=False, auto=False)
+                    k.get()
                     k.value = val
                     k.inTangentType = 'auto'
                     k.outTangentType = 'auto'
@@ -261,7 +285,8 @@ class Obj(Attribute):
             # turn on UI
             uiEnable()
         else:
-            message('nothing to bake', maya=True)
+            # message('nothing to bake', maya=True)
+            pass
 
     def getDrivers(self, obj, typ='', plugs=True):
         # Returns nodes that are driving given node
@@ -337,6 +362,13 @@ class Layer(Obj):
         self.rotationAccumulationMode = None  # test if enums work
         self.scaleAccumulationMode = None
         #
+        '''
+        self.getObjects()
+        self.getLayerAttrs()
+        self.getStartEndLength()
+        '''
+
+    def get(self):
         self.getObjects()
         self.getLayerAttrs()
         self.getStartEndLength()
@@ -344,9 +376,8 @@ class Layer(Obj):
     def getObjects(self):
         for obj in self.sel:
             a = Obj(obj)
+            a.get()
             self.objects.append(a)
-        # print self.sel
-        # print self.putObjectList
 
     def getStartEndLength(self):
         frames = []
@@ -371,6 +402,7 @@ class Layer(Obj):
             self.override = cmds.getAttr(self.name + '.override')
             self.passthrough = cmds.getAttr(self.name + '.passthrough')
             self.weight = Attribute(self.name, 'weight')
+            self.weight.get()
             self.rotationAccumulationMode = cmds.getAttr(
                 self.name + '.rotationAccumulationMode')
             self.scaleAccumulationMode = cmds.getAttr(
@@ -421,13 +453,14 @@ class Layer(Obj):
 class Clip(Layer):
 
     def __init__(self, name='', comment='', poseOnly=False):
-        self.sel = cmds.ls(sl=True, fl=True)
-        self.name = name
-        self.comment = comment
-        self.poseOnly = poseOnly
+        self.sel = None
+        #
+        self.name = ''
+        self.comment = ''
+        self.poseOnly = False
         self.source = None
-        self.user = getpass.getuser()
-        self.date = time.strftime("%c")
+        self.user = None
+        self.date = None
         #
         self.start = None
         self.end = None
@@ -437,7 +470,17 @@ class Clip(Layer):
         self.rootLayer = None
         # set on import of clip
         self.offset = 0  # import
+        '''
+        self.getLayers()
+        self.getClipAttrs()
+        self.getClipStartEndLength()
+        '''
+
+    def get(self):
         #
+        self.sel = cmds.ls(sl=True, fl=True)
+        self.user = getpass.getuser()
+        self.date = time.strftime("%c")
         self.getLayers()
         self.getClipAttrs()
         self.getClipStartEndLength()
@@ -469,16 +512,19 @@ class Clip(Layer):
                         # print layer, '_________'
                         clp = Layer(
                             name=layer, sel=currentLayerMembers, comment=self.comment)
+                        clp.get()
                         self.layers.append(clp)
                 else:
                     print layer, '     no members'
             self.setActiveLayer(l=self.rootLayer)
             # build root layer class
             clp = Layer(sel=self.sel, comment=self.comment)
+            clp.get()
             self.layers.append(clp)
         else:
             # no anim layers, create single layer class
             clp = Layer(name=None, sel=self.sel, comment=self.comment)
+            clp.get()
             self.layers.append(clp)
         # print self.putLayerList
 
@@ -554,22 +600,100 @@ def clipSave(name='clipTemp', path='', comment='', poseOnly=False):
     '''
     path = clipPath(name=name + '.clip')
     clp = Clip(name=name, comment=comment)
+    clp.get()
     # print clp.name
-    fileObject = open(path, 'wb')
-    pickle.dump(clp, fileObject)
-    fileObject.close()
-
+    # fileObject = open(path, 'wb')
+    # pickle.dump(clp, fileObject)
+    # fileObject.close()
+    #
+    fileObjectJSON = open(path, 'wb')
+    json.dump(clp, fileObjectJSON, default=to_json, indent=1)
+    fileObjectJSON.close()
 
 def clipOpen(path=''):
     '''
     open clip form file
     '''
-    fileObject = open(path, 'r')
-    clp = pickle.load(fileObject)
-    return clp
+    # fileObject = open(path, 'r')
+    # clp = pickle.load(fileObject)
+    # fileObject.close()
+    #
+    fileObjectJSON = open(path, 'r')
+    clpJSON = json.load(fileObjectJSON, object_hook=from_json)
+    # print clpJSON.__dict__, '   reconstructed'
+    fileObjectJSON.close()
+    return clpJSON
 
 
-def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, putLayerList=[], putObjectList=[], poseOnly=False):
+def to_json(python_object):
+    if isinstance(python_object, Clip):
+        return {'__class__': 'Clip',
+                '__value__': python_object.__dict__}
+    if isinstance(python_object, Layer):
+        return {'__class__': 'Layer',
+                '__value__': python_object.__dict__}
+    if isinstance(python_object, Obj):
+        return {'__class__': 'Obj',
+                '__value__': python_object.__dict__}
+    if isinstance(python_object, Attribute):
+        return {'__class__': 'Attribute',
+                '__value__': python_object.__dict__}
+    if isinstance(python_object, Key):
+        return {'__class__': 'Key',
+                '__value__': python_object.__dict__}
+    raise TypeError(repr(python_object) + ' is not JSON serializable')
+
+
+def from_json(json_object):
+    if '__class__' in json_object:
+        if json_object['__class__'] == 'Clip':
+            # !!! decoding breaks here !!!
+            # print 'Clip'
+            clp = Clip()
+            clp = populate_from_json(clp, json_object['__value__'])
+            return clp
+            # return Clip(**json_object['__value__'])
+        if json_object['__class__'] == 'Layer':
+            # print 'Layer'
+            lyr = Layer()
+            lyr = populate_from_json(lyr, json_object['__value__'])
+            return lyr
+            # return Layer(**json_object['__value__'])
+        if json_object['__class__'] == 'Obj':
+            # print 'Obj'
+            obj = Obj()
+            obj = populate_from_json(obj, json_object['__value__'])
+            return obj
+            # return Obj(**json_object['__value__'])
+        if json_object['__class__'] == 'Attribute':
+            # print 'Attribute'
+            attr = Attribute()
+            attr = populate_from_json(attr, json_object['__value__'])
+            return attr
+            # return Attribute(**json_object['__value__'])
+        if json_object['__class__'] == 'Key':
+            # print 'Key'
+            key = Key()
+            key = populate_from_json(key, json_object['__value__'])
+            return key
+            # return Key(**json_object['__value__'])
+    return json_object
+
+
+def populate_from_json(cls, dct={}):
+    for key in dct:
+        try:
+            getattr(cls, key)
+        except AttributeError:
+            pass
+            # print "Doesn't exist"
+        else:
+            setattr(cls, key, dct[key])
+    return cls
+
+
+def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, putLayerList=[], putObjectList=[],
+              start=None, end=None):
     '''
     apply animation from file
     FIX
@@ -579,6 +703,7 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     sel = cmds.ls(sl=1, fl=1)
     # set import attrs
     clp = clipOpen(path=path)
+    # print clp.__dict__
     if onCurrentFrame:
         clp.offset = onCurrentFrameOffset(start=clp.start)
     if ns:
@@ -587,9 +712,10 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
         clp = pruneObjects(clp, putObjectList)  # not working
     if putLayerList:
         clp = pruneLayers(clp, putLayerList)  # working
-    clp.poseOnly = poseOnly  # doesn't do anything yet
     #
+    clp = cutKeysToRange(clp, 1020.0, 1090)
     clp.putLayers(mergeExistingLayers, applyLayerSettings)
+    # print clp.layers
     if sel:
         cmds.select(sel)
 
@@ -618,6 +744,78 @@ def onCurrentFrameOffset(start=0.0):
         offset = ((start - current) * -1.0) + 0.0
     # print offset
     return offset
+
+
+def insertKey(clp, frame=0.0):
+    for layer in clp.layers:
+        for obj in layer.objects:
+            for attr in obj.attributes:
+                if attr.crv:
+                    # make sure no key exists on given frame, add short form loop, if it does dont overwrite
+                    k = Key(attr.obj, attr.name, attr.crv, frame, weightedTangents=False, auto=False)
+                    k.value = insertKeyValue(attr, frame)  # find appropriate value
+                    k.inTangentType = 'auto'
+                    k.outTangentType = 'auto'
+                    attr.keys.append(k)
+                else:
+                    # print 'no crv exists, skipping insert'
+                    pass
+    return clp
+
+
+def insertKeyValue(attr, frame=0.0):
+    # hacky, lack of calculus skills method, good for approximation.
+    # does not consider tangents, only key positions
+    val = 0.0
+    i = 0
+    while frame > attr.keys[i].frame:  # can reach end of list before finding a qualifying frame number
+        i = i + 1
+        if len(attr.keys) - 1 < i:
+            print 'done'
+            return None  # needs an actual value to work
+    else:
+        preVal = attr.keys[i - 1].value
+        nexVal = attr.keys[i].value
+        preFrm = attr.keys[i - 1].frame
+        nexFrm = attr.keys[i].frame
+        # frame range between keys
+        frameRange = int((preFrm - nexFrm) * -1)
+        valueRange = preVal - nexVal
+        if valueRange != 0.0:
+            # force positive
+            if valueRange < 0:
+                valueRange = valueRange * -1
+            # find increments
+            inc = valueRange / frameRange
+            # how many increments to add
+            mlt = int((preFrm - frame) * -1)
+            # add up increments
+            val = inc * mlt
+            # operation depends on preVal relative to nexVal value
+            if preVal < nexVal:
+                val = preVal + val
+            else:
+                val = preVal - val
+        else:
+            return preVal
+        return val
+
+
+def cutKeysToRange(clp, start=None, end=None):
+    if start:
+        clp = insertKey(clp, start)
+        clp = insertKey(clp, end)
+        for layer in clp.layers:
+            for obj in layer.objects:
+                for attr in obj.attributes:
+                    if attr.crv:
+                        keys = []
+                        for key in attr.keys:
+                            if key.frame >= start and key.frame <= end:
+                                keys.append(key)
+                        if keys:
+                            attr.keys = keys
+    return clp
 
 
 def putNS(clp):
