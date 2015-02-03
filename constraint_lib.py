@@ -792,6 +792,22 @@ def objColor(obj='', color=07):
     cmds.setAttr(obj + '.overrideColor', color)
 
 
+def null(obj='', suffix='', order='zxy'):
+    sel = cmds.ls(sl=True, fl=True, l=True)[0]
+    if obj:
+        sel = obj
+    if sel:
+        m = cmds.xform(sel, q=True, m=True, ws=True)
+        n = cmds.group(name=sel + suffix, em=True)
+        cmds.xform(n, m=m, ws=True)
+        if order:
+            cmds.xform(n, roo=order)
+        return n
+    else:
+        message('select one object or use the "obj" variable')
+        return None
+
+
 def attrStrings(pos=True, rot=True, period=True):
     p = ['tx', 'ty', 'tz']
     r = ['rx', 'ry', 'rz']

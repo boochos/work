@@ -190,7 +190,7 @@ def get(getScripts=False, getButtons=False, compileAll=False):
 
     # instead
     # download downloadFiles lib, always before update
-    dnLib = 'downloadFiles_lib'
+    dnLib = 'webrFiles_lib'
     url = urlScripts + '/' + dnLib
     home = os.path.join(scriptDir, dnLib)
     if os.path.isdir(home):
@@ -198,7 +198,7 @@ def get(getScripts=False, getButtons=False, compileAll=False):
         print 'remove   ', home
     #urllib.urlretrieve(url, home)
     pc.compile(file)
-    import downloadFiles_lib as df
+import webrFiles_lib as df
 
     # get scripts
     for lib in df.downloadlibs:

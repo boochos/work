@@ -713,7 +713,7 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     if putLayerList:
         clp = pruneLayers(clp, putLayerList)  # working
     #
-    clp = cutKeysToRange(clp, 1020.0, 1090)
+    # clp = cutKeysToRange(clp, 1020.0, 1090)
     clp.putLayers(mergeExistingLayers, applyLayerSettings)
     # print clp.layers
     if sel:

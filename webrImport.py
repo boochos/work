@@ -1,9 +1,8 @@
 import urllib2
 import imp
-import os
 
 
-def makeModule(modulename=''):
+def mod(modulename=''):
     # file path
     path = 'https://raw.githubusercontent.com/boochos/work/master/' + modulename + '.py'
     req = urllib2.Request(path)
@@ -12,6 +11,7 @@ def makeModule(modulename=''):
     contents = response.read()
     # must be exec mode
     codeobj = compile(contents, '', 'exec')
+    # module = imp.new_module(modulename)
     module = imp.new_module(modulename)
     exec(codeobj, module.__dict__)
     # done

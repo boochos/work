@@ -301,7 +301,7 @@ def locSize(lc, mltp=1):
     axis = ['X', 'Y', 'Z']
     for axs in axis:
         sz = cmds.getAttr(lc + 'Shape.localScale' + axs)
-        cmds.setAttr(lc + 'Shape.localScale' + axs, sz * X)
+        cmds.setAttr(lc + 'Shape.localScale' + axs, sz * mltp)
 
 def changeColor(color=17, shapes=False):
     sel = cmds.ls(sl=True)
