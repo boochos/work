@@ -2,6 +2,7 @@ import urllib
 import maya.cmds as cmds
 import maya.mel as mel
 import os
+#
 import webrImport as web
 # web
 wf = web.mod('webrFiles_lib')
@@ -21,22 +22,21 @@ class Depend():
 
     def __init__(self):
         # shelf
-        self.shelf = 'WebShelf'
-        self.old = 'WebShelf_old'
+        self.shelf = 'WebrShelf'
+        self.old = 'WebrShelf_old'
 
 
 def shelfRefresh():
     getIcons()
     shelfRename()
     shelfBuild()
-    shelfDeleteWin()
 
 
 def shelfDeleteWin():
     win = cmds.window('DELETE_OLD_SHELF', w=200, h=40)
     cmds.columnLayout(columnAttach=('both', 1), columnAlign=(
         'center'), adjustableColumn=True, rowSpacing=10, columnWidth=250)
-    cmds.button('deleteButtonShelf', c="import maya.cmds as cmds\ncmds.deleteUI('WebShelf_old', control=True)\ncmds.deleteUI('DELETE_OLD_SHELF', control=True)",
+    cmds.button('deleteButtonShelf', c="import maya.cmds as cmds\ncmds.deleteUI('WebrShelf_old', control=True)\ncmds.deleteUI('DELETE_OLD_SHELF', control=True)",
                 l='DELETE OLD SHELF', w=150, h=100)
     cmds.showWindow(win)
 
@@ -45,6 +45,7 @@ def shelfRename(*args):
     dp = Depend()
     if cmds.control(dp.shelf, q=1, ex=1):
         cmds.renameUI(dp.shelf, dp.old)
+        shelfDeleteWin()
 
 
 def shelfBuild(*args):
@@ -71,7 +72,7 @@ def shelfBuild(*args):
                          w=wh, h=wh, image='PrntSel.xpm', command='sl.prnt()')
 
         cmds.shelfButton(label='temporarily save selection', annotation='temporarily save selection',
-                         w=wh, h=wh, image='selStore.xpm', command='import webrImport as web\nsl = web.mod("selection")\nsl = sel.Sel()')
+                         w=wh, h=wh, image='selStore.xpm', command='import webrImport as web\nsel = web.mod("selection")\nsl = sel.Sel()')
 
         cmds.shelfButton(label='select saved selection', annotation='select saved selection',
                          w=wh, h=wh, image='sel.xpm', command='sl.select()')

@@ -1,10 +1,14 @@
 import maya.cmds as cmds
 import maya.mel as mel
-import constraint_lib as cn
-import os
 from subprocess import call
-import animCurve_lib as ac
-reload(cn)
+import os
+#
+# import constraint_lib as cn
+# import animCurve_lib as ac
+import webrImport as web
+# web
+cn = web.mod('constraint_lib')
+ac = web.mod('animCurve_lib')
 
 
 def message(what='', maya=True):

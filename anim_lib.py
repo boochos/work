@@ -1,11 +1,11 @@
 import maya.cmds as cmds
 import maya.mel as mel
-import constraint_lib as cn
 import os
-# import place_lib as place
-# import util_lib as util
-# import lists_lib as lists
-# reload(lists)
+#
+# import constraint_lib as cn
+import webrImport as web
+# web
+cn = web.mod('constraint_lib')
 
 def mocapSkelAnim():
     sel = cmds.ls(sl=True)

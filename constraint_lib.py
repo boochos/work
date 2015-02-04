@@ -1,8 +1,13 @@
 import maya.cmds as cmds
 import maya.mel as mel
-import characterSet_lib as cs
-import hijack_lib as hj
-reload(hj)
+#
+# import characterSet_lib as cs
+# import hijack_lib as hj
+import webrImport as web
+# web
+cs = web.mod('characterSet_lib')
+hj = web.mod('hijack_lib')
+
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'

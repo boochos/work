@@ -1,16 +1,19 @@
 import maya.cmds  as cmds
 import maya.mel as mel
-import anim_lib as al
 import os
+import time
 from subprocess import call
 import subprocess
-import clipPickleUI_micro_lib___BETA as ui
-import clipPickle_lib as cp
-import time
+#
+# import clipPickleUI_micro_lib___BETA as ui
+# import clipPickle_lib as cp
+# import anim_lib as al
+import webrImport as web
+# web
+ui = web.mod('clipPickleUI_micro_lib___BETA')
+cp = web.mod('clipPickle_lib')
+al = web.mod('anim_lib')
 
-reload(al)
-reload(ui)
-reload(cp)
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'

@@ -1,10 +1,16 @@
 import maya.cmds as cmds
 import maya.mel as mel
-import characterSet_lib as cs
-import constraint_lib as cn
-import display_lib as ds
-import animCurve_lib as ac
-reload(ac)
+#
+# import characterSet_lib as cs
+# import constraint_lib as cn
+# import display_lib as ds
+# import animCurve_lib as ac
+import webrImport as web
+# web
+cs = web.mod('characterSet_lib')
+cn = web.mod('constraint_lib')
+ds = web.mod('display_lib')
+ac = web.mod('animCurve_lib')
 
 
 def message(what='', maya=True):

@@ -1,12 +1,15 @@
 import maya.cmds  as cmds
-import constraintUI_micro_lib as ui
-import constraint_lib as cn
 import maya.mel as mel
-import anim_lib as al
+#
+# import constraintUI_micro_lib as ui
+# import constraint_lib as cn
+# import anim_lib as al
+import webrImport as web
+# web
+ui = web.mod('constraintUI_micro_lib')
+cn = web.mod('constraint_lib')
+al = web.mod('anim_lib')
 
-reload(al)
-reload(cn)
-reload(ui)
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
@@ -21,16 +24,16 @@ class CSUI(object):
     '''
 
     def __init__(self, columnWidth=80):
-        #external
-        self.columnWidth                  = columnWidth
-        #internal
-        self.windowName                   = 'CN Tools'
-        #store/restore
-        self.objects  = []
+        # external
+        self.columnWidth = columnWidth
+        # internal
+        self.windowName = 'CN Tools'
+        # store/restore
+        self.objects = []
         self.animBucket = []
         self.objX = None
         self.anim = None
-        #execute
+        # execute
         self.cleanUI()
         self.gui()
 
@@ -41,9 +44,9 @@ class CSUI(object):
             pass
 
     def gui(self):
-        #window
+        # window
         self.win = cmds.window(self.windowName, w=self.columnWidth, rtf=1)
-        #action
+        # action
         self.actionColumn = ui.Action('action', cmdAction='', label='', w=self.columnWidth)
         cmds.button(self.actionColumn.actionButton1, e=True, c=self.cmdBake)
         cmds.button(self.actionColumn.actionButton2, e=True, c=self.cmdPlace)
@@ -67,41 +70,41 @@ class CSUI(object):
     def cmdBake(self, *args):
         import constraint_lib as cn
         reload(cn)
-        #v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
+        # v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
         v2 = cmds.checkBox(self.actionColumn.c2, q=True, v=True)
         v3 = cmds.checkBox(self.actionColumn.c3, q=True, v=True)
         v4 = cmds.checkBox(self.actionColumn.c4, q=True, v=True)
-        #cn.bakeConstrainedSelection(sparseKeys=v1, removeConstraint=v2, timeLine=v3, sim=v4)
-        cn.bakeConstrainedSelection( removeConstraint=v2, timeLine=v3, sim=v4)
+        # cn.bakeConstrainedSelection(sparseKeys=v1, removeConstraint=v2, timeLine=v3, sim=v4)
+        cn.bakeConstrainedSelection(removeConstraint=v2, timeLine=v3, sim=v4)
 
-    def cmdPlace(self,*args):
+    def cmdPlace(self, *args):
         import constraint_lib as cn
         reload(cn)
         sel = cmds.ls(sl=1)
-        sl=False
+        sl = False
         v5 = cmds.checkBox(self.actionColumn.c5, q=True, v=True)
         v13 = cmds.checkBox(self.actionColumn.c13, q=True, v=True)
         if v5:
             btn = cmds.radioCollection(self.actionColumn.col1, q=True, sl=True)
             lab = cmds.radioButton(btn, q=True, l=True)
-            if 'selection' in lab: #string dependant on query working, dont change UI
+            if 'selection' in lab:  # string dependant on query working, dont change UI
                 sl = True
-        #print sl, '========='
+        # print sl, '========='
         locs = cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
-        i=0
+        i = 0
         if v13:
             for loc in locs:
                 cn.matchKeyedFrames(A=sel[i], B=loc, subtractive=True)
-                i=i+1
+                i = i + 1
 
-    def cmdBakeToLoc(self,*args):
+    def cmdBakeToLoc(self, *args):
         import constraint_lib as cn
         reload(cn)
-        #v6 = cmds.checkBox(self.actionColumn.c6, q=True, v=True)
+        # v6 = cmds.checkBox(self.actionColumn.c6, q=True, v=True)
         v7 = cmds.checkBox(self.actionColumn.c7, q=True, v=True)
         v8 = cmds.checkBox(self.actionColumn.c8, q=True, v=True)
         v12 = cmds.checkBox(self.actionColumn.c12, q=True, v=True)
-        #cn.controllerToLocator(p=v7, r=v8, sparseKeys=v6, timeLine=False, sim=v12)
+        # cn.controllerToLocator(p=v7, r=v8, sparseKeys=v6, timeLine=False, sim=v12)
         cn.controllerToLocator(p=v7, r=v8, timeLine=False, sim=v12)
 
     def cmdMatchKeys(self, *args):
@@ -117,12 +120,12 @@ class CSUI(object):
             if v10 == True:
                 v10 = 'none'
             else:
-                v10 = ['x','y','z']
+                v10 = ['x', 'y', 'z']
             v11 = cmds.checkBox(self.actionColumn.c11, q=True, v=True)
             if v11 == True:
                 v11 = 'none'
             else:
-                v11 = ['x','y','z']
+                v11 = ['x', 'y', 'z']
             cmds.parentConstraint(sel[0], sel[1], mo=v9, st=v10, sr=v11)
         else:
             cmds.warning('-- Select 2 objects --')
@@ -139,9 +142,9 @@ class CSUI(object):
     def cmdStore(self, *args):
         self.animBucket = []
         self.objects = cmds.ls(sl=1)
-        #self.objX = cmds.ls(sl=1)[0]
-        #self.anim = al.SpaceSwitch(self.objX)
-        #message('Animation Stored: -- ' + self.objX, maya=True)
+        # self.objX = cmds.ls(sl=1)[0]
+        # self.anim = al.SpaceSwitch(self.objX)
+        # message('Animation Stored: -- ' + self.objX, maya=True)
         for obj in self.objects:
             self.animBucket.append(al.SpaceSwitch(obj))
             message('Animation Stored: -- ' + obj, maya=True)
@@ -152,8 +155,8 @@ class CSUI(object):
             obj.restore()
             message('Animation ReStored: -- ' + obj.obj, maya=True)
             cmds.refresh(f=1)
-        #self.anim.restore()
-        #message('Animation ReStored: -- ' + self.objX, maya=True)
+        # self.anim.restore()
+        # message('Animation ReStored: -- ' + self.objX, maya=True)
 
     def cmdRestoreToSelected(self, *args):
         self.animBucket[0].restore(useSelected=True)
@@ -184,7 +187,7 @@ class CSUI(object):
     def cmdAimRig(self, *args):
         import animRig_lib as ar
         reload(ar)
-        ar.aimRig( mo=False)
+        ar.aimRig(mo=False)
         message('aimRig: -- ', maya=True)
 
     def cmdDistributeKeys(self, *args):
@@ -193,7 +196,7 @@ class CSUI(object):
         fld1 = cmds.textField(self.actionColumn.actionField1, q=1, tx=1)
         v14 = cmds.checkBox(self.actionColumn.c14, q=True, v=True)
         al.distributeKeys(count=float(fld1), destructive=v14)
-        #message('distribute keys on ' , maya=True)
+        # message('distribute keys on ' , maya=True)
 
     def cmdUpdateConstraintOffset(self, *args):
         cn.updateConstraintOffset(obj=cmds.ls(sl=1))
