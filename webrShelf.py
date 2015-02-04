@@ -36,7 +36,7 @@ def shelfDeleteWin():
     win = cmds.window('DELETE_OLD_SHELF', w=200, h=40)
     cmds.columnLayout(columnAttach=('both', 1), columnAlign=(
         'center'), adjustableColumn=True, rowSpacing=10, columnWidth=250)
-    cmds.button('deleteButtonShelf', c="import maya.cmds as cmds\ncmds.deleteUI('AnimGit_old', control=True)\ncmds.deleteUI('DELETE_OLD_SHELF', control=True)",
+    cmds.button('deleteButtonShelf', c="import maya.cmds as cmds\ncmds.deleteUI('WebShelf_old', control=True)\ncmds.deleteUI('DELETE_OLD_SHELF', control=True)",
                 l='DELETE OLD SHELF', w=150, h=100)
     cmds.showWindow(win)
 
