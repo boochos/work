@@ -1,5 +1,7 @@
 from pymel.core import *
 import pymel.core.datatypes as dt
+#
+
 
 def convertRangeStr(string):
     '''\n
@@ -8,14 +10,14 @@ def convertRangeStr(string):
     -return list  = ['head_Geo.vtx[2533]', 'head_Geo.vtx[2534]']
     '''
     rangeList = []
-    start  = string.rfind('[')
-    end    = string.rfind(']')
-    split  = string.rfind(':')
-    v1     = string[start+1:split]
-    v2     = string[split+1:end]
-    strngA = string[:start+1]
+    start = string.rfind('[')
+    end = string.rfind(']')
+    split = string.rfind(':')
+    v1 = string[start + 1:split]
+    v2 = string[split + 1:end]
+    strngA = string[:start + 1]
     strngB = string[end:]
-    for i in range(int(v1), int(v2)+1, 1):
+    for i in range(int(v1), int(v2) + 1, 1):
         rangeList.append(strngA + str(i) + strngB)
     return rangeList
 
@@ -24,7 +26,7 @@ def getPairList(*args):
     -Create vertex pair list from edge selection\n
     '''
     edges = cmds.ls(sl=True, fl=True)
-    pairList=[]
+    pairList = []
     for edge in  edges:
         result = cmds.polyListComponentConversion(edge, fe=True, tv=True)
         if ':' in str(result):
@@ -37,34 +39,34 @@ def findFirst(pairList=None):
     -find first vertex then loop thorugh for all others
     '''
     order = []
-    orderStop = ((len(pairList)-1) * 2) +1
-    stop = len(pairList)-1
+    orderStop = ((len(pairList) - 1) * 2) + 1
+    stop = len(pairList) - 1
     next = None
     nextPair = None
-    i=0
+    i = 0
     while i <= stop:
         for vert in pairList[i]:
             end = findNext(vert, pairList[i], pairList)
             if end[0] == False:
                 order.append(vert)
                 order.append(findPartner(vert, pairList[i]))
-                next     = order[1]
+                next = order[1]
                 nextPair = pairList[i]
                 j = 0
                 while len(order) < orderStop:
                     result = findNext(next, nextPair, pairList)
                     if result[0] != False:
-                        next     = result[0]
+                        next = result[0]
                         nextPair = result[1]
                         order.append(next)
                     else :
                         return order
-                    j=j+1
-                    if j ==  orderStop * 2:
-                        #sanity
+                    j = j + 1
+                    if j == orderStop * 2:
+                        # sanity
                         break
                 return order
-        i=i+1
+        i = i + 1
 
 def findNext(vert, vertPair, pairList):
     '''\n
@@ -76,18 +78,18 @@ def findNext(vert, vertPair, pairList):
     '''
     v = 0
     j = 0
-    next = [[None],[None]]
+    next = [[None], [None]]
     nextPair = None
     for iteratedPair in pairList:
         if vert in iteratedPair:
-            v=v+1
+            v = v + 1
             if pairCompare(vertPair, iteratedPair) == False:
                 next[0] = findPartner(vert, iteratedPair)
                 next[1] = iteratedPair
-        j=j+1
-    if v==2:
+        j = j + 1
+    if v == 2:
         return next
-    elif v==1:
+    elif v == 1:
         next[0] = False
         return next
 
@@ -118,23 +120,23 @@ def alignVertices(*args):
     -derived from edge selection
     -divides vector length by number of verts, and spaces them evenly
     '''
-    #get selection
+    # get selection
     pairList = getPairList()
-    #reorder selection
+    # reorder selection
     order = findFirst(pairList)
-    #get start pos
-    vector1  = dt.Vector(cmds.xform(order[0], q=True, os=True, t=True))
-    #get ewnd position
-    vector2  = dt.Vector(cmds.xform(order[(len(order)-1)], q=True, os=True, t=True))
-    #divide length between start/end evenly
-    posDiff  = ((vector1) - (vector2)) / (len(order)-1)
-    #repostion verts
-    i=0
+    # get start pos
+    vector1 = dt.Vector(cmds.xform(order[0], q=True, os=True, t=True))
+    # get ewnd position
+    vector2 = dt.Vector(cmds.xform(order[(len(order) - 1)], q=True, os=True, t=True))
+    # divide length between start/end evenly
+    posDiff = ((vector1) - (vector2)) / (len(order) - 1)
+    # repostion verts
+    i = 0
     for v in order:
-        cntDiff = (posDiff*i)
+        cntDiff = (posDiff * i)
         newPos = ((vector1) - (cntDiff))
         cmds.xform(v, os=True, t=[newPos.x, newPos.y, newPos.z])
-        i=i+1
+        i = i + 1
 
 
 alignVertices()
