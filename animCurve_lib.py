@@ -176,17 +176,25 @@ def getKeyedFrames(obj):
         return frames
 
 
-def deleteAnim(obj, attrs=['rotateX', 'rotateY', 'rotateZ']):
+def deleteAnim(obj, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=False, keyable=True):
     animCurves = cmds.findKeyframe(obj, c=True)
     frames = []
     if animCurves:
         # should actually do this through connections
         for crv in animCurves:
             for attr in attrs:
-                if attr in crv:
+                if attr.lower() in crv.lower():
                     cmds.delete(crv)
                 else:
-                    print 'no'
+                    # print attr.lower(), '  attr not in curve  ', crv.lower()
+                    pass
+    else:
+        # print 'no curves'
+        pass
+    for attr in attrs:
+        cmds.setAttr(obj + '.' + attr, lock=lock)
+        cmds.setAttr(obj + '.' + attr, keyable=keyable, cb=True)
+
 
 
 def unifyKeys():

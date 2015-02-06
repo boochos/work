@@ -148,6 +148,10 @@ def shelfBuild(*args):
 
         cmds.shelfButton(label='select 2 objects', annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes',
                          w=wh, h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()')
+
+        # add quick undo button
+        # add turn on ui button
+        # figure out why shelf doesnt draw
     else:
         # clean ui
         cmds.deleteUI(dp.shelf, control=True)

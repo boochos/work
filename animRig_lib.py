@@ -266,13 +266,19 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
     return locs
 
 
-def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, mo=False):
+def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, masterControl=False, masterPosition=0):
+    '''
+    0 = core
+    1 = root
+    2 = aim
+    3 = up
+    '''
     # store selection
     sel = cmds.ls(sl=True)
-    master = ''
+    selectedMaster = None
     if sel:
         if len(sel) == 2:
-            master = sel[1]
+            selectedMaster = sel[1]
             sel = sel[0]
         else:
             sel = sel[0]
@@ -284,59 +290,91 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         # place locators on selection
         coreL = cn.locator(obj=sel, constrain=False, X=5, color=15, suffix='__CORE__')[0]
         rootL = cn.locator(obj=sel, constrain=False, X=2, color=15, suffix='__ROOT__')[0]
-        driveL = cn.locator(obj=sel, constrain=False, X=5, color=15, suffix='__DRIVE__')[0]
         aimL = cn.locator(obj=sel, constrain=False, X=5, color=28, suffix='__AIM__')[0]
         upL = cn.locator(obj=sel, constrain=False, X=5, color=29, suffix='__UP__')[0]
         upG = cn.null(obj=sel, suffix='__UP_GRP')
-        # heirarchy
-        cmds.parent(rootL, driveL)
-        cmds.parent(driveL, coreL)
+        # heirarchy, prep for offsets
+        cmds.parent(rootL, coreL)
         cmds.parent(aimL, coreL)
         cmds.parent(upG, coreL)
         cmds.parent(upL, upG)
         # offsets
         cmds.setAttr(aimL + '.' + aAxs, offset)
-        cmds.setAttr(driveL + '.' + aAxs, offset * -1)
-        cmds.setAttr(upG + '.' + uAxs, offset)
-        # constraints
+        cmds.setAttr(rootL + '.' + aAxs, offset * -1)
+        cmds.setAttr(upG + '.' + uAxs, abs(offset))
+        # constraints, prep for basking
         cmds.parentConstraint(sel, aimL, mo=True, sr=('x', 'y', 'z'))
-        cmds.parentConstraint(sel, driveL, mo=True, sr=('x', 'y', 'z'))
-        # cmds.parentConstraint(sel, rootL, mo=True, sr=('x', 'y', 'z'))
         cmds.parentConstraint(sel, upL, mo=True, sr=('x', 'y', 'z'))
-        cmds.parentConstraint(sel, coreL, mo=True)
+        rootCn = cmds.parentConstraint(sel, rootL, mo=True, sr=('x', 'y', 'z'))
+        coreCn = cmds.parentConstraint(sel, coreL, mo=True)
         cmds.pointConstraint(rootL, upG, mo=True)
         cmds.pointConstraint(aimL, upG, mo=True)
-        # hierarchy adjust
-        if master:
-            master = cn.null(obj=master, suffix='temp')
-            master = cmds.rename(master, '__PIVOT_AIM_RIG__#')
-            cmds.parent(coreL, master)
+        # check if 2nd object was selected
+        if selectedMaster:
+            masterGrp = cn.null(obj=selectedMaster, suffix='temp')
+            masterGrp = cmds.rename(masterGrp, '__PIVOTAIM_RIG__#')
+            cmds.parentConstraint(selectedMaster, masterGrp, mo=False)
+            cmds.parent(coreL, masterGrp)
+            ac.deleteAnim(masterGrp, attrs=['scaleX', 'scaleY', 'scaleZ'], lock=True, keyable=False)
+            ac.deleteAnim(masterGrp, attrs=['visibility'], lock=False, keyable=False)
         else:
-            master = cmds.group(coreL, n='__PIVOT_AIM_RIG__#')
-        cmds.parent(driveL, master)
-        cmds.parent(aimL, driveL)
-        cmds.parent(upG, driveL)
+            masterGrp = cmds.group(coreL, n='__PIVOTAIM_RIG__#')
+        # add master control if necessary
+        if masterControl:
+            if masterPosition == 0:
+                masterL = cn.locator(obj=coreL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                cmds.parentConstraint(coreL, masterL, mo=True, sr=('x', 'y', 'z'))
+            if masterPosition == 1:
+                masterL = cn.locator(obj=rootL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                cmds.parentConstraint(rootL, masterL, mo=True, sr=('x', 'y', 'z'))
+            if masterPosition == 2:
+                masterL = cn.locator(obj=aimL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                cmds.parentConstraint(aimL, masterL, mo=True, sr=('x', 'y', 'z'))
+            if masterPosition == 3:
+                masterL = cn.locator(obj=upL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                cmds.parentConstraint(upL, masterL, mo=True, sr=('x', 'y', 'z'))
+            # bake master
+            cmds.parent(masterL, masterGrp)
+            cn.matchKeyedFrames(A=sel, B=masterL, subtractive=True)
+            cmds.setAttr(masterL + '.rotate', 0, 0, 0)
+            ac.deleteAnim(masterL, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=True)
+            cn.bakeConstrained(masterL, removeConstraint=True, timeLine=False, sim=False)
+            # adjust hierachy
+            cmds.parent(rootL, masterL)
+            cmds.parent(aimL, masterL)
+            cmds.parent(coreL, masterL)
+            cmds.parent(upG, masterL)
+            # return None
+        else:
+            cmds.parent(rootL, masterGrp)
+            cmds.parent(aimL, masterGrp)
+            cmds.parent(upG, masterGrp)
+        # return None
+        # core needs to be under root for the aim constraint
         cmds.parent(coreL, rootL)
-        # bake
-        cn.matchKeyedFrames(A=sel, B=driveL, subtractive=True)
-        ac.deleteAnim(driveL)
-        cmds.setAttr(driveL + '.rotate', 0, 0, 0)
-        cn.bakeConstrained(driveL, removeConstraint=True, timeLine=False, sim=False)
+        # bake the rest, manage attrs
         cn.matchKeyedFrames(A=sel, B=aimL, subtractive=True)
+        ac.deleteAnim(aimL, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=True)
         cn.bakeConstrained(aimL, removeConstraint=True, timeLine=False, sim=False)
         cn.matchKeyedFrames(A=sel, B=upL, subtractive=True)
+        ac.deleteAnim(upL, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=True)
         cn.bakeConstrained(upL, removeConstraint=True, timeLine=False, sim=False)
         # aim constraint
-        # print aim
-        cmds.aimConstraint(aimL, rootL, wut='object', wuo=upL, aim=aim, u=u, mo=mo)
-        cn.matchKeyedFrames(A=sel, B=coreL, subtractive=True)
-        cn.bakeConstrained(coreL, removeConstraint=True, timeLine=False, sim=False)
+        cmds.delete(rootCn)
+        cmds.aimConstraint(aimL, rootL, wut='object', wuo=upL, aim=aim, u=u, mo=False)
+        cn.matchKeyedFrames(A=sel, B=rootL, subtractive=True)
+        ac.deleteAnim(rootL, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=True)
+        # constrain selected object
+        cmds.delete(coreCn)
         cmds.parentConstraint(coreL, sel, mo=True)
-        # more pivots
+        # final constraints
         cmds.pointConstraint(rootL, coreL, mo=True)
         cmds.pointConstraint(aimL, coreL, mo=True)
+        ac.deleteAnim(coreL, attrs=['translateX', 'translateY', 'translateZ'], lock=True)
+        cn.matchKeyedFrames(A=sel, B=coreL, subtractive=True)
     else:
         message('select an object')
+
 
 def parentRig(bake=False):
     '''
