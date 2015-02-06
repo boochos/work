@@ -13,8 +13,6 @@ import webrImport as web
 ui = web.mod('ui_micro_lib')
 cs = web.mod('characterSet_lib')
 
-reload(cs)
-reload(ui)
 
 class CSUI(object):
     '''
@@ -397,13 +395,13 @@ class CSUI(object):
 
 
     def cmdUnflush(self, *args):
-        import characterSet_lib as cs
-        reload(cs)
+        import webrImport as web
+        cs = web.mod("characterSet_lib")
         cs.unflush()
         self.message(cs.tell, maya=False)
 
     def cmdFlush(self, *args):
-        import characterSet_lib as cs
-        reload(cs)
+        import webrImport as web
+        cs = web.mod("characterSet_lib")
         cs.flush()
         self.message(cs.tell, maya=False)
