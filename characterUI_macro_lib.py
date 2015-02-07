@@ -6,8 +6,6 @@ import subprocess
 import maya.mel as mel
 import time
 #
-# import ui_micro_lib as ui
-# import characterSet_lib as cs
 import webrImport as web
 # web
 ui = web.mod('ui_micro_lib')

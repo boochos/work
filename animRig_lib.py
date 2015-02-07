@@ -1,10 +1,6 @@
 import maya.cmds as cmds
 import maya.mel as mel
 #
-# import characterSet_lib as cs
-# import constraint_lib as cn
-# import display_lib as ds
-# import animCurve_lib as ac
 import webrImport as web
 # web
 cs = web.mod('characterSet_lib')
@@ -359,10 +355,11 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         cn.matchKeyedFrames(A=sel, B=upL, subtractive=True)
         ac.deleteAnim(upL, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=True)
         cn.bakeConstrained(upL, removeConstraint=True, timeLine=False, sim=False)
-        # aim constraint
-        cmds.delete(rootCn)
-        cmds.aimConstraint(aimL, rootL, wut='object', wuo=upL, aim=aim, u=u, mo=False)
         cn.matchKeyedFrames(A=sel, B=rootL, subtractive=True)
+        ac.deleteAnim(upL, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=True)
+        cn.bakeConstrained(rootL, removeConstraint=True, timeLine=False, sim=False)
+        # aim constraint
+        cmds.aimConstraint(aimL, rootL, wut='object', wuo=upL, aim=aim, u=u, mo=False)
         ac.deleteAnim(rootL, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=True)
         # constrain selected object
         cmds.delete(coreCn)
