@@ -2,7 +2,6 @@ import maya.cmds as cmds
 import maya.mel as mel
 import time
 import getpass
-import pickle
 import os
 import json
 
@@ -19,7 +18,7 @@ def message(what='', maya=True):
         print what
 
 
-def uiEnable(controls='modelPanel', toggle=True):
+def uiEnable(controls='modelPanel'):
     model = cmds.lsUI(panels=True, l=True)
     ed = []
     for m in model:
@@ -455,9 +454,9 @@ class Clip(Layer):
     def __init__(self, name='', comment='', poseOnly=False):
         self.sel = None
         #
-        self.name = ''
-        self.comment = ''
-        self.poseOnly = False
+        self.name = name
+        self.comment = comment
+        self.poseOnly = poseOnly
         self.source = None
         self.user = None
         self.date = None
@@ -530,7 +529,7 @@ class Clip(Layer):
 
     def getClipStartEndLength(self):
         for layer in self.layers:
-            if self.start == None:
+            if not self.start:
                 self.start = layer.start
                 self.end = layer.end
             else:
@@ -594,12 +593,12 @@ class Clip(Layer):
                 layer.putObjects()
 
 
-def clipSave(name='clipTemp', path='', comment='', poseOnly=False):
+def clipSave(name='clipTemp', comment='', poseOnly=False):
     '''
     save clip to file
     '''
     path = clipPath(name=name + '.clip')
-    clp = Clip(name=name, comment=comment)
+    clp = Clip(name=name, comment=comment, poseOnly=poseOnly)
     clp.get()
     # print clp.name
     # fileObject = open(path, 'wb')
@@ -609,6 +608,7 @@ def clipSave(name='clipTemp', path='', comment='', poseOnly=False):
     fileObjectJSON = open(path, 'wb')
     json.dump(clp, fileObjectJSON, default=to_json, indent=1)
     fileObjectJSON.close()
+
 
 def clipOpen(path=''):
     '''
@@ -696,9 +696,10 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
               start=None, end=None):
     '''
     apply animation from file
-    FIX
-    need to add option to import on existing layer with same name
-    add option to not apply layer settings to layers with same name
+    #FIX: note <>
+    need to add option to import on existing layer with same name,
+    add option to not apply layer settings to layers with same name,
+    apply to selected object no matter what name discrepancies exist
     '''
     sel = cmds.ls(sl=1, fl=1)
     # set import attrs
@@ -840,9 +841,10 @@ def putNS(clp):
     return clp
 
 
-def getNS(*args):
+def getNS():
     '''
     get it from selection
+    FIX: why is there an extra for loop<>
     '''
     sel = cmds.ls(sl=True)
     if sel:

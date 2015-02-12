@@ -55,6 +55,7 @@ class CSUI(object):
             # cmds.form(self.messageForm.form, edit=True, )
 
     def cleanUI(self, *args):
+        # TODO: script job keeps running if window is closed with X button
         try:
             cmds.deleteUI(self.windowName)
             toggleJob()
@@ -296,6 +297,7 @@ class CSUI(object):
             print 'here'
 
     def cmdAddMaster(self, *args):
+        # FIX: not sure where this is used
         masters = cmds.textScrollList(self.selectionForm.scroll, q=True, si=True)
         if masters:
             path = ss.defaultKeyPath()
@@ -390,6 +392,7 @@ class CSUI(object):
         print 'pass'
         # self.populateMembers()
 
+
     def cmdExport(self, *args):
         # this needs to account for user fed file name into path field
         set = cmds.textScrollList(self.selectionForm.scroll, q=True, ai=True)
@@ -404,6 +407,7 @@ class CSUI(object):
                 self.message('Add file name to path field. Action aborted.')
         else:
             self.message('Select a character Set in the middle column.')
+
 
     def cmdAction(self, *args):
         # print self.path
@@ -421,14 +425,16 @@ class CSUI(object):
             app = "nautilus"
             call([app, self.path])
 
+
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
     global tell
     tell = what
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 def job():
     global scroll
@@ -444,6 +450,7 @@ def job():
         pass
         # message('window missing')
 
+
 def killJob():
     getJobs = cmds.scriptJob(lj=True)
     jobs = []
@@ -453,6 +460,7 @@ def killJob():
     if len(jobs) > 0:
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
+
 
 def toggleJob():
     global id
@@ -465,4 +473,3 @@ def toggleJob():
         killJob()
         id = cmds.scriptJob(e=["SelectionChanged", "import selectionUI_macro_lib as selUI\nselUI.job()"])
         message('SelectSet scriptJob STARTED', maya=True)
-

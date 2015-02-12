@@ -11,7 +11,7 @@ ac = web.mod('animCurve_lib')
 
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
@@ -110,7 +110,7 @@ def nameSpace(ns='', base=False):
         i = ns.rfind(':')
         ref = ns[:i]
         obj = ns[i + 1:]
-        if base == False:
+        if not base:
             return ref
         else:
             return ref, obj
@@ -118,93 +118,74 @@ def nameSpace(ns='', base=False):
         return ns
 
 
-def switchLHand(*args):
+def switchLHand():
     ns = nameSpace(ns=cmds.ls(sl=1)[0])
     mlt = 3.0
-    thumb = [
-    ns + ':' + 'l_handThumb2_CTRL',
-    ns + ':' + 'l_handThumb1_CTRL',
-    ns + ':' + 'l_handThumb_CTRL',
-    ns + ':' + 'l_handThumbBase_CTRL'
-    ]
+    thumb = [ns + ':' + 'l_handThumb2_CTRL',
+             ns + ':' + 'l_handThumb1_CTRL',
+             ns + ':' + 'l_handThumb_CTRL',
+             ns + ':' + 'l_handThumbBase_CTRL']
     th = fingerRig(name='Lthumb', obj=thumb, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    index = [
-    ns + ':' + 'l_handFingerA2Fk_CTRL',
-    ns + ':' + 'l_handFingerA1Fk_CTRL',
-    ns + ':' + 'l_handFingerA0Fk_CTRL',
-    ns + ':' + 'l_handIk_CTRL'
-    ]
+    index = [ns + ':' + 'l_handFingerA2Fk_CTRL',
+             ns + ':' + 'l_handFingerA1Fk_CTRL',
+             ns + ':' + 'l_handFingerA0Fk_CTRL',
+             ns + ':' + 'l_handIk_CTRL']
     ind = fingerRig(name='Lindex', obj=index, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    middle = [
-    ns + ':' + 'l_handFingerB2Fk_CTRL',
-    ns + ':' + 'l_handFingerB1Fk_CTRL',
-    ns + ':' + 'l_handFingerB0Fk_CTRL',
-    ns + ':' + 'l_handIk_CTRL'
-    ]
+    middle = [ns + ':' + 'l_handFingerB2Fk_CTRL',
+              ns + ':' + 'l_handFingerB1Fk_CTRL',
+              ns + ':' + 'l_handFingerB0Fk_CTRL',
+              ns + ':' + 'l_handIk_CTRL']
     mid = fingerRig(name='Lmiddle', obj=middle, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    ring = [
-    ns + ':' + 'l_handFingerC2Fk_CTRL',
-    ns + ':' + 'l_handFingerC1Fk_CTRL',
-    ns + ':' + 'l_handFingerC0Fk_CTRL',
-    ns + ':' + 'l_handIk_CTRL'
-    ]
+    ring = [ns + ':' + 'l_handFingerC2Fk_CTRL',
+            ns + ':' + 'l_handFingerC1Fk_CTRL',
+            ns + ':' + 'l_handFingerC0Fk_CTRL',
+            ns + ':' + 'l_handIk_CTRL']
     rin = fingerRig(name='Lring', obj=ring, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    pinky = [
-    ns + ':' + 'l_handFingerD2Fk_CTRL',
-    ns + ':' + 'l_handFingerD1Fk_CTRL',
-    ns + ':' + 'l_handFingerD0Fk_CTRL',
-    ns + ':' + 'l_handIk_CTRL'
-    ]
+    pinky = [ns + ':' + 'l_handFingerD2Fk_CTRL',
+             ns + ':' + 'l_handFingerD1Fk_CTRL',
+             ns + ':' + 'l_handFingerD0Fk_CTRL',
+             ns + ':' + 'l_handIk_CTRL']
     pin = fingerRig(name='Lpinky', obj=pinky, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
     # group
     cmds.group(th, ind, mid, rin, pin, n='__LEFT_HAND__')
 
-def switchRHand(*args):
+
+def switchRHand():
     ns = nameSpace(ns=cmds.ls(sl=1)[0])
     mlt = 3.0
-    thumb = [
-    ns + ':' + 'r_handThumb2_CTRL',
-    ns + ':' + 'r_handThumb1_CTRL',
-    ns + ':' + 'r_handThumb_CTRL',
-    ns + ':' + 'r_handThumbBase_CTRL'
-    ]
+    thumb = [ns + ':' + 'r_handThumb2_CTRL',
+             ns + ':' + 'r_handThumb1_CTRL',
+             ns + ':' + 'r_handThumb_CTRL',
+             ns + ':' + 'r_handThumbBase_CTRL']
     th = fingerRig(name='Rthumb', obj=thumb, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    index = [
-    ns + ':' + 'r_handFingerA2Fk_CTRL',
-    ns + ':' + 'r_handFingerA1Fk_CTRL',
-    ns + ':' + 'r_handFingerA0Fk_CTRL',
-    ns + ':' + 'r_handIk_CTRL'
-    ]
+    index = [ns + ':' + 'r_handFingerA2Fk_CTRL',
+             ns + ':' + 'r_handFingerA1Fk_CTRL',
+             ns + ':' + 'r_handFingerA0Fk_CTRL',
+             ns + ':' + 'r_handIk_CTRL']
     ind = fingerRig(name='Rindex', obj=index, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    middle = [
-    ns + ':' + 'r_handFingerB2Fk_CTRL',
-    ns + ':' + 'r_handFingerB1Fk_CTRL',
-    ns + ':' + 'r_handFingerB0Fk_CTRL',
-    ns + ':' + 'r_handIk_CTRL'
-    ]
+    middle = [ns + ':' + 'r_handFingerB2Fk_CTRL',
+              ns + ':' + 'r_handFingerB1Fk_CTRL',
+              ns + ':' + 'r_handFingerB0Fk_CTRL',
+              ns + ':' + 'r_handIk_CTRL']
     mid = fingerRig(name='Rmiddle', obj=middle, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    ring = [
-    ns + ':' + 'r_handFingerC2Fk_CTRL',
-    ns + ':' + 'r_handFingerC1Fk_CTRL',
-    ns + ':' + 'r_handFingerC0Fk_CTRL',
-    ns + ':' + 'r_handIk_CTRL'
-    ]
+    ring = [ns + ':' + 'r_handFingerC2Fk_CTRL',
+            ns + ':' + 'r_handFingerC1Fk_CTRL',
+            ns + ':' + 'r_handFingerC0Fk_CTRL',
+            ns + ':' + 'r_handIk_CTRL']
     rin = fingerRig(name='Rring', obj=ring, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
-    pinky = [
-    ns + ':' + 'r_handFingerD2Fk_CTRL',
-    ns + ':' + 'r_handFingerD1Fk_CTRL',
-    ns + ':' + 'r_handFingerD0Fk_CTRL',
-    ns + ':' + 'r_handIk_CTRL'
-    ]
+    pinky = [ns + ':' + 'r_handFingerD2Fk_CTRL',
+             ns + ':' + 'r_handFingerD1Fk_CTRL',
+             ns + ':' + 'r_handFingerD0Fk_CTRL',
+             ns + ':' + 'r_handIk_CTRL']
     pin = fingerRig(name='Rpinky', obj=pinky, size=0.2, aim=[1, 0, 0], u=[0, 1, 0], mlt=mlt)
 
     # group
@@ -301,7 +282,7 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         # constraints, prep for basking
         cmds.parentConstraint(sel, aimL, mo=True, sr=('x', 'y', 'z'))
         cmds.parentConstraint(sel, upL, mo=True, sr=('x', 'y', 'z'))
-        rootCn = cmds.parentConstraint(sel, rootL, mo=True, sr=('x', 'y', 'z'))
+        cmds.parentConstraint(sel, rootL, mo=True, sr=('x', 'y', 'z'))
         coreCn = cmds.parentConstraint(sel, coreL, mo=True)
         cmds.pointConstraint(rootL, upG, mo=True)
         cmds.pointConstraint(aimL, upG, mo=True)
