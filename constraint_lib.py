@@ -11,7 +11,7 @@ hj = web.mod('hijack_lib')
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
@@ -42,8 +42,8 @@ def uiEnable(controls='modelPanel', toggle=True):
 
 
 def listX(l=[]):
-    if l != None:
-        if len(l) != None:
+    if l is not None:
+        if len(l) is not None:
             return list(set(l))
         else:
             return l
@@ -72,7 +72,7 @@ def subframe():
     if sel:
         for s in sel:
             animCurves = cmds.findKeyframe(s, c=True)
-            if animCurves != None:
+            if animCurves is not None:
                 for crv in animCurves:
                     frames = cmds.keyframe(crv, q=True)
                     if frames:
@@ -100,14 +100,14 @@ def matchKeyedFrames(A=None, B=None, subtractive=True):
     A = get keyed frames
     B = put keyed frames
     '''
-    if A == None and B == None:
+    if A is None and B is None:
         sel = cmds.ls(sl=True)
         if sel:
             crvs = cmds.keyframe(sel[0], q=True, name=True)
-        if crvs == None:
+        if crvs is None:
             message('No keys on object', maya=True)
             return None
-    if A == None and B == None:
+    if A is None and B is None:
         if len(sel) == 2:
             A = sel[0]
             B = sel[1]
@@ -141,7 +141,7 @@ def matchKeyedFrames(A=None, B=None, subtractive=True):
     if framesAdd:
         for frame in framesAdd:
             cmds.setKeyframe(B, i=True, t=frame)
-        if subtractive == True:
+        if subtractive:
             # remove keys from B, which A doesnt have
             min = framesAdd[0]
             max = framesAdd[len(framesAdd) - 1]
@@ -201,7 +201,7 @@ class GetRange():
             for sel in selAll:
                 animCurves = cmds.findKeyframe(sel, c=True)
                 # print 'XX    ',
-                if animCurves != None:
+                if animCurves is not None:
                     for crv in animCurves:
                         framesTmp = cmds.keyframe(crv, q=True)
                         # print 'XXX    ', framesTmp
@@ -220,7 +220,7 @@ class GetRange():
 
 def keyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
-    if animCurves != None:
+    if animCurves is not None:
         frames = []
         for crv in animCurves:
             framesTmp = cmds.keyframe(crv, q=True)
@@ -259,7 +259,7 @@ class reConnect():
         # get attributes
         connections = cmds.listConnections(
             self.selection, s=True, d=False, type='pairBlend', c=True)
-        if connections != None:
+        if connections is not None:
             for con in connections:
                 if '.' in con:
                     # build key:value pair
@@ -299,7 +299,7 @@ def updateConstraintOffset(obj=''):
 
 
 def updateConstrainedCurves(obj=None, sim=False):
-    if obj == None:
+    if obj is None:
         obj = cmds.ls(sl=True)
         if len(obj) != 1:
             message('Select one object.')
@@ -322,7 +322,7 @@ def updateConstrainedCurves(obj=None, sim=False):
     # reconnect constraint/pairBlend
     rcc.connect()
     for state in blndAttrState:
-        if state.crv != None:
+        if state.crv is not None:
             state.build()
         else:
             cmds.setAttr(obj + '.' + state.attr, state.value)
@@ -343,7 +343,6 @@ def eulerFilter(obj, tangentFix=False):
 
 def fixTangents(obj, attrs=['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']):
     animCurves = cmds.findKeyframe(obj, c=True)
-    curves = []
     for crv in animCurves:
         for attr in attrs:
             if attr in crv:
@@ -353,7 +352,7 @@ def fixTangents(obj, attrs=['translateX', 'translateY', 'translateZ', 'rotateX',
 def getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True):
     # fails with characterSets
     cons = []
-    if plugRoute == True:
+    if plugRoute:
         # if character set is connected, other checks fail
         # this method asks for specific plug string
         # if plug is consistent with all constraints, this may be most reliable
@@ -362,17 +361,17 @@ def getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True):
             for p in plug:
                 if 'constraintParentInverseMatrix' in p:
                     cons.append(p.split('.')[0])
-    if nonKeyedRoute == True:
+    if nonKeyedRoute:
         con = listX(cmds.listConnections(obj, s=True, d=False, t='constraint'))
         if con:
             for c in con:
                 cons.append(c)
-    if keyedRoute == True:
+    if keyedRoute:
         p = listX(cmds.listConnections(obj, s=True, d=False, t='pairBlend'))
         if p:
             con = listX(
                 cmds.listConnections(p, s=True, d=False, t='constraint'))
-            if con != None:
+            if con is not None:
                 for c in con:
                     cons.append(c)
     return listX(cons)
@@ -383,7 +382,7 @@ def getDrivers(obj, typ='', plugs=True):
     # typ=return only node types
     # plugs=True will return with driving attribute(s)
     con = cmds.listConnections(obj, d=False, s=True, t=typ, plugs=plugs)
-    if con != None:
+    if con is not None:
         con = list(set(con))
     return con
 
@@ -393,7 +392,7 @@ def getDriven(obj, typ='', plugs=True):
     # typ=return only node types
     # plugs=True will return with driven attribute(s)
     con = cmds.listConnections(obj, s=False, d=True, t=typ, plugs=plugs)
-    if con != None:
+    if con is not None:
         con = list(set(con))
     return con
 
@@ -413,13 +412,13 @@ def getDrivenAttrsByNodeType(obj, typ='pairBlend'):
 def getBlendAttr(obj, delete=False):
     attrs = []
     con = cmds.listConnections(obj, d=True, s=False, t='pairBlend', c=True)
-    if con != None:
+    if con is not None:
         con = listX(con)
         for c in con:
             if '.blend' in c:
                 attrs.append(c)
         if len(attrs) != 0:
-            if delete == True:
+            if delete:
                 for attr in attrs:
                     cmds.deleteAttr(attrs[0])
                     message('Attribute  ' + attrs[0] + '  is deleted')
@@ -430,7 +429,7 @@ def getBlendAttr(obj, delete=False):
 
 
 def deleteAttrList(objects):
-    if objects != None:
+    if objects is not None:
         if len(objects) != 0:
             for obj in objects:
                 name = obj.split('.')[0]
@@ -449,6 +448,7 @@ def deleteList(objects):
 
 
 def bakeStepConstraint():
+    # BUG: broken function, likely not being used anywhere
     old = cmds.listAttr(B, k=True)
     for attr in old:
         try:
@@ -560,12 +560,12 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
     blndAttr = getBlendAttr(obj, delete=False)
     keyedOrig = keyedFrames(obj)
     # print 'start baking\n'
-    if timeLine == True:
+    if timeLine:
         message('Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
         bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
         # print 'done baking\n'
     else:
-        if keyedOrig != None:
+        if keyedOrig is not None:
             message(
                 '0  Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
             if gRange.keyStart == gRange.keyEnd:
@@ -583,10 +583,10 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
                     str(gRange.start) + ' - ' + str(gRange.end))
             bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
             # print '3  done baking\n'
-    keyedBake = keyedFrames(obj)
+    # keyedBake = keyedFrames(obj)
     # print 'frames\n'
     eulerFilter(obj)
-    if removeConstraint == True:
+    if removeConstraint:
         deleteList(cons)
         deleteAttrList(blndAttr)
     '''
@@ -653,29 +653,29 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
             rState = cmds.getAttr(item + '.rx', k=True)
             # if translates are keyable constrain locator and store constraint
             # in cnT
-            if tState == True:
+            if tState:
                 cnT = cmds.pointConstraint(item, lc, mo=False)
             # if rotations are keyable constrain locator and store constraint
             # in cnR
-            if rState == True:
+            if rState:
                 cnR = cmds.orientConstraint(item, lc, mo=False)
             # bake locator in frame range
             matchKeyedFrames(item, lc)
             bakeConstrained(
                 lc, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
-            if sim != True:
+            if sim is not True:
                 matchKeyedFrames(item, lc)
-            if p == False:
-                if cnT != None:
+            if p is False:
+                if cnT is not None:
                     cmds.delete(cnT)
                 cnT = None
-            if r == False:
-                if cnR != None:
+            if r is False:
+                if cnR is not None:
                     cmds.delete(cnR)
                 cnR = None
             # if both cnT and cnR are not None a parent constraint can be
             # used...
-            if cnT and cnR != None:
+            if cnT and cnR is not None:
                 try:
                     cmds.delete(cnT)
                 except:
@@ -687,7 +687,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
                 cmds.parentConstraint(lc, item, mo=False)
             # ...else use point or orient constraint. Must assume pos or rot wont be constrained or edited with new locator
             else:
-                if cnT != None:
+                if cnT is not None:
                     # in this state it is assumed a translates are keyable, a
                     # contraint was made
                     cmds.delete(cnT)
@@ -697,7 +697,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
                         cmds.cutKey(lc, at=axis, cl=True, t=())
                         cmds.setAttr(lc + '.' + axis, k=False, cb=True)
                         cmds.setAttr(lc + '.' + axis, l=True)
-                if cnR != None:
+                if cnR is not None:
                     # in this state it is assumed a rotations are keyable, a
                     # constraint was made
                     cmds.delete(cnR)
@@ -719,8 +719,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
 def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07):
     locs = []
     roo = None
-    plc = '__PLACE__'
-    if obj != None:
+    if obj is not None:
         lc = cmds.spaceLocator(name=obj + 'temp')[0]
         objColor(lc, color)
         # print lc
@@ -743,7 +742,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         cmds.setAttr(lc + '.rotateOrder', roo)
         cmds.xform(lc, ws=True, t=t, ro=r)
         cmds.xform(lc, roo=ro)
-        if constrain == True:
+        if constrain:
             if toSelection:
                 constrainEnabled(obj, lc, mo=True)
                 # cmds.parentConstraint(obj, lc, mo=True)
@@ -760,6 +759,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         locs.append(loc)
     hj.hijackAttrs(locs[0], locs[0], 'overrideColor', 'color', set=True, default=None)
     return locs
+
 
 def objColorHijack(obj=''):
     cmds.setAttr(obj + '.overrideEnabled', 1)
@@ -822,9 +822,9 @@ def attrStrings(pos=True, rot=True, period=True):
             p[i] = '.' + p[i]
         for i in range(len(r)):
             r[i] = '.' + r[i]
-    if pos == True:
+    if pos:
         result.append(p)
-    if rot == True:
+    if rot:
         result.append(r)
     return result
 
@@ -843,36 +843,25 @@ def constrainEnabled(obj1, obj2, mo=True):
         result = []
         # if translates are keyable constrain locator and store constraint in
         # cnT
-        if tState == True:
+        if tState:
             cnT = cmds.pointConstraint(obj1, obj2, mo=mo)
             result.append(cnT)
         # if rotations are keyable constrain locator and store constraint in
         # cnR
-        if rState == True:
+        if rState:
             cnR = cmds.orientConstraint(obj1, obj2, mo=mo)
             result.append(cnR)
         return result[0]
 
 
 def collectEnabled():
+    # BUG: broken, likely not used anywhere
     # check keyable transforms
     tState = cmds.getAttr(obj2 + attrStrings(rot=False)[0][0], k=True)
     rState = cmds.getAttr(obj2 + attrStrings(pos=False)[0][0], k=True)
     attrs = []
-    if tState == True:
+    if tState:
         pass
-
-
-def collectOrigCurves(obj):
-    pass
-
-
-def collectNewCurves(obj):
-    pass
-
-
-def mergeCurves(obj, orig, new):
-    pass
 
 
 def stickAttr():
@@ -918,7 +907,7 @@ def unStick(timeLine=False, sim=False):
     blndAttr = getBlendAttr(sel, delete=True)
     # cmds.delete(cons)
     plugs = cmds.listConnections(sel[0] + '.message', s=False, d=True, p=True)
-    if plugs != None:
+    if plugs is not None:
         for p in plugs:
             if '.' + stickAttr() in p:
                 cmds.delete(p.split('.')[0])
@@ -980,14 +969,14 @@ class AnimCrv(Key):
         self.qualify()
 
     def qualify(self):
-        if self.crv != None:
+        if self.crv is not None:
             if len(self.crv) == 1:
                 self.crv = self.crv[0]
                 self.keyedFrames()
                 self.keyAttrs()
 
     def keyedFrames(self):
-        if self.crv != None:
+        if self.crv is not None:
             framesTmp = cmds.keyframe(self.crv, q=True)
             for frame in framesTmp:
                 self.frames.append(frame)
@@ -1000,7 +989,7 @@ class AnimCrv(Key):
             self.key.append(a)
 
     def build(self, replace=True):
-        if replace == True:
+        if replace:
             self.crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)
             if self.crv:
                 cmds.delete(self.crv)

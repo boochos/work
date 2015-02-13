@@ -20,14 +20,16 @@ glFrm = []
 glCrv = []
 glPlg = None
 
+
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
     global tell
     tell = what
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 def jobValue(*args):
     que = cmds.undoInfo(q=1, un=1)
@@ -102,7 +104,7 @@ def jobValue(*args):
                                     cmds.keyframe(crv, vc=val - (offset * blnd), time=(f, f))
                                     # cmds.keyTangent( crv, edit=True, itt='auto', ott='auto', time=(f, f))
                             b = b + 1
-                        #reset global, stops loop from running!!!
+                        # reset global, stops loop from running!!!
                         glVal[c][v] = lcVal
                         message('did math')
                         message('\n\n')
@@ -114,10 +116,12 @@ def jobValue(*args):
         else:
             message('_____________________________________________________nothing to act on')
 
+
 def jobUndo(*args):
     # need to reset globals if an undo is detected
     killValueJob()
     activateValueJob()
+
 
 def killUndoJob(*args):
     global idUndo
@@ -136,11 +140,13 @@ def killUndoJob(*args):
     idUndo = None
     message('Undo script OFF', maya=True)
 
+
 def activateUndoJob(*args):
     global idUndo
     idUndo = cmds.scriptJob(e=["Undo", "import curveSoftSelect as css\ncss.jobUndo()"])
     # print idUndo
     message('Undo script ON', maya=True)
+
 
 def killValueJob(*args):
     global idV
@@ -160,6 +166,7 @@ def killValueJob(*args):
     globalReset()
     message('Value script OFF', maya=True)
 
+
 def activateValueJob(*args):
     global idV
     # print idV, '___activate'
@@ -171,6 +178,7 @@ def activateValueJob(*args):
         message('Value script ON', maya=True)
     else:
         print 'nothing selected ____coudn\'t activate'
+
 
 def jobSel(*args):
     # local curves
@@ -184,6 +192,7 @@ def jobSel(*args):
         killValueJob()
         # print 'killed value'
 
+
 def killSelJob(*args):
     getJobs = cmds.scriptJob(lj=True)
     # print getJobs
@@ -194,6 +203,7 @@ def killSelJob(*args):
     if len(jobs) > 0:
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
+
 
 def toggleSelJob(*args):
     global idS
@@ -216,6 +226,7 @@ def toggleSelJob(*args):
         toggleButton()
         message('Soft key Selection ON', maya=True)
 
+
 def globalReset(*args):
     global glFrm
     glFrm = []
@@ -226,6 +237,7 @@ def globalReset(*args):
     global glPlg
     glPlg = None
     # print '___reset globals'
+
 
 def globalInitiate(*args):
     global glCrv
@@ -251,6 +263,7 @@ def globalInitiate(*args):
     # print glFrm
     print '___initiate globals'
 
+
 def plug(*args):
     crvs = cmds.keyframe(q=True, name=True, sl=True)
     if crvs:
@@ -260,8 +273,9 @@ def plug(*args):
     else:
         pass
 
-def toggleButton(off=False):
-    reload(ds)
+
+def toggleButton(*args):
+    ds = web.mod('display_lib')
     ui = ds.GeBtn()
     # sftSel
     global idB
@@ -279,6 +293,7 @@ def toggleButton(off=False):
                 cmds.button(btn, edit=True, bgc=[0.3, 0.35, 0.5])
                 idB = True
 
+
 def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
     '''
     drop should consider frame boundaries and find keys within, not keyframes on either side
@@ -289,7 +304,6 @@ def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
         dropoff = splitFrame - drop
     else:
         dropoff = splitFrame + drop
-    i = 0
     for frame in frames:
         if direction == 'l':
             if frame >= dropoff and frame < splitFrame:
@@ -298,6 +312,7 @@ def neibors(crv='', splitFrame=0.0, drop=1, direction='l'):
             if frame <= dropoff and frame > splitFrame:
                 result.append(frame)
     return result
+
 
 def blendWeight2(numOfPoints=1, i=1, function=2, falloff=0.0):
     '''
@@ -311,7 +326,7 @@ def blendWeight2(numOfPoints=1, i=1, function=2, falloff=0.0):
         falloff
         part of decay... not scripted yet
         <1 = (slower falloff)
-        1< = (quicker falloff)        
+        1< = (quicker falloff)
         \r#decay 0 = default value
         \r#decay 1 = full decayed value
         \r#divide decay(1) by same number as angles then progressively add it through loop

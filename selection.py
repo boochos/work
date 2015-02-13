@@ -1,4 +1,5 @@
-import maya.cmds  as cmds
+import maya.cmds as cmds
+
 
 class Sel():
 
@@ -7,7 +8,7 @@ class Sel():
         self.store()
 
     def store(self):
-       self.sel = cmds.ls(sl=True)
+        self.sel = cmds.ls(sl=True)
 
     def select(self):
         cmds.select(self.sel, add=True)
@@ -16,7 +17,7 @@ class Sel():
         self.sel = []
 
     def prnt(self):
-        if len(self.sel) ==  0:
+        if len(self.sel) == 0:
             self.sel = cmds.ls(sl=True)
         i = 1
         print '['
@@ -25,5 +26,5 @@ class Sel():
                 print "'" + item + "',"
             else:
                 print "'" + item + "'"
-            i = i+1
+            i = i + 1
         print ']'

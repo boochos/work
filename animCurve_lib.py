@@ -1,18 +1,21 @@
 import maya.cmds as cmds
 import maya.mel as mel
 
+
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 class GetRange():
     def __init__(self):
         self.min = cmds.playbackOptions(q=True, minTime=True)
         self.max = cmds.playbackOptions(q=True, maxTime=True)
         self.current = cmds.currentTime(q=True)
+
 
 '''
 import animCurve_lib as ac
@@ -22,6 +25,7 @@ start = cmds.playbackOptions(q=1,min=1)
 end = cmds.playbackOptions(q=1,max=1)
 bakeTimeWarp(objects,start,end,killWarp=True)
 '''
+
 
 def moveTime(left=True):
     try:
@@ -47,6 +51,7 @@ def moveValue(up=True):
         message('didnt work')
         pass
 
+
 def animScale(v):
     try:
         v = float(v)
@@ -57,6 +62,7 @@ def animScale(v):
         message('didnt work')
         return None
     # scale_factor = 4.0389
+
 
 def bakeTimeWarp(objects, start, end, killWarp=True):
     # for each frame between start and end, query time1.outTime and time1.unwarpedTime
@@ -104,6 +110,7 @@ def bakeTimeWarp(objects, start, end, killWarp=True):
         timeWarp = cmds.listConnections('time1.timewarpIn_Raw')[0]
         cmds.delete(timeWarp)
 
+
 def scaleCrv(val):
     '''
     -Scale selected Graph Editor curves with given value.
@@ -112,7 +119,7 @@ def scaleCrv(val):
     # get curves of selected keys
     crvs = cmds.keyframe(q=True, name=True, sl=True)
     pvt = 0.0
-    if crvs != None:
+    if crvs is not None:
         if len(crvs) == 1:
             # keys selected from one curve
             selKey_1 = cmds.keyframe(crvs, q=True, vc=True, sl=True)
@@ -141,24 +148,26 @@ def scaleCrv(val):
     else:
         message('Select one or more keys in the graph editor. Pivots depend on selection.')
 
+
 def holdCrv(postCurrent=True, preCurrent=True):
     crvs = cmds.keyframe(q=True, name=True, sl=True)
-    if crvs != None:
+    if crvs is not None:
         cur = GetRange()
         for crv in crvs:
             frames = cmds.keyframe(crv, q=True, tc=True)
             val = cmds.keyframe(crv, q=True, eval=True, t=(cur.current, cur.current))[0]
             for frame in frames:
-                if postCurrent == True:
+                if postCurrent:
                     if frame >= cur.current:
                         cmds.keyframe(crv, vc=val, t=(frame, frame))
                         cmds.keyTangent(crv, inTangentType='auto', outTangentType='auto', time=(frame, frame))
-                if preCurrent == True:
+                if preCurrent:
                     if frame <= cur.current:
                         cmds.keyframe(crv, vc=val, t=(frame, frame))
                         cmds.keyTangent(crv, inTangentType='auto', outTangentType='auto', time=(frame, frame))
     else:
         message('Select curve(s) in the Graph Editor. -- Current timeline value of selected curve will be held.')
+
 
 def getKeyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
@@ -178,7 +187,6 @@ def getKeyedFrames(obj):
 
 def deleteAnim(obj, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=False, keyable=True):
     animCurves = cmds.findKeyframe(obj, c=True)
-    frames = []
     if animCurves:
         # should actually do this through connections
         for crv in animCurves:
@@ -194,7 +202,6 @@ def deleteAnim(obj, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=False, keyable
     for attr in attrs:
         cmds.setAttr(obj + '.' + attr, lock=lock)
         cmds.setAttr(obj + '.' + attr, keyable=keyable, cb=True)
-
 
 
 def unifyKeys():
@@ -213,18 +220,21 @@ def unifyKeys():
     else:
         message('Select some curves in the graph editor.')
 
+
 def toggleTangentLock():
     state = cmds.keyTangent(q=True, lock=True)[0]
-    if state == True:
+    if state:
         cmds.keyTangent(lock=False)
         message('Tangent Broken')
     else:
         cmds.keyTangent(lock=True)
         message('Tangent Unified')
 
+
 def tangentStep(mltp=1.0001):
     angle = cmds.keyTangent(q=True, outAngle=True)[0]
     cmds.keyTangent(e=True, outAngle=angle + mltp)
+
 
 def bakeInfinity(sparseKeys=True, smart=True, sim=False):
     crvs = cmds.keyframe(q=True, name=True, sl=True)
@@ -239,14 +249,13 @@ def bakeInfinity(sparseKeys=True, smart=True, sim=False):
     else:
         message('no curves are selected', maya=1)
 
+
 def smoothKeys(weight=0.5):
     crvs = cmds.keyframe(q=True, name=True, sl=True)
     if crvs:
         for crv in crvs:
             frames = cmds.keyframe(crv, q=True, sl=True)
             size = len(frames)
-            value = None
-            rvrs = False
             if size > 2:
                 # first key val
                 # x = cmds.keyframe(crvs, q=True, vc=True, time=(frames[0], frames[0]))[0]
@@ -301,6 +310,7 @@ def smoothKeys(weight=0.5):
                         cmds.keyframe(crv, vc=val, time=(frame, frame))
                         cmds.keyTangent(crv, edit=True, itt='auto', ott='auto', time=(frame, frame))
                     i = i + 1
+
 
 def subframe():
     frames = None

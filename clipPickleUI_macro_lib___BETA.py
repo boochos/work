@@ -1,9 +1,6 @@
-import maya.cmds  as cmds
+import maya.cmds as cmds
 import maya.mel as mel
 import os
-import time
-from subprocess import call
-import subprocess
 #
 # import clipPickleUI_micro_lib___BETA as ui
 # import clipPickle_lib as cp
@@ -17,7 +14,7 @@ al = web.mod('anim_lib')
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
@@ -88,7 +85,6 @@ class CPUI(object):
             cmds.textScrollList(self.control.scroll2, e=True, si=sel[1])
         if sel[2]:
             cmds.textScrollList(self.control.scroll3, e=True, si=sel[2])
-
 
     def cmdImport(self, *args):
         # file

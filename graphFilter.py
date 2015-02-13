@@ -11,10 +11,11 @@ ac = web.mod('animCurve_lib')
 
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 def graphFilterCore(attr='', panel=''):
     '''\n
@@ -44,6 +45,7 @@ def graphFilterCore(attr='', panel=''):
         # reset filters to None
         cmds.outlinerEditor(panel + 'OutlineEd', e=True, af=0)
 
+
 def graphFilters(attrs, panel=''):
     '''\n
     attrs should be seperated by commas
@@ -69,12 +71,14 @@ def graphFilters(attrs, panel=''):
         for attr in givenList:
             graphFilterCore(attr=attr, panel=panel)
 
+
 def graphEditorCMD():
     ui = ds.GeBtn()
     panel = ds.findControlParent(control=ui.fil, split=5)
     panel = panel.split('|')
     attrs = cmds.textField(ui.fil, query=True, tx=True)
     graphFilters(attrs, panel[len(panel) - 1])
+
 
 def toggleExpand():
     gs = ac.GraphSelection()

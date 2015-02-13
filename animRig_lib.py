@@ -354,7 +354,7 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         message('select an object')
 
 
-def parentRig(bake=False):
+def parentRig(*args):
     '''
     sometimes adds 2 pairblends, needs to be fixed as it breaks active char set key ticks.
     '''

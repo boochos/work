@@ -1,18 +1,19 @@
 import os
-import shutil
 import maya.cmds as cmds
 import maya.mel as mel
 
 tell = ''
 
+
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
     global tell
     tell = what
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 def createDefaultPath():
     # main path
@@ -43,21 +44,25 @@ def createDefaultPath():
     '''
     return path
 
+
 def defaultPath():
     user = os.path.expanduser('~')
     mainDir = user + '/maya/selectionSets/'
     return mainDir
+
+
 '''
 def defaultPosePath():
     mainDir = defaultPath()
     poseDir = mainDir + 'selectionPoseSets'
     return poseDir
-    
 def defaultKeyPath():
     mainDir = defaultPath()
     keyDir = mainDir + 'selectionKeySets'
     return keyDir
 '''
+
+
 def loadFile(path):
     loaded = []
     for line in open(path):
@@ -66,10 +71,12 @@ def loadFile(path):
         loaded.append(line.strip('\n'))
     return loaded
 
+
 def printLines(path=''):
     loaded = loadFile(path)
     for line in loaded:
         print line
+
 
 def deletePath():
     if os.name == 'linux':
@@ -81,7 +88,9 @@ def deletePath():
         deleteDir = 'C:\\$Recycle.Bin'
         return deleteDir
 
+
 def deleteFlushed():
+    # TODO: wip, not sorted
     path = shotPath()
     delPath = deletePath()
     # this 'if' prevents deletion of files from main(default) character set directory
@@ -94,8 +103,10 @@ def deleteFlushed():
     else:
         message('Name your scene before proceeding')
 
+
 def nameSpace(ns=''):
     return ns.split(':')[0]
+
 
 def exportFile(filePath, sel=None):
     # Exports the given character set to a file.
@@ -104,7 +115,7 @@ def exportFile(filePath, sel=None):
     if not sel:
         sel = cmds.ls(sl=True, fl=True)
     if len(sel) > 0:
-        if os.path.isdir(filePath) == True:
+        if os.path.isdir(filePath):
             message('No file name specified.')
         else:
             # add extension if not present
@@ -118,6 +129,7 @@ def exportFile(filePath, sel=None):
             message(" file:   '" + filePath + "'   saved")
     else:
         message('Select an object', maya=True)
+
 
 def writeFile(sel=None, outFile=''):
     # Arguments   :<char>   : attribute of a character set
@@ -141,6 +153,7 @@ def writeFile(sel=None, outFile=''):
         # empty character set, write info
         pass
         # outFile.write( 'ParentInfo=' + parent + '|' + char + '\n')
+
 
 def selectSet(path=defaultPath()):
     plus = []
@@ -171,6 +184,7 @@ def selectSet(path=defaultPath()):
     else:
         message('Select an object', maya=True)
 
+
 def stripNs(obj):
     if ':' in obj:
         i = obj.rfind(':')
@@ -180,12 +194,14 @@ def stripNs(obj):
     else:
         return '', obj
 
+
 def getObjects(filePath):
     result = []
     objects = open(filePath).readlines()
     for obj in objects:
         result.append(obj.strip('\n'))
     return result
+
 
 def updateNS(old='', new=''):
     '''
@@ -196,6 +212,7 @@ def updateNS(old='', new=''):
         return old.replace(nameSpace(old), nameSpace(new))
     else:
         return old
+
 
 def updateCS(string, old='', new=''):
     '''
@@ -209,11 +226,13 @@ def updateCS(string, old='', new=''):
         else:
             return string
 
+
 def updateCSlist(lst, old='', new=''):
     newLst = []
     for string in lst:
         newLst.append(updateCS(string, old, new))
     return newLst
+
 
 def replaceInString(string, dic):
     '''
@@ -224,14 +243,15 @@ def replaceInString(string, dic):
         string = string.replace(key, dic[key])
     return string
 
-def importFile(path='', prefix='', ns='', cs=['old', 'new'], rp={None:None}):
+
+def importFile(path='', prefix='', ns='', cs=['old', 'new'], rp={None: None}):
     '''
     prefix = adds prefix string with underscore after
     ns     = namespace string to replace
     cs     = character set string to replace, is obsolete with "rp" attribute
     rplc   = per line in file replace string, could change to dictionary for clarity
     '''
-    if os.path.isfile(path) == True:
+    if os.path.isfile(path):
         if prefix != '':
             prefix = prefix + '_'
         addNode = ''

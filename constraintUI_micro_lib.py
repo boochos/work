@@ -1,10 +1,11 @@
-import maya.cmds  as cmds
-import maya.mel   as mel
+import maya.cmds as cmds
+import maya.mel as mel
 
 
 def message(what=''):
     mel.eval('print \"' + '-- ' + what + ' --' + '\";')
     # print "\n"
+
 
 class Action(object):
     # builds row of buttons for bottom of window

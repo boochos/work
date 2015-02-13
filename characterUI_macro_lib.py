@@ -1,10 +1,9 @@
-import maya.cmds  as cmds
+import maya.cmds as cmds
 import os
-import sys, sys_lib, fnmatch
+import fnmatch
 from subprocess import call
 import subprocess
 import maya.mel as mel
-import time
 #
 import webrImport as web
 # web
@@ -49,11 +48,11 @@ class CSUI(object):
 
     def message(self, what='', maya=True, ui=True, *args):
         if what != '':
-            if maya == True:
+            if maya:
                 mel.eval('print \"' + '-- ' + what + ' --' + '\";')
         else:
             print ''
-        if ui == True:
+        if ui:
             cmds.text(self.messageForm.heading, edit=True, l='   ' + what + '   ')
             # cmds.form(self.messageForm.form, edit=True, )
 
@@ -180,7 +179,7 @@ class CSUI(object):
             except:
                 self.message("  FAIL  --  Replace string failed. --  Use colons,commas  --    ie.    search1:replace1,search2:replace2")
         else:
-            return {None:None}
+            return {None: None}
 
     def populatePath(self):
         cmds.textField(self.pathForm.field, edit=True, text=self.path)
@@ -277,7 +276,7 @@ class CSUI(object):
                 f = cmds.referenceQuery(s, filename=True)
             except:
                 pass
-            if f != None:
+            if f is not None:
                 namespace.append(cmds.file(f, q=True, namespace=True))
         for ns in namespace:
             cmds.textScrollList(self.namespaceForm.scroll, edit=True, append=ns)
@@ -285,7 +284,7 @@ class CSUI(object):
     def cmdShortcuts(self, *args):
         tsl = cmds.textScrollList
         tmp = tsl(self.shortcutsForm.scroll, query=True, sii=True)
-        if tmp != None :
+        if tmp is not None:
             idx = tmp[0]
             self.path = self.shortcuts[idx - 1][1]
             self.populatePath()
@@ -293,7 +292,7 @@ class CSUI(object):
 
     def cmdBrowse(self, *args):
         tmp = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
-        if tmp != None:
+        if tmp is not None:
             item = tmp[0]
             # find if the current item is a directory
             if item[:len(self.dirStr)] == self.dirStr:
@@ -390,7 +389,6 @@ class CSUI(object):
             self.message('Close file window to regain control over MAYA.')
             app = "nautilus"
             call([app, self.path])
-
 
     def cmdUnflush(self, *args):
         import webrImport as web

@@ -67,7 +67,8 @@ class Key():
             self.getKey()
         '''
 
-    def get(self):
+    def get
+    (self):
         if self.auto:
             self.getKey()
 
@@ -77,26 +78,17 @@ class Key():
         # print self.frame
         # print self.attr
         # print index
-        self.value = cmds.keyframe(
-            self.crv, q=True, time=(self.frame, self.frame), valueChange=True, a=True)[0]
+        self.value = cmds.keyframe(self.crv, q=True, time=(self.frame, self.frame), valueChange=True, a=True)[0]
         # print self.value
-        self.inAngle = cmds.keyTangent(
-            self.crv, q=True, time=(self.frame, self.frame), inAngle=True)[0]
-        self.outAngle = cmds.keyTangent(
-            self.crv, q=True, time=(self.frame, self.frame), outAngle=True)[0]
-        self.inTangentType = cmds.keyTangent(
-            self.crv, q=True, time=(self.frame, self.frame), inTangentType=True)[0]
-        self.outTangentType = cmds.keyTangent(
-            self.crv, q=True, time=(self.frame, self.frame), outTangentType=True)[0]
-        self.lock = cmds.keyTangent(
-            self.crv, q=True, time=(self.frame, self.frame), lock=True)[0]
+        self.inAngle = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), inAngle=True)[0]
+        self.outAngle = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), outAngle=True)[0]
+        self.inTangentType = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), inTangentType=True)[0]
+        self.outTangentType = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), outTangentType=True)[0]
+        self.lock = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), lock=True)[0]
         if self.weightedTangents:
-            self.weightLock = cmds.keyTangent(
-                self.crv, q=True, time=(self.frame, self.frame), weightLock=True)[0]
-            self.inWeight = cmds.keyTangent(
-                self.crv, q=True, time=(self.frame, self.frame), inWeight=True)[0]
-            self.outWeight = cmds.keyTangent(
-                self.crv, q=True, time=(self.frame, self.frame), outWeight=True)[0]
+            self.weightLock = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), weightLock=True)[0]
+            self.inWeight = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), inWeight=True)[0]
+            self.outWeight = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), outWeight=True)[0]
 
     def putKey(self):
         # set key, creates curve node
@@ -113,17 +105,23 @@ class Key():
             cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
                             inTangentType=self.inTangentType, outTangentType=self.outTangentType)
             if self.lock:
-                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), lock=self.lock)
+                cmds.keyTangent(self.crv, edit=True, time=(
+                    self.frame + self.offset, self.frame + self.offset), lock=self.lock)
             if self.inAngle:
-                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), inAngle=self.inAngle)
+                cmds.keyTangent(self.crv, edit=True, time=(
+                    self.frame + self.offset, self.frame + self.offset), inAngle=self.inAngle)
             if self.outAngle:
-                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
+                cmds.keyTangent(self.crv, edit=True, time=(
+                    self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
             if self.weightedTangents:
-                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock,)
+                cmds.keyTangent(self.crv, edit=True, time=(
+                    self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock,)
                 if self.inWeight:
-                    cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), inWeight=self.inWeight)
+                    cmds.keyTangent(self.crv, edit=True, time=(
+                        self.frame + self.offset, self.frame + self.offset), inWeight=self.inWeight)
                 if self.outWeight:
-                    cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
+                    cmds.keyTangent(self.crv, edit=True, time=(
+                        self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
         else:
             # message('Unable to add animation to ' + self.obj + '.' + self.attr)
             pass
@@ -234,7 +232,8 @@ class Obj(Attribute):
         self.getBakedAttribute()
 
     def getAttribute(self):
-        keyable = cmds.listAttr(self.name, k=True, s=True)  # if lattice point is selected, returning list is 'attr.attr'
+        # if lattice point is selected, returning list is 'attr.attr'
+        keyable = cmds.listAttr(self.name, k=True, s=True)
         if keyable:
             for attr in keyable:
                 if attr not in self.attributesDriven:
@@ -271,7 +270,8 @@ class Obj(Attribute):
                     # get value of attribute from maya
                     val = cmds.getAttr(self.name + '.' + attr.name)
                     # store value in attr class, instantiate Key class
-                    k = Key(self.name, attr.name, '', frame, weightedTangents=False, auto=False)
+                    k = Key(
+                        self.name, attr.name, '', frame, weightedTangents=False, auto=False)
                     k.get()
                     k.value = val
                     k.inTangentType = 'auto'
@@ -306,12 +306,14 @@ class Obj(Attribute):
         return con
 
     def getDrivenAttrsByType(self, typ=''):
-        # Returns attributes of the given object which are driven by a node type
+        # Returns attributes of the given object which are driven by a node
+        # type
         drivers = self.getDrivers(self.name, typ=typ, plugs=True)
         driven = []
         if drivers:
             for driver in drivers:
-                driven.append(self.getDriven(driver, typ='', plugs=True)[0].split('.')[1])
+                driven.append(
+                    self.getDriven(driver, typ='', plugs=True)[0].split('.')[1])
             return sorted(driven)
         else:
             return None
@@ -427,7 +429,8 @@ class Layer(Obj):
                 obj.offset = self.offset
                 obj.putAttribute()
             else:
-                cmds.warning('Object   ' + obj.name + '   does not exist, skipping.')
+                cmds.warning(
+                    'Object   ' + obj.name + '   does not exist, skipping.')
         cmds.autoKeyframe(state=autoKey)
 
     def putLayerAttrs(self):
@@ -693,7 +696,7 @@ def populate_from_json(cls, dct={}):
 
 
 def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, putLayerList=[], putObjectList=[],
-              start=None, end=None):
+            start=None, end=None):
     '''
     apply animation from file
     #FIX: note <>
@@ -752,9 +755,12 @@ def insertKey(clp, frame=0.0):
         for obj in layer.objects:
             for attr in obj.attributes:
                 if attr.crv:
-                    # make sure no key exists on given frame, add short form loop, if it does dont overwrite
-                    k = Key(attr.obj, attr.name, attr.crv, frame, weightedTangents=False, auto=False)
-                    k.value = insertKeyValue(attr, frame)  # find appropriate value
+                    # make sure no key exists on given frame, add short form
+                    # loop, if it does dont overwrite
+                    k = Key(attr.obj, attr.name, attr.crv, frame,
+                            weightedTangents=False, auto=False)
+                    # find appropriate value
+                    k.value = insertKeyValue(attr, frame)
                     k.inTangentType = 'auto'
                     k.outTangentType = 'auto'
                     attr.keys.append(k)
@@ -769,7 +775,8 @@ def insertKeyValue(attr, frame=0.0):
     # does not consider tangents, only key positions
     val = 0.0
     i = 0
-    while frame > attr.keys[i].frame:  # can reach end of list before finding a qualifying frame number
+    # can reach end of list before finding a qualifying frame number
+    while frame > attr.keys[i].frame:
         i = i + 1
         if len(attr.keys) - 1 < i:
             print 'done'

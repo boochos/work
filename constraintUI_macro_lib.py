@@ -13,10 +13,11 @@ al = web.mod('anim_lib')
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 class CSUI(object):
     '''
@@ -117,12 +118,12 @@ class CSUI(object):
         if len(sel) == 2:
             v9 = cmds.checkBox(self.actionColumn.c9, q=True, v=True)
             v10 = cmds.checkBox(self.actionColumn.c10, q=True, v=True)
-            if v10 == True:
+            if v10:
                 v10 = 'none'
             else:
                 v10 = ['x', 'y', 'z']
             v11 = cmds.checkBox(self.actionColumn.c11, q=True, v=True)
-            if v11 == True:
+            if v11:
                 v11 = 'none'
             else:
                 v11 = ['x', 'y', 'z']

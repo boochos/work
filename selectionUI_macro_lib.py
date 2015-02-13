@@ -1,19 +1,21 @@
-import maya.cmds  as cmds
+import maya.cmds as cmds
 import os
-import os, sys, sys_lib, fnmatch
+import fnmatch
 from subprocess import call
 import subprocess
+# FIXME: needs new import style
 import ui_micro_lib as ui
 import characterSet_lib as cs
 import selectionSet_lib as ss
 import maya.mel as mel
-import time
+
 
 reload(ui)
 reload(ss)
 
 id = None
 scroll = None
+
 
 class CSUI(object):
     '''
@@ -46,11 +48,11 @@ class CSUI(object):
         if what != '':
             if '\\' in what:
                 what = what.replace('\\', '/')
-            if maya == True:
+            if maya:
                 mel.eval('print \"' + '-- ' + what + ' --' + '\";')
         else:
             print ''
-        if ui == True:
+        if ui:
             cmds.text(self.messageForm.heading, edit=True, l='   ' + what + '   ')
             # cmds.form(self.messageForm.form, edit=True, )
 
@@ -168,7 +170,7 @@ class CSUI(object):
             except:
                 self.message("  FAIL  --  Replace string failed. --  Use colons,commas  --    ie.    search1:replace1,search2:replace2")
         else:
-            return {None:None}
+            return {None: None}
 
     def populatePathWindows(self):
         if os.name == 'nt':
@@ -244,7 +246,7 @@ class CSUI(object):
     def cmdShortcuts(self, *args):
         tsl = cmds.textScrollList
         tmp = tsl(self.shortcutsForm.scroll, query=True, sii=True)
-        if tmp != None :
+        if tmp is not None:
             idx = tmp[0]
             self.path = self.shortcuts[idx - 1][1]
             self.populatePath()
@@ -252,7 +254,7 @@ class CSUI(object):
 
     def cmdBrowse(self, *args):
         tmp = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
-        if tmp != None:
+        if tmp is not None:
             item = tmp[0]
             # find if the current item is a directory
             if item[:len(self.dirStr)] == self.dirStr:
@@ -297,7 +299,7 @@ class CSUI(object):
             print 'here'
 
     def cmdAddMaster(self, *args):
-        # FIX: not sure where this is used
+        # FIXME: not sure where this is used
         masters = cmds.textScrollList(self.selectionForm.scroll, q=True, si=True)
         if masters:
             path = ss.defaultKeyPath()
@@ -392,7 +394,6 @@ class CSUI(object):
         print 'pass'
         # self.populateMembers()
 
-
     def cmdExport(self, *args):
         # this needs to account for user fed file name into path field
         set = cmds.textScrollList(self.selectionForm.scroll, q=True, ai=True)
@@ -407,7 +408,6 @@ class CSUI(object):
                 self.message('Add file name to path field. Action aborted.')
         else:
             self.message('Select a character Set in the middle column.')
-
 
     def cmdAction(self, *args):
         # print self.path

@@ -1,5 +1,4 @@
 import os
-import shutil
 import maya.cmds as cmds
 import maya.mel as mel
 #
@@ -16,10 +15,11 @@ def message(what='', maya=False):
     what = '-- ' + what + ' --'
     global tell
     tell = what
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 def sceneName():
     sceneName = cmds.file(q=True, sn=True)
@@ -32,6 +32,7 @@ def sceneName():
     slash = sceneName.rfind('/')
     sceneName = sceneName[slash + 1:]
     return sceneName
+
 
 def shotPath():
     shotDir = sceneName()
@@ -49,6 +50,7 @@ def shotPath():
         # message("path:   '" + path + "'   exists")
     return path
 
+
 def createDefaultPath():
     path = defaultPath()
     if not os.path.isdir(path):
@@ -59,10 +61,12 @@ def createDefaultPath():
         # message("path:   '" + path + "'   exists")
     return path
 
+
 def defaultPath():
     user = os.path.expanduser('~')
     mainDir = user + '/maya/characterSets/'
     return mainDir
+
 
 def loadFile(path):
     loaded = []
@@ -72,13 +76,16 @@ def loadFile(path):
         loaded.append(line.strip('\n'))
     return loaded
 
+
 def printLines(path=''):
     loaded = loadFile(path)
     for line in loaded:
         print line
 
+
 def listAll():
     return cmds.ls(type='character')
+
 
 def listTop():
     top = []
@@ -106,6 +113,7 @@ def listTop():
         message('here 6')
         return []
 
+
 def deleteAll():
     chrs = listAll()
     for chr in chrs:
@@ -115,9 +123,11 @@ def deleteAll():
         except:
             pass
 
+
 def parentSet():
     # forces first selection to be a member of second selection
     cmds.character(cmds.ls(sl=True)[0], fe=cmds.ls(sl=True)[1])
+
 
 def flush():
     all = listTop()
@@ -127,7 +137,7 @@ def flush():
         print 'deleted'
         tmp = []
         for char in all:
-            if cmds.reference(char, inr=True) == False:
+            if cmds.reference(char, inr=True) is False:
                 tmp.append(char)
         all = tmp
         if len(all) > 0:
@@ -141,6 +151,7 @@ def flush():
     else:
         message('No Character Sets in Scene')
 
+
 def unflush():
     path = shotPath()
     if path != defaultPath():
@@ -150,6 +161,7 @@ def unflush():
             print "-- unflushed:   '" + set + "'  --"
     else:
         message('Open a scene before proceeding')
+
 
 def deletePath():
     if os.name == 'linux':
@@ -164,7 +176,6 @@ def deletePath():
 
 def deleteFlushed():
     path = shotPath()
-    delPath = deletePath()
     # this 'if' prevents deletion of files from main(default) character set directory
     if path != defaultPath():
         chars = os.listdir(path)
@@ -175,6 +186,7 @@ def deleteFlushed():
     else:
         message('Name your scene before proceeding')
 
+
 def writeFile(char, parent, outFile=''):
     # Arguments   :<char>   : attribute of a character set
     #            :<parent> : character nodes parent
@@ -184,7 +196,7 @@ def writeFile(char, parent, outFile=''):
     #
     # list all attributes of the character)
     characterMembers = cmds.character(char, query=True)
-    if characterMembers != None:
+    if characterMembers is not None:
         # write out the parent line
         outFile.write('ParentInfo=' + parent + '|' + char + '\n')
         parent = char
@@ -203,12 +215,13 @@ def writeFile(char, parent, outFile=''):
         # empty character set, write info
         outFile.write('ParentInfo=' + parent + '|' + char + '\n')
 
+
 def exportFile(selChar, filePath):
     # Exports the given character set to a file.
     # test the path for type, want a full file path
     import os
     if cmds.nodeType(selChar) == 'character':
-        if os.path.isdir(filePath) == True:
+        if os.path.isdir(filePath):
             message('No file name specified.')
         else:
             # add extension if not present
@@ -223,17 +236,19 @@ def exportFile(selChar, filePath):
     else:
         message('Object  ::' + selChar + '::  is not a characterSet.')
 
+
 def nameSpace(ns='', base=False):
     if ':' in ns:
         i = ns.rfind(':')
         ref = ns[:i]
         obj = ns[i + 1:]
-        if base == False:
+        if base is False:
             return ref
         else:
             return ref, obj
     else:
         return ns
+
 
 def updateNS(old='', new=''):
     '''
@@ -244,6 +259,7 @@ def updateNS(old='', new=''):
         return old.replace(nameSpace(old), nameSpace(new))
     else:
         return old
+
 
 def updateCS(string, old='', new=''):
     '''
@@ -257,11 +273,13 @@ def updateCS(string, old='', new=''):
         else:
             return string
 
+
 def updateCSlist(lst, old='', new=''):
     newLst = []
     for string in lst:
         newLst.append(updateCS(string, old, new))
     return newLst
+
 
 def replaceInString(string, dic):
     '''
@@ -272,7 +290,8 @@ def replaceInString(string, dic):
         string = string.replace(key, dic[key])
     return string
 
-def importFile(path='', prefix='', ns='', cs=['old', 'new'], rp={None:None}):
+
+def importFile(path='', prefix='', ns='', cs=['old', 'new'], rp={None: None}):
     '''
     prefix = adds prefix string with underscore after
     ns     = namespace string to replace
@@ -281,7 +300,7 @@ def importFile(path='', prefix='', ns='', cs=['old', 'new'], rp={None:None}):
     '''
     # nsCurrent = cmds.namespaceInfo(currentNamespace=True)
     # cmds.namespace(set=':')
-    if os.path.isfile(path) == True:
+    if os.path.isfile(path):
         if prefix != '':
             prefix = prefix + '_'
         addNode = ''
@@ -313,7 +332,7 @@ def importFile(path='', prefix='', ns='', cs=['old', 'new'], rp={None:None}):
                 # does not account for multiple refs in one set, like character and prop
                 if ':' in line:
                     line = updateNS(str(line), str(ns))
-                    if cmds.objExists(line) == False:
+                    if cmds.objExists(line) is False:
                         sel = cmds.ls(sl=True)
                         if len(sel) > 0:
                             sel = sel[0]
@@ -331,6 +350,7 @@ def importFile(path='', prefix='', ns='', cs=['old', 'new'], rp={None:None}):
         # cmds.namespace(set=nsCurrent)
     else:
         message('Path not found: ' + path)
+
 
 def activateSet(setList):
     string = ''
@@ -355,6 +375,7 @@ def activateSet(setList):
     cmd = "setCurrentCharacters({" + string + "});"
     mel.eval(cmd)
 
+
 class GetSetOptions():
     def __init__(self):
         # attrs
@@ -366,16 +387,15 @@ class GetSetOptions():
         self.upper = None
         # get attr values
         self.lower = cmds.listConnections(self.sel[0], t='character', s=False, d=True)
-        if self.lower != None:
+        if self.lower is not None:
             self.lower = list(set(self.lower))[0]
-        if self.lower != None:
+        if self.lower is not None:
             self.upper = cmds.listConnections(self.lower, t='character', s=False, d=True)
-            if self.upper != None:
+            if self.upper is not None:
                 self.upper = list(set(self.upper))[0]
 
     def currentSet(self):
         form = "MayaWindow|toolBar5|MainPlaybackRangeLayout|formLayout10|formLayout11"
-        txtFld = []
         txtFld = cmds.formLayout(form, q=True, ca=True)
         if len(txtFld) != 0:
             txtFld = txtFld[1]
@@ -385,9 +405,9 @@ class GetSetOptions():
             else:
                 return None
 
+
 def currentSet():
     form = "MayaWindow|toolBar5|MainPlaybackRangeLayout|formLayout10|formLayout11"
-    txtFld = []
     txtFld = cmds.formLayout(form, q=True, ca=True)
     if len(txtFld) != 0:
         txtFld = txtFld[1]
@@ -396,6 +416,7 @@ def currentSet():
             return val
         else:
             return None
+
 
 def currentSet2():
     ge = 'graphEditor1OutlineEd'
@@ -409,7 +430,8 @@ def currentSet2():
         cmds.select(sel)
     return result
 
-def smartActivateSet(next=True):
+
+def smartActivateSet(*args):
     set = GetSetOptions()
     # script will error when activateSet() returns {None} for .upper or .lower
     if len(set.sel) != 0:
@@ -419,7 +441,7 @@ def smartActivateSet(next=True):
             return set.sel
         if set.lower:
             print set.lower, '___there',  # #problem occurs here for some reason
-            if set.current == None or set.current == 'Multiple':
+            if set.current is None or set.current == 'Multiple':
                 if set.upper:
                     print 0
                     activateSet(set.upper)
@@ -471,6 +493,7 @@ def smartActivateSet(next=True):
     else:
         message('--Select an object--')
 
+
 def toggleMembershipToCurrentSet():
     current = GetSetOptions()
     current.currentSet()  # add if current == None, return message and bail
@@ -489,10 +512,10 @@ def toggleMembershipToCurrentSet():
         except:
             pass
         # object attr toggle
-        if attrs != None:
+        if attrs is not None:
             # print '__1'
             for attr in attrs:
-                if cmds.character(obj + '.' + attr, im=current.currentSet()) == False:
+                if cmds.character(obj + '.' + attr, im=current.currentSet()) is False:
                     print attr, obj
                     cmds.character(obj + '.' + attr, fe=current.currentSet())
                     print attr, '  added'
@@ -503,7 +526,7 @@ def toggleMembershipToCurrentSet():
         elif shapeAttrs:
             # print '__2'
             for attr in shapeAttrs:
-                if cmds.character(shape + '.' + attr, im=current.currentSet()) == False:
+                if cmds.character(shape + '.' + attr, im=current.currentSet()) is False:
                     cmds.character(shape + '.' + attr, fe=current.currentSet())
                     print attr, '  added'
                 else:
@@ -532,6 +555,7 @@ def toggleMembershipToCurrentSet():
         # add toggle if / else
         cmds.character(sel, include=current.currentSet())
 
+
 def insertKey():
     '''
     #inserts key on active character set if no objects are selected
@@ -547,6 +571,7 @@ def insertKey():
             message('Key inserted to selection', maya=True)
         else:
             cmds.setKeyframe()
+
 
 def parent(parent=True):
     if parent:
