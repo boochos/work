@@ -1,5 +1,4 @@
 from pymel.core import *
-import pymel.core.datatypes as dt
 #
 
 
@@ -21,18 +20,20 @@ def convertRangeStr(string):
         rangeList.append(strngA + str(i) + strngB)
     return rangeList
 
+
 def getPairList(*args):
     '''\n
     -Create vertex pair list from edge selection\n
     '''
     edges = cmds.ls(sl=True, fl=True)
     pairList = []
-    for edge in  edges:
+    for edge in edges:
         result = cmds.polyListComponentConversion(edge, fe=True, tv=True)
         if ':' in str(result):
             result = convertRangeStr(result[0])
         pairList.append(result)
     return pairList
+
 
 def findFirst(pairList=None):
     '''\n
@@ -47,7 +48,7 @@ def findFirst(pairList=None):
     while i <= stop:
         for vert in pairList[i]:
             end = findNext(vert, pairList[i], pairList)
-            if end[0] == False:
+            if end[0] is False:
                 order.append(vert)
                 order.append(findPartner(vert, pairList[i]))
                 next = order[1]
@@ -59,7 +60,7 @@ def findFirst(pairList=None):
                         next = result[0]
                         nextPair = result[1]
                         order.append(next)
-                    else :
+                    else:
                         return order
                     j = j + 1
                     if j == orderStop * 2:
@@ -67,6 +68,7 @@ def findFirst(pairList=None):
                         break
                 return order
         i = i + 1
+
 
 def findNext(vert, vertPair, pairList):
     '''\n
@@ -79,11 +81,11 @@ def findNext(vert, vertPair, pairList):
     v = 0
     j = 0
     next = [[None], [None]]
-    nextPair = None
+    # nextPair = None
     for iteratedPair in pairList:
         if vert in iteratedPair:
             v = v + 1
-            if pairCompare(vertPair, iteratedPair) == False:
+            if pairCompare(vertPair, iteratedPair) is False:
                 next[0] = findPartner(vert, iteratedPair)
                 next[1] = iteratedPair
         j = j + 1
@@ -92,6 +94,7 @@ def findNext(vert, vertPair, pairList):
     elif v == 1:
         next[0] = False
         return next
+
 
 def pairCompare(pair1, pair2):
     '''\n
@@ -105,6 +108,7 @@ def pairCompare(pair1, pair2):
     else:
         return False
 
+
 def findPartner(vert, VertPair):
     '''\n
     ie. pair1[v1______v2]\n
@@ -114,6 +118,7 @@ def findPartner(vert, VertPair):
         return VertPair[1]
     else:
         return VertPair[0]
+
 
 def alignVertices(*args):
     '''\n
@@ -125,9 +130,9 @@ def alignVertices(*args):
     # reorder selection
     order = findFirst(pairList)
     # get start pos
-    vector1 = dt.Vector(cmds.xform(order[0], q=True, os=True, t=True))
+    vector1 = datatypes.Vector(cmds.xform(order[0], q=True, os=True, t=True))
     # get ewnd position
-    vector2 = dt.Vector(cmds.xform(order[(len(order) - 1)], q=True, os=True, t=True))
+    vector2 = datatypes.Vector(cmds.xform(order[(len(order) - 1)], q=True, os=True, t=True))
     # divide length between start/end evenly
     posDiff = ((vector1) - (vector2)) / (len(order) - 1)
     # repostion verts

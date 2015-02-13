@@ -4,14 +4,13 @@ import os
 import fnmatch
 from subprocess import call
 import subprocess
-# FIXME: needs new import style
-import ui_micro_lib as ui
-import characterSet_lib as cs
-import selectionSet_lib as ss
+#
+import webrImport as web
+# web
+ui = web.mod('ui_micro_lib')
+cs = web.mod('characterSet_lib')
+ss = web.mod('selectionSet_lib')
 
-
-reload(ui)
-reload(ss)
 
 id = None
 scroll = None

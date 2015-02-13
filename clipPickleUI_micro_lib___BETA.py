@@ -1,7 +1,7 @@
 # from __future__ import with_statement
 # import os, sys, sys_lib, fnmatch
-import maya.cmds  as cmds
-import maya.mel   as mel
+import maya.cmds as cmds
+import maya.mel as mel
 # import pymel.core as pm
 # import characterSet_lib as cs
 # import ast
