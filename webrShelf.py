@@ -1,4 +1,4 @@
-import urllib
+import urllib  # need this for downloading icons, line is sometimes commented out
 import maya.cmds as cmds
 import maya.mel as mel
 import os
@@ -6,6 +6,7 @@ import os
 import webrImport as web
 # web
 wf = web.mod('webrFiles_lib')
+# BUG: when new version is pushed, server lags causing syncing problems. Short find a way to time the updates
 
 
 def message(what='', maya=True):
@@ -27,17 +28,17 @@ class Depend():
 
 
 def shelfRefresh():
-    getIcons()
+    # getIcons()
     # shelfRename()
     shelfBuild()
 
 
-def shelfDeleteWin():
-    win = cmds.window('DELETE_OLD_SHELF', w=200, h=40)
+def shelfRefreshWin():
+    win = cmds.window('REFRESH_SHELF', w=200, h=40)
     cmds.columnLayout(columnAttach=('both', 1), columnAlign=(
         'center'), adjustableColumn=True, rowSpacing=10, columnWidth=250)
-    cmds.button('deleteButtonShelf', c="import maya.cmds as cmds\ncmds.deleteUI('WebrShelf_old', control=True)\ncmds.deleteUI('DELETE_OLD_SHELF', control=True)",
-                l='DELETE OLD SHELF', w=150, h=100)
+    cmds.button('deleteButtonShelf', c='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefresh()',
+                l='REFRESH SHELF', w=150, h=100)
     cmds.showWindow(win)
 
 
@@ -45,11 +46,11 @@ def shelfRename(*args):
     dp = Depend()
     if cmds.control(dp.shelf, q=1, ex=1):
         cmds.renameUI(dp.shelf, dp.old)
-        shelfDeleteWin()
+        shelfRefreshWin()
 
 
 def shelfBuild(*args):
-    shelfPrnt = 'ShelfLayout'
+    # shelfPrnt = 'ShelfLayout'
     dp = Depend()
     if not cmds.control(dp.shelf, q=1, ex=1):
         # build ui
@@ -79,7 +80,7 @@ def shelfAddButtons(*args):
     cmds.setParent(Depend().shelf)
     # build buttons
     cmds.shelfButton(label='FRSH', annotation='refresh AnimGit shelf', w=wh, h=wh,
-                     image='dwnArrow.xpm', command='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefresh()')
+                     image='dwnArrow.xpm', command='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefreshWin()')
 
     cmds.shelfButton(label='save ++', annotation='save ++', w=wh, h=wh, image='save++_icon.xpm',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()')
@@ -216,4 +217,3 @@ def removeShelf():
         cmds.saveAllShelves(gShelfTopLevel)
     else:
         return
-
