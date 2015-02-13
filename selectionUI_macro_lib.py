@@ -1,4 +1,5 @@
 import maya.cmds as cmds
+import maya.mel as mel
 import os
 import fnmatch
 from subprocess import call
@@ -7,7 +8,6 @@ import subprocess
 import ui_micro_lib as ui
 import characterSet_lib as cs
 import selectionSet_lib as ss
-import maya.mel as mel
 
 
 reload(ui)
@@ -438,6 +438,7 @@ def message(what='', maya=False):
 
 def job():
     global scroll
+    print scroll, ' here_____'  # BUG: RuntimeError: No object name specified. line 441
     if cmds.control(scroll, ex=True):
         cmds.textScrollList(scroll, edit=True, ra=True)
         selection = cmds.ls(sl=True, fl=True)
