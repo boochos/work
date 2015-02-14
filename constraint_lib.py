@@ -713,7 +713,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
         return locs
     else:
         cmds.warning(
-            'Select an object. Selection will be constrainted to a locator with the same anim.')
+            'Select an object. Selection will be constrained to a locator with the same anim.')
 
 
 def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07):
@@ -817,7 +817,7 @@ def attrStrings(pos=True, rot=True, period=True):
     p = ['tx', 'ty', 'tz']
     r = ['rx', 'ry', 'rz']
     result = []
-    if period == True:
+    if period:
         for i in range(len(p)):
             p[i] = '.' + p[i]
         for i in range(len(r)):
@@ -997,6 +997,11 @@ class AnimCrv(Key):
             key.obj = self.obj
             key.put()
 
+
+def consolidatePairBlends():
+    # FIXME: If given control has 2 pairblends consolidate
+    # connected check if the source is the same constraint. If yes, consolidate or check to make sure weight attr is affected by both
+    pass
 
 def bakeUndo():
     que = cmds.undoInfo(q=1, un=1)

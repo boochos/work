@@ -28,8 +28,7 @@ class Depend():
 
 
 def shelfRefresh():
-    # getIcons()
-    # shelfRename()
+    getIcons(download=False)
     shelfBuild()
 
 
@@ -172,7 +171,7 @@ def shelfAddButtons(*args):
     # TODO: add turn on ui button
 
 
-def getIcons():
+def getIcons(download=False):
     # online
     urlIcons = 'https://raw.github.com/boochos/shelfIcons/master'
 
@@ -184,12 +183,12 @@ def getIcons():
     for icon in wf.icons:
         url = urlIcons + '/' + icon
         # print url
-        home = os.path.join(iconDir, icon)
-        print url
-        print home
-        message('downloading -- ' + home)
-        cmds.refresh()
-        # urllib.urlretrieve(url, home)
+        local = os.path.join(iconDir, icon)
+        # print local
+        if download:
+            message('downloading -- ' + local)
+            cmds.refresh()
+            urllib.urlretrieve(url, local)
 
 
 def createMyShelf():

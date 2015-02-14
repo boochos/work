@@ -193,6 +193,7 @@ def switchRHand():
 
 
 def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False):
+    # TODO: add option to not keep current anim (dont bake offset control)
     locs = []
     if objAim == '':
         sel = cmds.ls(sl=1)  # order = tip,base

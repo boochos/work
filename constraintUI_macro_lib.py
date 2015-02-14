@@ -65,6 +65,12 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton13, e=True, c=self.cmdAimRig)
         cmds.button(self.actionColumn.actionButton15, e=True, c=self.cmdUpdateConstraintOffset)
         cmds.button(self.actionColumn.actionButton16, e=True, c=self.cmdDistributeKeys)
+        # TODO: Add aimPivotRig, remove other buttons that overlap the shelf
+        # TODO: Add aim and up vector options
+        # TODO: add point/orient constraint buttons or drop down for constraint type
+        # TODO: dockable window, tools used like in Nuke, with scroll bar ?maybe?
+        # TODO: delete constraint button
+        # TODO: add help section of some sort
 
         cmds.showWindow(self.win)
 

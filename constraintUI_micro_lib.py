@@ -148,7 +148,7 @@ class Action(object):
         ann='An aim rig is created between 2 objects.\n Animation is preserved and transfered to locator.\nSelect target first.\nROOT/BASE\nROOT/AIM/OFFSET\nROOT/AIM/UP')
         self.s5 = cmds.separator(height=self.sepH, style=self.sepStl)
         # update constraint offset
-        self.actionButton15 = cmds.button(self.actionButton15, label='Constraint Update', c=self.cmdAction, bgc=blue)
+        self.actionButton15 = cmds.button(self.actionButton15, label='Constraint Offset Update', c=self.cmdAction, bgc=blue)
         self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
         # place loc, constain
         self.actionButton2 = cmds.button(self.actionButton2, label='Place LOC', c=self.cmdAction, bgc=blue)
@@ -166,5 +166,5 @@ class Action(object):
         # distribute keys
         self.actionButton16 = cmds.button(self.actionButton16, label='Distribute Keys', c=self.cmdAction, bgc=grey)
         self.actionField1 = cmds.textField(self.actionField1, tx=5.0)
-        ann = 'Destructive Mode. Removes keys that dont fall on the frame itteration.'
+        ann = 'Destructive Mode. Removes keys that dont fall on the same frame.'
         self.c14 = cmds.checkBox(label='Destructive', v=True, ann=ann)
