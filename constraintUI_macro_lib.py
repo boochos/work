@@ -1,13 +1,9 @@
-import maya.cmds  as cmds
+import maya.cmds as cmds
 import maya.mel as mel
 #
-# import constraintUI_micro_lib as ui
-# import constraint_lib as cn
-# import anim_lib as al
 import webrImport as web
 # web
 ui = web.mod('constraintUI_micro_lib')
-cn = web.mod('constraint_lib')
 al = web.mod('anim_lib')
 
 
@@ -71,22 +67,22 @@ class CSUI(object):
         # TODO: dockable window, tools used like in Nuke, with scroll bar ?maybe?
         # TODO: delete constraint button
         # TODO: add help section of some sort
+        # TODO: projection tool
+        # TODO: witness camera tool
 
         cmds.showWindow(self.win)
 
     def cmdBake(self, *args):
-        import constraint_lib as cn
-        reload(cn)
+        # TODO: creates an exta locator when object with no keys is selected
+        cn = web.mod('constraint_lib')
         # v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
         v2 = cmds.checkBox(self.actionColumn.c2, q=True, v=True)
         v3 = cmds.checkBox(self.actionColumn.c3, q=True, v=True)
         v4 = cmds.checkBox(self.actionColumn.c4, q=True, v=True)
-        # cn.bakeConstrainedSelection(sparseKeys=v1, removeConstraint=v2, timeLine=v3, sim=v4)
         cn.bakeConstrainedSelection(removeConstraint=v2, timeLine=v3, sim=v4)
 
     def cmdPlace(self, *args):
-        import constraint_lib as cn
-        reload(cn)
+        cn = web.mod('constraint_lib')
         sel = cmds.ls(sl=1)
         sl = False
         v5 = cmds.checkBox(self.actionColumn.c5, q=True, v=True)
@@ -100,23 +96,21 @@ class CSUI(object):
         locs = cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
         i = 0
         if v13:
-            for loc in locs:
-                cn.matchKeyedFrames(A=sel[i], B=loc, subtractive=True)
-                i = i + 1
+            if sel:
+                for loc in locs:
+                    cn.matchKeyedFrames(A=sel[i], B=loc, subtractive=True)
+                    i = i + 1
 
     def cmdBakeToLoc(self, *args):
-        import constraint_lib as cn
-        reload(cn)
+        cn = web.mod('constraint_lib')
         # v6 = cmds.checkBox(self.actionColumn.c6, q=True, v=True)
         v7 = cmds.checkBox(self.actionColumn.c7, q=True, v=True)
         v8 = cmds.checkBox(self.actionColumn.c8, q=True, v=True)
         v12 = cmds.checkBox(self.actionColumn.c12, q=True, v=True)
-        # cn.controllerToLocator(p=v7, r=v8, sparseKeys=v6, timeLine=False, sim=v12)
         cn.controllerToLocator(p=v7, r=v8, timeLine=False, sim=v12)
 
     def cmdMatchKeys(self, *args):
-        import constraint_lib as cn
-        reload(cn)
+        cn = web.mod('constraint_lib')
         cn.matchKeyedFrames()
 
     def cmdConstrain(self, *args):
@@ -138,72 +132,72 @@ class CSUI(object):
             cmds.warning('-- Select 2 objects --')
 
     def cmdA2B(self, *args):
-        import anim_lib as anim
-        reload(anim)
-        anim.matchObj()
+        al = web.mod('anim_lib')
+        al.matchObj()
 
     def cmdRO(self, *args):
+        al = web.mod('anim_lib')
         t1 = cmds.optionMenuGrp(self.actionColumn.opt1, q=True, v=True)
         al.changeRoMulti(ro=t1)
 
     def cmdStore(self, *args):
         self.animBucket = []
         self.objects = cmds.ls(sl=1)
-        # self.objX = cmds.ls(sl=1)[0]
-        # self.anim = al.SpaceSwitch(self.objX)
-        # message('Animation Stored: -- ' + self.objX, maya=True)
-        for obj in self.objects:
-            self.animBucket.append(al.SpaceSwitch(obj))
-            message('Animation Stored: -- ' + obj, maya=True)
-            cmds.refresh(f=1)
+        if self.objects:
+            for obj in self.objects:
+                self.animBucket.append(al.SpaceSwitch(obj))
+                message('Animation Stored: -- ' + obj, maya=True)
+                cmds.refresh(f=1)
+        else:
+            cmds.warning('Select object(s)')
 
     def cmdRestore(self, *args):
-        for obj in self.animBucket:
-            obj.restore()
-            message('Animation ReStored: -- ' + obj.obj, maya=True)
-            cmds.refresh(f=1)
-        # self.anim.restore()
-        # message('Animation ReStored: -- ' + self.objX, maya=True)
+        if self.animBucket:
+            for obj in self.animBucket:
+                obj.restore()
+                message('Animation ReStored: -- ' + obj.obj, maya=True)
+                cmds.refresh(f=1)
+        else:
+            cmds.warning('No objects have been stored.')
 
     def cmdRestoreToSelected(self, *args):
-        self.animBucket[0].restore(useSelected=True)
-        message('Animation ReStored: -- ' + self.animBucket[0].obj, maya=True)
-        cmds.refresh(f=1)
+        # TODO: if more than one object add window pop up to choose source
+        if self.animBucket:
+            self.animBucket[0].restore(useSelected=True)
+            message('Animation ReStored: -- ' + self.animBucket[0].obj, maya=True)
+            cmds.refresh(f=1)
+        else:
+            cmds.warning('No objects have been stored.')
 
     def cmdStick(self, *args):
-        import constraint_lib as cn
-        reload(cn)
+        cn = web.mod('constraint_lib')
         self.objX = cmds.ls(sl=1)[0]
         cn.stick(offset=True)
         message('sticky: -- ' + self.objX, maya=True)
 
     def cmdUnStick(self, *args):
-        import constraint_lib as cn
-        reload(cn)
+        cn = web.mod('constraint_lib')
         v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
         self.objX = cmds.ls(sl=1)[0]
         cn.unStick(timeLine=False, sim=v1)
         message('un~sticky: -- ' + self.objX, maya=True)
 
     def cmdParentRig(self, *args):
-        import animRig_lib as ar
-        reload(ar)
+        ar = web.mod('animRig_lib')
         ar.parentRig(bake=True)
         message('parent rig built. -- new control Selected ', maya=True)
 
     def cmdAimRig(self, *args):
-        import animRig_lib as ar
-        reload(ar)
+        ar = web.mod('animRig_lib')
         ar.aimRig(mo=False)
         message('aimRig: -- ', maya=True)
 
     def cmdDistributeKeys(self, *args):
-        import anim_lib as al
-        reload(al)
+        al = web.mod('anim_lib')
         fld1 = cmds.textField(self.actionColumn.actionField1, q=1, tx=1)
         v14 = cmds.checkBox(self.actionColumn.c14, q=True, v=True)
         al.distributeKeys(count=float(fld1), destructive=v14)
-        # message('distribute keys on ' , maya=True)
 
     def cmdUpdateConstraintOffset(self, *args):
+        cn = web.mod('constraint_lib')
         cn.updateConstraintOffset(obj=cmds.ls(sl=1))

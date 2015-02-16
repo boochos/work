@@ -1,12 +1,11 @@
 import maya.cmds as cmds
 import maya.mel as mel
 #
-# import characterSet_lib as cs
-# import hijack_lib as hj
 import webrImport as web
 # web
 cs = web.mod('characterSet_lib')
 hj = web.mod('hijack_lib')
+fr = web.mod('frameRange_lib')
 
 
 def message(what='', maya=False):
@@ -17,7 +16,7 @@ def message(what='', maya=False):
         print what
 
 
-def uiEnable(controls='modelPanel', toggle=True):
+def uiEnable(controls='modelPanel'):
     model = cmds.lsUI(panels=True, l=True)
     ed = []
     for m in model:
@@ -155,69 +154,6 @@ def matchKeyedFrames(A=None, B=None, subtractive=True):
             cmds.cutKey(B, t=(current, current))
 
 
-class GetRange():
-
-    def __init__(self, fromSelection=True):
-        self.min = cmds.playbackOptions(q=True, minTime=True)
-        self.max = cmds.playbackOptions(q=True, maxTime=True)
-        self.selStart = cmds.playbackOptions(q=True, minTime=True)
-        self.selEnd = cmds.playbackOptions(q=True, maxTime=True)
-        self.start = 0
-        self.end = 0
-        self.current = cmds.currentTime(q=True)
-        self.setStartEnd()
-        self.keyStart = 0
-        self.keyEnd = 0
-        self.selection = False
-        if fromSelection:
-            self.keyedFrames()
-        # Has to be last
-        self.selRange()
-
-    def selRange(self):
-        # overide range if selected range is detected
-        sel = cmds.timeControl('timeControl1', q=True, ra=True)
-        range = sel[1] - sel[0]
-        if range > 1:
-            self.selStart = sel[0]
-            self.selEnd = sel[1]
-            self.keyStart = sel[0]
-            self.keyEnd = sel[1]
-            self.selection = True
-
-    def setStartEnd(self):
-        if self.selStart != 0:
-            self.start = self.selStart
-            self.end = self.selEnd
-        else:
-            self.start = self.min
-            self.end = self.max
-
-    def keyedFrames(self):
-        selAll = cmds.ls(sl=True)
-        # print 'X     ', selAll
-        frames = []
-        if selAll:
-            for sel in selAll:
-                animCurves = cmds.findKeyframe(sel, c=True)
-                # print 'XX    ',
-                if animCurves is not None:
-                    for crv in animCurves:
-                        framesTmp = cmds.keyframe(crv, q=True)
-                        # print 'XXX    ', framesTmp
-                        for frame in framesTmp:
-                            frames.append(frame)
-                    frames = list(set(frames))
-                    # print 'XXXX    ', frames, selAll
-                    self.keyStart = min(frames)
-                    self.keyEnd = max(frames)
-                else:
-                    # print 'no anim curves', sel
-                    pass
-        else:
-            print '-- Select an object. --'
-
-
 def keyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
     if animCurves is not None:
@@ -282,20 +218,24 @@ def updateConstraintOffset(obj=''):
     # currently assuming list is being fed with one object
     obj = obj[0]
     # find constraint
-    con = getConstraint(
-        obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)[0]
-    # find target
-    driver = []
-    # lists [constrained object, constraint, driving object] not in this order
-    drivers = getDrivers(con, typ='transform', plugs=False)
-    for item in drivers:
-        if item != con and item != obj:
-            print item, obj, con
-            driver.append(item)
-    print driver
-    # update
-    cmds.parentConstraint(driver[0], con, e=1, maintainOffset=1)
-    message('Offset Updated -- ' + con, maya=1)
+    con = getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
+    if con:
+        con = con[0]
+        print con
+        # find target
+        driver = []
+        # lists [constrained object, constraint, driving object] not in this order
+        drivers = getDrivers(con, typ='transform', plugs=False)
+        for item in drivers:
+            if item != con and item != obj:
+                print item, obj, con
+                driver.append(item)
+        # print driver
+        # update
+        cmds.parentConstraint(driver[0], con, e=1, maintainOffset=1)
+        message('Offset Updated -- ' + con, maya=1)
+    else:
+        message('No constraint detected')
 
 
 def updateConstrainedCurves(obj=None, sim=False):
@@ -470,7 +410,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
     sim = keys only, dont step through frame at a time
     '''
     if uiOff:
-        uiEnable(controls='modelPanel', toggle=True)
+        uiEnable(controls='modelPanel')
     # r = getRange()
     attrs = []
     min = time[0]
@@ -540,7 +480,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
     cmds.currentTime(current)
     cmds.autoKeyframe(state=autoK)
     if uiOff:
-        uiEnable(controls='modelPanel', toggle=True)
+        uiEnable(controls='modelPanel')
 
 
 def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
@@ -552,7 +492,7 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
     # needs to beselected to prioritze keyed range of given object over
     # selection
     cmds.select(obj)
-    gRange = GetRange()
+    gRange = fr.Get()
     # reselect selection
     cmds.select(sel)
     # end workaround
@@ -871,17 +811,17 @@ def stickAttr():
 def stick(offset=True):
     # needs work
     sel = cmds.ls(sl=True)
-    gRange = GetRange()
+    gRange = fr.Get()
     if len(sel) == 1:
         sel = sel[0]
         loc = locator(sel, X=1, constrain=False)[0]
-        print loc
+        # print loc
         cmds.addAttr(loc, longName=stickAttr(), at='message')
         cmds.connectAttr(sel + '.message', loc + '.' + stickAttr())
         name = loc.replace(
             'PLACE', stickAttr() + '_frame' + str(int(gRange.current)))
         loc = cmds.rename(loc, name)
-        print loc
+        # print loc
         constrainEnabled(loc, sel, mo=True)
     elif len(sel) == 2:
         constrainEnabled(sel[1], sel[0], mo=offset)
@@ -894,7 +834,7 @@ def unStick(timeLine=False, sim=False):
     # needs work
     activeSet = cs.GetSetOptions()
     sel = cmds.ls(sl=True)
-    gRange = GetRange()
+    gRange = fr.Get()
     cons = getConstraint(sel)
     if activeSet.current:
         bakeConstrainedSelection(

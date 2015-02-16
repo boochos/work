@@ -1,5 +1,9 @@
 import maya.cmds as cmds
 import maya.mel as mel
+#
+import webrImport as web
+# web
+fr = web.mod('frameRange_lib')
 
 
 def message(what='', maya=True):
@@ -8,23 +12,6 @@ def message(what='', maya=True):
         mel.eval('print \"' + what + '\";')
     else:
         print what
-
-
-class GetRange():
-    def __init__(self):
-        self.min = cmds.playbackOptions(q=True, minTime=True)
-        self.max = cmds.playbackOptions(q=True, maxTime=True)
-        self.current = cmds.currentTime(q=True)
-
-
-'''
-import animCurve_lib as ac
-reload(ac)
-objects = cmds.ls(sl=1)
-start = cmds.playbackOptions(q=1,min=1)
-end = cmds.playbackOptions(q=1,max=1)
-bakeTimeWarp(objects,start,end,killWarp=True)
-'''
 
 
 def moveTime(left=True):
@@ -152,7 +139,7 @@ def scaleCrv(val):
 def holdCrv(postCurrent=True, preCurrent=True):
     crvs = cmds.keyframe(q=True, name=True, sl=True)
     if crvs is not None:
-        cur = GetRange()
+        cur = fr.Get()
         for crv in crvs:
             frames = cmds.keyframe(crv, q=True, tc=True)
             val = cmds.keyframe(crv, q=True, eval=True, t=(cur.current, cur.current))[0]
@@ -207,7 +194,6 @@ def deleteAnim(obj, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=False, keyable
 def unifyKeys():
     sel = cmds.keyframe(q=True, name=True, sl=True)
     if sel:
-        crvs = len(sel)
         # new method, less loops
         frames = sorted(list(set(cmds.keyframe(sel, q=True))))
         i = len(frames)
@@ -333,6 +319,67 @@ def subframe():
                         cmds.cutKey(animCurves, time=(frame, frame))
     else:
         message('no keys')
+
+
+def distributeKeys(step=3.0, destructive=True, forceWholeFrames=True):
+    '''
+    operates on selected curves
+    '''
+    s = GraphSelection()
+    sel = cmds.ls(sl=1, fl=True)
+    rng = fr.Get()
+    if s.crvs:
+        # gather info
+        autoK = cmds.autoKeyframe(q=True, state=True)
+        frames = getKeyedFrames(s.crvs)
+        # process start/end of loop
+        framesNew = []
+        if rng.selection:
+            for f in frames:
+                if f >= rng.keyStart and f <= rng.keyEnd:
+                    framesNew.append(f)
+            frames = framesNew
+        #
+        cut = []
+        # print frames
+        if forceWholeFrames:
+            framesOrig = frames
+            frames = [round(frame) for frame in frames]
+            framesPartial = list(set(framesOrig) - set(frames))
+            cut = [frame for frame in framesPartial]
+            # print cut, '______cut'
+        lastFrame = frames[len(frames) - 1]
+        count = frames[0]
+        i = frames[0]
+        # turn off autokey
+        cmds.autoKeyframe(state=False)
+        framesNew = []
+        # process keys
+        while i < lastFrame:
+            if i == count:
+                cmds.setKeyframe(s.crvs, i=True, t=count)
+                framesNew.append(count)
+                count = count + step
+            else:
+                if i in frames:
+                    cut.append(i)
+            i = i + 1
+        # remove keys is destructive
+        if destructive:
+            framesDel = sorted(list(set(frames) - set(framesNew)))
+            for frame in framesDel:
+                cut.append(frame)
+            # print framesOrig, '________orig'
+            # print framesNew, '________new'
+            # print cut, '_________cut'
+            if cut:
+                for frame in cut:
+                    if frame >= rng.keyStart and frame <= rng.keyEnd:
+                        cmds.cutKey(sel, clear=1, time=(frame, frame))
+        # restore autokey
+        cmds.autoKeyframe(state=autoK)
+    else:
+        message('Select one or more anima curves', maya=1)
 
 
 class GraphSelection():

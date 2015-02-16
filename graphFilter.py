@@ -73,7 +73,7 @@ def graphFilters(attrs, panel=''):
 
 
 def graphEditorCMD():
-    ui = ds.GeBtn()
+    ui = ds.GraphEditorButtonNames()
     panel = ds.findControlParent(control=ui.fil, split=5)
     panel = panel.split('|')
     attrs = cmds.textField(ui.fil, query=True, tx=True)
@@ -84,7 +84,7 @@ def toggleExpand():
     gs = ac.GraphSelection()
     cmds.select(clear=True)
     cmds.refresh(f=True)
-    ui = ds.GeBtn()
+    ui = ds.GraphEditorButtonNames()
     panel = ds.findControlParent(control=ui.fil, split=5)
     panel = panel.split('|')
     panel = panel[len(panel) - 1]

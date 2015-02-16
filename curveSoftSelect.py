@@ -276,7 +276,7 @@ def plug(*args):
 
 def toggleButton(*args):
     ds = web.mod('display_lib')
-    ui = ds.GeBtn()
+    ui = ds.GraphEditorButtonNames()
     # sftSel
     global idB
     # List shelf buttons

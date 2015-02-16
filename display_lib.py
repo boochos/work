@@ -2,13 +2,10 @@ import maya.cmds as cmds
 import maya.mel as mel
 from subprocess import call
 #
-# import constraint_lib as cn
-# import animCurve_lib as ac
 import webrImport as web
 # web
 cn = web.mod('constraint_lib')
 ac = web.mod('animCurve_lib')
-# FIXME: Fix all the imports to webrImport
 
 
 def message(what='', maya=True):
@@ -113,7 +110,7 @@ def geField(name='', parent='', attach=None, label='', cmd='', w=100, gap=10, tx
 
 
 def geFieldTx(v=''):
-    ui = GeBtn()
+    ui = GraphEditorButtonNames()
     try:
         tx = cmds.textField(ui.fil, q=1, tx=1)
         if not tx:
@@ -129,10 +126,11 @@ def geFieldTx(v=''):
         pass
 
 
-def buttonsGE(*args):
+def graphEditorButtons(*args):
     # TODO: add button to distribute keys on selected curves
+    # TODO: use dif layout, window gets locked to a min size
     # ui names
-    ui = GeBtn()
+    ui = GraphEditorButtonNames()
     # check where to build
     build = False
     p = findControl(ann='Move Nearest Picked Key Tool', panelTyp='graphEditor', split=3)
@@ -152,35 +150,75 @@ def buttonsGE(*args):
         bgc = [0.38, 0.38, 0.38]
         if build:
             p = findControl(ann='Move Nearest Picked Key Tool', panelTyp=pnl, split=3)[0]
-            print '_______    ', findControl(ann='Indicates that either text filter', panelTyp=pnl, split=2)
+            # print '_______    ', findControl(ann='Indicates that either text filter', panelTyp=pnl, split=2)
             remove = findControl(ann='Enter text to limit the listing', panelTyp=pnl, split=2)[0]
             cmds.control(remove, e=1, m=0)
             cmds.formLayout(p, e=1, h=52)
             cmds.setParent(p)
+            #
+            # "import webrImport as web\nds = web.mod('display_lib')\nds.geFieldTx('tx,ty,tz,rx,ry,rz')"
             # build
-            item = geButton(name=ui.filD, parent=p, label='::', cmd="import display_lib\nreload(display_lib)\ndisplay_lib.geFieldTx('tx,ty,tz,rx,ry,rz')", gap=2, w=15, bg=[0.2, 0.3, 0.5], ann="add default channel filter: tr*,ro*")
-            item = geField(name=ui.fil, parent=p, attach=item, cmd="import graphFilter\nreload(graphFilter)\ngraphFilter.graphEditorCMD()", w=185, gap=2, ann="add channel filters by name and/or wildcards: 't*X'")
-            item = geButton(name=ui.hldPre, parent=p, attach=item, label='<--', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(postCurrent=False)', gap=5, bg=[0.4, 0.2, 0.2], ann='hold value of selected curve to the left')
-            item = geButton(name=ui.hldAll, parent=p, attach=item, label='HOLD', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv()', w=45, gap=0, bg=[0.5, 0.2, 0.2], ann='hold value of selected curve')
-            item = geButton(name=ui.hldPost, parent=p, attach=item, label='-->', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.holdCrv(preCurrent=False)', gap=0, bg=[0.4, 0.2, 0.2], ann='hold value of selected curve to the right')
-            item = geButton(name=ui.sclDwn, parent=p, attach=item, label='-', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(0.995)', gap=5, bg=[0.1, 0.4, 0.4], ann='scale curve:\npivot @ key = keys with same values selected\npivot @ 0     = keys with dif values selected\n')
+            item = geButton(name=ui.filD, parent=p, label='::',
+                            cmd="import webrImport as web\nds = web.mod('display_lib')\nds.geFieldTx('tx,ty,tz,rx,ry,rz')",
+                            gap=2, w=15, bg=[0.2, 0.3, 0.5], ann="add default channel filter: tr*,ro*")
+            item = geField(name=ui.fil, parent=p, attach=item,
+                           cmd="import webrImport as web\ngf = web.mod('graphFilter')\ngf.graphEditorCMD()",
+                           gap=2, w=185, ann="add channel filters by name and/or wild cards: 't*X'")
+            item = geButton(name=ui.hldPre, parent=p, attach=item, label='<--',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.holdCrv(postCurrent=False)",
+                            gap=5, bg=[0.4, 0.2, 0.2], ann='hold value of selected curve to the left')
+            item = geButton(name=ui.hldAll, parent=p, attach=item, label='HOLD',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\na.holdCrv()",
+                            gap=0, w=45, bg=[0.5, 0.2, 0.2], ann='hold value of selected curve')
+            item = geButton(name=ui.hldPost, parent=p, attach=item, label='-->',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.holdCrv(preCurrent=False)",
+                            gap=0, bg=[0.4, 0.2, 0.2], ann='hold value of selected curve to the right')
+            item = geButton(name=ui.sclDwn, parent=p, attach=item, label='-',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(0.995)",
+                            gap=5, bg=[0.1, 0.4, 0.4], ann='scale curve:\npivot @ key = keys with same values selected\npivot @ 0     = keys with dif values selected\n')
             item = geHeading(name=ui.sclTx, parent=p, attach=item, label='SCALE', gap=0, w=45, bgc=[0.25, 0.4, 0.4])
-            item = geButton(name=ui.sclUp, parent=p, attach=item, label='+', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(1.005)', gap=0, bg=[0.1, 0.4, 0.4], ann='scale curve:\npivot @ key = keys with same values selected\npivot @ 0     = keys with dif values selected\n')
-            item = geButton(name=ui.flp, parent=p, attach=item, label='FLIP', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.scaleCrv(-1)', w=50, gap=0, bg=[0.1, 0.4, 0.4])
-            item = geButton(name=ui.movDwn, parent=p, attach=item, label='-', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveValue(False)", gap=5, bg=[0.3, 0.3, 0.5], ann='nudge keys/curves down in value')
+            item = geButton(name=ui.sclUp, parent=p, attach=item, label='+',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(1.005)",
+                            gap=0, bg=[0.1, 0.4, 0.4], ann='scale curve:\npivot @ key = keys with same values selected\npivot @ 0     = keys with dif values selected\n')
+            item = geButton(name=ui.flp, parent=p, attach=item, label='FLIP',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(-1)",
+                            gap=0, w=50, bg=[0.1, 0.4, 0.4])
+            item = geButton(name=ui.movDwn, parent=p, attach=item, label='-',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.moveValue(False)",
+                            gap=5, bg=[0.3, 0.3, 0.5], ann='nudge keys/curves down in value')
             item = geHeading(name=ui.movTx, parent=p, attach=item, label='VALUE', gap=0, bgc=[0.35, 0.35, 0.5])
-            item = geButton(name=ui.movUp, parent=p, attach=item, label='+', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveValue(True)", gap=0, bg=[0.3, 0.3, 0.5], ann='nudge keys/curves up in value')
-            item = geButton(name=ui.movTmLf, parent=p, attach=item, label='<', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveTime(True)", gap=5, bg=[0.2, 0.3, 0.5], ann='move keys/curves to the left')
+            item = geButton(name=ui.movUp, parent=p, attach=item, label='+',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.moveValue(True)",
+                            gap=0, bg=[0.3, 0.3, 0.5], ann='nudge keys/curves up in value')
+            item = geButton(name=ui.movTmLf, parent=p, attach=item, label='<',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.moveTime(True)",
+                            gap=5, bg=[0.2, 0.3, 0.5], ann='move keys/curves to the left')
             item = geHeading(name=ui.movTmTx, parent=p, attach=item, label='TIME', gap=0, bgc=[0.3, 0.35, 0.5])
-            item = geButton(name=ui.movTmRt, parent=p, attach=item, label='>', cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.moveTime(False)", gap=0, bg=[0.2, 0.3, 0.5], ann='move keys/curves to the right')
+            item = geButton(name=ui.movTmRt, parent=p, attach=item, label='>',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.moveTime(False)",
+                            gap=0, bg=[0.2, 0.3, 0.5], ann='move keys/curves to the right')
             item = geHeading(name=ui.sclTmTx, parent=p, attach=item, label='SCALE TIME', w=65)
-            item = geField(name=ui.sclTmBy, parent=p, attach=item, cmd="import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.animScale(cmds.textField('scaleTimeBy',query=True,tx=True))", w=40, gap=2, tx=1.0, ann='Scale selected curves from the first frame of playback')
-            item = geButton(name=ui.sftSel, parent=p, attach=item, label='SOFT_Sel', cmd='import curveSoftSelect\ncurveSoftSelect.toggleSelJob()', w=70, gap=20, bg=bgc)
-            item = geButton(name=ui.sbfrm, parent=p, attach=item, label='SUBfrm_X', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.subframe()', w=70, gap=0, bg=bgc, ann='subframes to whole frames ')
-            item = geButton(name=ui.unfy, parent=p, attach=item, label='UNIFY', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.unifyKeys()', w=70, gap=0, bg=bgc)
-            item = geButton(name=ui.bkInfty, parent=p, attach=item, label='BAKE_Infnty', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.bakeInfinity()', w=70, gap=0, bg=bgc)
-            item = geButton(name=ui.smth, parent=p, attach=item, label='SMOOTH', cmd='import animCurve_lib\nreload(animCurve_lib)\nanimCurve_lib.smoothKeys()', w=70, gap=0, bg=bgc)
-            item = geButton(name=ui.expTgl, parent=p, attach=item, label='COLLAPSE', cmd='import graphFilter\nreload(graphFilter)\ngraphFilter.toggleExpand()', w=70, gap=0, bg=bgc)
+            item = geField(name=ui.sclTmBy, parent=p, attach=item,
+                           cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.animScale(cmds.textField('scaleTimeBy',query=True,tx=True))",
+                           gap=2, w=40, tx=1.0, ann='Scale selected curves from the first frame of playback')
+            item = geButton(name=ui.sftSel, parent=p, attach=item, label='SOFT_Sel',
+                            cmd="import webrImport as web\ncss = web.mod('curveSoftSelect')\css.toggleSelJob()",
+                            gap=20, w=70, bg=bgc)
+            item = geButton(name=ui.sbfrm, parent=p, attach=item, label='SUBfrm_X',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.subframe()",
+                            gap=0, w=70, bg=bgc, ann='subframes to whole frames ')
+            item = geButton(name=ui.unfy, parent=p, attach=item, label='UNIFY',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.unifyKeys()",
+                            gap=0, w=70, bg=bgc)
+            item = geButton(name=ui.bkInfty, parent=p, attach=item, label='BAKE_Infnty',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.bakeInfinity()",
+                            gap=0, w=70, bg=bgc)
+            item = geButton(name=ui.smth, parent=p, attach=item, label='SMOOTH',
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.smoothKeys()",
+                            gap=0, w=70, bg=bgc)
+            item = geButton(name=ui.expTgl, parent=p, attach=item, label='COLLAPSE',
+                            cmd="import webrImport as web\ngf = web.mod('graphFilter')\ngraphFilter.toggleExpand()",
+                            gap=0, w=70, bg=bgc)
     else:
         # clean UI
         d = ui.__dict__
@@ -196,7 +234,7 @@ def buttonsGE(*args):
             cmds.control(item, e=1, m=1)
 
 
-class GeBtn():
+class GraphEditorButtonNames():
     def __init__(self):
         # filter
         self.filD = 'FilterDefault'

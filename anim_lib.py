@@ -2,17 +2,21 @@ import maya.cmds as cmds
 import maya.mel as mel
 import os
 #
-# import constraint_lib as cn
 import webrImport as web
 # web
 cn = web.mod('constraint_lib')
+fr = web.mod('frameRange_lib')
+
 
 def mocapSkelAnim():
+    '''
+    forgot what this is for
+    '''
     sel = cmds.ls(sl=True)
     if len(sel) == 2:
         get = sel[0]
-        put = sel[1].split(':')[0]
-        mocap = 'mocap_'
+        # put = sel[1].split(':')[0]
+        # mocap = 'mocap_'
         grp = 'mocap_JNTS'
         if ':' in get:
             grpNS = get.split(':')[0] + ':' + grp
@@ -28,20 +32,22 @@ def mocapSkelAnim():
                         # update obj class attr to pasted version
                         if ':' in obj:
                             obj = obj.split(':')[1]
-                        crv.obj = put + ':' + obj
+                        # crv.obj = put + ':' + obj
                         # paste/buildCurve
                         # crv.build()
     else:
         print 'Select node from copy namespace, select node from paste namespace'
 
+
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
     global tell
     tell = what
-    if maya == True:
+    if maya:
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
 
 def toggleFrustum():
     import pymel.core as pm
@@ -65,88 +71,12 @@ def toggleFrustum():
     except:
         message('Select a camera to toggle Frustum.', maya=True)
 
-def proceduralVis(objs):
-    # preview toggle
-    attrs = ['parm_modifiers_p0_camera',
-    'parm_modifiers_p0_shadowMaps',
-    'parm_modifiers_p0_master']
-    if objs:
-        shapes = cmds.listRelatives(objs, type='shape', f=True)
-        proc = []
-        for shape in shapes:
-            if 'proceduralShape' in shape:
-                proc.append(shape)
-        if proc:
-            now = cmds.getAttr(proc[0] + '.' + attrs[0])
-            if now == True:
-                for shape in proc:
-                    for attr in attrs:
-                        cmds.setAttr(shape + '.' + attr, 0)
-                message('Visibility Off' + '--        ' + str(attrs), maya=True)
-            else:
-                for shape in proc:
-                    for attr in attrs:
-                        cmds.setAttr(shape + '.' + attr, 1)
-                message('Visibility On' + '--        ' + str(attrs), maya=True)
-        else:
-            message("No 'proceduralShape' found in selection", maya=True)
-    else:
-        message('Select a layout object(s).  ---  Expect shape attrs:  --  parm_modifiers_p0_camera  --  parm_modifiers_p0_shadowMaps  --  parm_modifiers_p0_master', maya=True)
-
-def proceduralPreview(objs, all=True):
-    # preview toggle
-    shapes = []
-    if all:
-        shapes = cmds.ls(type='shape')
-    else:
-        shapes = cmds.listRelatives(objs, type='shape', f=True)
-    proc = []
-    for shape in shapes:
-        if 'proceduralShape' in shape:
-            proc.append(shape)
-    if proc:
-        now = cmds.getAttr(proc[0] + '.glPreview')
-        if now == True:
-            for shape in proc:
-                cmds.setAttr(shape + '.glPreview', 0)
-            message('Preview Off', maya=True)
-        else:
-            for shape in proc:
-                cmds.setAttr(shape + '.glPreview', 1)
-            message('Preview On', maya=True)
-    else:
-        message("No 'proceduralShape' found in scene", maya=True)
-
-def proceduralBox():
-    # boundingbox toggle
-    scene = cmds.ls(type='shape')
-    proc = []
-    for shape in scene:
-        if 'proceduralShape' in shape:
-            proc.append(shape)
-    if proc:
-        now = cmds.getAttr(proc[0] + '.drawBound')
-        if now:
-            for shape in proc:
-                cmds.setAttr(shape + '.drawBound', 0)
-        else:
-            for shape in proc:
-                cmds.setAttr(shape + '.drawBound', 1)
-    else:
-        message("No 'proceduralShape' found in scene", maya=True)
-
-def layoutAnim(offset=1):
-    # cache offset
-    sel = cmds.ls(sl=True)
-    for obj in sel:
-        obj = obj.split('.')[0]
-        now = cmds.getAttr(obj + '.parm_modifiers_p6_offset')
-        cmds.setAttr(obj + '.parm_modifiers_p6_offset', now + offset)
 
 def locSize(lc, X=0.5):
     axis = ['X', 'Y', 'Z']
     for axs in axis:
             cmds.setAttr(lc + 'Shape.localScale' + axs, X)
+
 
 def locator(ro='zxy', size=0.1, constrain=False):
     locs = []
@@ -166,11 +96,12 @@ def locator(ro='zxy', size=0.1, constrain=False):
             cmds.xform(lc, t=t, ro=r)
             cmds.setAttr(lc + '.rotateOrder', roo)
             cmds.xform(lc, roo=ro)
-            if constrain == True:
+            if constrain:
                 cmds.parentConstraint(item, lc, mo=True)
         return locs
     else:
         cmds.warning('Select something!')
+
 
 def getRange():
     min = cmds.playbackOptions(q=True, minTime=True)
@@ -178,11 +109,6 @@ def getRange():
     current = cmds.currentTime(q=True)
     return min, max, current
 
-class GetRange():
-    def __init__(self):
-        self.min = cmds.playbackOptions(q=True, minTime=True)
-        self.max = cmds.playbackOptions(q=True, maxTime=True)
-        self.current = cmds.currentTime(q=True)
 
 def nonKey(obj):
     pos = ['tx', 'ty', 'tz']
@@ -190,27 +116,26 @@ def nonKey(obj):
     nonKeyT = []
     nonKeyR = []
     for axis in pos:
-        if cmds.getAttr(obj + '.' + axis, k=True) == False:
+        if not cmds.getAttr(obj + '.' + axis, k=True):
             at = axis.split('t')[1]
             nonKeyT.append(at)
     for axis in rot:
-        if cmds.getAttr(obj + '.' + axis, k=True) == False:
+        if not cmds.getAttr(obj + '.' + axis, k=True):
             at = axis.split('r')[1]
             nonKeyR.append(at)
     return nonKeyT, nonKeyR
+
 
 def changeRO(obj, ro):
     '''
     '''
     if cmds.getAttr(obj + '.rotateOrder', settable=1):
-        cn.uiEnable(controls='modelPanel', toggle=True)
+        cn.uiEnable(controls='modelPanel')
         r = getRange()
         autoK = cmds.autoKeyframe(q=True, state=True)
         cmds.autoKeyframe(state=False)
-        min = r[0]
-        max = r[1]
+        i = r[0]
         current = r[2]
-        i = min
         origRO = cmds.getAttr(obj + '.rotateOrder')
         cmds.currentTime(i)
         cmds.currentTime(cmds.findKeyframe(which='previous'))
@@ -224,9 +149,10 @@ def changeRO(obj, ro):
         cmds.currentTime(current)
         cmds.autoKeyframe(state=autoK)
         cn.eulerFilter(obj, tangentFix=True)
-        cn.uiEnable(controls='modelPanel', toggle=True)
+        cn.uiEnable(controls='modelPanel')
     else:
         message('FAIL. Rotate order is LOCKED or CONNECTED to a custom attribute.', maya=True)
+
 
 class SpaceSwitch():
     def __init__(self, obj):
@@ -248,8 +174,7 @@ class SpaceSwitch():
         keyStart
         keyEnd
         '''
-        self.rng = cn.GetRange()
-
+        self.rng = fr.Get()
 
     def store(self):
         '''
@@ -259,7 +184,7 @@ class SpaceSwitch():
         if self.keys:
             current = cmds.currentTime(q=True)
             # ui off
-            cn.uiEnable(controls='modelPanel', toggle=True)
+            cn.uiEnable(controls='modelPanel')
             # autokey state
             autoK = cmds.autoKeyframe(q=True, state=True)
             cmds.autoKeyframe(state=False)
@@ -271,7 +196,7 @@ class SpaceSwitch():
             # restore everything
             cmds.currentTime(current)
             cmds.autoKeyframe(state=autoK)
-            cn.uiEnable(controls='modelPanel', toggle=True)
+            cn.uiEnable(controls='modelPanel')
         else:
             message('No keys.', maya=True)
 
@@ -285,14 +210,14 @@ class SpaceSwitch():
         if self.keys:
             current = cmds.currentTime(q=True)
             # ui off
-            cn.uiEnable(controls='modelPanel', toggle=True)
+            cn.uiEnable(controls='modelPanel')
             # autokey state
             autoK = cmds.autoKeyframe(q=True, state=True)
             cmds.autoKeyframe(state=False)
             i = 0
             for key in self.keys:
                 if key >= self.rng.keyStart and key <= self.rng.keyEnd:
-                    message(str(key))
+                    # message(str(key))
                     cmds.currentTime(key)
                     cmds.xform(self.obj, m=self.mtrx[i], ws=True)
                     # cmds.xform(self.obj, t=self.pos[i], ws=True)
@@ -301,7 +226,7 @@ class SpaceSwitch():
                     cmds.setKeyframe(self.obj + '.rotate')
                     cmds.setKeyframe(self.obj + '.translate')
                     # getCurves for translate and rotate
-                    crv = getAnimCurves(self.obj)
+                    # crv = getAnimCurves(self.obj)
                     cn.eulerFilter(self.obj, tangentFix=True)
                 i = i + 1
             # tangent fix
@@ -309,9 +234,10 @@ class SpaceSwitch():
             # restore everything
             cmds.currentTime(current)
             cmds.autoKeyframe(state=autoK)
-            cn.uiEnable(controls='modelPanel', toggle=True)
+            cn.uiEnable(controls='modelPanel')
         else:
             message('No keys.', maya=True)
+
 
 def getAnimCurves(obj='', attrs=['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']):
     animCurves = cmds.findKeyframe(obj, c=True)
@@ -322,9 +248,10 @@ def getAnimCurves(obj='', attrs=['translateX', 'translateY', 'translateZ', 'rota
                 curves.append(crv)
     return curves
 
+
 def getKeyedFrames(obj):
     animCurves = cmds.findKeyframe(obj, c=True)
-    if animCurves != None:
+    if animCurves is not None:
         frames = []
         for crv in animCurves:
             framesTmp = cmds.keyframe(crv, q=True)
@@ -344,12 +271,17 @@ def getKeyedFrames(obj):
             message('Object ' + obj + ' has no keys')
         return None
 
+
 def changeRoMulti(ro='zxy'):
-	# changes rotate order of an object to the desired order without changing the pose. tangent will bust.
-	# will use current frame range
+    # changes rotate order of an object to the desired order without changing the pose. tangent will bust.
+    # will use current frame range
     sel = cmds.ls(sl=True)
-    for item in sel:
-        changeRO(item, ro=ro)
+    if sel:
+        for item in sel:
+            changeRO(item, ro=ro)
+    else:
+        cmds.warning('Select object(s)')
+
 
 def keyHi(v=0):
     cmds.select(hierarchy=True)
@@ -357,6 +289,7 @@ def keyHi(v=0):
     print h
     for item in h:
         cmds.setKeyframe(item, attribute='visibility', v=v)
+
 
 def matchObj():
     # queries dont work correctly when constraints, pairBlends and characterSets get involved
@@ -403,36 +336,28 @@ def matchObj():
     else:
         message('Select 2 objects.')
 
-def selectFngrs(R=False):
-    sel = cmds.ls(sl=True, fl=True)
-    ref = sel[0].split(':')[0]
-    cmds.select(clear=True)
-    for item in lists.fingers:
-        if R == True:
-            item = item.replace('l_', 'r_')
-        print item
-        cmds.select(ref + ':' + item, add=True)
 
 def shapeSize(obj=None, mltp=1):
     '''\n
     mltp = size multiplier of shape nodes
     '''
-    if obj == None:
-	# make a list from selection
-	obj = cmds.ls(sl=True, l=True)
+    if obj is None:
+        # make a list from selection
+        obj = cmds.ls(sl=True, l=True)
     elif type(obj) == list:
-	# no need to accomodate
-    	pass
+        # no need to accomodate
+        pass
     else:
-    	# obj must be a single item, make a list
-    	obj = [obj]
+        # obj must be a single item, make a list
+        obj = [obj]
         # run the loop on list
         for item in obj:
-        	shape = cmds.listRelatives(item, s=True, f=True)
-        	if shape != None:
-        	    for node in shape:
-            		if 'SharedAttr' not in node:
-            		    cmds.scale(mltp, mltp, mltp, node + '.cv[*]')
+            shape = cmds.listRelatives(item, s=True, f=True)
+            if shape is not None:
+                for node in shape:
+                    if 'SharedAttr' not in node:
+                        cmds.scale(mltp, mltp, mltp, node + '.cv[*]')
+
 
 def toggleRes():
     sel = cmds.ls(sl=True)
@@ -447,9 +372,10 @@ def toggleRes():
         cmds.setAttr(name + c + attrHi, 1)
         cmds.setAttr(name + c + attrLo, 0)
 
+
 def distributeKeys(count=3.0, destructive=True):
     sel = cmds.ls(sl=1, fl=True)
-    rng = cn.GetRange()
+    rng = fr.Get()
     if sel:
         # gather info
         autoK = cmds.autoKeyframe(q=True, state=True)
@@ -496,6 +422,7 @@ def distributeKeys(count=3.0, destructive=True):
     else:
         message('Select one or more objects', maya=1)
 
+
 def panelOnSelection():
     sel = cmds.ls(sl=1, fl=True)
     if len(sel) == 4:
@@ -511,6 +438,7 @@ def panelOnSelection():
 
 
 def importCurveShape(name='', scale=1.0, overRide=False):
+    # TODO: not working yet
     path = os.path.expanduser('~') + '/maya/controlShapes/'
     selection = cmds.ls(selection=True, tr=True)
     path = path + '/' + name + '.txt'

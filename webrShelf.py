@@ -130,7 +130,7 @@ def shelfAddButtons(*args):
                      h=wh, image='flushUn.png', command='import webrImport as web\ncs = web.mod("characterSet_lib")\ncs.unflush()')
 
     cmds.shelfButton(label='graph editor buttons', annotation='graph editor buttons', w=wh,
-                     h=wh, image='geBttns.png', command='import webrImport as web\nds = web.mod("display_lib")\nds.buttonsGE()')
+                     h=wh, image='geBttns.png', command='import webrImport as web\nds = web.mod("display_lib")\nds.graphEditorButtons()')
 
     cmds.shelfButton(label='gather frame numbers', annotation='gather frame numbers of first selection\ninsert keys on same frames to all consecutive objects\nremove non matching frames',
                      w=wh, h=wh, image='matchKeys.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.matchKeyedFramesLoop()')
