@@ -69,6 +69,8 @@ class CSUI(object):
         # TODO: add help section of some sort
         # TODO: projection tool
         # TODO: witness camera tool
+        # TODO: locator scale default multiplier
+        # TODO: user pref files
 
         cmds.showWindow(self.win)
 

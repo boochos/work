@@ -40,6 +40,7 @@ def mod(modulename=''):
 
     # actual function
     # paths
+    print modulename, '&&&&&&&&&&&&&&&&&&&&&&'
     urlPath = webPath + modulename + '.py'
     localPath = varPath + modulename + '.py'
     if local:

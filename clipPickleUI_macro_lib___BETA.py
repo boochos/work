@@ -10,6 +10,7 @@ import webrImport as web
 ui = web.mod('clipPickleUI_micro_lib___BETA')
 cp = web.mod('clipPickle_lib')
 al = web.mod('anim_lib')
+# TODO: add pose import and pose percentage import
 
 
 def message(what='', maya=False):
@@ -64,6 +65,7 @@ class CPUI(object):
         self.populateClipList()
 
     def cmdExport(self, *args):
+        # TODO: overwrite or insert option
         # collect selections in UI
         sel = self.cmdCollectSelections()
         # export
@@ -71,7 +73,7 @@ class CPUI(object):
         comment = cmds.textField(self.control.field2, q=True, tx=True)
         version = '.' + self.cmdCreateVersionNumber()
         #
-        cp.clipSave(name=name + version, path=self.path, comment=comment)
+        cp.clipSave(name=name + version, comment=comment)
         cmds.textScrollList(self.control.scroll1, edit=True, ra=True)
         self.populateClipList()
         path = os.path.join(self.path, name + '.clip')

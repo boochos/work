@@ -471,3 +471,31 @@ def importCurveShape(name='', scale=1.0, overRide=False):
                     OpenMaya.MGlobal.displayError('CV count[' + str(len(cmds.getAttr(shapeNode + '.cv[*]'))) + '] from selected does not match import CV count[' + str(len(cvInfo)) + ']')
     else:
         OpenMaya.MGlobal.displayError('Select a NURBS curve if you truly want to proceed...')
+
+
+def rpms(rpm=360):
+    '''
+    x value change per frame
+    '''
+    return rpm * 0.25
+
+
+def addSection(rpm=100, frame=110):
+    '''
+    used to setup rpm wedge
+    '''
+    #
+    sel = cmds.ls(sl=1)[0]
+    attr = 'rotateY'
+    crv = cmds.findKeyframe(sel + '.' + attr, c=True)
+    #
+    r = rpms(rpm)
+    print '________________'
+    print '_____ for', rpm, 'rpm'
+    print r, ' x value'
+    x = r * frame
+    print x, ' on frame'
+    cmds.setKeyframe(crv, time=(1000, 1000), value=0, shape=False)
+    cmds.setKeyframe(crv, time=(1000 + frame, 1000 + frame), value=x, shape=False)
+    cmds.selectKey(crv)
+    cmds.keyframe(animation='keys', relative=1, timeChange=(0 - (frame + 1)))

@@ -193,12 +193,18 @@ def switchRHand():
 
 
 def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False):
-    # TODO: add option to not keep current anim (dont bake offset control)
+    # TODO: add option to not keep current anim (don't bake offset or up controls )
+    # TODO: change first 2 vars to be None by default
     locs = []
     if objAim == '':
         sel = cmds.ls(sl=1)  # order = tip,base
         objAim = sel[0]
         objBase = sel[1]
+    # sort axis
+    aAxs = ['.tx', '.ty', '.tz']
+    aAxs = aAxs[aim.index(1.0)]
+    uAxs = ['.tx', '.ty', '.tz']
+    uAxs = uAxs[u.index(1.0)]
     # distance
     offset = ds.measureDis(obj1=objAim, obj2=objBase)
     # place locator at locale A and constrain
@@ -216,7 +222,7 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
     # print locUp
     # parent up locator, move up in ty, unparent
     cmds.parent(locUp, locB)
-    cmds.setAttr(locUp + '.ty', offset)
+    cmds.setAttr(locUp + uAxs, offset)
     # constraint up locator to locator B
     cmds.parentConstraint(objBase, locUp, mo=1)
     # parent locUp to locator A, bake up locator
@@ -226,7 +232,7 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
     # aim offset
     locAim = cn.locator(obj=objBase, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__')[0]
     cmds.parent(locAim, locB)
-    cmds.setAttr(locAim + '.tx', offset)
+    cmds.setAttr(locAim + aAxs, offset)
     cmds.parent(locAim, locA)
     cmds.parentConstraint(objBase, locAim, mo=1)
     cn.matchKeyedFrames(A=objAim, B=locAim, subtractive=True)
@@ -261,9 +267,9 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         else:
             sel = sel[0]
         # sort axis
-        aAxs = ['tx', 'ty', 'tz']
+        aAxs = ['.tx', '.ty', '.tz']
         aAxs = aAxs[aim.index(1.0)]
-        uAxs = ['tx', 'ty', 'tz']
+        uAxs = ['.tx', '.ty', '.tz']
         uAxs = uAxs[u.index(1.0)]
         # place locators on selection
         coreL = cn.locator(obj=sel, constrain=False, X=5, color=15, suffix='__CORE__')[0]
@@ -277,9 +283,9 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         cmds.parent(upG, coreL)
         cmds.parent(upL, upG)
         # offsets
-        cmds.setAttr(aimL + '.' + aAxs, offset)
-        cmds.setAttr(rootL + '.' + aAxs, offset * -1)
-        cmds.setAttr(upG + '.' + uAxs, abs(offset))
+        cmds.setAttr(aimL + aAxs, offset)
+        cmds.setAttr(rootL + aAxs, offset * -1)
+        cmds.setAttr(upG + uAxs, abs(offset))
         # constraints, prep for basking
         cmds.parentConstraint(sel, aimL, mo=True, sr=('x', 'y', 'z'))
         cmds.parentConstraint(sel, upL, mo=True, sr=('x', 'y', 'z'))

@@ -169,6 +169,9 @@ def shelfAddButtons(*args):
                      w=wh, h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()')
     # TODO: add quick undo button
     # TODO: add turn on ui button
+    # TODO: timewarp tool
+    # TODO: rivet
+    # TODO: mirror
 
 
 def getIcons(download=False):

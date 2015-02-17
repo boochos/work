@@ -10,6 +10,14 @@ import webrImport as web
 ui = web.mod('ui_micro_lib')
 cs = web.mod('characterSet_lib')
 
+# TODO: ui overhaul
+# include import export in one window
+# easier string replacement, include char sets in replace consideration
+# include membership editing in ui
+# remove location editing, force paths
+# add multi namespace remapping
+# fix problem with reopening window while its open
+
 
 class CSUI(object):
     '''
@@ -242,8 +250,8 @@ class CSUI(object):
         stp = '  '
         self.message('')
         cmds.textScrollList(self.membersForm.scroll, edit=True, ra=True)
-        set = cmds.textScrollList(self.setsForm.scroll, query=True, si=True)
-        members = cmds.character(set, query=True)
+        charSet = cmds.textScrollList(self.setsForm.scroll, query=True, si=True)
+        members = cmds.character(charSet, query=True)
         if members:
             members.sort()
             for member in members:
@@ -349,7 +357,7 @@ class CSUI(object):
 
     def cmdExport(self, *args):
         # this needs to account for user fed file name into path field
-        set = cmds.textScrollList(self.setsForm.scroll, q=True, si=True)
+        charSet = cmds.textScrollList(self.setsForm.scroll, q=True, si=True)
         # file = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
         path = cmds.textField(self.pathForm.field, q=True, tx=True)
         '''
@@ -359,12 +367,12 @@ class CSUI(object):
         else:
             self.message('Select a character Set in the middle column.')
             '''
-        if set:
+        if charSet:
             if not os.path.isdir(path):
-                set = set[0].replace(' ', '')
-                cs.exportFile(set, path)
+                charSet = charSet[0].replace(' ', '')
+                cs.exportFile(charSet, path)
                 self.populateBrowse()
-                self.message('Set   ' + set + '   exported to   ' + path)
+                self.message('Set   ' + charSet + '   exported to   ' + path)
             else:
                 self.message('Add file name to path field. Action aborted.')
         else:

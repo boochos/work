@@ -433,6 +433,7 @@ def currentSet2():
 
 def smartActivateSet(*args):
     set = GetSetOptions()
+    # TODO: make smarter, behaviour should traverse up and down the parent chain
     # script will error when activateSet() returns {None} for .upper or .lower
     if len(set.sel) != 0:
         if len(set.sel) > 1:
