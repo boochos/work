@@ -3,6 +3,7 @@ import maya.cmds as cmds
 import maya.mel as mel
 # TODO: not working at all
 
+
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
     if maya:

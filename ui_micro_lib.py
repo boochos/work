@@ -1,17 +1,25 @@
 from __future__ import with_statement
-import os, sys, sys_lib, fnmatch
-import maya.cmds  as cmds
-import maya.mel   as mel
+import os
+import sys
+import sys_lib
+import fnmatch
+import maya.cmds as cmds
+import maya.mel as mel
 import pymel.core as pm
 import ast
 
 
-def message(what=''):
-    mm.eval('print \"' + '-- ' + what + ' --' + '\";')
-    # print "\n"
+def message(what='', maya=True):
+    what = '-- ' + what + ' --'
+    if maya:
+        mel.eval('print \"' + what + '\";')
+    else:
+        print what
+
 
 class Form(object):
     # builds text field or list with heading
+
     def __init__(self, text='', label='', name='', parent=None, h=15, w=15, createField=False, createList=False, allowMultiSelection=False, cmdSingle='print \'single click\'', cmdDouble='print \'double click\''):
         self.parent = parent
         self.text = text
@@ -33,9 +41,9 @@ class Form(object):
         self.cleanUI()
         self.buildForm()
         self.buildHeading()
-        if createField == True:
+        if createField:
             self.buildField()
-        if createList == True:
+        if createList:
             self.buildList()
 
     def cleanUI(self):
@@ -65,7 +73,9 @@ class Form(object):
         attachControl = [(self.scroll, 'top', 0, self.heading)]
         cmds.formLayout(self.form, edit=True, attachForm=attachForm, attachControl=attachControl)
 
+
 class Button(object):
+
     def __init__(self, name='', label='', cmd='', parent='', moveUp=20):
         self.name = name
         self.label = label
@@ -73,6 +83,7 @@ class Button(object):
         self.parent = parent
         self.moveUp = moveUp
         self.new()
+
     def new(self):
         cmds.setParent(self.parent)
         self.name = cmds.button(self.name, label=self.label, c=self.cmd)
@@ -83,9 +94,10 @@ class Button(object):
 class Action(object):
     # builds row of buttons for bottom of window
     # removed from variables: cmdFlush='print \'None\'', cmdUnflush='print \'None\'',
+
     def __init__(self, name, parent=None, h=15, w=80,
-      cmdAction='', cmdCancel='', cmdOpen='', cmdFilter='print \'None\'',
-      filters=['.chr', '.txt', '.mb', '.ma', '*.*'], label=''):
+                 cmdAction='', cmdCancel='', cmdOpen='', cmdFilter='print \'None\'',
+                 filters=['.chr', '.txt', '.mb', '.ma', '*.*'], label=''):
         self.parent = parent
         self.filters = filters
         self.illegalChar = ['.', '*']
@@ -164,12 +176,14 @@ class Action(object):
         attachControl = [(self.unflushButton, 'right', 5, self.flushButton)]
         cmds.formLayout(self.form, edit=True, attachForm=attachForm, attachControl=attachControl)
 
+
 class ActionCollection(object):
     # builds row of buttons for bottom of window
+
     def __init__(self, name, parent=None, h=15, w=80,
-      cmdAction='', cmdCancel='', label=''):
+                 cmdAction='', cmdCancel='', label=''):
         self.parent = parent
-        self.filters = filters
+        #self.filters = filters
         self.illegalChar = ['.', '*']
         self.form = name + '_form'
         self.opt = name + '_opt'

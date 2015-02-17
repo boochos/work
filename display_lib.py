@@ -129,6 +129,7 @@ def geFieldTx(v=''):
 def graphEditorButtons(*args):
     # TODO: add button to distribute keys on selected curves
     # TODO: use dif layout, window gets locked to a min size
+    # TODO: should work on all graph editors, needs to be smarter
     # ui names
     ui = GraphEditorButtonNames()
     # check where to build
@@ -235,6 +236,7 @@ def graphEditorButtons(*args):
 
 
 class GraphEditorButtonNames():
+
     def __init__(self):
         # filter
         self.filD = 'FilterDefault'

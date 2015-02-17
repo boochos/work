@@ -6,7 +6,7 @@ libs = ['download_lib.py', 'downloadFiles_lib.py', 'fileMan_lib', 'characterSet_
         'animCurve_lib.py', 'animCopyPaste_lib.py', 'animation_library_manager.py',
         'anim_lib.py', 'ui_micro_lib.py', 'sys_lib.py', 'playblast_lib.py', 'togglePlate.py',
         'graphFilter.py', 'curveSoftSelect.py', 'pairSelectList.txt', 'animRig_lib.py', 'clipPickle_lib.py',
-        'clipPickleUI_micro_lib___BETA.py', 'clipPickleUI_macro_lib___BETA.py']
+        'clipPickleUI_micro_lib.py', 'clipPickleUI_macro_lib.py']
 
 # icons
 icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',

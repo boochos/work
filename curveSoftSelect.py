@@ -8,6 +8,7 @@ import webrImport as web
 # web
 ds = web.mod('display_lib')
 
+# TODO: use Castejeau method to draw nicer curve
 
 # global job id
 idB = None
@@ -347,7 +348,7 @@ def blendWeight2(numOfPoints=1, i=1, function=2, falloff=0.0):
             decay = falloff / numOfPoints
         else:
             decay = 0
-        # #weight[0] = math.cos(math.radians(iDegree*i))
+        # weight[0] = math.cos(math.radians(iDegree*i))
         weight[0] = math.cos(math.radians(iDegree * i))
         weight[1] = 1 - weight[0]
         # weight[1] =  weight[1]/math.exp(decay*(len(List) -(i)))
@@ -360,7 +361,7 @@ def blendWeight2(numOfPoints=1, i=1, function=2, falloff=0.0):
             decay = falloff / numOfPoints
         else:
             decay = 0
-        # #weight[1] = math.sin(math.radians(iDegree*i))
+        # weight[1] = math.sin(math.radians(iDegree*i))
         weight[1] = math.sin(math.radians(iDegree * i))
         weight[0] = 1 - weight[1]
         # weight[0] = weight[0]/math.exp(decay*(i+1))

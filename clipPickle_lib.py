@@ -5,8 +5,6 @@ import getpass
 import os
 import json
 
-#
-
 
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
@@ -695,7 +693,7 @@ def populate_from_json(cls, dct={}):
 
 
 def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, putLayerList=[], putObjectList=[],
-            start=None, end=None):
+              start=None, end=None):
     '''
     apply animation from file
     #FIX: note <>

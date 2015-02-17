@@ -1,3 +1,0 @@
-'Scarecrow', 'C:/VFX/projects/Scarecrow'
-'Shots','C:/VFX/projects/Scarecrow/Work'
-'AnimDailies', 'C:/VFX/projects/Scarecrow/IO/_Output'
