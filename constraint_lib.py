@@ -939,9 +939,10 @@ class AnimCrv(Key):
 
 
 def consolidatePairBlends():
-    # FIXME: If given control has 2 pairblends consolidate
+    # BUG: If given control has 2 pairblends consolidate
     # connected check if the source is the same constraint. If yes, consolidate or check to make sure weight attr is affected by both
     pass
+
 
 def bakeUndo():
     que = cmds.undoInfo(q=1, un=1)

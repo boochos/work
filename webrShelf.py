@@ -6,7 +6,7 @@ import os
 import webrImport as web
 # web
 wf = web.mod('webrFiles_lib')
-# BUG: when new version is pushed, server lags causing syncing problems. Short find a way to time the updates
+# TODO: when new version is pushed, server lags causing syncing problems. Short find a way to time the updates
 
 
 def message(what='', maya=True):

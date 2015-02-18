@@ -701,7 +701,7 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     add option to not apply layer settings to layers with same name,
     apply to selected object no matter what name discrepancies exist
     '''
-    # TODO:linear curves dont import correctly
+    # BUG:linear curves dont import correctly
     sel = cmds.ls(sl=1, fl=1)
     # set import attrs
     clp = clipOpen(path=path)
@@ -769,7 +769,7 @@ def insertKey(clp, frame=0.0):
 
 
 def insertKeyValue(attr, frame=0.0):
-    # hacky, lack of calculus skills method, good for approximation.
+    # HACK: lack of calculus skills method, good for approximation.
     # does not consider tangents, only key positions
     val = 0.0
     i = 0

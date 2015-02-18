@@ -90,14 +90,14 @@ def listAll():
 def listTop():
     top = []
     all = listAll()
-    if len(all) > 0:
+    if all:
         for set in all:
             cnnct = cmds.listConnections(set + '.message', d=True, s=False)
             if cnnct:
                 # case 1, partition node connection
                 for node in cnnct:
                     if cmds.objExists(node):
-                    # connections are returned that are not objects
+                        # connections are returned that are not objects
                         if cmds.nodeType(node) == 'partition':
                             top.append(set)
                             break
@@ -110,7 +110,7 @@ def listTop():
                 top.append(set)
         return top
     else:
-        message('here 6')
+        message('No character sets exist')
         return []
 
 
@@ -377,6 +377,7 @@ def activateSet(setList):
 
 
 class GetSetOptions():
+
     def __init__(self):
         # attrs
         # when 'multiple' is active as a set, active objects can be found if a connection is exists to 'set1'

@@ -7,6 +7,7 @@ cs = web.mod('characterSet_lib')
 cn = web.mod('constraint_lib')
 ds = web.mod('display_lib')
 ac = web.mod('animCurve_lib')
+# TODO: add new locators in rigs to character sets if they are attached
 
 
 def message(what='', maya=True):

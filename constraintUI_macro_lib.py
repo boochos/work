@@ -16,6 +16,7 @@ def message(what='', maya=False):
 
 
 class CSUI(object):
+
     '''
     Build CharacterSet UI
     '''
@@ -68,7 +69,7 @@ class CSUI(object):
         # TODO: delete constraint button
         # TODO: add help section of some sort
         # TODO: projection tool
-        # TODO: witness camera tool
+        # TODO: witness camera tool, point and parent constraint options, could try heads up sliders fir fail safe
         # TODO: locator scale default multiplier
         # TODO: user pref files
 
@@ -186,7 +187,7 @@ class CSUI(object):
 
     def cmdParentRig(self, *args):
         ar = web.mod('animRig_lib')
-        ar.parentRig(bake=True)
+        ar.parentRig()
         message('parent rig built. -- new control Selected ', maya=True)
 
     def cmdAimRig(self, *args):

@@ -1,12 +1,6 @@
 from __future__ import with_statement
-import os
-import sys
-import sys_lib
-import fnmatch
 import maya.cmds as cmds
 import maya.mel as mel
-import pymel.core as pm
-import ast
 
 
 def message(what='', maya=True):

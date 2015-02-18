@@ -6,7 +6,7 @@ def setProjectFromFilename(dirVar):
     path = cmds.file(query=True,sceneName =True)
     if len(path) > 0:
         idx = path.rfind(dirVar) 
-        if  idx > -1:
+        if idx > -1:
             setPath = path[:idx+2]
             m=mm.eval('setProject "' + setPath + '";')
             print '-- Project set to: %s' %(setPath)
@@ -33,7 +33,6 @@ def getDate(*args):
         day = '0' + str(date.day)
     else:
         day = str(date.day)
-    
     return '%s, %s, %s' % (year, month, day)
 
 #-------------

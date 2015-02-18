@@ -19,9 +19,9 @@ class RPM():
         try:
             self.attr = cmds.channelBox('mainChannelBox', q=True, sma=True)[0]
             self.obj = cmds.channelBox('mainChannelBox', q=True, mol=True)[0]
-            self.label = self.hud + '__' + self.obj + '.' + self.attr
+            self.label = self.hud + '__' + self.obj.split(':')[1] + '.' + self.attr
         except:
-            cmds.warning('Select an attr in the ChannelBox to opertae on.')
+            cmds.warning('Select an attr in the ChannelBox to operate on.')
 
     def avg(self):
         '''
@@ -79,3 +79,19 @@ def addSection(rpm=100, startFrame=1000, totalFrames=110):
     cmds.setKeyframe(crv, time=(startFrame + totalFrames, startFrame + totalFrames), value=x, shape=False)
     cmds.selectKey(crv)
     cmds.keyframe(animation='keys', relative=1, timeChange=(0 - (totalFrames + 1)))
+
+
+def tireRotation():
+    # TODO: tire rotation, figure it out, copied from net
+    '''
+    you'll want to link the tire's rotation (in example) in the z axis to the translation in the x axis...
+    you'll need to get the diameter of that tire, so use a distance tool to find it...
+    once you got that, open up your handy dandy calculator and the formula for the circumference is " 2*3.14*diameter ". 
+    Once you get that number, divide 360 by that number.
+    so say the diam of the tyre was 4 then the circumference would be 25.13, and 360 / 25.13 = 14.33. 
+    So what this means is that for every unit travelled in the x axis, the tyre will rotate 14.33 degrees.
+    So to get this to work using mel would look something like this..
+    tyre.rotateZ = tyre.translateX * 14.33;
+    so what this says is that for every 1 unit travelled in x, the rotate is equal to that times 14.33, so if it went 1 unite, 1 * 14.33 is 14.33 degrees....
+    '''
+    pass

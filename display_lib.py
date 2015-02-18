@@ -169,7 +169,7 @@ def graphEditorButtons(*args):
                             cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.holdCrv(postCurrent=False)",
                             gap=5, bg=[0.4, 0.2, 0.2], ann='hold value of selected curve to the left')
             item = geButton(name=ui.hldAll, parent=p, attach=item, label='HOLD',
-                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\na.holdCrv()",
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.holdCrv()",
                             gap=0, w=45, bg=[0.5, 0.2, 0.2], ann='hold value of selected curve')
             item = geButton(name=ui.hldPost, parent=p, attach=item, label='-->',
                             cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.holdCrv(preCurrent=False)",
@@ -586,6 +586,10 @@ def clearKey():
 
 
 def altFrame(*args):
+    # BUG: fails if shape node is selected
+    # cmds.nodeType(sel), object type
+    # cmds.listRelatives(sel, parent=1), use that to find parent of objects in selection
+    # try using while loop to iterate through parents
     pnl = cmds.getPanel(withFocus=True)
     typ = cmds.getPanel(typeOf=pnl)
     if typ == 'modelPanel':

@@ -17,9 +17,11 @@ scroll = None
 
 
 class CSUI(object):
+
     '''
     Build CharacterSet UI
     '''
+
     def __init__(self, path=os.path.expanduser('~') + '/maya/selectionSets', filters=['.sel', '.txt', '.mb', '.ma', '*.*'], columnWidth=200):
         # external
         self.path = path
@@ -298,7 +300,7 @@ class CSUI(object):
             print 'here'
 
     def cmdAddMaster(self, *args):
-        # FIXME: not sure where this is used
+        # TODO: not sure where this is used
         masters = cmds.textScrollList(self.selectionForm.scroll, q=True, si=True)
         if masters:
             path = ss.defaultKeyPath()
