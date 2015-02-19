@@ -196,6 +196,9 @@ def switchRHand():
 def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False):
     # TODO: add option to not keep current anim (don't bake offset or up controls )
     # TODO: change first 2 vars to be None by default
+    # BUG: does not support negative numbers for aim vectors, use for offset direction
+    # BUG: turns off auto key, maybe cuz the aim object had no keys
+    # BUG: every frame gets keyed, happens cuz aim obj has no keys.. is actually normal behaviour
     locs = []
     if objAim == '':
         sel = cmds.ls(sl=1)  # order = tip,base

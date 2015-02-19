@@ -157,10 +157,10 @@ def shelfAddButtons(*args):
                      image='AnimPaste.xpm', command='import webrImport as web\nalm = web.mod("animation_library_manager")\nancop = alm.AnimationToolbox()\nancop.animPaste()')
 
     cmds.shelfButton(label='anim is imported from a file', annotation='anim is imported from a file', w=wh, h=wh,
-                     image='AnimImport.xpm', command='import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipApply(ns=cmds.ls(sl=1)[0].split(":")[0])')
+                     image='AnimImport.xpm', command='import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipApply(path=cp.clipDefaultTempPath() + "tempClip.clip")')
 
     cmds.shelfButton(label='anim is exported to a file', annotation='anim is exported to a file', w=wh,
-                     h=wh, image='AnimExport.xpm', command='import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipSave()')
+                     h=wh, image='AnimExport.xpm', command='import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipSave(name="tempClip", temp=True)')
 
     cmds.shelfButton(label='speed attribute is added', annotation='speed attribute is added', w=wh,
                      h=wh, image='kmh.xpm', command='import webrImport as web\nds = web.mod("display_lib")\nds.speed(local=0)')
@@ -170,6 +170,7 @@ def shelfAddButtons(*args):
     # TODO: add quick undo button
     # TODO: add turn on ui button
     # TODO: timewarp tool
+    # TODO: timewarp with path anim, uisng some combo to sync path anim to, anim layer as time warp to keep object anim on same spot on curve
     # TODO: rivet
     # TODO: mirror
 

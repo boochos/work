@@ -4,6 +4,7 @@ import time
 import getpass
 import os
 import json
+# TODO: add new class to deal with multi ref selections
 
 
 def message(what='', maya=True):
@@ -43,7 +44,7 @@ def uiEnable(controls='modelPanel'):
 class Key():
 
     def __init__(self, obj='', attr='', crv='', frame=0.0, offset=0, weightedTangents=None, auto=True):
-        # dont think this currently accounts for weighted tangents
+        # BUG: tangent angles are being overridden by something
         self.obj = obj
         self.attr = attr
         self.frame = frame
@@ -593,11 +594,11 @@ class Clip(Layer):
                 layer.putObjects()
 
 
-def clipSave(name='clipTemp', comment='', poseOnly=False):
+def clipSave(name='clipTemp', comment='', poseOnly=False, temp=False):
     '''
     save clip to file
     '''
-    path = clipPath(name=name + '.clip')
+    path = clipPath(name=name + '.clip', temp=temp)
     clp = Clip(name=name, comment=comment, poseOnly=poseOnly)
     clp.get()
     # print clp.name
@@ -701,7 +702,9 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     add option to not apply layer settings to layers with same name,
     apply to selected object no matter what name discrepancies exist
     '''
-    # BUG:linear curves dont import correctly
+    # BUG:linear curves don't import correctly
+    # TODO: apply should only take name, path should be predetermined
+    # update all other functions that use the behaviour
     sel = cmds.ls(sl=1, fl=1)
     # set import attrs
     clp = clipOpen(path=path)
@@ -722,8 +725,11 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
         cmds.select(sel)
 
 
-def clipPath(name=''):
-    path = clipDefaultPath()
+def clipPath(name='', temp=False):
+    if temp:
+        path = clipDefaultTempPath()
+    else:
+        path = clipDefaultPath()
     if os.path.isdir(path):
         return os.path.join(path, name)
     else:
@@ -737,15 +743,24 @@ def clipDefaultPath():
     return path
 
 
+def clipDefaultTempPath():
+    user = os.path.expanduser('~')
+    path = user + '/maya/clipTemp/'
+    return path
+
+
 def onCurrentFrameOffset(start=0.0):
-    current = cmds.currentTime(q=True)
-    offset = 0.0
-    if start > current:
-        offset = current - start
+    if start:
+        current = cmds.currentTime(q=True)
+        offset = 0.0
+        if start > current:
+            offset = current - start
+        else:
+            offset = ((start - current) * -1.0) + 0.0
+        # print offset
+        return offset
     else:
-        offset = ((start - current) * -1.0) + 0.0
-    # print offset
-    return offset
+        return 0.0
 
 
 def insertKey(clp, frame=0.0):

@@ -519,7 +519,7 @@ def toggleMembershipToCurrentSet():
             for attr in attrs:
                 if cmds.character(obj + '.' + attr, im=current.currentSet()) is False:
                     print attr, obj
-                    cmds.character(obj + '.' + attr, fe=current.currentSet())
+                    cmds.character(obj + '.' + attr, fe=current.currentSet())  # BUG: sometimes throws error, only one set was in scene, no sub chars
                     print attr, '  added'
                 else:
                     output = cmds.character(obj + '.' + attr, rm=current.currentSet())

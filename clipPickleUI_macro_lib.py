@@ -11,6 +11,8 @@ ui = web.mod('clipPickleUI_micro_lib')
 cp = web.mod('clipPickle_lib')
 al = web.mod('anim_lib')
 # TODO: add pose import and pose percentage import
+# TODO: add UI support for multi ref import/exports
+# each ref gets its on class, objects with no namespace get their own class
 
 
 def message(what='', maya=False):
@@ -22,6 +24,7 @@ def message(what='', maya=False):
 
 
 class CPUI(object):
+
     '''
     Build CharacterSet UI
     '''

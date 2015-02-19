@@ -175,11 +175,11 @@ def graphEditorButtons(*args):
                             cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.holdCrv(preCurrent=False)",
                             gap=0, bg=[0.4, 0.2, 0.2], ann='hold value of selected curve to the right')
             item = geButton(name=ui.sclDwn, parent=p, attach=item, label='-',
-                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(0.995)",
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(0.99)",
                             gap=5, bg=[0.1, 0.4, 0.4], ann='scale curve:\npivot @ key = keys with same values selected\npivot @ 0     = keys with dif values selected\n')
             item = geHeading(name=ui.sclTx, parent=p, attach=item, label='SCALE', gap=0, w=45, bgc=[0.25, 0.4, 0.4])
             item = geButton(name=ui.sclUp, parent=p, attach=item, label='+',
-                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(1.005)",
+                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(1.01)",
                             gap=0, bg=[0.1, 0.4, 0.4], ann='scale curve:\npivot @ key = keys with same values selected\npivot @ 0     = keys with dif values selected\n')
             item = geButton(name=ui.flp, parent=p, attach=item, label='FLIP',
                             cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.scaleCrv(-1)",
@@ -218,7 +218,7 @@ def graphEditorButtons(*args):
                             cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.smoothKeys()",
                             gap=0, w=70, bg=bgc)
             item = geButton(name=ui.expTgl, parent=p, attach=item, label='COLLAPSE',
-                            cmd="import webrImport as web\ngf = web.mod('graphFilter')\ngraphFilter.toggleExpand()",
+                            cmd="import webrImport as web\ngf = web.mod('graphFilter')\ngf.toggleExpand()",
                             gap=0, w=70, bg=bgc)
     else:
         # clean UI
