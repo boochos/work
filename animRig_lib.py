@@ -197,8 +197,7 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
     # TODO: add option to not keep current anim (don't bake offset or up controls )
     # TODO: change first 2 vars to be None by default
     # BUG: does not support negative numbers for aim vectors, use for offset direction
-    # BUG: turns off auto key, maybe cuz the aim object had no keys
-    # BUG: every frame gets keyed, happens cuz aim obj has no keys.. is actually normal behaviour
+    # TODO: add parent option for aim control
     locs = []
     if objAim == '':
         sel = cmds.ls(sl=1)  # order = tip,base
@@ -256,6 +255,8 @@ def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
 
 def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, masterControl=False, masterPosition=0):
     '''
+    master control: moves entire constraint rig
+    master position options:
     0 = core
     1 = root
     2 = aim
@@ -369,6 +370,7 @@ def parentRig(*args):
     '''
     sometimes adds 2 pairblends, needs to be fixed as it breaks active char set key ticks.
     '''
+    # TODO: add option to not bake anim
     # store selection
     sel = cmds.ls(sl=True)
     # place 3 locators on selection

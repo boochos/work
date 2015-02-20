@@ -387,28 +387,12 @@ def deleteList(objects):
             message(typ + ' | ' + obj + '  is deleted')
 
 
-def bakeStepConstraint():
-    # BUG: broken function, likely not being used anywhere
-    old = cmds.listAttr(B, k=True)
-    for attr in old:
-        try:
-            if cmds.setKeyframe(B + '.' + attr, i=True) == 0:
-                cmds.setKeyframe(B + '.' + attr)
-        except:
-            print 'sanity check: FAILED ATTRS ____', B, attr
-    # check if new constraint blend attr is created after keying
-    new = cmds.listAttr(B, k=True)
-    created = list(set(new) - set(old))
-    if len(created) != 0:
-        for attr in created:
-            cmds.setKeyframe(B + '.' + attr, v=1)
-
-
 def bakeStep(obj, time=(), sim=False, uiOff=False):
     '''
     custom bake function
     sim = keys only, dont step through frame at a time
     '''
+    # TODO: account for timewarp curve
     if uiOff:
         uiEnable(controls='modelPanel')
     # r = getRange()
@@ -450,6 +434,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         loc = locatorOnSelection(
             ro='zxy', X=1.0, constrain=True, toSelection=True)[0]
         bakeStep(loc, time=(time[0], time[1]), sim=True, uiOff=uiOff)
+        cmds.autoKeyframe(state=autoK)
         return None
     #
     cmds.currentTime(i)
@@ -472,6 +457,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         else:
             message('no keys__________________________')
             bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
+            cmds.autoKeyframe(state=autoK)
             return None
     if attrs:
         # add option to only correct tangents of baked frames

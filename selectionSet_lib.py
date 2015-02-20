@@ -176,7 +176,7 @@ def selectSet(path=defaultPath()):
                         obj = ns + obj
                         if obj not in selection:
                             plus.append(obj)
-        if len(plus) > 0:
+        if plus:
             cmds.select(plus, add=True)
             message(msg, maya=True)
         else:
