@@ -25,7 +25,7 @@ class CSUI(object):
         # external
         self.columnWidth = columnWidth
         # internal
-        self.windowName = 'CN Tools'
+        self.windowName = 'ConstraintTools'
         # store/restore
         self.objects = []
         self.animBucket = []
@@ -38,6 +38,14 @@ class CSUI(object):
     def cleanUI(self, *args):
         try:
             cmds.deleteUI(self.windowName)
+        except:
+            pass
+
+    def cleanUI(self, *args):
+        # TODO: script job keeps running if window is closed with X button
+        try:
+            cmds.deleteUI(self.windowName)
+            toggleJob()
         except:
             pass
 

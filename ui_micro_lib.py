@@ -100,16 +100,12 @@ class Action(object):
         self.cancelButton = name + '_cancelButton'
         self.actionButton = name + '_actionButton'
         self.openButton = name + '_openButton'
-        # self.flushButton   = name + '_flushButton'
-        # self.unflushButton = name + '_unflushButton'
         self.actionMessage = name + '_actionMessage'
         self.label = label
         self.cmdFilter = cmdFilter
         self.cmdCancel = cmdCancel
         self.cmdAction = cmdAction
         self.cmdOpen = cmdOpen
-        # self.cmdFlush      = cmdFlush
-        # self.cmdUnflush    = cmdUnflush
         self.ui = [self.form, self.opt, self.cancelButton, self.actionButton]
         self.h = h
         self.w = w
@@ -120,8 +116,6 @@ class Action(object):
         self.buildAction()
         self.buildCancel()
         self.buildOpen()
-        # self.buildFlush()
-        # self.buildUnflush()
 
     def cleanUI(self):
         cmds.setParent(self.parent)
@@ -168,51 +162,4 @@ class Action(object):
         self.unflushButton = cmds.button(self.unflushButton, label='  Un-flush Sets  ', c=self.cmdUnflush)
         attachForm = [(self.unflushButton, 'bottom', 0)]
         attachControl = [(self.unflushButton, 'right', 5, self.flushButton)]
-        cmds.formLayout(self.form, edit=True, attachForm=attachForm, attachControl=attachControl)
-
-
-class ActionCollection(object):
-    # builds row of buttons for bottom of window
-
-    def __init__(self, name, parent=None, h=15, w=80,
-                 cmdAction='', cmdCancel='', label=''):
-        self.parent = parent
-        #self.filters = filters
-        self.illegalChar = ['.', '*']
-        self.form = name + '_form'
-        self.opt = name + '_opt'
-        self.cancelButton = name + '_cancelButton'
-        self.actionButton = name + '_actionButton'
-        self.actionMessage = name + '_actionMessage'
-        self.label = label
-        self.cmdCancel = cmdCancel
-        self.cmdAction = cmdAction
-        self.ui = [self.form, self.opt, self.cancelButton, self.actionButton]
-        self.h = h
-        self.w = w
-        self.heightForm = 30
-        self.cleanUI()
-        self.buildForm()
-        self.buildAction()
-        self.buildCancel()
-
-    def cleanUI(self):
-        cmds.setParent(self.parent)
-        for ui in self.ui:
-            if cmds.control(ui, q=True, exists=True):
-                cmds.deleteUI(ui)
-
-    def buildForm(self):
-        cmds.setParent(self.parent)
-        self.form = cmds.formLayout(self.form, h=self.heightForm)
-
-    def buildAction(self):
-        self.actionButton = cmds.button(self.actionButton, label=self.label.upper(), c=self.cmdAction)
-        attachForm = [(self.actionButton, 'bottom', 0), (self.actionButton, 'right', 0)]
-        cmds.formLayout(self.form, edit=True, attachForm=attachForm)
-
-    def buildCancel(self):
-        self.cancelButton = cmds.button(self.cancelButton, label='CLOSE', c=self.cmdCancel)
-        attachForm = [(self.cancelButton, 'bottom', 0)]
-        attachControl = [(self.cancelButton, 'right', 5, self.actionButton)]
         cmds.formLayout(self.form, edit=True, attachForm=attachForm, attachControl=attachControl)

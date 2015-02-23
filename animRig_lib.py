@@ -193,58 +193,58 @@ def switchRHand():
     cmds.group(th, ind, mid, rin, pin, n='__RIGHT_HAND__')
 
 
-def aimRig(objAim='', objBase='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False):
+def aimRig(target='', obj='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False):
     # TODO: add option to not keep current anim (don't bake offset or up controls )
     # TODO: change first 2 vars to be None by default
     # BUG: does not support negative numbers for aim vectors, use for offset direction
     # TODO: add parent option for aim control
     locs = []
-    if objAim == '':
+    if target == '':
         sel = cmds.ls(sl=1)  # order = tip,base
-        objAim = sel[0]
-        objBase = sel[1]
+        target = sel[0]
+        obj = sel[1]
     # sort axis
     aAxs = ['.tx', '.ty', '.tz']
     aAxs = aAxs[aim.index(1.0)]
     uAxs = ['.tx', '.ty', '.tz']
     uAxs = uAxs[u.index(1.0)]
     # distance
-    offset = ds.measureDis(obj1=objAim, obj2=objBase)
+    offset = ds.measureDis(obj1=target, obj2=obj)
     # place locator at locale A and constrain
-    locA = cn.locator(obj=objAim, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__')[0]
+    locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__')[0]
     locs.append(locA)
     # match keys
-    cn.matchKeyedFrames(A=objAim, B=locA, subtractive=True)
+    cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
     # bake locator A
     cn.bakeConstrained(locA, removeConstraint=True, timeLine=False, sim=False)
     # bake locator on location B
-    locB = cn.controllerToLocator(objBase, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
+    locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
     locs.append(locB)
     # place up locator on location B
-    locUp = cn.locator(obj=objBase, ro='zxy', constrain=False, toSelection=False, X=size * 0.5, color=29, suffix='__UP__')[0]
+    locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 0.5, color=29, suffix='__UP__')[0]
     # print locUp
     # parent up locator, move up in ty, unparent
     cmds.parent(locUp, locB)
     cmds.setAttr(locUp + uAxs, offset)
     # constraint up locator to locator B
-    cmds.parentConstraint(objBase, locUp, mo=1)
+    cmds.parentConstraint(obj, locUp, mo=1)
     # parent locUp to locator A, bake up locator
     cmds.parent(locUp, locA)
-    cn.matchKeyedFrames(A=objAim, B=locUp, subtractive=True)
+    cn.matchKeyedFrames(A=target, B=locUp, subtractive=True)
     cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
     # aim offset
-    locAim = cn.locator(obj=objBase, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__')[0]
+    locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__')[0]
     cmds.parent(locAim, locB)
     cmds.setAttr(locAim + aAxs, offset)
     cmds.parent(locAim, locA)
-    cmds.parentConstraint(objBase, locAim, mo=1)
-    cn.matchKeyedFrames(A=objAim, B=locAim, subtractive=True)
+    cmds.parentConstraint(obj, locAim, mo=1)
+    cn.matchKeyedFrames(A=target, B=locAim, subtractive=True)
     cn.bakeConstrained(locAim, removeConstraint=True, timeLine=False, sim=False)
     # delete helper
-    con = cn.getConstraint(objBase, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
+    con = cn.getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
     cmds.delete(con, locB)
     # aim constrain Locator A to B, using up locator as up vector
-    cmds.aimConstraint(locAim, objBase, wut='object', wuo=locUp, aim=aim, u=u, mo=mo)
+    cmds.aimConstraint(locAim, obj, wut='obj', wuo=locUp, aim=aim, u=u, mo=mo)
     # group
     cmds.group(locA, n='__AIMRIG__#')
     # select offset loc

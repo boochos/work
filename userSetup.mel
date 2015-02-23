@@ -1,6 +1,6 @@
 //stuff
-python("import startup");
-print ("__HERE__");
+//python("import startup");
+//print ("__HERE__");
 
 //build graph editor buttons
 string $mod = "display_lib";
