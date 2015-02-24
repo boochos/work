@@ -30,10 +30,12 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
-    # TODO: add rename set, dict objects
-    # TODO: find sets with current maya selection
-    # TODO: add auto select
+    # TODO: add rename set
+    # TODO: filter applicable sets on launch, perform filter in populateBrowse command
+    # TODO: add auto select set on click
+    # FUTURE: highlight sets that contain current maya selection
     # FUTURE: add namespace management modes: native, dynamic, available namespaces(explicit)
+    # BUG: if a set is created from 2 objects with same name and dif namespace, only one is saved to file
 
     def __init__(self):
         # external
