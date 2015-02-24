@@ -75,12 +75,12 @@ class CSUI(object):
         # TODO: add point/orient constraint buttons or drop down for constraint type
         # TODO: dockable window, tools used like in Nuke, with scroll bar ?maybe?
         # TODO: delete constraint button
-        # TODO: add help section of some sort
-        # TODO: projection tool
+        # FUTURE: add help section of some sort
+        # FUTURE: projection tool
         # TODO: witness camera tool, point and parent constraint options, could try heads up sliders fir fail safe
         # TODO: locator scale default multiplier
-        # TODO: user pref files
-        # TODO: use annotate tool for viewport display info, distance, speed
+        # FUTURE: user pref files
+        # FUTURE: use annotate tool for viewport display info, distance, speed
 
         cmds.showWindow(self.win)
 

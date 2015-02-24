@@ -203,7 +203,7 @@ def graphEditorButtons(*args):
                            cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.animScale(cmds.textField('scaleTimeBy',query=True,tx=True))",
                            gap=2, w=40, tx=1.0, ann='Scale selected curves from the first frame of playback')
             item = geButton(name=ui.sftSel, parent=p, attach=item, label='SOFT_Sel',
-                            cmd="import webrImport as web\ncss = web.mod('curveSoftSelect')\css.toggleSelJob()",
+                            cmd="import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.toggleSelJob()",
                             gap=20, w=70, bg=bgc)
             item = geButton(name=ui.sbfrm, parent=p, attach=item, label='SUBfrm_X',
                             cmd="import webrImport as web\nac = web.mod('animCurve_lib')\nac.subframe()",

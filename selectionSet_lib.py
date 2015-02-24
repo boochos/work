@@ -95,6 +95,7 @@ def outputDict(sel=[]):
 
 
 def selectSet(path=defaultPath()):
+    # TODO: add explicit mode, select exactly saved objects
     plus = []
     selection = cmds.ls(sl=True, fl=True)
     files = os.listdir(str(path))

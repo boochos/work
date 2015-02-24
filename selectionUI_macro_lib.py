@@ -30,6 +30,10 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
+    # TODO: add rename set, dict objects
+    # TODO: find sets with current maya selection
+    # TODO: add auto select
+    # FUTURE: add namespace management modes: native, dynamic, available namespaces(explicit)
 
     def __init__(self):
         # external
@@ -141,13 +145,13 @@ class CSUI(object):
         cmds.textField(self.pathForm.field, edit=True, text=self.path)
 
     def populateBrowse(self):
-        # TODO: add a reason for directory browsing or remove the feature
+        # FUTURE: add a reason for directory browsing or remove the feature
         # Make sure the path exists and access is permitted
         if os.path.isdir(self.path) and os.access(self.path, os.R_OK):
             # Clear the textScrollList
             cmds.textScrollList(self.browseForm.scroll, edit=True, ra=True)
             # Append the '..'(move up a director) as the first item
-            #cmds.textScrollList(self.browseForm.scroll, edit=True, append='..')
+            # cmds.textScrollList(self.browseForm.scroll, edit=True, append='..')
             # Populate the directories and non-directories for organization
             dirs = []
             nonDir = []
@@ -192,7 +196,7 @@ class CSUI(object):
                 cmds.textScrollList(self.selectionForm.scroll, edit=True, append=sel)
         else:
             pass
-            #cmds.textScrollList(self.selectionForm.scroll, edit=True, append='Nothing Selected')
+            # cmds.textScrollList(self.selectionForm.scroll, edit=True, append='Nothing Selected')
 
     def cmdBrowse(self, *args):
         tmp = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
@@ -255,11 +259,11 @@ class CSUI(object):
                     ss.exportFile(path, sel=self.members)
                     self.populatePreview()
                 else:
-                    message('Nothing highlighted in right column.', warning=True)
+                    message('Select an object in your scene.', warning=True)
             else:
                 message('File path does not exist ' + path, warning=True)
         else:
-            message('No Set is selected in left column.', warning=True)
+            message('Select a set in the left column.', warning=True)
 
     def cmdRemoveMember(self, *args):
         #
@@ -274,9 +278,9 @@ class CSUI(object):
                 ss.exportFile(path, sel=self.members)
                 self.populatePreview()
             else:
-                message('Nothing highlighted in middle column.', warning=True)
+                message('Select an object in the middle column.', warning=True)
         else:
-            message('No members to remove.', warning=True)
+            message('Set is empty, nothing to remove.', warning=True)
 
     def cmdCreate(self, *args):
         #
@@ -313,13 +317,11 @@ class CSUI(object):
         else:
             message('No Set is selected in left column.', warning=True)
 
-    def getMembersFromFile(self):
-        members = []
-        path = os.path.join(ss.defaultPath(), cmds.textScrollList(self.browseForm.scroll, query=True, si=True)[0]) + self.ext
-        f = open(path)
-        for line in open(path):
-            members.append(line.strip('\n'))
-        return members
+    def cmdRenameDict(self):
+        pass
+
+    def cmdRenameSet(self):
+        pass
 
 
 def job(scroll=''):

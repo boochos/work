@@ -8,7 +8,8 @@ import webrImport as web
 # web
 ds = web.mod('display_lib')
 
-# TODO: use Castejeau method to draw nicer curve
+# FUTURE: use Castejeau method to draw nicer curve
+# BUG: off button broken
 
 # global job id
 idB = None
