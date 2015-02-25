@@ -39,14 +39,17 @@ def mocapSkelAnim():
         print 'Select node from copy namespace, select node from paste namespace'
 
 
-def message(what='', maya=False):
+def message(what='', maya=True, warning=False):
     what = '-- ' + what + ' --'
-    global tell
-    tell = what
-    if maya:
-        mel.eval('print \"' + what + '\";')
+    if '\\' in what:
+        what = what.replace('\\', '/')
+    if warning:
+        cmds.warning(what)
     else:
-        print what
+        if maya:
+            mel.eval('print \"' + what + '\";')
+        else:
+            print what
 
 
 def toggleFrustum():
@@ -295,8 +298,11 @@ def keyHi(v=0):
 def matchObj():
     # queries dont work correctly when constraints, pairBlends and characterSets get involved
     # objs
+    # BUG: works like a turd, if rotations are locked it works half the time
+    print ' run '
     sel = cmds.ls(sl=True, fl=True)
     if len(sel) == 2:
+        print ' if '
         # collect get
         get = sel[1]
         '''
@@ -308,16 +314,19 @@ def matchObj():
         # collect put
         put = sel[0]
         # origRO = cmds.xform(put, q=True, roo=True)
+        #
+        # cmds.xform(put, m=mtrx, ws=True)
+        #
         try:
+            print ' try '
             # put
-            '''
-            cmds.setAttr(put + '.rotateOrder', roo)
-            cmds.xform(put, ws=True, t=t)
-            cmds.xform(put, ws=True, ro=r)
-            cmds.xform(put, roo=origRO)
-            '''
+            # cmds.setAttr(put + '.rotateOrder', roo)
+            # cmds.xform(put, ws=True, t=t)
+            # cmds.xform(put, ws=True, ro=r)
+            # cmds.xform(put, roo=origRO)
             cmds.xform(put, m=mtrx, ws=True)
         except:
+            print 'exception'
             # intermediate object
             loc = cmds.spaceLocator(name='getSpace_deleteMe')[0]
             cmds.setAttr(loc + '.rotateOrder', roo)
@@ -332,10 +341,12 @@ def matchObj():
             cmds.xform(put, ws=True, ro=r)
             # delete
             cmds.delete(loc)
+        else:
+            print 'else'
         # reselect objects
         cmds.select(sel)
     else:
-        message('Select 2 objects.')
+        message('Select 2 objects.', maya=True, warning=True)
 
 
 def shapeSize(obj=None, mltp=1):

@@ -6,6 +6,27 @@ import json
 tell = ''
 
 
+'''
+# absorb old file format
+ss = web.mod('selectionSet_lib')
+path = '/home/sebastianw/maya/selectionSets'
+files = os.listdir(path)
+for f in files:
+    objL = []
+    p = os.path.join(path, f)
+    read = open(p, 'r')
+    lines = read.readlines()
+    for line in lines:
+        if '{' not in line:
+            objL.append('Ref:' + line.strip('\n'))
+        else:
+            break
+    print ss.outputDict(objL)
+    ss.exportFile(filePath=p, sel=objL)
+    read.close()
+'''
+
+
 def message(what='', maya=True, warning=False):
     what = '-- ' + what + ' --'
     if '\\' in what:
@@ -82,7 +103,7 @@ def loadFile(filePath):
 
 
 def outputDict(sel=[]):
-    # make out put format, update ui
+    # TODO: make original name key, stripped name as value
     dic = {}
     if sel:
         for s in sel:

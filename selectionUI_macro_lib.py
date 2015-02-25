@@ -32,7 +32,7 @@ class CSUI(object):
     '''
     # TODO: add rename set
     # TODO: filter applicable sets on launch, perform filter in populateBrowse command
-    # TODO: add auto select set on click
+    # TODO: add auto select set on click mode
     # FUTURE: highlight sets that contain current maya selection
     # FUTURE: add namespace management modes: native, dynamic, available namespaces(explicit)
     # BUG: if a set is created from 2 objects with same name and dif namespace, only one is saved to file
