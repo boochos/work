@@ -45,11 +45,10 @@ class CSUI(object):
         self.selDir = os.path.split(self.path)[1]
         self.windowName = 'SelectionSetManager'
         self.dirStr = ' / '
-        self.par = ''
-        self.mem = ''
         self.ext = '.sel'
         self.scroll = ''
         self.members = {}
+        self.popupName = 'RenameSet'
         # execute
         self.populatePathWindows()
         self.cleanUI()
@@ -57,6 +56,8 @@ class CSUI(object):
         self.drawWindow()
         self.populateBrowse()
         self.populateSelection()
+        # popup
+        self.popupName = 'RenameSet'
 
     def message(self, what='', maya=True, ui=True, *args):
         if what != '':
@@ -73,8 +74,12 @@ class CSUI(object):
         # IGNORE: script job keeps running if window is closed with X button
         try:
             cmds.deleteUI(self.windowName)
+            self.cleanPopup()
         except:
             pass
+
+    def cleanPopup(self, *args):
+        cmds.deleteUI(self.popupName)
 
     def browser(self):
         self.win = cmds.window(self.windowName, w=700)
@@ -91,7 +96,7 @@ class CSUI(object):
         attachForm = [(self.createSetForm.form, 'left', 0), (self.createSetForm.form, 'top', 0), (self.createSetForm.form, 'right', 0)]
         cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm)
         # browse ui
-        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainTopLeftForm, createList=True, cmdSingle=self.cmdBrowse, h=80)
+        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainTopLeftForm, createList=True, cmdSingle=self.cmdBrowse, cmdDouble=self.drawPopup, h=80)
         attachForm = [(self.browseForm.form, 'left', 0), (self.browseForm.form, 'bottom', 0), (self.browseForm.form, 'right', 0)]
         attachControl = [(self.browseForm.form, 'top', 0, self.createSetForm.form)]
         cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm, attachControl=attachControl)
@@ -120,7 +125,7 @@ class CSUI(object):
         addLimbMember = ui.Button(name='AddMember', label='Add Members', cmd=self.cmdAddMember, parent=self.selectionForm.form, moveUp=moveUp * 0)
         removeMember = ui.Button(name='removeMember', label='Remove Members', cmd=self.cmdRemoveMember, parent=self.previewForm.form, moveUp=moveUp * 0)
         deleteSet = ui.Button(name='deleteSet', label='Delete Set', cmd=self.cmdDelete, parent=self.browseForm.form, moveUp=moveUp * 0)
-        createSet = ui.Button(name='addSet', label='Create Set', cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0)
+        self.createSet = ui.Button(name='addSet', label='Create Set', cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0)
         # accommodate new buttons
         attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 1)]
         cmds.formLayout(self.previewForm.form, edit=True, attachForm=attachForm)
@@ -132,11 +137,29 @@ class CSUI(object):
         self.scroll = self.selectionForm.scroll
         toggleJob(scroll=self.scroll)
 
+    def renamer(self):
+        # cmds.button(self.createSet.name, e=True, label='RENAME')
+        if cmds.window(self.popupName, q=True, ex=True):
+            self.cleanPopup()
+        self.popup = cmds.window(self.popupName, w=200, h=50)
+        # popup form
+        self.popupForm = cmds.formLayout('popupForm')
+        #
+        cmds.setParent(self.popupForm)
+        self.renameForm = ui.Form(label='Rename', name='renameSs', parent=self.popupForm, createField=True)
+        #
+        #cmds.textField(self.renameForm.field, e=True, cc=self.cmdRename)
+        cmds.formLayout(self.renameForm.form, edit=True, h=60, w=200)
+        attachForm = [(self.renameForm.form, 'left', 0), (self.renameForm.form, 'top', 0), (self.renameForm.form, 'right', 0)]
+        cmds.formLayout(self.popupForm, edit=True, attachForm=attachForm)
+        renameSet = ui.Button(name='renameSet', label='Rename Set', cmd=self.cmdRename, parent=self.renameForm.form, moveUp=0)
+
     def drawWindow(self):
         cmds.showWindow(self.win)
 
-    def format(self, line=''):
-        return self.mem + line
+    def drawPopup(self):
+        self.renamer()
+        cmds.showWindow(self.popup)
 
     def populatePathWindows(self):
         if os.name == 'nt':
@@ -319,11 +342,16 @@ class CSUI(object):
         else:
             message('No Set is selected in left column.', warning=True)
 
-    def cmdRenameDict(self):
-        pass
-
-    def cmdRenameSet(self):
-        pass
+    def cmdRename(self, close=True, *args):
+        name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
+        new = cmds.textField(self.renameForm.field, q=True, tx=True)
+        if new:
+            os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
+            cmds.deleteUI(self.popupName)
+            self.populateBrowse()
+            cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
+        else:
+            message('Enter a new name in the field.', maya=True, warning=True)
 
 
 def job(scroll=''):
