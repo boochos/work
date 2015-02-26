@@ -30,7 +30,7 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
-    # TODO: add rename set
+    # TODO: add rename set, add multi select for add prefix option
     # TODO: filter applicable sets on launch, perform filter in populateBrowse command
     # TODO: add auto select set on click mode
     # FUTURE: highlight sets that contain current maya selection
@@ -127,6 +127,7 @@ class CSUI(object):
         deleteSet = ui.Button(name='deleteSet', label='Delete Set', cmd=self.cmdDelete, parent=self.browseForm.form, moveUp=moveUp * 0)
         self.createSet = ui.Button(name='addSet', label='Create Set', cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0)
         # accommodate new buttons
+        moveUp = moveUp + 2
         attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 1)]
         cmds.formLayout(self.previewForm.form, edit=True, attachForm=attachForm)
         attachForm = [(self.selectionForm.scroll, 'bottom', moveUp * 1)]
