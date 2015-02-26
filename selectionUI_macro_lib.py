@@ -30,9 +30,8 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
-    # TODO: add rename set, add multi select for add prefix option
     # TODO: filter applicable sets on launch, perform filter in populateBrowse command
-    # TODO: add auto select set on click mode
+    # TODO: add auto select set on click mode, multi select
     # FUTURE: highlight sets that contain current maya selection
     # FUTURE: add namespace management modes: native, dynamic, available namespaces(explicit)
     # BUG: if a set is created from 2 objects with same name and dif namespace, only one is saved to file
@@ -49,6 +48,20 @@ class CSUI(object):
         self.scroll = ''
         self.members = {}
         self.popupName = 'RenameSet'
+        self.createLabel = 'Create Set'
+        self.renameLabel = 'RENAME SET'
+        # color
+        self.neutral = [0.38, 0.38, 0.38]
+        self.grey = [0.5, 0.5, 0.5]
+        self.greyD = [0.2, 0.2, 0.2]
+        self.red = [0.5, 0.2, 0.2]
+        self.redD = [0.4, 0.2, 0.2]
+        self.blue = [0.2, 0.3, 0.5]
+        self.green = [0.2, 0.5, 0.0]
+        self.teal = [0.0, 0.5, 0.5]
+        self.purple = [0.35, 0.35, 0.5]
+        self.purple2 = [0.28, 0.28, 0.39]
+        self.orange = [0.5, 0.35, 0.0]
         # execute
         self.populatePathWindows()
         self.cleanUI()
@@ -56,8 +69,6 @@ class CSUI(object):
         self.drawWindow()
         self.populateBrowse()
         self.populateSelection()
-        # popup
-        self.popupName = 'RenameSet'
 
     def message(self, what='', maya=True, ui=True, *args):
         if what != '':
@@ -79,7 +90,8 @@ class CSUI(object):
             pass
 
     def cleanPopup(self, *args):
-        cmds.deleteUI(self.popupName)
+        if cmds.control(self.popupName, q=True, ex=True):
+            cmds.deleteUI(self.popupName, control=True)
 
     def browser(self):
         self.win = cmds.window(self.windowName, w=700)
@@ -92,11 +104,12 @@ class CSUI(object):
         cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm)
         # create set ui
         self.createSetForm = ui.Form(label='Set Name', name='createSs', parent=self.mainTopLeftForm, createField=True)
+        cmds.textField(self.createSetForm.field, e=True, ec=self.cmdCreate)
         cmds.formLayout(self.createSetForm.form, edit=True, h=60)
         attachForm = [(self.createSetForm.form, 'left', 0), (self.createSetForm.form, 'top', 0), (self.createSetForm.form, 'right', 0)]
         cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm)
         # browse ui
-        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainTopLeftForm, createList=True, cmdSingle=self.cmdBrowse, cmdDouble=self.drawPopup, h=80)
+        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainTopLeftForm, createList=True, cmdSingle=self.cmdBrowse, cmdDouble=self.drawPopup, h=80, allowMultiSelection=True)
         attachForm = [(self.browseForm.form, 'left', 0), (self.browseForm.form, 'bottom', 0), (self.browseForm.form, 'right', 0)]
         attachControl = [(self.browseForm.form, 'top', 0, self.createSetForm.form)]
         cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm, attachControl=attachControl)
@@ -125,7 +138,7 @@ class CSUI(object):
         addLimbMember = ui.Button(name='AddMember', label='Add Members', cmd=self.cmdAddMember, parent=self.selectionForm.form, moveUp=moveUp * 0)
         removeMember = ui.Button(name='removeMember', label='Remove Members', cmd=self.cmdRemoveMember, parent=self.previewForm.form, moveUp=moveUp * 0)
         deleteSet = ui.Button(name='deleteSet', label='Delete Set', cmd=self.cmdDelete, parent=self.browseForm.form, moveUp=moveUp * 0)
-        self.createSet = ui.Button(name='addSet', label='Create Set', cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0)
+        self.createSet = ui.Button(name='addSet', label=self.createLabel, cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0)
         # accommodate new buttons
         moveUp = moveUp + 2
         attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 1)]
@@ -138,29 +151,32 @@ class CSUI(object):
         self.scroll = self.selectionForm.scroll
         toggleJob(scroll=self.scroll)
 
-    def renamer(self):
-        # cmds.button(self.createSet.name, e=True, label='RENAME')
-        if cmds.window(self.popupName, q=True, ex=True):
-            self.cleanPopup()
-        self.popup = cmds.window(self.popupName, w=200, h=50)
-        # popup form
-        self.popupForm = cmds.formLayout('popupForm')
-        #
-        cmds.setParent(self.popupForm)
-        self.renameForm = ui.Form(label='Rename', name='renameSs', parent=self.popupForm, createField=True)
-        #
-        #cmds.textField(self.renameForm.field, e=True, cc=self.cmdRename)
-        cmds.formLayout(self.renameForm.form, edit=True, h=60, w=200)
-        attachForm = [(self.renameForm.form, 'left', 0), (self.renameForm.form, 'top', 0), (self.renameForm.form, 'right', 0)]
-        cmds.formLayout(self.popupForm, edit=True, attachForm=attachForm)
-        renameSet = ui.Button(name='renameSet', label='Rename Set', cmd=self.cmdRename, parent=self.renameForm.form, moveUp=0)
+    def renamer(self, on=True):
+        # TODO: need cancel button
+        if on:
+            name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
+            #
+            cmds.textField(self.createSetForm.field, e=True, text=name, ec=self.cmdRename, aie=True)
+            cmds.button(self.createSet.name, e=True, l=self.renameLabel, c=self.cmdRename, bgc=self.red)
+            #
+            cmds.formLayout(self.browseForm.form, e=True, en=False)
+            cmds.formLayout(self.mainModularForm, e=True, en=False)
+            #
+            cmds.setFocus(self.createSetForm.field)
+        else:
+            cmds.textField(self.createSetForm.field, e=True, text='', ec=self.cmdCreate, aie=False)
+            cmds.button(self.createSet.name, e=True, l=self.createLabel, c=self.cmdCreate, bgc=self.neutral)
+            #
+            cmds.formLayout(self.browseForm.form, e=True, en=True)
+            cmds.formLayout(self.mainModularForm, e=True, en=True)
+            #
+            cmds.setFocus(self.browseForm.scroll)
 
     def drawWindow(self):
         cmds.showWindow(self.win)
 
     def drawPopup(self):
         self.renamer()
-        cmds.showWindow(self.popup)
 
     def populatePathWindows(self):
         if os.name == 'nt':
@@ -206,13 +222,14 @@ class CSUI(object):
 
     def populatePreview(self):
         cmds.textScrollList(self.previewForm.scroll, edit=True, ra=True)
-        browseSel = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
-        if browseSel:
-            path = os.path.join(self.path, browseSel[0]) + self.ext
-            self.members = ss.loadFile(path)
-            keys = sorted(self.members.keys())
-            for key in keys:
-                cmds.textScrollList(self.previewForm.scroll, edit=True, append=key)
+        browseSels = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
+        if browseSels:
+            for browseSel in browseSels:
+                path = os.path.join(self.path, browseSel[0]) + self.ext
+                self.members = ss.loadFile(path)
+                keys = sorted(self.members.keys())
+                for key in keys:
+                    cmds.textScrollList(self.previewForm.scroll, edit=True, append=key)
 
     def populateSelection(self):
         cmds.textScrollList(self.selectionForm.scroll, edit=True, ra=True)
@@ -270,41 +287,49 @@ class CSUI(object):
             print 'here'
 
     def cmdAddMember(self, *args):
-        selSet = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
-        if selSet:
-            selSet = selSet[0]
-            path = path = os.path.join(self.path, selSet) + self.ext
-            # print path
-            if os.path.isfile(path):
-                selection = cmds.textScrollList(self.selectionForm.scroll, q=True, ai=True)
-                selection = ss.outputDict(selection)
-                if selection:
-                    for key in selection:
-                        if key not in self.members.keys():
-                            self.members[key] = selection[key]
-                    ss.exportFile(path, sel=self.members)
-                    self.populatePreview()
-                else:
-                    message('Select an object in your scene.', warning=True)
-            else:
-                message('File path does not exist ' + path, warning=True)
+        selSets = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
+        if len(selSets) > 1:
+            message('Too many sets selected', warning=True)
         else:
-            message('Select a set in the left column.', warning=True)
+            selSet = selSets[0]
+            if selSet:
+                selSet = selSet[0]
+                path = path = os.path.join(self.path, selSet) + self.ext
+                # print path
+                if os.path.isfile(path):
+                    selection = cmds.textScrollList(self.selectionForm.scroll, q=True, ai=True)
+                    selection = ss.outputDict(selection)
+                    if selection:
+                        for key in selection:
+                            if key not in self.members.keys():
+                                self.members[key] = selection[key]
+                        ss.exportFile(path, sel=self.members)
+                        self.populatePreview()
+                    else:
+                        message('Select an object in your scene.', warning=True)
+                else:
+                    message('File path does not exist ' + path, warning=True)
+            else:
+                message('Select a set in the left column.', warning=True)
 
     def cmdRemoveMember(self, *args):
         #
         if self.members:
-            selection = cmds.textScrollList(self.previewForm.scroll, q=True, si=True)
-            selection = ss.outputDict(selection)
-            if selection:
-                for key in selection:
-                    del self.members[key]
-                f = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
-                path = os.path.join(self.path, f) + self.ext
-                ss.exportFile(path, sel=self.members)
-                self.populatePreview()
+            names = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
+            if len(names) > 1:
+                message('Too many sets selected', warning=True)
             else:
-                message('Select an object in the middle column.', warning=True)
+                selection = cmds.textScrollList(self.previewForm.scroll, q=True, si=True)
+                selection = ss.outputDict(selection)
+                if selection:
+                    for key in selection:
+                        del self.members[key]
+                    f = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
+                    path = os.path.join(self.path, f) + self.ext
+                    ss.exportFile(path, sel=self.members)
+                    self.populatePreview()
+                else:
+                    message('Select an object in the middle column.', warning=True)
         else:
             message('Set is empty, nothing to remove.', warning=True)
 
@@ -343,16 +368,21 @@ class CSUI(object):
         else:
             message('No Set is selected in left column.', warning=True)
 
-    def cmdRename(self, close=True, *args):
-        name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
-        new = cmds.textField(self.renameForm.field, q=True, tx=True)
-        if new:
-            os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
-            cmds.deleteUI(self.popupName)
-            self.populateBrowse()
-            cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
+    def cmdRename(self, *args):
+        names = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
+        if len(names) > 1:
+            message('Too many objects selected', warning=True)
         else:
-            message('Enter a new name in the field.', maya=True, warning=True)
+            name = names[0]
+            new = cmds.textField(self.createSetForm.field, q=True, tx=True)
+            if new:
+                os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
+                # cmds.deleteUI(self.popupName)
+                self.populateBrowse()
+                cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
+                self.renamer(on=False)
+            else:
+                message('Enter a new name in the field.', maya=True, warning=True)
 
 
 def job(scroll=''):
