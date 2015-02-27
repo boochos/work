@@ -50,9 +50,11 @@ class CSUI(object):
         self.popupName = 'RenameSet'
         self.createLabel = 'Create Set'
         self.renameLabel = 'RENAME SET'
-        self.renamerOn = False
+        self.overwriteLabel = '-- O V E R W R I T E --'
+        self.alternateUI = False
         # color
         self.neutral = [0.38, 0.38, 0.38]
+        self.darkbg = [0.17, 0.17, 0.17]
         self.grey = [0.5, 0.5, 0.5]
         self.greyD = [0.2, 0.2, 0.2]
         self.red = [0.5, 0.2, 0.2]
@@ -67,7 +69,7 @@ class CSUI(object):
         # execute
         self.populatePathWindows()
         self.cleanUI()
-        self.browser()
+        self.browseUI()
         self.drawWindow()
         self.populateBrowse()
         self.populateSelection()
@@ -87,15 +89,10 @@ class CSUI(object):
         # IGNORE: script job keeps running if window is closed with X button
         try:
             cmds.deleteUI(self.windowName)
-            self.cleanPopup()
         except:
             pass
 
-    def cleanPopup(self, *args):
-        if cmds.control(self.popupName, q=True, ex=True):
-            cmds.deleteUI(self.popupName, control=True)
-
-    def browser(self):
+    def browseUI(self):
         self.win = cmds.window(self.windowName, w=700)
         # main form
         self.mainForm = cmds.formLayout('mainFormSs')
@@ -106,12 +103,12 @@ class CSUI(object):
         cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm)
         # create set ui
         self.createSetForm = ui.Form(label='Set Name', name='createSs', parent=self.mainTopLeftForm, createField=True)
-        cmds.textField(self.createSetForm.field, e=True, ec=self.cmdCreate)
+        cmds.textField(self.createSetForm.field, e=True, ec=self.cmdCreate, aie=True)
         cmds.formLayout(self.createSetForm.form, edit=True, h=60)
         attachForm = [(self.createSetForm.form, 'left', 0), (self.createSetForm.form, 'top', 0), (self.createSetForm.form, 'right', 0)]
         cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm)
         # browse ui
-        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainTopLeftForm, createList=True, cmdSingle=self.cmdBrowse, cmdDouble=self.drawPopup, h=80, allowMultiSelection=True)
+        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainTopLeftForm, createList=True, cmdSingle=self.cmdBrowse, cmdDouble=self.renameUI, h=80, allowMultiSelection=True)
         attachForm = [(self.browseForm.form, 'left', 0), (self.browseForm.form, 'bottom', 0), (self.browseForm.form, 'right', 0)]
         attachControl = [(self.browseForm.form, 'top', 0, self.createSetForm.form)]
         cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm, attachControl=attachControl)
@@ -153,34 +150,35 @@ class CSUI(object):
         self.scroll = self.selectionForm.scroll
         toggleJob(scroll=self.scroll)
 
-    def renamer(self):
-        # TODO: need cancel button
-        if not self.renamerOn:
-            self.renamerOn = True
+    def renameUI(self):
+        if not self.alternateUI:
+            self.alternateUI = True
             name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
-            #
-            cmds.textField(self.createSetForm.field, e=True, text=name, ec=self.cmdRename, aie=True)
-            cmds.button(self.createSet.name, e=True, l=self.renameLabel, c=self.cmdRename, bgc=self.red)
-            #
-            # cmds.formLayout(self.browseForm.form, e=True, en=False)
+            cmds.textField(self.createSetForm.field, e=True, text=name, ec=self.cmdRename)
+            cmds.button(self.createSet.name, e=True, l=self.renameLabel, c=self.cmdRename, bgc=self.blue)
             cmds.formLayout(self.mainModularForm, e=True, en=False)
-            #
             cmds.setFocus(self.createSetForm.field)
         else:
-            self.renamerOn = False
-            cmds.textField(self.createSetForm.field, e=True, text='', ec=self.cmdCreate, aie=False)
+            # reset UI
+            self.alternateUI = False
+            cmds.textField(self.createSetForm.field, e=True, text='', ec=self.cmdCreate, aie=True)
             cmds.button(self.createSet.name, e=True, l=self.createLabel, c=self.cmdCreate, bgc=self.neutral)
-            #
-            # cmds.formLayout(self.browseForm.form, e=True, en=True)
             cmds.formLayout(self.mainModularForm, e=True, en=True)
-            #
+            cmds.textField(self.createSetForm.field, e=True, bgc=self.darkbg)
             cmds.setFocus(self.browseForm.scroll)
 
-    def confirmOverwrite(self):
-        cmds.textField(self.createSetForm.field, e=True, bgc=self.pink)
+    def overwriteUI(self):
+        name = cmds.textField(self.createSetForm.field, q=True, text=True)
+        #cmds.textScrollList(self.browseForm.scroll, e=True, da=True)
+        #cmds.textScrollList(self.browseForm.scroll, e=True, si=name)
+        # self.populatePreview()
+        cmds.formLayout(self.mainModularForm, e=True, en=False)
+        cmds.textField(self.createSetForm.field, e=True, aie=False)
+        cmds.button(self.createSet.name, e=True, l=self.overwriteLabel, c=self.cmdOverwrite, bgc=self.red)
+        self.alternateUI = True
 
-    def displayStyle(self):
-        cmds.textField(self.createSetForm.field, e=True, bgc=[0.0, 0.68, 0.70])
+    def displayStyleUI(self):
+        pass
 
     def queryApplicableSets(self):
         pass
@@ -188,16 +186,9 @@ class CSUI(object):
     def drawWindow(self):
         cmds.showWindow(self.win)
 
-    def drawPopup(self):
-        self.renamer()
-
     def populatePathWindows(self):
         if os.name == 'nt':
             self.path = self.path.replace('/', '\\')
-
-    def populatePath(self):
-        self.populatePathWindows()
-        cmds.textField(self.pathForm.field, edit=True, text=self.path)
 
     def populateBrowse(self):
         # FUTURE: add a reason for directory browsing or remove the feature
@@ -236,8 +227,8 @@ class CSUI(object):
     def populatePreview(self):
         cmds.textScrollList(self.previewForm.scroll, edit=True, ra=True)
         browseSels = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
-        if self.renamerOn:
-            self.renamer()
+        if self.alternateUI:
+            self.renameUI()
         if browseSels:
             for browseSel in browseSels:
                 path = os.path.join(self.path, browseSel) + self.ext
@@ -357,12 +348,11 @@ class CSUI(object):
                 selSet = cmds.textScrollList(self.selectionForm.scroll, q=True, ai=True)
                 ss.exportFile(path, selSet)
                 self.populateBrowse()
-                # message('Selection exported to:   ' + path)
+                cmds.textScrollList(self.browseForm.scroll, e=True, si=name)
+                self.populatePreview()
             else:
                 message('File of same name exists.', warning=True)
-                self.confirmOverwrite()
-            cmds.textScrollList(self.browseForm.scroll, e=True, si=name)
-            self.populatePreview()
+                self.overwriteUI()
         else:
             message('Name field is empty', warning=True)
 
@@ -374,7 +364,6 @@ class CSUI(object):
             name = name[0]
             path = os.path.join(self.path, name + self.ext)
             if os.path.isfile(path):
-                # delPath = ss.deletePath() # should be moving things to trash
                 os.remove(path)
                 self.populateBrowse()
                 self.populatePreview()
@@ -384,6 +373,22 @@ class CSUI(object):
         else:
             message('No Set is selected in left column.', warning=True)
 
+    def cmdOverwrite(self, args):
+        new = cmds.textField(self.createSetForm.field, q=True, tx=True)
+        name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
+        if name:
+            # doesnt work, should use export first then delete file with old name
+            os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
+            ss.exportFile(path, selSet)
+            # works
+            self.populateBrowse()
+            cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
+            self.renameUI()
+            self.populatePreview()
+            message('Select set has been overwritten:  ' + new, warning=False)
+        else:
+            message('Name field is empty', warning=True)
+
     def cmdRename(self, *args):
         names = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
         if len(names) > 1:
@@ -392,11 +397,14 @@ class CSUI(object):
             name = names[0]
             new = cmds.textField(self.createSetForm.field, q=True, tx=True)
             if new:
-                os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
-                # cmds.deleteUI(self.popupName)
-                self.populateBrowse()
-                cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
-                self.renamer()
+                path = os.path.join(self.path, new + self.ext)
+                if not os.path.isfile(path):
+                    os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
+                    self.populateBrowse()
+                    cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
+                    self.renameUI()
+                else:
+                    self.overwriteUI()
             else:
                 message('Enter a new name in the field.', maya=True, warning=True)
 
