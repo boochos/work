@@ -33,8 +33,8 @@ class CSUI(object):
     # TODO: filter applicable sets on launch, perform filter in populateBrowse command
     # TODO: add auto select set on click mode, multi select
     # FUTURE: highlight sets that contain current maya selection
-    # FUTURE: add namespace management modes: native, dynamic, available namespaces(explicit)
     # BUG: if a set is created from 2 objects with same name and dif namespace, only one is saved to file
+    # https://tug.org/pracjourn/2007-4/walden/color.pdf
 
     def __init__(self):
         # external
@@ -50,6 +50,7 @@ class CSUI(object):
         self.popupName = 'RenameSet'
         self.createLabel = 'Create Set'
         self.renameLabel = 'RENAME SET'
+        self.renamerOn = False
         # color
         self.neutral = [0.38, 0.38, 0.38]
         self.grey = [0.5, 0.5, 0.5]
@@ -62,6 +63,7 @@ class CSUI(object):
         self.purple = [0.35, 0.35, 0.5]
         self.purple2 = [0.28, 0.28, 0.39]
         self.orange = [0.5, 0.35, 0.0]
+        self.pink = [0.8, 0.4, 0.4]
         # execute
         self.populatePathWindows()
         self.cleanUI()
@@ -151,26 +153,37 @@ class CSUI(object):
         self.scroll = self.selectionForm.scroll
         toggleJob(scroll=self.scroll)
 
-    def renamer(self, on=True):
+    def renamer(self):
         # TODO: need cancel button
-        if on:
+        if not self.renamerOn:
+            self.renamerOn = True
             name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
             #
             cmds.textField(self.createSetForm.field, e=True, text=name, ec=self.cmdRename, aie=True)
             cmds.button(self.createSet.name, e=True, l=self.renameLabel, c=self.cmdRename, bgc=self.red)
             #
-            cmds.formLayout(self.browseForm.form, e=True, en=False)
+            # cmds.formLayout(self.browseForm.form, e=True, en=False)
             cmds.formLayout(self.mainModularForm, e=True, en=False)
             #
             cmds.setFocus(self.createSetForm.field)
         else:
+            self.renamerOn = False
             cmds.textField(self.createSetForm.field, e=True, text='', ec=self.cmdCreate, aie=False)
             cmds.button(self.createSet.name, e=True, l=self.createLabel, c=self.cmdCreate, bgc=self.neutral)
             #
-            cmds.formLayout(self.browseForm.form, e=True, en=True)
+            # cmds.formLayout(self.browseForm.form, e=True, en=True)
             cmds.formLayout(self.mainModularForm, e=True, en=True)
             #
             cmds.setFocus(self.browseForm.scroll)
+
+    def confirmOverwrite(self):
+        cmds.textField(self.createSetForm.field, e=True, bgc=self.pink)
+
+    def displayStyle(self):
+        cmds.textField(self.createSetForm.field, e=True, bgc=[0.0, 0.68, 0.70])
+
+    def queryApplicableSets(self):
+        pass
 
     def drawWindow(self):
         cmds.showWindow(self.win)
@@ -223,9 +236,11 @@ class CSUI(object):
     def populatePreview(self):
         cmds.textScrollList(self.previewForm.scroll, edit=True, ra=True)
         browseSels = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
+        if self.renamerOn:
+            self.renamer()
         if browseSels:
             for browseSel in browseSels:
-                path = os.path.join(self.path, browseSel[0]) + self.ext
+                path = os.path.join(self.path, browseSel) + self.ext
                 self.members = ss.loadFile(path)
                 keys = sorted(self.members.keys())
                 for key in keys:
@@ -345,6 +360,7 @@ class CSUI(object):
                 # message('Selection exported to:   ' + path)
             else:
                 message('File of same name exists.', warning=True)
+                self.confirmOverwrite()
             cmds.textScrollList(self.browseForm.scroll, e=True, si=name)
             self.populatePreview()
         else:
@@ -380,7 +396,7 @@ class CSUI(object):
                 # cmds.deleteUI(self.popupName)
                 self.populateBrowse()
                 cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
-                self.renamer(on=False)
+                self.renamer()
             else:
                 message('Enter a new name in the field.', maya=True, warning=True)
 
@@ -389,9 +405,12 @@ def job(scroll=''):
     if scroll:
         if cmds.control(scroll, ex=True):
             cmds.textScrollList(scroll, edit=True, ra=True)
-            selection = cmds.ls(sl=True, fl=True)
+            selection = cmds.ls(sl=True, fl=True)  # returns full path if same object with dif namespace exists
             if selection:
                 for sel in selection:
+                    if '|' in sel:
+                        sel = sel.split('|')
+                        sel = sel[len(sel) - 1]
                     cmds.textScrollList(scroll, edit=True, append=sel)
             else:
                 pass

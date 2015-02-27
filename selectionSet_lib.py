@@ -116,7 +116,6 @@ def outputDict(sel=[]):
 
 
 def selectSet(path=defaultPath()):
-    # TODO: add explicit mode, select exactly saved objects
     plus = []
     selection = cmds.ls(sl=True, fl=True)
     files = os.listdir(str(path))
@@ -126,6 +125,9 @@ def selectSet(path=defaultPath()):
     ex = '  '
     if selection:
         for sel in selection:
+            if '|' in sel:
+                sel = sel.split('|')
+                sel = sel[len(sel) - 1]
             for file in files:
                 # load dict
                 objects = loadFile(os.path.join(path, file))
