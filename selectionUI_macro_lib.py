@@ -7,7 +7,7 @@ import webrImport as web
 ui = web.mod('ui_micro_lib')
 cs = web.mod('characterSet_lib')
 ss = web.mod('selectionSet_lib')
-
+clr = web.mod('colour')
 
 idJ = None
 
@@ -30,9 +30,9 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
-    # TODO: filter applicable sets on launch, perform filter in populateBrowse command
     # TODO: add auto select set on click mode, multi select
-    # FUTURE: highlight sets that contain current maya selection
+    # TODO: highlight sets that contain current maya selection
+    # TODO: display style
     # BUG: if a set is created from 2 objects with same name and dif namespace, only one is saved to file
     # https://tug.org/pracjourn/2007-4/walden/color.pdf
 
@@ -52,20 +52,9 @@ class CSUI(object):
         self.renameLabel = 'RENAME SET'
         self.overwriteLabel = '-- O V E R W R I T E --'
         self.alternateUI = False
+        self.keys = True
         # color
-        self.neutral = [0.38, 0.38, 0.38]
-        self.darkbg = [0.17, 0.17, 0.17]
-        self.grey = [0.5, 0.5, 0.5]
-        self.greyD = [0.2, 0.2, 0.2]
-        self.red = [0.5, 0.2, 0.2]
-        self.redD = [0.4, 0.2, 0.2]
-        self.blue = [0.2, 0.3, 0.5]
-        self.green = [0.2, 0.5, 0.0]
-        self.teal = [0.0, 0.5, 0.5]
-        self.purple = [0.35, 0.35, 0.5]
-        self.purple2 = [0.28, 0.28, 0.39]
-        self.orange = [0.5, 0.35, 0.0]
-        self.pink = [0.8, 0.4, 0.4]
+        self.clr = clr.Get()
         # execute
         self.populatePathWindows()
         self.cleanUI()
@@ -122,7 +111,7 @@ class CSUI(object):
         # copied from export cs function, deleted
         moveUp = 23
         # preview
-        self.previewForm = ui.Form(label='Set Members', name='selectionSets', parent=self.mainModularForm, createList=True, h=80, allowMultiSelection=True)
+        self.previewForm = ui.Form(label='Set Members', name='selectionSets', parent=self.mainModularForm, createList=True, h=80, allowMultiSelection=True, cmdDouble=self.cmdDisplayStyle)
         cmds.formLayout(self.previewForm.form, edit=True, w=200)
         attachForm = [(self.previewForm.form, 'left', 0), (self.previewForm.form, 'top', 0), (self.previewForm.form, 'bottom', 0)]
         cmds.formLayout(self.mainModularForm, edit=True, attachForm=attachForm)
@@ -155,30 +144,23 @@ class CSUI(object):
             self.alternateUI = True
             name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
             cmds.textField(self.createSetForm.field, e=True, text=name, ec=self.cmdRename)
-            cmds.button(self.createSet.name, e=True, l=self.renameLabel, c=self.cmdRename, bgc=self.blue)
+            cmds.button(self.createSet.name, e=True, l=self.renameLabel, c=self.cmdRename, bgc=self.clr.blue)
             cmds.formLayout(self.mainModularForm, e=True, en=False)
             cmds.setFocus(self.createSetForm.field)
         else:
             # reset UI
             self.alternateUI = False
             cmds.textField(self.createSetForm.field, e=True, text='', ec=self.cmdCreate, aie=True)
-            cmds.button(self.createSet.name, e=True, l=self.createLabel, c=self.cmdCreate, bgc=self.neutral)
+            cmds.button(self.createSet.name, e=True, l=self.createLabel, c=self.cmdCreate, bgc=self.clr.neutral)
             cmds.formLayout(self.mainModularForm, e=True, en=True)
-            cmds.textField(self.createSetForm.field, e=True, bgc=self.darkbg)
+            cmds.textField(self.createSetForm.field, e=True, bgc=self.clr.darkbg)
             cmds.setFocus(self.browseForm.scroll)
 
     def overwriteUI(self):
-        name = cmds.textField(self.createSetForm.field, q=True, text=True)
-        #cmds.textScrollList(self.browseForm.scroll, e=True, da=True)
-        #cmds.textScrollList(self.browseForm.scroll, e=True, si=name)
-        # self.populatePreview()
         cmds.formLayout(self.mainModularForm, e=True, en=False)
         cmds.textField(self.createSetForm.field, e=True, aie=False)
-        cmds.button(self.createSet.name, e=True, l=self.overwriteLabel, c=self.cmdOverwrite, bgc=self.red)
+        cmds.button(self.createSet.name, e=True, l=self.overwriteLabel, c=self.cmdOverwrite, bgc=self.clr.red)
         self.alternateUI = True
-
-    def displayStyleUI(self):
-        pass
 
     def queryApplicableSets(self):
         pass
@@ -191,13 +173,10 @@ class CSUI(object):
             self.path = self.path.replace('/', '\\')
 
     def populateBrowse(self):
-        # FUTURE: add a reason for directory browsing or remove the feature
         # Make sure the path exists and access is permitted
         if os.path.isdir(self.path) and os.access(self.path, os.R_OK):
             # Clear the textScrollList
             cmds.textScrollList(self.browseForm.scroll, edit=True, ra=True)
-            # Append the '..'(move up a director) as the first item
-            # cmds.textScrollList(self.browseForm.scroll, edit=True, append='..')
             # Populate the directories and non-directories for organization
             dirs = []
             nonDir = []
@@ -233,7 +212,10 @@ class CSUI(object):
             for browseSel in browseSels:
                 path = os.path.join(self.path, browseSel) + self.ext
                 self.members = ss.loadFile(path)
-                keys = sorted(self.members.keys())
+                if self.keys:
+                    keys = sorted(self.members.keys())
+                else:
+                    keys = sorted(self.members.values())
                 for key in keys:
                     cmds.textScrollList(self.previewForm.scroll, edit=True, append=key)
 
@@ -265,21 +247,6 @@ class CSUI(object):
                         self.populateBrowse()
                     else:
                         print 'no access'
-            elif item == '..':
-                # dont allow out of base dir
-                if os.path.split(self.path)[1] is not self.selDir:
-                    path = os.path.split(self.path)[0]
-                    # query existence
-                    if os.path.exists(path):
-                        if os.access(path, os.R_OK):
-                            self.path = path
-                            try:
-                                cmds.textScrollList(self.previewForm.scroll, edit=True, ra=True)
-                            except:
-                                pass
-                            self.populateBrowse()
-                else:
-                    message('Currently at root of Selection Set directory.', warning=True)
             else:
                 # this is a file
                 path = os.path.join(self.path, item + self.ext)
@@ -377,9 +344,10 @@ class CSUI(object):
         new = cmds.textField(self.createSetForm.field, q=True, tx=True)
         name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
         if name:
-            # doesnt work, should use export first then delete file with old name
+            # delete existing file with 'new' name, (file being overwritten)
+            os.remove(os.path.join(self.path, new + self.ext))
+            # rename file to new name
             os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
-            ss.exportFile(path, selSet)
             # works
             self.populateBrowse()
             cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
@@ -398,33 +366,63 @@ class CSUI(object):
             new = cmds.textField(self.createSetForm.field, q=True, tx=True)
             if new:
                 path = os.path.join(self.path, new + self.ext)
-                if not os.path.isfile(path):
-                    os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
-                    self.populateBrowse()
-                    cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
-                    self.renameUI()
+                if name != new:
+                    if not os.path.isfile(path):
+                        os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
+                        self.populateBrowse()
+                        cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
+                        self.renameUI()
+                    else:
+                        self.deleteFile = new
+                        self.overwriteUI()
                 else:
-                    self.overwriteUI()
+                    self.renameUI()
+                    message('No action required.', maya=True, warning=False)
             else:
                 message('Enter a new name in the field.', maya=True, warning=True)
 
+    def cmdDisplayStyle(self):
+        if self.keys:
+            self.keys = False
+        else:
+            self.keys = True
+        # killjob
+        #toggleJob(scroll=self.scroll, keys=self.keys)
+        # restart job with new self.keys value
+        #toggleJob(scroll=self.scroll, keys=self.keys)
+        # refresh views
+        self.populatePreview()
 
-def job(scroll=''):
+
+def job(scroll='', keys=True):
+    import webrImport as web
+    # web
+    ss = web.mod('selectionSet_lib')
+    add = []
     if scroll:
         if cmds.control(scroll, ex=True):
             cmds.textScrollList(scroll, edit=True, ra=True)
-            selection = cmds.ls(sl=True, fl=True)  # returns full path if same object with dif namespace exists
+            selection = cmds.ls(sl=True, fl=True)  # returns full path if same object with dif namespace existskeys
             if selection:
                 for sel in selection:
                     if '|' in sel:
                         sel = sel.split('|')
                         sel = sel[len(sel) - 1]
-                    cmds.textScrollList(scroll, edit=True, append=sel)
+                        add.append(sel)
+                add = ss.outputDict(add)
+                print add, '(((((((((((((((((((((((((('
+                # keys or values
+                if keys:
+                    # add to list
+                    cmds.textScrollList(add.keys(), edit=True, append=sel)
+                else:
+                    # add to list
+                    cmds.textScrollList(add.values(), edit=True, append=sel)
             else:
-                pass
+                message('no selection', warning=True)
         else:
-            pass
-            # message('window missing, job should be killed')
+            # pass
+            message('window missing, job should be killed')
 
 
 def killJob():
@@ -438,7 +436,7 @@ def killJob():
             cmds.scriptJob(kill=int(job), force=True)
 
 
-def toggleJob(scroll=''):
+def toggleJob(scroll='', keys=True):
     global idJ
     if idJ:
         killJob()
@@ -447,5 +445,5 @@ def toggleJob(scroll=''):
         message('SelectSet scriptJob KILLED', maya=True)
     else:
         killJob()
-        idJ = cmds.scriptJob(e=["SelectionChanged", "import webrImport as web\nselUI = web.mod('selectionUI_macro_lib')\nselUI.job('%s')" % scroll])
+        idJ = cmds.scriptJob(e=["SelectionChanged", "import webrImport as web\nselUI = web.mod('selectionUI_macro_lib')\nselUI.job('%s %s')" % (scroll, keys)])
         message('SelectSet scriptJob STARTED', maya=True)
