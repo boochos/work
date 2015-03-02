@@ -62,7 +62,10 @@ class Form(object):
         cmds.formLayout(self.form, edit=True, attachForm=attachForm, attachControl=attachControl)
 
     def buildList(self):
-        self.scroll = cmds.textScrollList(self.scroll, sc=self.cmdSingle, allowMultiSelection=self.ams, dcc=self.cmdDouble, fn='plainLabelFont', h=10, w=10)
+        if self.cmdSingle:
+            self.scroll = cmds.textScrollList(self.scroll, sc=self.cmdSingle, allowMultiSelection=self.ams, dcc=self.cmdDouble, fn='plainLabelFont', h=10, w=10)
+        else:
+            self.scroll = cmds.textScrollList(self.scroll, allowMultiSelection=self.ams, dcc=self.cmdDouble, fn='plainLabelFont', h=10, w=10)
         attachForm = [(self.scroll, 'bottom', 0), (self.scroll, 'left', 0), (self.scroll, 'right', 0)]
         attachControl = [(self.scroll, 'top', 0, self.heading)]
         cmds.formLayout(self.form, edit=True, attachForm=attachForm, attachControl=attachControl)
@@ -70,17 +73,21 @@ class Form(object):
 
 class Button(object):
 
-    def __init__(self, name='', label='', cmd='', parent='', moveUp=20):
+    def __init__(self, name='', label='', cmd='', parent='', moveUp=20, h=20, bgc=None):
         self.name = name
         self.label = label
         self.cmd = cmd
         self.parent = parent
         self.moveUp = moveUp
+        self.h = h
+        self.bgc = bgc
         self.new()
 
     def new(self):
         cmds.setParent(self.parent)
-        self.name = cmds.button(self.name, label=self.label, c=self.cmd)
+        self.name = cmds.button(self.name, label=self.label, c=self.cmd, h=self.h)
+        if self.bgc:
+            cmds.button(self.name, e=True, bgc=self.bgc)
         attachForm = [(self.name, 'bottom', self.moveUp), (self.name, 'right', 0), (self.name, 'left', 0)]
         cmds.formLayout(self.parent, edit=True, attachForm=attachForm)
 

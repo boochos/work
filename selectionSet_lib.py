@@ -95,7 +95,7 @@ def exportFile(filePath, sel=None):
     message(" file:   '" + filePath + "'   saved")
 
 
-def loadFile(filePath):
+def loadDict(filePath):
     readFile = open(filePath, 'r')
     dic = json.load(readFile)
     readFile.close()
@@ -103,7 +103,6 @@ def loadFile(filePath):
 
 
 def outputDict(sel=[]):
-    # TODO: make original name key, stripped name as value
     dic = {}
     if sel:
         for s in sel:
@@ -111,68 +110,184 @@ def outputDict(sel=[]):
                 val = s.split(':')[1]
             else:
                 val = s
-            dic[val] = s
+            dic[s] = val
+    # print dic
     return dic
 
 
 def selectSet(path=defaultPath()):
-    plus = []
+    # needs overhaul
+    #
+    # split set into assets partitions (refed, unrefed)
+    #
     selection = cmds.ls(sl=True, fl=True)
+    selection = stripPipe(selection)
     files = os.listdir(str(path))
+    foundSet = False
+    selectionAdd = []
+    #
     msg = 'Sets selected:  '
     warn = 'Some objects could not be selected. No namespace provided by selection:  --  '
-    foundSet = False
     ex = '  '
+    #
     if selection:
         for sel in selection:
-            if '|' in sel:
-                sel = sel.split('|')
-                sel = sel[len(sel) - 1]
+            # loop files
             for file in files:
                 # load dict
-                objects = loadFile(os.path.join(path, file))
-                # strip ns
-                findObj = stripNs(sel)[1]
-                # new ns
-                ns = stripNs(sel)[0]
-                if findObj in objects.keys():
+                setDict = loadDict(os.path.join(path, file))
+                # selected object
+                findObj = splitNs(sel)[1]
+                # selected ns
+                ns = splitNs(sel)[0]
+                #
+                if findObj in setDict.values():
                     foundSet = True
-                    # build message
+                    #
+                    # build message for selected sets print
                     f = file.split('.sel')[0]
                     if f not in msg:
-                        msg = msg + ' ' + f
-                    # remove already selected from dict
-                    del objects[findObj]
-                    # iterate values in dict
-                    for value in objects.values():
-                        # if orig obj had ns, apply new ns
-                        if ':' in value:
-                            # current selection may not have ns, use original ns
-                            if ns:
-                                obj = ns + value.split(':')[1]
+                        msg = msg + ' -- ' + f
+                    #
+                    # qualify route, explicit or dynamic ns
+                    explicit = False
+                    if sel in setDict.keys():  # explicit
+                        # check if sel has ns, if not check if rest of set has ns members, if yes, check existance
+                        explicitMembers = []
+                        if ':' in sel:  # list should be appropriate
+                            for key in setDict.keys():
+                                if cmds.objExists(key):
+                                    selectionAdd.append(key)
+                                    explicitMembers.append(key)
+                            if len(explicitMembers) == len(setDict.keys()):
+                                message('explicit attempt -- success')
                             else:
-                                # use original ns if new one is not supplied
-                                obj = value
-                        else:
-                            obj = value
-                        if obj not in selection:
-                            if cmds.objExists(obj):
-                                plus.append(obj)
-                            else:
-                                ex = ex + obj + '  --  '
-        if plus:
-            cmds.select(plus, add=True)
+                                message('explicit attempt -- missing objects')
+                        else:  # list needs further investigation
+                            ref = False
+                            for key in setDict.keys():
+                                if ':' in key and cmds.objExists(key):
+                                    # likelyhood of set being correct is high
+                                    explicit = True
+                                    ref = True  # dont go in next if query
+                                    break
+                            if not ref:
+                                # no ref exists, list should be good as is
+                                for key in setDict.keys():
+                                    if cmds.objExists(key):
+                                        selectionAdd.append(key)
+                                        explicitMembers.append(key)
+                                if len(explicitMembers) == len(setDict.keys()):
+                                    message('explicit attempt -- success')
+                                else:
+                                    message('explicit attempt -- missing objects')
+                            if explicit:
+                                for key in setDict.keys():
+                                    if cmds.objExists(key):
+                                        selectionAdd.append(key)
+                                        explicitMembers.append(key)
+                                if len(explicitMembers) == len(setDict.keys()):
+                                    message('explicit attempt -- success')
+                                else:
+                                    message('explicit attempt -- missing objects')
+                    if not explicit:  # dynamic
+                        print '\n  dynamic  \n'
+                        # qualify for single vs multi ns in set
+                        refs = []
+                        for key in setDict.keys():
+                            if ':' in key:
+                                ref = splitNs(key)[0]
+                                if ref not in refs:
+                                    refs.append(ref)
+                        if len(refs) == 1:  # single ns in set
+                            print '\n  single  \n'
+                            # iterate keys in dict
+                            for key in setDict.keys():
+                                # print key, '______key'
+                                # if orig obj had ns, apply new ns
+                                if ':' in key:
+                                    # current selection may not have ns, use original ns
+                                    if ns:
+                                        print 'here'
+                                        obj = ns + key.split(':')[1]
+                                    else:
+                                        print 'there'
+                                        # use original ns if new one is not supplied
+                                        obj = key
+                                else:
+                                    obj = key
+                                if obj not in selection:
+                                    print obj, ' not in sel'
+                                    if cmds.objExists(obj):
+                                        selectionAdd.append(obj)
+                                    else:
+                                        ex = ex + obj + '  --  '
+                        else:  # multi ns in set
+                            print '\n  multi  \n'
+                            # TODO: attempt to find objects in existing namespaces, if more than one solution is found SELECT NOTHING
+                            liveRefs = listNs()
+                            numOfMembers = len(setDict.keys())
+                            renamedMembers = []
+                            renamed = None
+                            for key in setDict.keys():
+                                if ':' in key:
+                                    obj = setDict[key]
+                                    availabeleNs = []
+                                    for ref in liveRefs:
+                                        renamed = ref + ':' + obj
+                                        if cmds.objExists(renamed):
+                                            availabeleNs.append(ref)
+                                        else:
+                                            renamed = None
+                                    if len(availabeleNs) == 1:
+                                        # print availabeleNs
+                                        renamedMembers.append(availabeleNs[0] + ':' + obj)
+                                else:
+                                    if cmds.objExists(key):
+                                        renamedMembers.append(key)
+                            if renamedMembers:
+                                for item in renamedMembers:
+                                    selectionAdd.append(item)
+                                if len(renamedMembers) == numOfMembers:
+                                    message('dynamic attempt -- success')
+                                else:
+                                    message('dynamic attempt -- missing objects')
+
+        if selectionAdd:
+            # TODO: add selectionAdd - selection operation, result is objects that should be added to selection
+            cmds.select(selectionAdd, add=True)
             message(msg, maya=True)
         else:
             if foundSet:
-                message(warn + ex, maya=True, warning=True)
+                pass
+                # message(warn + ex, maya=True, warning=True)
             else:
                 message('No suitable objects found.', maya=True)
     else:
         message('Select an object', maya=True)
 
 
-def stripNs(obj):
+def stripPipe(selList=[]):
+    selection = []
+    if selList:
+        for sel in selList:
+            # strip full path to object, if exists
+            if '|' in sel:
+                sel = sel.split('|')
+                selection.append(sel[len(sel) - 1])
+            else:
+                selection.append(sel)
+    return selection
+
+
+def getNs(sel=''):
+    if ':' in sel:
+        return sel.split(':')[0]
+    else:
+        return ''
+
+
+def splitNs(obj):
     if ':' in obj:
         i = obj.rfind(':')
         ref = obj[:i]
@@ -180,3 +295,14 @@ def stripNs(obj):
         return ref + ':', base
     else:
         return '', obj
+
+
+def listNs():
+    ref = []
+    all = cmds.ls()
+    for item in all:
+        if ':' in item:
+            ns = item.split(':')[0]
+            if ns not in ref:
+                ref.append(ns)
+    return ref
