@@ -116,7 +116,7 @@ def outputDict(sel=[]):
 
 
 def selectSet(path=defaultPath()):
-    # needs overhaul
+    # needs overhaul, split up function so it can be fed a specific select set
     #
     # split set into assets partitions (refed, unrefed)
     #
@@ -306,3 +306,29 @@ def listNs():
             if ns not in ref:
                 ref.append(ns)
     return ref
+
+
+def splitSetAssets(inputSet=''):
+    '''
+    compartmentalize dict into assets
+    split by namespaces and local objects
+    '''
+    refs = []
+    assets = []
+    objs = []
+    for key in inputSet:
+        if ':' in key:
+            ns = key.split(':')[0]
+            if ns not in refs:
+                refs.append(ns)
+        else:
+            objs.append(key)
+    for ref in refs:
+        asset = []
+        for key in inputSet:
+            if ref in key:
+                asset.append(key)
+        assets.append(asset)
+    assets.append(objs)
+    for asset in assets:
+        print 'ASSET:  ', asset

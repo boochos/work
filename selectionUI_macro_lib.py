@@ -3,6 +3,7 @@ import maya.mel as mel
 import os
 #
 import webrImport as web
+import sets
 # web
 ui = web.mod('ui_micro_lib')
 cs = web.mod('characterSet_lib')
@@ -45,13 +46,14 @@ class CSUI(object):
         self.ext = '.sel'
         self.scroll = ''
         self.members = {}
-        self.popupName = 'RenameSet'
         self.createLabel = 'Create Set'
         self.renameLabel = 'RENAME SET'
         self.overwriteLabel = '-- O V E R W R I T E --'
+        self.contextualLabel = 'Contextual Toggle'
         self.alternateUI = False
         self.keys = True
         self.rename = False
+        self.contextualList = True
         self.conflictName = ''
         # color
         self.clr = clr.Get()
@@ -133,8 +135,8 @@ class CSUI(object):
         #
         h = 20
         self.querySets = ui.Button(name='querySets', label='Query Sets', cmd=self.cmdQuerySets, parent=self.selectionForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
-        self.namespaces = ui.Button(name='namespaces', label='Display Namespace', cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
-        self.contextual = ui.Button(name='contextual', label='Contextual Filter', cmd=self.cmdContextualSetList, parent=self.browseForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
+        self.namespaces = ui.Button(name='namespaces', label='Namespace Toggle', cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
+        self.contextual = ui.Button(name='contextual', label=self.contextualLabel, cmd=self.cmdContextualToggle, parent=self.browseForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
         # accommodate new buttons
         moveUp = moveUp + 5
         attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 2)]
@@ -182,7 +184,7 @@ class CSUI(object):
         if os.path.isdir(self.path) and os.access(self.path, os.R_OK):
             # Clear the textScrollList
             cmds.textScrollList(self.browseForm.scroll, edit=True, ra=True)
-            sets = self.cmdGetAllSets()
+            sets = self.cmdContextualSetList()
             if sets:
                 cmds.textScrollList(self.browseForm.scroll, edit=True, append=sets)
 
@@ -195,6 +197,7 @@ class CSUI(object):
             for browseSel in browseSels:
                 path = os.path.join(self.path, browseSel) + self.ext
                 self.members = ss.loadDict(path)
+                ss.splitSetAssets(self.members)
                 if self.keys:
                     keys = sorted(self.members.keys())
                 else:
@@ -224,7 +227,8 @@ class CSUI(object):
                 except:
                     pass
         else:
-            print 'here'
+            pass
+            # print 'here'
 
     def cmdAddMember(self, *args):
         selSets = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
@@ -428,9 +432,45 @@ class CSUI(object):
             message('Select an object to find sets.')
         # return applicable
 
+    def cmdContextualToggle(self, *args):
+        if self.contextualList:
+            self.contextualList = False
+        else:
+            self.contextualList = True
+        self.populateBrowse()
+        self.populatePreview()
+
     def cmdContextualSetList(self, *args):
         '''
-        list only sets that apply to current scene
+        returns sets for browse column, depending on variable
+        '''
+        sceneContents = []
+        contextualSets = []
+        #
+        scene = cmds.ls(fl=True)
+        scene = ss.stripPipe(scene)
+        for obj in scene:
+            if ':' in obj:
+                sceneContents.append(obj.split(':')[1])
+            else:
+                sceneContents.append(obj)
+        #
+        sets = self.cmdGetAllSets()
+        for s in sets:
+            dic = ss.loadDict(os.path.join(ss.defaultPath(), s + self.ext))
+            for obj in dic.values():
+                if obj in sceneContents:
+                    if s not in contextualSets:
+                        contextualSets.append(s)
+        #
+        if self.contextualList:
+            return contextualSets
+        else:
+            return sets
+
+    def cmdSelectSet(self, *args):
+        '''
+        select highlighted sets in browse column
         '''
         pass
 
