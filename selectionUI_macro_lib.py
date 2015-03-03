@@ -32,6 +32,7 @@ class CSUI(object):
     '''
     # TODO: add auto select set on click mode, multi select
     # https://tug.org/pracjourn/2007-4/walden/color.pdf
+    # filtersOn.png filtersOff.png gotoLine.png
 
     def __init__(self):
         # external
@@ -87,7 +88,7 @@ class CSUI(object):
         self.mainForm = cmds.formLayout('mainFormSs')
         # left form
         cmds.setParent(self.mainForm)
-        self.mainTopLeftForm = cmds.formLayout('mainTopLeftFormSs', w=self.columnWidth, h=80)
+        self.mainTopLeftForm = cmds.formLayout('mainTopLeftFormSs', w=self.columnWidth, h=195)
         attachForm = [(self.mainTopLeftForm, 'left', 5), (self.mainTopLeftForm, 'top', 5), (self.mainTopLeftForm, 'bottom', 5)]
         cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm)
         # create set ui
@@ -131,9 +132,9 @@ class CSUI(object):
         self.createSet = ui.Button(name='addSet', label=self.createLabel, cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0)
         #
         h = 20
-        self.querySets = ui.Button(name='querySets', label='Query Sets', cmd=self.cmdQuerySets, parent=self.selectionForm.form, moveUp=moveUp * 0, h=h)
-        self.namespaces = ui.Button(name='namespaces', label='Display Namespace', cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h)
-        self.contextual = ui.Button(name='contextual', label='Contextual Filter', cmd=self.cmdContextualSetList, parent=self.browseForm.form, moveUp=moveUp * 0, h=h)
+        self.querySets = ui.Button(name='querySets', label='Query Sets', cmd=self.cmdQuerySets, parent=self.selectionForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
+        self.namespaces = ui.Button(name='namespaces', label='Display Namespace', cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
+        self.contextual = ui.Button(name='contextual', label='Contextual Filter', cmd=self.cmdContextualSetList, parent=self.browseForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
         # accommodate new buttons
         moveUp = moveUp + 5
         attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 2)]
@@ -340,7 +341,7 @@ class CSUI(object):
     def cmdRename(self, *args):
         names = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
         if len(names) > 1:
-            message('Too many objects selected', warning=True)
+            message('Too many sets selected', warning=True)
         else:
             name = names[0]
             new = cmds.textField(self.createSetForm.field, q=True, tx=True)
