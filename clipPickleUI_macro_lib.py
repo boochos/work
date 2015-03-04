@@ -33,7 +33,7 @@ class CPUI(object):
         # external
         self.columnWidth = columnWidth
         # internal
-        self.windowName = 'Clip Manager'
+        self.windowName = 'ClipManager'
         self.path = os.path.expanduser('~') + '/maya/clipLibrary/'
         # store/restore
         # self.objects = [] not used

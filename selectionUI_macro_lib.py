@@ -32,6 +32,7 @@ class CSUI(object):
     Build Selection Set UI
     '''
     # TODO: add auto select set on click mode, multi select
+    # TODO: clear field after creation
     # https://tug.org/pracjourn/2007-4/walden/color.pdf
     # filtersOn.png filtersOff.png gotoLine.png
 
@@ -90,7 +91,7 @@ class CSUI(object):
         self.mainForm = cmds.formLayout('mainFormSs')
         # left form
         cmds.setParent(self.mainForm)
-        self.mainTopLeftForm = cmds.formLayout('mainTopLeftFormSs', w=self.columnWidth, h=195)
+        self.mainTopLeftForm = cmds.formLayout('mainTopLeftFormSs', w=self.columnWidth, h=190)
         attachForm = [(self.mainTopLeftForm, 'left', 5), (self.mainTopLeftForm, 'top', 5), (self.mainTopLeftForm, 'bottom', 5)]
         cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm)
         # create set ui
@@ -113,7 +114,7 @@ class CSUI(object):
 
         # copied from export cs function, deleted
         moveUp = 20
-        h = 25
+        h = 20
         # preview
         self.previewForm = ui.Form(label='Set Members', name='selectionSets', parent=self.mainModularForm, createList=True, h=80, allowMultiSelection=True, cmdSingle=None, cmdDouble=self.cmdDisplayStyle)
         cmds.formLayout(self.previewForm.form, edit=True, w=200)
@@ -138,7 +139,7 @@ class CSUI(object):
         self.namespaces = ui.Button(name='namespaces', label='Namespace Toggle', cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
         self.contextual = ui.Button(name='contextual', label=self.contextualLabel, cmd=self.cmdContextualToggle, parent=self.browseForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
         # accommodate new buttons
-        moveUp = moveUp + 5
+        moveUp = moveUp + 2
         attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 2)]
         cmds.formLayout(self.previewForm.form, edit=True, attachForm=attachForm)
         attachForm = [(self.selectionForm.scroll, 'bottom', moveUp * 2)]
@@ -373,11 +374,13 @@ class CSUI(object):
             message('No Namespace', warning=False)
             cmds.button(self.removeMember.name, e=True, en=False)
             cmds.button(self.addMember.name, e=True, en=False)
+            cmds.button(self.namespaces.name, e=True, l='Namespace Toggle -- OFF')
         else:
             self.keys = True
             message('Namespace', warning=False)
             cmds.button(self.removeMember.name, e=True, en=True)
             cmds.button(self.addMember.name, e=True, en=True)
+            cmds.button(self.namespaces.name, e=True, l='Namespace Toggle -- ON')
         # killjob
         toggleJob(scroll=self.scroll, k=self.keys)
         # restart job with new self.keys value
