@@ -48,9 +48,12 @@ class CSUI(object):
         self.scroll = ''
         self.members = {}
         self.createLabel = 'Create Set'
-        self.renameLabel = 'RENAME SET'
-        self.overwriteLabel = '-- O V E R W R I T E --'
-        self.contextualLabel = 'Contextual Toggle'
+        self.renameLabel = 'Rename Set'
+        self.overwriteLabel = 'O V E R W R I T E'
+        self.contextualLabel = 'Context View'
+        self.displayLabel = 'Namespaces'
+        self.on = ' On'
+        self.off = ' Off'
         self.alternateUI = False
         self.keys = True
         self.rename = False
@@ -136,8 +139,8 @@ class CSUI(object):
         #
         h = 20
         self.querySets = ui.Button(name='querySets', label='Query Sets', cmd=self.cmdQuerySets, parent=self.selectionForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
-        self.namespaces = ui.Button(name='namespaces', label='Namespace Toggle', cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
-        self.contextual = ui.Button(name='contextual', label=self.contextualLabel, cmd=self.cmdContextualToggle, parent=self.browseForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
+        self.namespaces = ui.Button(name='namespaces', label=self.displayLabel + self.on, cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
+        self.contextual = ui.Button(name='contextual', label=self.contextualLabel + self.on, cmd=self.cmdContextualToggle, parent=self.browseForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
         # accommodate new buttons
         moveUp = moveUp + 2
         attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 2)]
@@ -198,7 +201,7 @@ class CSUI(object):
             for browseSel in browseSels:
                 path = os.path.join(self.path, browseSel) + self.ext
                 self.members = ss.loadDict(path)
-                ss.splitSetAssets(self.members)
+                ss.splitSetToAssets(self.members)
                 if self.keys:
                     keys = sorted(self.members.keys())
                 else:
@@ -371,16 +374,16 @@ class CSUI(object):
     def cmdDisplayStyle(self, *args):
         if self.keys:
             self.keys = False
-            message('No Namespace', warning=False)
+            #message('No Namespace', warning=False)
             cmds.button(self.removeMember.name, e=True, en=False)
             cmds.button(self.addMember.name, e=True, en=False)
-            cmds.button(self.namespaces.name, e=True, l='Namespace Toggle -- OFF')
+            cmds.button(self.namespaces.name, e=True, l=self.displayLabel + self.off)
         else:
             self.keys = True
-            message('Namespace', warning=False)
+            #message('Namespace', warning=False)
             cmds.button(self.removeMember.name, e=True, en=True)
             cmds.button(self.addMember.name, e=True, en=True)
-            cmds.button(self.namespaces.name, e=True, l='Namespace Toggle -- ON')
+            cmds.button(self.namespaces.name, e=True, l=self.displayLabel + self.on)
         # killjob
         toggleJob(scroll=self.scroll, k=self.keys)
         # restart job with new self.keys value
@@ -438,8 +441,10 @@ class CSUI(object):
     def cmdContextualToggle(self, *args):
         if self.contextualList:
             self.contextualList = False
+            cmds.button(self.contextual.name, e=True, l=self.contextualLabel + self.off)
         else:
             self.contextualList = True
+            cmds.button(self.contextual.name, e=True, l=self.contextualLabel + self.on)
         self.populateBrowse()
         self.populatePreview()
 
