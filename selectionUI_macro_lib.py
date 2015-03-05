@@ -433,9 +433,10 @@ class CSUI(object):
                 self.populatePreview()
                 # add line to select objects in middle column
             else:
-                message('No sets were found for current selection')
+                cmds.textScrollList(self.browseForm.scroll, e=True, da=True)
+                message('No sets were found for current selection', warning=True)
         else:
-            message('Select an object to find sets.')
+            message('Select an object to find sets.', warning=True)
         # return applicable
 
     def cmdContextualToggle(self, *args):

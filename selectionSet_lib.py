@@ -384,9 +384,9 @@ def convertExplicit(sel='', setList=[]):
     try explicit selection
     '''
     converted = []
-    for obj in seList:
-        if cmds.objExists(key):
-            converted.append(key)
+    for obj in setList:
+        if cmds.objExists(obj):
+            converted.append(obj)
     return converted
 
 
