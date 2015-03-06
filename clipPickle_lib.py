@@ -92,37 +92,38 @@ class Key():
         # set key, creates curve node
         # print self.obj, self.attr, self.frame, self.offset, self.value,
         # '_____________________________'
-        s = cmds.setKeyframe(self.obj, at=self.attr, time=(
-            self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False)
-        if s:
-            # update curve name, set curve type, set weights
-            self.crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
-            cmds.keyframe(self.crv, time=(self.frame + self.offset, self.frame +
-                                          self.offset), valueChange=self.value)  # correction, hacky, should fix
-            cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
-            cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
-                            inTangentType=self.inTangentType, outTangentType=self.outTangentType)
-            if self.lock:
-                cmds.keyTangent(self.crv, edit=True, time=(
-                    self.frame + self.offset, self.frame + self.offset), lock=self.lock)
-            if self.inAngle:
-                cmds.keyTangent(self.crv, edit=True, time=(
-                    self.frame + self.offset, self.frame + self.offset), inAngle=self.inAngle)
-            if self.outAngle:
-                cmds.keyTangent(self.crv, edit=True, time=(
-                    self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
-            if self.weightedTangents:
-                cmds.keyTangent(self.crv, edit=True, time=(
-                    self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock,)
-                if self.inWeight:
+        if cmds.getAttr(self.obj + '.' + self.attr, se=True):
+            s = cmds.setKeyframe(self.obj, at=self.attr, time=(
+                self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False)
+            if s:
+                # update curve name, set curve type, set weights
+                self.crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
+                cmds.keyframe(self.crv, time=(self.frame + self.offset, self.frame +
+                                              self.offset), valueChange=self.value)  # correction, hacky, should fix
+                cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
+                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
+                                inTangentType=self.inTangentType, outTangentType=self.outTangentType)
+                if self.lock:
                     cmds.keyTangent(self.crv, edit=True, time=(
-                        self.frame + self.offset, self.frame + self.offset), inWeight=self.inWeight)
-                if self.outWeight:
+                        self.frame + self.offset, self.frame + self.offset), lock=self.lock)
+                if self.inAngle:
                     cmds.keyTangent(self.crv, edit=True, time=(
-                        self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
-        else:
-            # message('Unable to add animation to ' + self.obj + '.' + self.attr)
-            pass
+                        self.frame + self.offset, self.frame + self.offset), inAngle=self.inAngle)
+                if self.outAngle:
+                    cmds.keyTangent(self.crv, edit=True, time=(
+                        self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
+                if self.weightedTangents:
+                    cmds.keyTangent(self.crv, edit=True, time=(
+                        self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock,)
+                    if self.inWeight:
+                        cmds.keyTangent(self.crv, edit=True, time=(
+                            self.frame + self.offset, self.frame + self.offset), inWeight=self.inWeight)
+                    if self.outWeight:
+                        cmds.keyTangent(self.crv, edit=True, time=(
+                            self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
+            else:
+                # message('Unable to add animation to ' + self.obj + '.' + self.attr)
+                pass
 
 
 class Attribute(Key):
@@ -199,7 +200,8 @@ class Attribute(Key):
         else:
             if cmds.objExists(self.obj + '.' + self.name):
                 if not cmds.getAttr(self.obj + '.' + self.name, l=True):
-                    cmds.setAttr(self.obj + '.' + self.name, self.value)
+                    if cmds.getAttr(self.obj + '.' + self.name, se=True):
+                        cmds.setAttr(self.obj + '.' + self.name, self.value)
 
     def putCurveAttrs(self):
         # need to update curve name, isnt the same as stored, depends on how

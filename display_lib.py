@@ -486,14 +486,18 @@ def distance(obj1=None, obj2=None):
     attr = 'distance'
     if not obj1:
         selected = cmds.ls(sl=True, fl=True)
+        print selected, 'here'
     else:
         selected = [obj1, obj2]
+        print '_____'
     if len(selected) == 2:
         i = 1
         #
         for sel in selected:
+            print i
+            print sel, selected[i]
             exp = distanceExp(sel, selected[i], attr)
-            if cmds.attributeQuery(attr, node=sel, ex=True) == False:
+            if not cmds.attributeQuery(attr, node=sel, ex=True):
                 createDisAttr(sel, attr, exp)
             else:
                 message('Distance attr off')

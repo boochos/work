@@ -3,6 +3,7 @@ import maya.cmds as cmds
 
 def trackReposition():
     # TODO: could alter to make camera space tool
+    # TODO: use camera space with scale
     trans = cmds.ls(tr=True)
     locs = []
     cam = ''
