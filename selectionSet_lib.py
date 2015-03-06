@@ -352,6 +352,17 @@ def splitSetToAssets(setDict={}):
     return assetDict
 
 
+def findSelAsset(sel='', assets={}):
+    inAssets = []
+    obj = splitNs(sel)[1]
+    for key in assets:
+        for member in assets[key]:
+            memberObj = splitNs(member)[1]
+            if obj == memberObj:
+                inAssets.append(key)
+    return inAssets
+
+
 def findSet():
     path = defaultPath()
     selection = cmds.ls(sl=True, fl=True)
@@ -368,25 +379,35 @@ def findSet():
                 setDict = loadDict(os.path.join(path, f))
                 #
                 if obj in setDict.values():
+                    print f
                     # convert set to list of objects
-                    coverted = convertSet(sel, setDict)
+                    converted = convertSet(sel, setDict)
+                    for con in converted:
+                        if con not in selection:
+                            addSel.append(con)
+    if addSel:
+        cmds.select(addSel, add=True)
 
 
 def convertSet(sel='', setDict={}):
     '''
     convert saved set to contextual form, try and replace missing namespaces
     '''
-    #
+    # figure out which asset the selection is in
     convertedSet = []
     assets = splitSetToAssets(setDict)
+    # inAssets = findSelAsset(sel, assets)
     refs = getSetRefs(setDict.keys())
     # obj asset
+    objSet = ''
     for key in assets:
         if 'obj' in key:
             for obj in assets[key]:
                 if cmds.objExists(obj):
                     convertedSet.append(obj)
-        del assets[key]
+            objSet = key
+    del assets[objSet]
+
     # ref assets
     if refs == 1:
         # single ref
@@ -407,17 +428,19 @@ def convertSet(sel='', setDict={}):
                                 convertedSet.append(obj)
     else:
         # multi ref
-        converted = convertMultiNs(sel, setDict[key])
+        converted = convertMultiNs(sel, setDict)
         if converted:
             for obj in converted:
                 if cmds.objExists(obj):
                     convertedSet.append(obj)
+    return convertedSet
 
 
 def convertExplicit(sel='', setList=[]):
     '''
     try explicit selection
     '''
+    print '\n  explicit  \n'
     converted = []
     if sel in setList:
         for obj in setList:
@@ -427,38 +450,27 @@ def convertExplicit(sel='', setList=[]):
 
 
 def convertSingleNs(sel='', setList=[]):
-    # for given asset try finding one solution
-    # qualify for single vs multi ns in set
-    selectionAdd = []
     print '\n  single  \n'
+    converted = []
+    obj = splitNs(sel)[1]
+    ns = splitNs(sel)[0]
     # iterate keys in dict
-    for key in setDict.keys():
-        # print key, '______key'
-        # if orig obj had ns, apply new ns
-        if ':' in key:
-            # current selection may not have ns, use original ns
-            if ns:
-                print 'here'
-                obj = ns + key.split(':')[1]
-            else:
-                print 'there'
-                # use original ns if new one is not supplied
-                obj = key
-        else:
-            obj = key
-        if obj not in selection:
-            print obj, ' not in sel'
-            if cmds.objExists(obj):
-                selectionAdd.append(obj)
+    for member in setList:
+        # print member, '______member'
+        obj = ns + member.split(':')[1]
+        if cmds.objExists(obj):
+            converted.append(obj)
+    return converted
 
 
-def convertMultiNs():
+def convertMultiNs(sel, setDict):
     print '\n  multi  \n'
     # TODO: attempt to find objects in existing namespaces, if more than one solution is found SELECT NOTHING
+    converted = []
     liveRefs = listNs()
     numOfMembers = len(setDict.keys())
-    renamedMembers = []
     renamed = None
+    print setDict
     for key in setDict.keys():
         if ':' in key:
             obj = setDict[key]
@@ -470,12 +482,11 @@ def convertMultiNs():
                 else:
                     renamed = None
             if len(availabeleNs) == 1:
-                # print availabeleNs
-                renamedMembers.append(availabeleNs[0] + ':' + obj)
-    if renamedMembers:
-        for item in renamedMembers:
-            selectionAdd.append(item)
-        if len(renamedMembers) == numOfMembers:
+                print availabeleNs[0] + ':' + obj
+                converted.append(availabeleNs[0] + ':' + obj)
+    if converted:
+        if len(converted) == numOfMembers:
             message('dynamic attempt -- success')
         else:
             message('dynamic attempt -- missing objects')
+    return converted
