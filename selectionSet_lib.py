@@ -323,7 +323,7 @@ def splitSetToAssets(setDict={}):
     compartmentalize dict into assets,
     split by namespaces and local objects
     '''
-    # keys should contain 'ref', 'objs'
+    # TODO: keys should contain 'ref', 'objs', use actual ns name for key unless object belongs to objs'
     refs = []
     assets = []
     objs = []
@@ -428,11 +428,12 @@ def convertSet(sel='', setDict={}):
                                 convertedSet.append(obj)
     else:
         # multi ref
-        converted = convertMultiNs(sel, setDict)
-        if converted:
-            for obj in converted:
-                if cmds.objExists(obj):
-                    convertedSet.append(obj)
+        if ':' in sel:
+            converted = convertMultiNs(sel, setDict)
+            if converted:
+                for obj in converted:
+                    if cmds.objExists(obj):
+                        convertedSet.append(obj)
     return convertedSet
 
 
@@ -463,9 +464,15 @@ def convertSingleNs(sel='', setList=[]):
     return converted
 
 
-def convertMultiNs(sel, setDict):
+def convertMultiNs(sel=None, setDict={}):
     print '\n  multi  \n'
-    # TODO: attempt to find objects in existing namespaces, if more than one solution is found SELECT NOTHING
+    # TODO: all below
+    # keep track of unresolved namespaces,
+    # if sel has no ':' then pass None for sel, this function should not deal with non-ref objects
+    # try explicit, then manually solve, compare results, take solve with more conversions
+    # if sel resolve that ns first
+    # if solves fail, compare remaining ns and objects, if objects are same and length of objects equals unresolved ns,
+    # then assume ns match obj remainders
     converted = []
     liveRefs = listNs()
     numOfMembers = len(setDict.keys())

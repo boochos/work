@@ -45,6 +45,7 @@ class Key():
 
     def __init__(self, obj='', attr='', crv='', frame=0.0, offset=0, weightedTangents=None, auto=True):
         # BUG: tangent angles are being overridden by something
+        # BUG: if clip doesnt have a key, just pose value, no key is set,, pose may be lost once current frame is changed
         self.obj = obj
         self.attr = attr
         self.frame = frame
@@ -201,6 +202,11 @@ class Attribute(Key):
             if cmds.objExists(self.obj + '.' + self.name):
                 if not cmds.getAttr(self.obj + '.' + self.name, l=True):
                     if cmds.getAttr(self.obj + '.' + self.name, se=True):
+                        # TODO: set attr does not make a key, pose is lost if live scene has keys
+                        # should set key if curve exists in scene, or inform user or potential problem
+                        # TODO: on clicking clip, find potential problems, try and find a remedy
+                        # TODO: replace parts of clip feature, manual value attr change
+                        # TODO: auto refresh ui for new files
                         cmds.setAttr(self.obj + '.' + self.name, self.value)
 
     def putCurveAttrs(self):
