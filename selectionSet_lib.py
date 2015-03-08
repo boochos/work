@@ -115,7 +115,7 @@ def outputDict(sel=[]):
     return dic
 
 
-def selectSet(path=defaultPath()):
+def selectSet_old(path=defaultPath()):
     # needs overhaul, split up function so it can be fed a specific select set
     #
     # split set into assets partitions (refed, unrefed)
@@ -196,7 +196,7 @@ def selectSet(path=defaultPath()):
                         refs = []
                         for key in setDict.keys():
                             if ':' in key:
-                                ref = splitNs(key)[0]
+                                ref = splitNs(key, colon=False)[0]
                                 if ref not in refs:
                                     refs.append(ref)
                         if len(refs) == 1:  # single ns in set
@@ -225,7 +225,7 @@ def selectSet(path=defaultPath()):
                         else:  # multi ns in set
                             print '\n  multi  \n'
                             # TODO: attempt to find objects in existing namespaces, if more than one solution is found SELECT NOTHING
-                            liveRefs = listNs()
+                            liveRefs = listLiveNs()
                             numOfMembers = len(setDict.keys())
                             renamedMembers = []
                             renamed = None
@@ -280,34 +280,30 @@ def stripPipe(selList=[]):
     return selection
 
 
-def getSetRefs(setList=[]):
+def getSetNsList(setList=[]):
     refs = []
     for obj in setList:
         if ':' in obj:
-            ref = splitNs(obj)[0]
+            ref = obj.split(':')[0]
             if ref not in refs:
                 refs.append(ref)
     return len(refs)
 
 
-def getNs(sel=''):
-    if ':' in sel:
-        return sel.split(':')[0]
-    else:
-        return ''
-
-
-def splitNs(obj):
+def splitNs(obj, colon=True):
     if ':' in obj:
         i = obj.rfind(':')
         ref = obj[:i]
         base = obj[i + 1:]
-        return ref + ':', base
+        if colon:
+            return ref + ':', base
+        else:
+            return ref, base
     else:
         return '', obj
 
 
-def listNs():
+def listLiveNs():
     ref = []
     all = cmds.ls()
     for item in all:
@@ -316,6 +312,19 @@ def listNs():
             if ns not in ref:
                 ref.append(ns)
     return ref
+
+
+def listLiveContextualNs(setList=[]):
+    allRefs = listLiveNs()
+    liveRefs = []
+    for obj in setList:
+        if ':' in obj:
+            obj = obj.split(':')[1]
+            for ref in allRefs:
+                if cmds.objExists(ref + ':' + obj):
+                    if ref not in liveRefs:
+                        liveRefs.append(ref)
+    return liveRefs
 
 
 def splitSetToAssets(setDict={}):
@@ -344,23 +353,19 @@ def splitSetToAssets(setDict={}):
                 if ref in key:
                     asset.append(key)
             assets.append(asset)
-            assetDict['ref' + str(i)] = asset
+            assetDict[ref] = asset
             i = i + 1
     assets.append(objs)
     for asset in assets:
-        print 'ASSET:  ', asset
+        pass
+        # print 'ASSET:  ', asset
     return assetDict
 
 
-def findSelAsset(sel='', assets={}):
-    inAssets = []
-    obj = splitNs(sel)[1]
-    for key in assets:
-        for member in assets[key]:
-            memberObj = splitNs(member)[1]
-            if obj == memberObj:
-                inAssets.append(key)
-    return inAssets
+def selectSet():
+    remapped = findSet()
+    if remapped:
+        cmds.select(remapped, add=True)
 
 
 def findSet():
@@ -379,121 +384,248 @@ def findSet():
                 setDict = loadDict(os.path.join(path, f))
                 #
                 if obj in setDict.values():
-                    print f
+                    # print f
                     # convert set to list of objects
-                    converted = convertSet(sel, setDict)
+                    converted = remapSet(sel, setDict)
                     for con in converted:
                         if con not in selection:
                             addSel.append(con)
-    if addSel:
-        cmds.select(addSel, add=True)
+    return addSel
 
 
-def convertSet(sel='', setDict={}):
+def findNewRef(obj, liveRefs):
+    '''
+    obj = obj without ns
+    liveRefs = edited as solutions are found
+    '''
+    remapped = None
+    availabeleNs = []
+    removeRef = []
+    for ref in liveRefs:
+        renamed = ref + ':' + obj
+        if cmds.objExists(renamed):
+            availabeleNs.append(ref)
+            removeRef.append(ref)
+        else:
+            renamed = None
+    if len(availabeleNs) == 1:
+        remapped = availabeleNs[0] + ':' + obj
+    else:
+        obj = None
+    return remapped
+
+
+def remapSet(sel='', setDict={}):
     '''
     convert saved set to contextual form, try and replace missing namespaces
     '''
     # figure out which asset the selection is in
-    convertedSet = []
+    remappedSet = []
     assets = splitSetToAssets(setDict)
-    # inAssets = findSelAsset(sel, assets)
-    refs = getSetRefs(setDict.keys())
+    setNsList = getSetNsList(setDict.keys())  # int number of setNsList in set
     # obj asset
     objSet = ''
     for key in assets:
         if 'obj' in key:
             for obj in assets[key]:
                 if cmds.objExists(obj):
-                    convertedSet.append(obj)
+                    remappedSet.append(obj)
             objSet = key
     del assets[objSet]
 
     # ref assets
-    if refs == 1:
+    if setNsList == 1:
         # single ref
         for key in assets:
-            if 'ref' in key:
+            if ':' in key:
                 # try saved ns
-                converted = convertExplicit(sel, assets[key])
+                converted = remapExplicit(sel, assets[key])
                 if converted:
                     for obj in converted:
                         if cmds.objExists(obj):
-                            convertedSet.append(obj)
+                            remappedSet.append(obj)
                 else:
                     # replace ns
-                    converted = convertSingleNs(sel, assets[key])
+                    converted = remapSingleNs(sel, assets[key])
                     if converted:
                         for obj in converted:
                             if cmds.objExists(obj):
-                                convertedSet.append(obj)
-    else:
+                                remappedSet.append(obj)
+    elif setNsList > 1:
         # multi ref
-        if ':' in sel:
-            converted = convertMultiNs(sel, setDict)
-            if converted:
-                for obj in converted:
-                    if cmds.objExists(obj):
-                        convertedSet.append(obj)
-    return convertedSet
+        if ':' not in sel:
+            sel = None
+        converted = remapMultiNs(sel, assets)
+        if converted:
+            for obj in converted:
+                if cmds.objExists(obj):
+                    remappedSet.append(obj)
+    return remappedSet
 
 
-def convertExplicit(sel='', setList=[]):
+def remapExplicit(sel='', setList=[]):
     '''
-    try explicit selection
+    try using saved selection
     '''
-    print '\n  explicit  \n'
-    converted = []
+    # print '\n  explicit  \n'
+    remapped = []
     if sel in setList:
         for obj in setList:
             if cmds.objExists(obj):
-                converted.append(obj)
-    return converted
+                remapped.append(obj)
+    return remapped
 
 
-def convertSingleNs(sel='', setList=[]):
-    print '\n  single  \n'
-    converted = []
-    obj = splitNs(sel)[1]
-    ns = splitNs(sel)[0]
+def remapSingleNs(sel='', setList=[]):
+    # print '\n  single  \n'
+    remapped = []
+    obj = sel.split(':')[1]
+    ns = sel.split(':')[0]
     # iterate keys in dict
     for member in setList:
-        # print member, '______member'
         obj = ns + member.split(':')[1]
         if cmds.objExists(obj):
-            converted.append(obj)
-    return converted
+            remapped.append(obj)
+    return remapped
 
 
-def convertMultiNs(sel=None, setDict={}):
-    print '\n  multi  \n'
-    # TODO: all below
-    # keep track of unresolved namespaces,
-    # if sel has no ':' then pass None for sel, this function should not deal with non-ref objects
-    # try explicit, then manually solve, compare results, take solve with more conversions
-    # if sel resolve that ns first
-    # if solves fail, compare remaining ns and objects, if objects are same and length of objects equals unresolved ns,
-    # then assume ns match obj remainders
-    converted = []
-    liveRefs = listNs()
-    numOfMembers = len(setDict.keys())
-    renamed = None
-    print setDict
-    for key in setDict.keys():
-        if ':' in key:
-            obj = setDict[key]
-            availabeleNs = []
-            for ref in liveRefs:
-                renamed = ref + ':' + obj
-                if cmds.objExists(renamed):
-                    availabeleNs.append(ref)
-                else:
-                    renamed = None
-            if len(availabeleNs) == 1:
-                print availabeleNs[0] + ':' + obj
-                converted.append(availabeleNs[0] + ':' + obj)
-    if converted:
-        if len(converted) == numOfMembers:
-            message('dynamic attempt -- success')
-        else:
-            message('dynamic attempt -- missing objects')
+def remapMultiNs(sel=None, assets={}):
+    '''
+    find new namespaces if saved ones dont apply
+    '''
+    #
+    remappedExplicit = []
+    remappedSolve = []
+    setList = []
+    #
+    # convert assets to object list
+    for key in assets:
+        for member in assets[key]:
+            setList.append(member)
+    #
+    # contextual ref list
+    liveNsList = listLiveContextualNs(setList)
+    #
+    print 'explicit_______'
+    print liveNsList
+    print setList
+    # explicit, entire set list
+    if sel:
+        remappedExplicit = remapExplicit(sel, setList)
+    #
+    # explicit per asset
+    solved = []
+    for asset in assets:
+        converted = remapExplicit(assets[asset][0], assets[asset])
+        if converted:
+            solved.append(asset)
+            for member in converted:
+                remappedSolve.append(member)
+            ns = assets[asset][0].split(':')[0]
+            if ns in liveNsList:
+                liveNsList.remove(ns)
+    for asset in solved:
+        for obj in assets[asset]:
+            setList.remove(obj)
+        del assets[asset]
+    #
+    print 'explicit per asset_______'
+    print liveNsList
+    print setList
+    #
+    # solve sel ns
+    if sel:
+        obj = findNewRef(sel, liveNsList)
+        if obj:
+            setList.remove(obj)
+            remappedSolve.append(obj)
+            ref = obj.split(':')[0]
+            selRef = sel.split(':')[0]
+            del assets[selRef]
+            for member in setList:
+                if selRef in member:
+                    member = member.replace(selRef, ref)
+                    setList.remove(member)
+                    remappedSolve.append(member)
+    #
+    print 'sel ns_______'
+    print liveNsList
+    print setList
+    #
+    # cycle through asset members
+    for asset in assets:
+        for member in assets[asset]:
+            # cycle through liveNsList
+            obj = member.split(':')[1]
+            obj = findNewRef(obj, liveNsList)
+            print obj, '   *************'
+            if obj:
+                if member in setList:
+                    setList.remove(member)
+                    remappedSolve.append(obj)
+    #
+    # remove solved ns
+    if remappedSolve:
+        for member in remappedSolve:
+            ref = member.split(':')[0]
+            if ref in liveNsList:
+                liveNsList.remove(ref)
+    #
+    print 'cycle assets_______'
+    print liveNsList
+    print setList
+    #
+    # check liveNsList
+    if liveNsList:
+        # check dupes
+        setListNoNs = []
+        solved = []
+        for obj in setList:
+            setListNoNs.append(obj.split(':')[1])
+        for obj in setListNoNs:
+            num = setListNoNs.count(obj)
+            ns = []
+            refs = []
+            if num > 1:
+                # check number of ns options
+                for ref in liveNsList:
+                    renamed = ref + ':' + obj
+                    if cmds.objExists(renamed):
+                        ns.append(renamed)
+                        refs.append(ref)
+            if len(ns) == num:
+                # add to cyclic solve
+                for item in ns:
+                    remappedSolve.append(item)
+            for ref in refs:
+                solved.append(ref)
+            dupeList = setList
+            for member in dupeList:
+                if obj in member:
+                    if member in setList:
+                        setList.remove(member)
+        for ref in solved:
+            if ref in liveNsList:
+                liveNsList.remove(ref)
+    #
+    print 'check dupes_______'
+    print liveNsList
+    print setList
+    #
+    # compare results
+    converted = None
+    if len(remappedSolve) > len(remappedExplicit):
+        converted = remappedSolve
+    elif len(remappedExplicit) > len(remappedSolve):
+        converted = remappedExplicit
+        liveNsList = None
+    else:
+        converted = remappedExplicit
+        liveNsList = None
+    #
+    if liveNsList:
+        ns = ''
+        for n in liveNsList:
+            ns = ns + ' -- ' + n
+        message('Objects were not resolved for these namespaces: ' + ns, warning=True)
     return converted
