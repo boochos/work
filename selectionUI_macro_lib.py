@@ -31,8 +31,7 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
-    # TODO: add auto select set on click mode, multi select
-    # TODO: clear field after creation
+    # TODO: add auto select set toggle, and additive or exclusive behaviour
     # https://tug.org/pracjourn/2007-4/walden/color.pdf
     # filtersOn.png filtersOff.png gotoLine.png
 
@@ -222,11 +221,13 @@ class CSUI(object):
 
     def cmdBrowse(self, *args):
         item = cmds.textScrollList(self.browseForm.scroll, query=True, si=True)
+        self.cmdSelectSet(item)
         if item:
             path = os.path.join(self.path, item[0] + self.ext)
             # print path
             if os.path.isfile(path):
                 try:
+                    self.cmdSelectSet(item)
                     self.populatePreview()
                 except:
                     pass
@@ -293,6 +294,8 @@ class CSUI(object):
                 self.populateBrowse()
                 cmds.textScrollList(self.browseForm.scroll, e=True, si=name)
                 self.populatePreview()
+                cmds.textField(self.createSetForm.field, e=True, tx='')
+                cmds.setFocus(self.browseForm.scroll)
             else:
                 message('File of same name exists.', warning=True)
                 self.conflictName = name
@@ -340,6 +343,7 @@ class CSUI(object):
             cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
             self.renameUI()
             self.populatePreview()
+            cmds.setFocus(self.browseForm.scroll)
             message('Select set has been overwritten:  ' + new, warning=False)
         else:
             self.renameUI()  # reset ui
@@ -360,6 +364,7 @@ class CSUI(object):
                         os.rename(os.path.join(self.path, name + self.ext), os.path.join(self.path, new + self.ext))
                         self.populateBrowse()
                         cmds.textScrollList(self.browseForm.scroll, e=True, si=new)
+                        cmds.setFocus(self.browseForm.scroll)
                         self.renameUI()
                     else:
                         self.conflictName = new
@@ -477,11 +482,21 @@ class CSUI(object):
         else:
             return sets
 
-    def cmdSelectSet(self, *args):
+    def cmdSelectSet(self, sets, *args):
         '''
         select highlighted sets in browse column
         '''
-        pass
+        selAdd = []
+        # sets = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
+        for s in sets:
+            setDict = ss.loadDict(os.path.join(ss.defaultPath()) + s + self.ext)
+            selection = ss.remapMultiNs(sel='', assets=ss.splitSetToAssets(setDict=setDict))
+            for sel in selection:
+                selAdd.append(sel)
+        if selAdd:
+            cmds.select(selAdd)
+        else:
+            message('Nothing to select.')
 
 
 def job(scroll='', k=False):

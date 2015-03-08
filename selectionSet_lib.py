@@ -115,158 +115,6 @@ def outputDict(sel=[]):
     return dic
 
 
-def selectSet_old(path=defaultPath()):
-    # needs overhaul, split up function so it can be fed a specific select set
-    #
-    # split set into assets partitions (refed, unrefed)
-    #
-    selection = cmds.ls(sl=True, fl=True)
-    selection = stripPipe(selection)
-    files = os.listdir(str(path))
-    foundSet = False
-    selectionAdd = []
-    #
-    msg = 'Sets selected:  '
-    warn = 'Some objects could not be selected. No namespace provided by selection:  --  '
-    ex = '  '
-    #
-    if selection:
-        for sel in selection:
-            # loop files
-            for file in files:
-                # load dict
-                setDict = loadDict(os.path.join(path, file))
-                # selected object
-                findObj = splitNs(sel)[1]
-                # selected ns
-                ns = splitNs(sel)[0]
-                #
-                if findObj in setDict.values():
-                    foundSet = True
-                    #
-                    # build message for selected sets print
-                    f = file.split('.sel')[0]
-                    if f not in msg:
-                        msg = msg + ' -- ' + f
-                    #
-                    # qualify route, explicit or dynamic ns
-                    explicit = False
-                    if sel in setDict.keys():  # explicit
-                        # check if sel has ns, if not check if rest of set has ns members, if yes, check existance
-                        explicitMembers = []
-                        if ':' in sel:  # list should be appropriate
-                            for key in setDict.keys():
-                                if cmds.objExists(key):
-                                    selectionAdd.append(key)
-                                    explicitMembers.append(key)
-                            if len(explicitMembers) == len(setDict.keys()):
-                                message('explicit attempt -- success')
-                            else:
-                                message('explicit attempt -- missing objects')
-                        else:  # list needs further investigation
-                            ref = False
-                            for key in setDict.keys():
-                                if ':' in key and cmds.objExists(key):
-                                    # likelyhood of set being correct is high
-                                    explicit = True
-                                    ref = True  # dont go in next if query
-                                    break
-                            if not ref:
-                                # no ref exists, list should be good as is
-                                for key in setDict.keys():
-                                    if cmds.objExists(key):
-                                        selectionAdd.append(key)
-                                        explicitMembers.append(key)
-                                if len(explicitMembers) == len(setDict.keys()):
-                                    message('explicit attempt -- success')
-                                else:
-                                    message('explicit attempt -- missing objects')
-                            if explicit:
-                                for key in setDict.keys():
-                                    if cmds.objExists(key):
-                                        selectionAdd.append(key)
-                                        explicitMembers.append(key)
-                                if len(explicitMembers) == len(setDict.keys()):
-                                    message('explicit attempt -- success')
-                                else:
-                                    message('explicit attempt -- missing objects')
-                    if not explicit:  # dynamic
-                        print '\n  dynamic  \n'
-                        # qualify for single vs multi ns in set
-                        refs = []
-                        for key in setDict.keys():
-                            if ':' in key:
-                                ref = splitNs(key, colon=False)[0]
-                                if ref not in refs:
-                                    refs.append(ref)
-                        if len(refs) == 1:  # single ns in set
-                            print '\n  single  \n'
-                            # iterate keys in dict
-                            for key in setDict.keys():
-                                # print key, '______key'
-                                # if orig obj had ns, apply new ns
-                                if ':' in key:
-                                    # current selection may not have ns, use original ns
-                                    if ns:
-                                        print 'here'
-                                        obj = ns + key.split(':')[1]
-                                    else:
-                                        print 'there'
-                                        # use original ns if new one is not supplied
-                                        obj = key
-                                else:
-                                    obj = key
-                                if obj not in selection:
-                                    print obj, ' not in sel'
-                                    if cmds.objExists(obj):
-                                        selectionAdd.append(obj)
-                                    else:
-                                        ex = ex + obj + '  --  '
-                        else:  # multi ns in set
-                            print '\n  multi  \n'
-                            # TODO: attempt to find objects in existing namespaces, if more than one solution is found SELECT NOTHING
-                            liveRefs = listLiveNs()
-                            numOfMembers = len(setDict.keys())
-                            renamedMembers = []
-                            renamed = None
-                            for key in setDict.keys():
-                                if ':' in key:
-                                    obj = setDict[key]
-                                    availabeleNs = []
-                                    for ref in liveRefs:
-                                        renamed = ref + ':' + obj
-                                        if cmds.objExists(renamed):
-                                            availabeleNs.append(ref)
-                                        else:
-                                            renamed = None
-                                    if len(availabeleNs) == 1:
-                                        # print availabeleNs
-                                        renamedMembers.append(availabeleNs[0] + ':' + obj)
-                                else:
-                                    if cmds.objExists(key):
-                                        renamedMembers.append(key)
-                            if renamedMembers:
-                                for item in renamedMembers:
-                                    selectionAdd.append(item)
-                                if len(renamedMembers) == numOfMembers:
-                                    message('dynamic attempt -- success')
-                                else:
-                                    message('dynamic attempt -- missing objects')
-
-        if selectionAdd:
-            # TODO: add selectionAdd - selection operation, result is objects that should be added to selection
-            cmds.select(selectionAdd, add=True)
-            message(msg, maya=True)
-        else:
-            if foundSet:
-                pass
-                # message(warn + ex, maya=True, warning=True)
-            else:
-                message('No suitable objects found.', maya=True)
-    else:
-        message('Select an object', maya=True)
-
-
 def stripPipe(selList=[]):
     selection = []
     if selList:
@@ -332,7 +180,6 @@ def splitSetToAssets(setDict={}):
     compartmentalize dict into assets,
     split by namespaces and local objects
     '''
-    # TODO: keys should contain 'ref', 'objs', use actual ns name for key unless object belongs to objs'
     refs = []
     assets = []
     objs = []
@@ -344,7 +191,8 @@ def splitSetToAssets(setDict={}):
                 refs.append(ns)
         else:
             objs.append(key)
-    assetDict['obj'] = objs
+    if objs:
+        assetDict['obj'] = objs
     i = 1
     if refs:
         for ref in refs:
@@ -386,8 +234,9 @@ def findSet():
                 if obj in setDict.values():
                     # print f
                     # convert set to list of objects
-                    converted = remapSet(sel, setDict)
-                    for con in converted:
+                    remapped = remapSet(sel, setDict)
+                    # print remapped
+                    for con in remapped:
                         if con not in selection:
                             addSel.append(con)
     return addSel
@@ -425,32 +274,32 @@ def remapSet(sel='', setDict={}):
     setNsList = getSetNsList(setDict.keys())  # int number of setNsList in set
     # obj asset
     objSet = ''
-    for key in assets:
-        if 'obj' in key:
-            for obj in assets[key]:
+    for asset in assets:
+        if 'obj' in asset:
+            for obj in assets[asset]:
                 if cmds.objExists(obj):
                     remappedSet.append(obj)
-            objSet = key
-    del assets[objSet]
-
+            objSet = asset
+    if objSet:
+        del assets[objSet]
     # ref assets
     if setNsList == 1:
         # single ref
-        for key in assets:
-            if ':' in key:
-                # try saved ns
-                converted = remapExplicit(sel, assets[key])
+        for asset in assets:
+            # try saved ns
+            converted = remapExplicit(sel, assets[asset])
+            if converted:
+                for obj in converted:
+                    if cmds.objExists(obj):
+                        remappedSet.append(obj)
+            else:
+                # replace ns
+                converted = remapSingleNs(sel, assets[asset])
+                # print converted
                 if converted:
                     for obj in converted:
                         if cmds.objExists(obj):
                             remappedSet.append(obj)
-                else:
-                    # replace ns
-                    converted = remapSingleNs(sel, assets[key])
-                    if converted:
-                        for obj in converted:
-                            if cmds.objExists(obj):
-                                remappedSet.append(obj)
     elif setNsList > 1:
         # multi ref
         if ':' not in sel:
@@ -469,23 +318,25 @@ def remapExplicit(sel='', setList=[]):
     '''
     # print '\n  explicit  \n'
     remapped = []
-    if sel in setList:
-        for obj in setList:
-            if cmds.objExists(obj):
-                remapped.append(obj)
+    if sel:
+        if sel in setList:
+            for obj in setList:
+                if cmds.objExists(obj):
+                    remapped.append(obj)
     return remapped
 
 
 def remapSingleNs(sel='', setList=[]):
     # print '\n  single  \n'
     remapped = []
-    obj = sel.split(':')[1]
-    ns = sel.split(':')[0]
-    # iterate keys in dict
-    for member in setList:
-        obj = ns + member.split(':')[1]
-        if cmds.objExists(obj):
-            remapped.append(obj)
+    if sel:
+        obj = sel.split(':')[1]
+        ns = sel.split(':')[0]
+        # iterate keys in dict
+        for member in setList:
+            obj = ns + ':' + member.split(':')[1]
+            if cmds.objExists(obj):
+                remapped.append(obj)
     return remapped
 
 
@@ -506,32 +357,26 @@ def remapMultiNs(sel=None, assets={}):
     # contextual ref list
     liveNsList = listLiveContextualNs(setList)
     #
-    print 'explicit_______'
-    print liveNsList
-    print setList
     # explicit, entire set list
     if sel:
         remappedExplicit = remapExplicit(sel, setList)
     #
     # explicit per asset
     solved = []
-    for asset in assets:
-        converted = remapExplicit(assets[asset][0], assets[asset])
-        if converted:
-            solved.append(asset)
-            for member in converted:
-                remappedSolve.append(member)
-            ns = assets[asset][0].split(':')[0]
-            if ns in liveNsList:
-                liveNsList.remove(ns)
-    for asset in solved:
-        for obj in assets[asset]:
-            setList.remove(obj)
-        del assets[asset]
-    #
-    print 'explicit per asset_______'
-    print liveNsList
-    print setList
+    if assets:
+        for asset in assets:
+            converted = remapExplicit(assets[asset][0], assets[asset])
+            if converted:
+                solved.append(asset)
+                for member in converted:
+                    remappedSolve.append(member)
+                ns = assets[asset][0].split(':')[0]
+                if ns in liveNsList:
+                    liveNsList.remove(ns)
+        for asset in solved:
+            for obj in assets[asset]:
+                setList.remove(obj)
+            del assets[asset]
     #
     # solve sel ns
     if sel:
@@ -548,32 +393,23 @@ def remapMultiNs(sel=None, assets={}):
                     setList.remove(member)
                     remappedSolve.append(member)
     #
-    print 'sel ns_______'
-    print liveNsList
-    print setList
-    #
     # cycle through asset members
     for asset in assets:
         for member in assets[asset]:
             # cycle through liveNsList
             obj = member.split(':')[1]
             obj = findNewRef(obj, liveNsList)
-            print obj, '   *************'
             if obj:
                 if member in setList:
                     setList.remove(member)
                     remappedSolve.append(obj)
     #
-    # remove solved ns
+    # remove solved ns from previous section
     if remappedSolve:
         for member in remappedSolve:
             ref = member.split(':')[0]
             if ref in liveNsList:
                 liveNsList.remove(ref)
-    #
-    print 'cycle assets_______'
-    print liveNsList
-    print setList
     #
     # check liveNsList
     if liveNsList:
@@ -608,9 +444,9 @@ def remapMultiNs(sel=None, assets={}):
             if ref in liveNsList:
                 liveNsList.remove(ref)
     #
-    print 'check dupes_______'
-    print liveNsList
-    print setList
+    # print 'check dupes_______'
+    # print liveNsList
+    # print setList
     #
     # compare results
     converted = None
@@ -623,9 +459,10 @@ def remapMultiNs(sel=None, assets={}):
         converted = remappedExplicit
         liveNsList = None
     #
+    # Done
     if liveNsList:
         ns = ''
         for n in liveNsList:
             ns = ns + ' -- ' + n
-        message('Objects were not resolved for these namespaces: ' + ns, warning=True)
+        message('WRONG MESSAGE -- Objects were not resolved for these namespaces: ' + ns, warning=True)
     return converted
