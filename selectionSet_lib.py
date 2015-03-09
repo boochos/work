@@ -249,12 +249,10 @@ def findNewRef(obj, liveRefs):
     '''
     remapped = None
     availabeleNs = []
-    removeRef = []
     for ref in liveRefs:
         renamed = ref + ':' + obj
         if cmds.objExists(renamed):
             availabeleNs.append(ref)
-            removeRef.append(ref)
         else:
             renamed = None
     if len(availabeleNs) == 1:
@@ -362,38 +360,40 @@ def remapMultiNs(sel=None, assets={}):
         remappedExplicit = remapExplicit(sel, setList)
     #
     # explicit per asset
-    solved = []
+    solvedAssets = []
     if assets:
         for asset in assets:
             converted = remapExplicit(assets[asset][0], assets[asset])
             if converted:
-                solved.append(asset)
+                solvedAssets.append(asset)
                 for member in converted:
                     remappedSolve.append(member)
                 ns = assets[asset][0].split(':')[0]
                 if ns in liveNsList:
                     liveNsList.remove(ns)
-        for asset in solved:
+        for asset in solvedAssets:
             for obj in assets[asset]:
                 setList.remove(obj)
             del assets[asset]
     #
     # solve sel ns
     if sel:
-        obj = findNewRef(sel, liveNsList)
+        selObj = sel.split(':')[1]
+        selRef = sel.split(':')[0]
+        obj = findNewRef(selObj, liveNsList)
         if obj:
-            setList.remove(obj)
+            liveNsList.remove(selRef)
             remappedSolve.append(obj)
-            ref = obj.split(':')[0]
-            selRef = sel.split(':')[0]
-            del assets[selRef]
+            #
             for member in setList:
-                if selRef in member:
-                    member = member.replace(selRef, ref)
+                if selObj in member:
+                    asset = member.split(':')[0]
                     setList.remove(member)
                     remappedSolve.append(member)
+            del assets[asset]
     #
     # cycle through asset members
+    solvedAssets = []
     for asset in assets:
         for member in assets[asset]:
             # cycle through liveNsList
@@ -403,6 +403,11 @@ def remapMultiNs(sel=None, assets={}):
                 if member in setList:
                     setList.remove(member)
                     remappedSolve.append(obj)
+                if asset not in solvedAssets:
+                    solvedAssets.append(asset)
+    if solvedAssets:
+        for asset in solvedAssets:
+            del assets[asset]
     #
     # remove solved ns from previous section
     if remappedSolve:
@@ -444,10 +449,6 @@ def remapMultiNs(sel=None, assets={}):
             if ref in liveNsList:
                 liveNsList.remove(ref)
     #
-    # print 'check dupes_______'
-    # print liveNsList
-    # print setList
-    #
     # compare results
     converted = None
     if len(remappedSolve) > len(remappedExplicit):
@@ -460,9 +461,9 @@ def remapMultiNs(sel=None, assets={}):
         liveNsList = None
     #
     # Done
-    if liveNsList:
+    if assets:
         ns = ''
-        for n in liveNsList:
+        for n in assets:
             ns = ns + ' -- ' + n
         message('WRONG MESSAGE -- Objects were not resolved for these namespaces: ' + ns, warning=True)
     return converted
