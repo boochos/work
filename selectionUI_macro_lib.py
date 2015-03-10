@@ -458,38 +458,29 @@ class CSUI(object):
         '''
         returns sets for browse column, depending on variable
         '''
-        # BUG: deformer lattice points aren't found as an option, but selecting the set works
         # the file also wasnt found once created, perhaps ui filesystem lag, try delaying query
-        sceneContents = []
         contextualSets = []
         #
-        scene = cmds.ls(fl=True)
-        scene = ss.stripPipe(scene)
-        for obj in scene:
-            if ':' in obj:
-                sceneContents.append(obj.split(':')[1])
-            else:
-                sceneContents.append(obj)
-        #
         sets = self.cmdGetAllSets()
+        liveNs = ss.listLiveNs()
         for s in sets:
             dic = ss.loadDict(os.path.join(ss.defaultPath(), s + self.ext))
-            liveNs = ss.listLiveContextualNs(dic.keys())
             foundNs = []
-            for obj in dic.values():
-                # need line here to avoid looping too many objects that have already been resolved under a namespace
-                # if ns not in foundNs:
-                if '[' not in obj:
-                    if obj in sceneContents:
+            for obj in dic.keys():
+                if ':' in obj:
+                    obj = obj.split(':')[1]
+                    objNs = obj.split(':')[0]
+                    if objNs not in foundNs:
+                        for ns in liveNs:
+                            if cmds.objExists(ns + ':' + obj):
+                                if s not in contextualSets:
+                                    contextualSets.append(s)
+                                    foundNs.append(objNs)
+                                    break
+                else:
+                    if cmds.objExists(obj):
                         if s not in contextualSets:
                             contextualSets.append(s)
-                else:  # TODO: really slow
-                    for ns in liveNs:
-                        if cmds.objExists(ns + ':' + obj):
-                            if s not in contextualSets:
-                                contextualSets.append(s)
-                                foundNs.append(ns)
-                                break
         #
         if self.contextualList:
             return contextualSets
@@ -501,7 +492,6 @@ class CSUI(object):
         select highlighted sets in browse column
         '''
         selAdd = []
-        # sets = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
         for s in sets:
             setDict = ss.loadDict(os.path.join(ss.defaultPath()) + s + self.ext)
             selection = ss.remapMultiNs(sel='', assets=ss.splitSetToAssets(setDict=setDict))
