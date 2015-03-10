@@ -139,6 +139,9 @@ def getSetNsList(setList=[]):
 
 
 def splitNs(obj, colon=True):
+    '''
+    may need a version of this in the future for nested references
+    '''
     if ':' in obj:
         i = obj.rfind(':')
         ref = obj[:i]
@@ -242,14 +245,14 @@ def findSet():
     return addSel
 
 
-def findNewRef(obj, liveRefs):
+def findNewNs(obj, liveNs):
     '''
     obj = obj without ns
-    liveRefs = edited as solutions are found
+    liveNs = edited as solutions are found
     '''
     remapped = None
     availabeleNs = []
-    for ref in liveRefs:
+    for ref in liveNs:
         renamed = ref + ':' + obj
         if cmds.objExists(renamed):
             availabeleNs.append(ref)
@@ -380,7 +383,7 @@ def remapMultiNs(sel=None, assets={}):
     if sel:
         selObj = sel.split(':')[1]
         selRef = sel.split(':')[0]
-        obj = findNewRef(selObj, liveNsList)
+        obj = findNewNs(selObj, liveNsList)
         if obj:
             liveNsList.remove(selRef)
             remappedSolve.append(obj)
@@ -398,7 +401,7 @@ def remapMultiNs(sel=None, assets={}):
         for member in assets[asset]:
             # cycle through liveNsList
             obj = member.split(':')[1]
-            obj = findNewRef(obj, liveNsList)
+            obj = findNewNs(obj, liveNsList)
             if obj:
                 if member in setList:
                     setList.remove(member)
@@ -465,5 +468,5 @@ def remapMultiNs(sel=None, assets={}):
         ns = ''
         for n in assets:
             ns = ns + ' -- ' + n
-        message('WRONG MESSAGE -- Objects were not resolved for these namespaces: ' + ns, warning=True)
+        message('WRONG MESSAGE -- Objects were not remapped for these namespaces: ' + ns, warning=True)
     return converted

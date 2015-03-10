@@ -31,7 +31,7 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
-    # TODO: add auto select set toggle, and additive or exclusive behaviour
+    # FUTURE: add auto select set toggle, and additive or exclusive behaviour
     # https://tug.org/pracjourn/2007-4/walden/color.pdf
     # filtersOn.png filtersOff.png gotoLine.png
 
@@ -458,6 +458,8 @@ class CSUI(object):
         '''
         returns sets for browse column, depending on variable
         '''
+        # BUG: deformer lattice points aren't found as an option, but selecting the set works
+        # the file also wasnt found once created, perhaps ui filesystem lag, try delaying query
         sceneContents = []
         contextualSets = []
         #
@@ -472,10 +474,22 @@ class CSUI(object):
         sets = self.cmdGetAllSets()
         for s in sets:
             dic = ss.loadDict(os.path.join(ss.defaultPath(), s + self.ext))
+            liveNs = ss.listLiveContextualNs(dic.keys())
+            foundNs = []
             for obj in dic.values():
-                if obj in sceneContents:
-                    if s not in contextualSets:
-                        contextualSets.append(s)
+                # need line here to avoid looping too many objects that have already been resolved under a namespace
+                # if ns not in foundNs:
+                if '[' not in obj:
+                    if obj in sceneContents:
+                        if s not in contextualSets:
+                            contextualSets.append(s)
+                else:  # TODO: really slow
+                    for ns in liveNs:
+                        if cmds.objExists(ns + ':' + obj):
+                            if s not in contextualSets:
+                                contextualSets.append(s)
+                                foundNs.append(ns)
+                                break
         #
         if self.contextualList:
             return contextualSets
