@@ -26,8 +26,8 @@ class Action(object):
         self.actionButton7 = name + '_actionButton7'
         self.actionButton8 = name + '_actionButton8'
         self.actionButton9 = name + '_actionButton9'
-        self.actionButton10 = name + '_actionButton10'
-        self.actionButton11 = name + '_actionButton11'
+        #self.actionButton10 = name + '_actionButton10'
+        #self.actionButton11 = name + '_actionButton11'
         self.actionButton12 = name + '_actionButton12'
         self.actionButton13 = name + '_actionButton13'
         self.actionButton14 = name + '_actionButton14'
@@ -61,28 +61,14 @@ class Action(object):
         self.r2 = ''
         self.label = label
         self.cmdAction = cmdAction
-        self.ui = [self.form, self.opt, self.actionButton1, self.actionButton2, self.actionButton3,
-                   self.actionButton4, self.actionButton5, self.actionButton6, self.actionField1,
-                   self.actionButton7, self.actionButton8, self.actionButton9, self.actionButton10,
-                   self.actionButton11, self.actionButton12, self.actionButton13, self.actionButton14,
-                   self.actionButton15, self.actionButton16, self.c1, self.c2, self.c3, self.c4,
-                   self.c5, self.c7, self.c8, self.c9, self.c10, self.c11, self.c12, self.c13,
-                   self.c14, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.s6, self.s7,
-                   self.opt1, self.col1, self.r1, self.r2]
+        #
         self.h = h
         self.w = w
         self.heightForm = 30
         self.sepH = 15
         self.sepStl = 'in'
-        # self.cleanUI()
         self.buildColumn()
         self.buildAction()
-
-    def cleanUI(self):
-        cmds.setParent(self.parent)
-        for ui in self.ui:
-            if cmds.control(ui, q=True, exists=True):
-                cmds.deleteUI(ui)
 
     def buildColumn(self):
         cmds.setParent(self.parent)
@@ -112,10 +98,8 @@ class Action(object):
         self.c3 = cmds.checkBox(label='Timeline Range', ann=time)
         self.c4 = cmds.checkBox(label='On All Frames', v=False, ann=simu)
         # rotate order
-        self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=red,
-                                         ann='Change rotate order of selected Object.')
-        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', w=self.w, cw=[1, self.w],
-                                       ann='Select rotate order to bake to.')
+        self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=red, ann='Change rotate order of selected Object.')
+        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', w=self.w, cw=[1, self.w], ann='Select rotate order to bake to.')
         ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
         for o in ro:
             cmds.menuItem(o)
@@ -137,18 +121,18 @@ class Action(object):
                                           ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Override - Restore animation to selected object.')
         self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
         # match things
-        self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=green,
-                                         ann='Select 2 objects.\nSecond object will be keyed on same frames as the first.\nNo animation is added, the object is just keyed.')
-        self.actionButton6 = cmds.button(self.actionButton6, label='Match Transforms', c=self.cmdAction, bgc=green,
-                                         ann='Match the position of first object to second object.')
-        self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)
+        # self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=green,
+        #                                ann='Select 2 objects.\nSecond object will be keyed on same frames as the first.\nNo animation is added, the object is just keyed.')
+        # self.actionButton6 = cmds.button(self.actionButton6, label='Match Transforms', c=self.cmdAction, bgc=green,
+        #                                 ann='Match the position of first object to second object.')
+        # self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)
         # stick
-        self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=teal,
-                                          ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
-        self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=teal,
-                                          ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
-        self.c1 = cmds.checkBox(label='On All Frames', v=False, ann=existing)
-        self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
+        # self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=teal,
+        # ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
+        # self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=teal,
+        # ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
+        # self.c1 = cmds.checkBox(label='On All Frames', v=False, ann=existing)
+        # self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
         # anim Rigs
         self.actionButton12 = cmds.button(self.actionButton12, label='Parent Rig', c=self.cmdAction, bgc=greyD,
                                           ann='A parent rig is created between 2 objects.\n Animation is preserved and transfered to a locator.\nSelect child first.\nROOT/SPIN/OFFSET')

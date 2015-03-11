@@ -42,6 +42,7 @@ class CSUI(object):
         # internal
         self.selDir = os.path.split(self.path)[1]
         self.windowName = 'SelectionSetManager'
+        self.windowNameDock = self.windowName + 'Dock'
         self.dirStr = ' / '
         self.ext = '.sel'
         self.scroll = ''
@@ -68,6 +69,9 @@ class CSUI(object):
         self.drawWindow()
         self.populateBrowse()
         self.populateSelection()
+        # dock control
+        allowedAreas = ['right', 'left']
+        cmds.dockControl(self.windowNameDock, area='left', fl=True, content=self.windowName, allowedArea=allowedAreas)
 
     def message(self, what='', maya=True, ui=True, *args):
         if what != '':
@@ -84,6 +88,7 @@ class CSUI(object):
         # IGNORE: script job keeps running if window is closed with X button
         try:
             cmds.deleteUI(self.windowName)
+            cmds.deleteUI(self.windowNameDock)
         except:
             pass
 
@@ -109,7 +114,7 @@ class CSUI(object):
         cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm, attachControl=attachControl)
         # edit sets ui
         cmds.setParent(self.mainForm)
-        self.mainModularForm = cmds.formLayout('mainTopRightFormSs', w=200, h=100)
+        self.mainModularForm = cmds.formLayout('mainTopRightFormSs', w=self.columnWidth, h=100)
         attachForm = [(self.mainModularForm, 'top', 5), (self.mainModularForm, 'right', 5), (self.mainModularForm, 'bottom', 5)]
         attachControl = [(self.mainModularForm, 'left', 5, self.mainTopLeftForm)]
         cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm, attachControl=attachControl)
@@ -119,7 +124,7 @@ class CSUI(object):
         h = 20
         # preview
         self.previewForm = ui.Form(label='Set Members', name='selectionSets', parent=self.mainModularForm, createList=True, h=80, allowMultiSelection=True, cmdSingle=None, cmdDouble=self.cmdDisplayStyle)
-        cmds.formLayout(self.previewForm.form, edit=True, w=200)
+        cmds.formLayout(self.previewForm.form, edit=True, w=self.columnWidth)
         attachForm = [(self.previewForm.form, 'left', 0), (self.previewForm.form, 'top', 0), (self.previewForm.form, 'bottom', 0)]
         cmds.formLayout(self.mainModularForm, edit=True, attachForm=attachForm)
         # scene selection
