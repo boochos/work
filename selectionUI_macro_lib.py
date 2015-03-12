@@ -31,7 +31,7 @@ class CSUI(object):
     '''
     Build Selection Set UI
     '''
-    # FUTURE: add auto select set toggle, and additive or exclusive behaviour
+    # FUTURE: remap namespace option for member double click
     # https://tug.org/pracjourn/2007-4/walden/color.pdf
     # filtersOn.png filtersOff.png gotoLine.png
 
@@ -70,8 +70,8 @@ class CSUI(object):
         self.populateBrowse()
         self.populateSelection()
         # dock control
-        allowedAreas = ['right', 'left']
-        cmds.dockControl(self.windowNameDock, area='left', fl=True, content=self.windowName, allowedArea=allowedAreas)
+        # allowedAreas = ['right', 'left']
+        # cmds.dockControl(self.windowNameDock, area='left', fl=True, content=self.windowName, allowedArea=allowedAreas)
 
     def message(self, what='', maya=True, ui=True, *args):
         if what != '':
@@ -93,66 +93,65 @@ class CSUI(object):
             pass
 
     def browseUI(self):
-        self.win = cmds.window(self.windowName, w=700)
+        moveUp = 20
+        h = 20
+        moveUp = moveUp + 2
+        self.win = cmds.window(self.windowName, w=self.columnWidth * 2)
         # main form
         self.mainForm = cmds.formLayout('mainFormSs')
+
         # left form
         cmds.setParent(self.mainForm)
-        self.mainTopLeftForm = cmds.formLayout('mainTopLeftFormSs', w=self.columnWidth, h=190)
-        attachForm = [(self.mainTopLeftForm, 'left', 5), (self.mainTopLeftForm, 'top', 5), (self.mainTopLeftForm, 'bottom', 5)]
+        self.mainLeftForm = cmds.formLayout('mainTopLeftFormSs', w=self.columnWidth, h=190)
+        attachForm = [(self.mainLeftForm, 'left', 5), (self.mainLeftForm, 'top', 5), (self.mainLeftForm, 'bottom', 5)]
         cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm)
+
         # create set ui
-        self.createSetForm = ui.Form(label='Set Name', name='createSs', parent=self.mainTopLeftForm, createField=True)
+        self.createSetForm = ui.Form(label='Set Name', name='createSs', parent=self.mainLeftForm, createField=True)
         cmds.textField(self.createSetForm.field, e=True, ec=self.cmdCreate, aie=True)
         cmds.formLayout(self.createSetForm.form, edit=True, h=60)
         attachForm = [(self.createSetForm.form, 'left', 0), (self.createSetForm.form, 'top', 0), (self.createSetForm.form, 'right', 0)]
-        cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm)
+        cmds.formLayout(self.mainLeftForm, edit=True, attachForm=attachForm)
+        # create button
+        self.createSet = ui.Button(name='addSet', label=self.createLabel, cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0, bgc=self.clr.grey)
         # browse ui
-        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainTopLeftForm, createList=True, cmdSingle=self.cmdBrowse, cmdDouble=self.renameUI, h=80, allowMultiSelection=True)
+        self.browseForm = ui.Form(label='Select Sets', name='browseSs', parent=self.mainLeftForm, createList=True, cmdSingle=self.cmdBrowse, cmdDouble=self.renameUI, h=80, allowMultiSelection=True)
         attachForm = [(self.browseForm.form, 'left', 0), (self.browseForm.form, 'bottom', 0), (self.browseForm.form, 'right', 0)]
         attachControl = [(self.browseForm.form, 'top', 0, self.createSetForm.form)]
-        cmds.formLayout(self.mainTopLeftForm, edit=True, attachForm=attachForm, attachControl=attachControl)
-        # edit sets ui
-        cmds.setParent(self.mainForm)
-        self.mainModularForm = cmds.formLayout('mainTopRightFormSs', w=self.columnWidth, h=100)
-        attachForm = [(self.mainModularForm, 'top', 5), (self.mainModularForm, 'right', 5), (self.mainModularForm, 'bottom', 5)]
-        attachControl = [(self.mainModularForm, 'left', 5, self.mainTopLeftForm)]
-        cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm, attachControl=attachControl)
-
-        # copied from export cs function, deleted
-        moveUp = 20
-        h = 20
-        # preview
-        self.previewForm = ui.Form(label='Set Members', name='selectionSets', parent=self.mainModularForm, createList=True, h=80, allowMultiSelection=True, cmdSingle=None, cmdDouble=self.cmdDisplayStyle)
-        cmds.formLayout(self.previewForm.form, edit=True, w=self.columnWidth)
-        attachForm = [(self.previewForm.form, 'left', 0), (self.previewForm.form, 'top', 0), (self.previewForm.form, 'bottom', 0)]
-        cmds.formLayout(self.mainModularForm, edit=True, attachForm=attachForm)
-        # scene selection
-        self.selectionForm = ui.Form(label='Maya Selection', name='selection', parent=self.mainModularForm, createList=True, h=80, allowMultiSelection=True)
-        cmds.formLayout(self.selectionForm.form, edit=True, w=1)
-        attachForm = [(self.selectionForm.form, 'top', 0), (self.selectionForm.form, 'right', 0), (self.selectionForm.form, 'bottom', 0)]
-        attachControl = [(self.selectionForm.form, 'left', 5, self.previewForm.form)]
-        cmds.formLayout(self.mainModularForm, edit=True, attachForm=attachForm, attachControl=attachControl)
-        cmds.textScrollList(self.selectionForm.scroll, e=True, en=False)
+        cmds.formLayout(self.mainLeftForm, edit=True, attachForm=attachForm, attachControl=attachControl)
         # buttons
-        self.addMember = ui.Button(name='AddMember', label='Add Members', cmd=self.cmdAddMember, parent=self.selectionForm.form, moveUp=moveUp * 1, h=h)
-        self.removeMember = ui.Button(name='removeMember', label='Remove Members', cmd=self.cmdRemoveMember, parent=self.previewForm.form, moveUp=moveUp * 1, h=h)
-        self.deleteSet = ui.Button(name='deleteSet', label='Delete Set', cmd=self.cmdDelete, parent=self.browseForm.form, moveUp=moveUp * 1, h=h)
-        #
-        self.createSet = ui.Button(name='addSet', label=self.createLabel, cmd=self.cmdCreate, parent=self.createSetForm.form, moveUp=moveUp * 0)
-        #
-        h = 20
-        self.querySets = ui.Button(name='querySets', label='Query Sets', cmd=self.cmdQuerySets, parent=self.selectionForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
-        self.namespaces = ui.Button(name='namespaces', label=self.displayLabel + self.on, cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
-        self.contextual = ui.Button(name='contextual', label=self.contextualLabel + self.on, cmd=self.cmdContextualToggle, parent=self.browseForm.form, moveUp=moveUp * 0, h=h, bgc=self.clr.greyD)
-        # accommodate new buttons
-        moveUp = moveUp + 2
-        attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 2)]
-        cmds.formLayout(self.previewForm.form, edit=True, attachForm=attachForm)
-        attachForm = [(self.selectionForm.scroll, 'bottom', moveUp * 2)]
-        cmds.formLayout(self.selectionForm.form, edit=True, attachForm=attachForm)
+        self.deleteSet = ui.Button(name='deleteSet', label='Delete Set', cmd=self.cmdDelete, parent=self.browseForm.form, moveUp=moveUp * 1, h=h, bgc=self.clr.red)
+        self.contextual = ui.Button(name='contextual', label=self.contextualLabel + self.on, cmd=self.cmdContextualToggle, parent=self.browseForm.form, moveUp=moveUp * 0, h=h)
+        # make room for buttons
         attachForm = [(self.browseForm.scroll, 'bottom', moveUp * 2)]
         cmds.formLayout(self.browseForm.form, edit=True, attachForm=attachForm)
+
+        # preview ui
+        self.previewForm = ui.Form(label='Set Members', name='selectionSets', parent=self.mainForm, createList=True, h=80, allowMultiSelection=True, cmdSingle=None, cmdDouble=self.cmdDisplayStyle)
+        cmds.formLayout(self.previewForm.form, edit=True, w=self.columnWidth)
+        attachForm = [(self.previewForm.form, 'left', self.columnWidth + 5), (self.previewForm.form, 'top', 5), (self.previewForm.form, 'bottom', 5)]
+        attachControl = [(self.previewForm.form, 'left', 5, self.mainLeftForm)]
+        cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm, attachControl=attachControl)
+        # buttons
+        self.removeMember = ui.Button(name='removeMember', label='Remove Members', cmd=self.cmdRemoveMember, parent=self.previewForm.form, moveUp=moveUp * 1, h=h, bgc=self.clr.grey)
+        self.namespaces = ui.Button(name='namespaces', label=self.displayLabel + self.on, cmd=self.cmdDisplayStyle, parent=self.previewForm.form, moveUp=moveUp * 0, h=h)
+        # make room for buttons
+        attachForm = [(self.previewForm.scroll, 'bottom', moveUp * 2)]
+        cmds.formLayout(self.previewForm.form, edit=True, attachForm=attachForm)
+
+        # scene selection ui
+        self.selectionForm = ui.Form(label='Maya Selection', name='selection', parent=self.mainForm, createList=True, h=80, allowMultiSelection=True)
+        cmds.formLayout(self.selectionForm.form, edit=True, w=1)
+        attachForm = [(self.selectionForm.form, 'top', 5), (self.selectionForm.form, 'right', 5), (self.selectionForm.form, 'bottom', 5)]
+        attachControl = [(self.selectionForm.form, 'left', 5, self.previewForm.form)]
+        cmds.formLayout(self.mainForm, edit=True, attachForm=attachForm, attachControl=attachControl)
+        cmds.textScrollList(self.selectionForm.scroll, e=True, en=False)
+        # buttons
+        self.addMember = ui.Button(name='AddMember', label='Add Members', cmd=self.cmdAddMember, parent=self.selectionForm.form, moveUp=moveUp * 1, h=h, bgc=self.clr.grey)
+        self.querySets = ui.Button(name='querySets', label='Query Sets', cmd=self.cmdQuerySets, parent=self.selectionForm.form, moveUp=moveUp * 0, h=h)
+        # make room for buttons
+        attachForm = [(self.selectionForm.scroll, 'bottom', moveUp * 2)]
+        cmds.formLayout(self.selectionForm.form, edit=True, attachForm=attachForm)
 
         self.scroll = self.selectionForm.scroll
         toggleJob(scroll=self.scroll, k=self.keys)
@@ -163,20 +162,23 @@ class CSUI(object):
             name = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)[0]
             cmds.textField(self.createSetForm.field, e=True, text=name, ec=self.cmdRename)
             cmds.button(self.createSet.name, e=True, l=self.renameLabel, c=self.cmdRename, bgc=self.clr.blue)
-            cmds.formLayout(self.mainModularForm, e=True, en=False)
+            cmds.formLayout(self.selectionForm.form, e=True, en=False)
+            cmds.formLayout(self.previewForm.form, e=True, en=False)
             cmds.setFocus(self.createSetForm.field)
         else:
             # reset UI
             self.alternateUI = False
             cmds.textField(self.createSetForm.field, e=True, text='', ec=self.cmdCreate, aie=True)
-            cmds.button(self.createSet.name, e=True, l=self.createLabel, c=self.cmdCreate, bgc=self.clr.neutral)
-            cmds.formLayout(self.mainModularForm, e=True, en=True)
+            cmds.button(self.createSet.name, e=True, l=self.createLabel, c=self.cmdCreate, bgc=self.clr.grey)
+            cmds.formLayout(self.selectionForm.form, e=True, en=True)
+            cmds.formLayout(self.previewForm.form, e=True, en=True)
             cmds.textField(self.createSetForm.field, e=True, bgc=self.clr.darkbg)
             cmds.setFocus(self.browseForm.scroll)
 
     def overwriteUI(self):
         self.alternateUI = True
-        cmds.formLayout(self.mainModularForm, e=True, en=False)
+        cmds.formLayout(self.previewForm.form, e=True, en=False)
+        cmds.formLayout(self.selectionForm.form, e=True, en=False)
         cmds.textField(self.createSetForm.field, e=True, aie=False)
         cmds.button(self.createSet.name, e=True, l=self.overwriteLabel, c=self.cmdOverwrite, bgc=self.clr.red)
 

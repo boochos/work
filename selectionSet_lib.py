@@ -398,16 +398,21 @@ def remapMultiNs(sel=None, assets={}):
     # cycle through asset members
     solvedAssets = []
     for asset in assets:
-        for member in assets[asset]:
-            # cycle through liveNsList
-            obj = member.split(':')[1]
-            obj = findNewNs(obj, liveNsList)
-            if obj:
-                if member in setList:
-                    setList.remove(member)
-                    remappedSolve.append(obj)
-                if asset not in solvedAssets:
-                    solvedAssets.append(asset)
+        if asset not in 'obj':
+            for member in assets[asset]:
+                # cycle through liveNsList
+                print member
+                obj = member.split(':')[1]
+                obj = findNewNs(obj, liveNsList)
+                if obj:
+                    if member in setList:
+                        setList.remove(member)
+                        remappedSolve.append(obj)
+                    if asset not in solvedAssets:
+                        solvedAssets.append(asset)
+        else:
+            # add to selection if exists
+            pass
     if solvedAssets:
         for asset in solvedAssets:
             del assets[asset]

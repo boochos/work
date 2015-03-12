@@ -15,6 +15,9 @@ def rgbConversion(rgb=[]):
         pass
 
 
+# print rgbConversion(rgb=[86, 146, 184])
+
+
 class Get():
 
     def __init__(self):
@@ -34,3 +37,4 @@ class Get():
         self.purple2 = [0.28, 0.28, 0.39]
         self.orange = [0.5, 0.35, 0.0]
         self.pink = [0.8, 0.4, 0.4]
+        self.blue2 = [0.23, 0.36, 0.49]
