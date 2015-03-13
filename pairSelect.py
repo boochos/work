@@ -14,6 +14,7 @@ def message(what='', maya=False):
 
 
 class Get():
+
     def __init__(self):
         # scripts
         scriptDir = cmds.internalVar(usd=1)
@@ -119,47 +120,47 @@ def killJob():
     getJobs = cmds.scriptJob(lj=True)
     jobs = []
     for job in getJobs:
-        if "selUI.job()" in job:
+        if "ps.job()" in job:
             jobs.append(job.split(':')[0])
-    if len(jobs) > 0:
+    if jobs:
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
 
 
-# global id for script job
-id = None
+def jobState():
+    getJobs = cmds.scriptJob(lj=True)
+    jobs = []
+    for job in getJobs:
+        if "ps.job()" in job:
+            jobs.append(job.split(':')[0])
+    if jobs:
+        return True
+    else:
+        return False
 
 
 def toggleJob():
-    p = Get()
-    global id
-    if id:
-        killJob()
-        cmds.scriptJob(kill=id, force=True)
-        id = None
-        toggleIcon()
+    job = jobState()
+    killJob()
+    if job:
+        toggleIcon(off=False)
         message('Pair Selection OFF', maya=True)
     else:
-        # print id
-        killJob()
-        id = cmds.scriptJob(e=["SelectionChanged", "import pairSelect as ps\nps.job()"])
-        toggleIcon()
+        cmds.scriptJob(e=["SelectionChanged", "import webrImport as web\nps = web.mod('pairSelect')\nps.job()"])
+        toggleIcon(off=True)
         message('Pair Selection ON', maya=True)
 
 
 def toggleIcon(off=False):
     p = Get()
-    global id
     # List shelf buttons
     buttons = cmds.lsUI(type='shelfButton')
     # interate through buttons to find one using appropriate images
     for btn in buttons:
         img = cmds.shelfButton(btn, q=1, image=1)
+        # toggle icon
         if img in p.iconOff or img in p.iconOn:
-            if off:
+            if not off:
                 cmds.shelfButton(btn, edit=True, image=p.iconOff)
             else:
-                if id:
-                    cmds.shelfButton(btn, edit=True, image=p.iconOn)
-                else:
-                    cmds.shelfButton(btn, edit=True, image=p.iconOff)
+                cmds.shelfButton(btn, edit=True, image=p.iconOn)
