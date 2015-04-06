@@ -401,7 +401,7 @@ def remapMultiNs(sel=None, assets={}):
         if asset not in 'obj':
             for member in assets[asset]:
                 # cycle through liveNsList
-                print member
+                # print member
                 obj = member.split(':')[1]
                 obj = findNewNs(obj, liveNsList)
                 if obj:
