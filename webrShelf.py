@@ -85,7 +85,7 @@ def shelfAddButtons(*args):
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()')
 
     cmds.shelfButton(label='', annotation='set project from file name', w=wh, h=wh, image='PrjtSet.xpm',
-                     command='import webrImport as web\nfm = web.mod("fileMan_lib"\nreload(fm)\nfm.setProjectFromFilename("scenes")')
+                     command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.setProjectFromFilename("scenes")')
 
     cmds.shelfButton(label='print selection', annotation='print selection',
                      w=wh, h=wh, image='PrntSel.xpm', command='sl.prnt()')
@@ -156,11 +156,11 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='anim is pasted to selected objects', annotation='anim is pasted to selected objects', w=wh, h=wh,
                      image='AnimPaste.xpm', command='import webrImport as web\nalm = web.mod("animation_library_manager")\nancop = alm.AnimationToolbox()\nancop.animPaste()')
 
-    cmds.shelfButton(label='anim is imported from a file', annotation='anim is imported from a file', w=wh, h=wh,
-                     image='AnimImport.xpm', command='import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipApply(path=cp.clipDefaultTempPath() + "tempClip.clip")')
-
     cmds.shelfButton(label='anim is exported to a file', annotation='anim is exported to a file', w=wh,
                      h=wh, image='AnimExport.xpm', command='import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipSave(name="tempClip", temp=True)')
+
+    cmds.shelfButton(label='anim is imported from a file', annotation='anim is imported from a file', w=wh, h=wh,
+                     image='AnimImport.xpm', command='import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipApply(path=cp.clipDefaultTempPath() + "tempClip.clip")')
 
     cmds.shelfButton(label='speed attribute is added', annotation='speed attribute is added', w=wh,
                      h=wh, image='kmh.xpm', command='import webrImport as web\nds = web.mod("display_lib")\nds.speed(local=0)')
