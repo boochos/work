@@ -51,6 +51,7 @@ def graphFilters(attrs, panel=''):
     attrs should be seperated by commas
     use * as for wildcards/shortcuts ie.(ro*X) will filter rotateX
     '''
+    # TODO: any filter with '*' should be sorted first in order for it to work
     shortName = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']
     longName = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ', 'scaleX', 'scaleY', 'scaleZ']
     if attrs == '':
