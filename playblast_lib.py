@@ -225,6 +225,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 #subprocess.Popen(rvString)
                 '''
     elif os.name == 'posix':
+        print '__Patricia__\n'
         # could be linux or mac os
         # i = 1
         if not blastDir():
