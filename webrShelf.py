@@ -23,7 +23,7 @@ class Depend():
 
     def __init__(self):
         # shelf
-        self.shelf = 'WebrShelf'
+        self.shelf = 'Web'
         self.old = 'WebrShelf_old'
 
 
