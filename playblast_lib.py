@@ -153,7 +153,7 @@ def createBlastPath(suffix=None):
     return path
 
 
-def blastDir(forceTemp=True):
+def blastDir(forceTemp=False):
     '''
     forceTemp = use get default function to force a specified location, otherwise standard maya locations are used
     '''
@@ -189,7 +189,7 @@ def blastDir(forceTemp=True):
         return getDefaultPath()
 
 
-def blast(w=2094, h=858, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=False):
+def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=False):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
@@ -231,11 +231,12 @@ def blast(w=2094, h=858, x=1, format='qt', qlt=100, compression='H.264', offScre
             message('Set project', maya=True)
         else:
             pbName = shotDir2() + sceneName()
+            pbName = blastDir(forceTemp=False) + sceneName()
             if os.path.exists(pbName):
                 # print True
                 pass
             if 'image' not in format:
-                path = cmds.playblast(format=format, filename=shotDir2() + sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+                path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
                 playLo, playHi, current = getRange()
                 w = w * x
@@ -433,8 +434,8 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
 
     # checkbox
     chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0],
-        onc="import playblast_lib as pb\nreload(pb)\npb.addChecked(%s)" % (getString(strings=[path])),
-        ofc="import playblast_lib as pb\nreload(pb)\npb.removeChecked(%s)" % (getString(strings=[path])))
+                          onc="import playblast_lib as pb\nreload(pb)\npb.addChecked(%s)" % (getString(strings=[path])),
+                          ofc="import playblast_lib as pb\nreload(pb)\npb.removeChecked(%s)" % (getString(strings=[path])))
     cmds.formLayout(f, e=1, af=(chkBx, 'top', height / 2 - 8))
     cmds.formLayout(f, e=1, af=(chkBx, 'left', 4))
 
