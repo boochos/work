@@ -94,7 +94,7 @@ def toggle():
         all(v=0)
         # change to mid
         for geo in midGeo:
-            if cmds.objExists(geo):
+            if cmds.objExists(ns() + geo):
                 shapes = cmds.listRelatives(ns() + geo, type='shape')
                 for shape in shapes:
                     cmds.setAttr(shape + attr, 1)
@@ -104,7 +104,7 @@ def toggle():
         all(v=0)
         # change to lo
         for geo in loGeo:
-            if cmds.objExists(geo):
+            if cmds.objExists(ns() + geo):
                 shapes = cmds.listRelatives(ns() + geo, type='shape')
                 for shape in shapes:
                     cmds.setAttr(shape + attr, 1)
@@ -117,10 +117,12 @@ def all(v=0):
     allStates = [loGeo, midGeo, hiGeo, off]
     for state in allStates:
         for geo in state:
-            if cmds.objExists(geo):
+            if cmds.objExists(ns() + geo):
                 shapes = cmds.listRelatives(ns() + geo, type='shape')
                 for shape in shapes:
                     cmds.setAttr(shape + attr, v)
+            else:
+                print 'here\n'
         cmds.setAttr(ns() + loVis, v)
         if v == 0:
             message('all OFF --  ' + tip, maya=True)
@@ -131,7 +133,7 @@ def all(v=0):
 def hi():
     all(v=0)
     for geo in hiGeo:
-        if cmds.objExists(geo):
+        if cmds.objExists(ns() + geo):
             shapes = cmds.listRelatives(ns() + geo, type='shape')
             for shape in shapes:
                 cmds.setAttr(shape + attr, 1)
