@@ -76,7 +76,6 @@ class CSUI(object):
         # TODO: dockable window, tools used like in Nuke, with scroll bar ?maybe?
         # TODO: delete constraint button
         # FUTURE: add help section of some sort
-        # FUTURE: projection tool
         # TODO: witness camera tool, point and parent constraint options, could try heads up sliders fir fail safe
         # TODO: locator scale default multiplier
         # FUTURE: user pref files

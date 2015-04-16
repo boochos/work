@@ -1,10 +1,3 @@
 //stuff
 //python("import startup");
 //print ("__HERE__");
-
-//build graph editor buttons
-string $mod = "display_lib";
-string $import = "import webrImport as web\n";
-string $build = "ds = web.mod(\"" + $mod + "\")\n";
-string $run = "ds.graphEditorButtons()";
-python($import + $build + $run);
