@@ -164,11 +164,14 @@ def shelfAddButtons(*args):
 
     cmds.shelfButton(label='speed attribute is added', annotation='speed attribute is added', w=wh,
                      h=wh, image='kmh.xpm', command='import webrImport as web\nds = web.mod("display_lib")\nds.speed(local=0)')
-
+    '''
     cmds.shelfButton(label='select 2 objects', annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes',
                      w=wh, h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()')
-    # TODO: add quick undo button
-    # TODO: add turn on ui button
+    '''
+    cmds.shelfButton(label='quick undo', annotation='viewport toggle', w=wh,
+                     h=wh, imageOverlayLabel='_UI_', image='pythonFamily.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.uiEnable()')
+    cmds.shelfButton(label='quick undo', annotation='quick undo, viewport hide while executing undo', w=wh,
+                     h=wh, imageOverlayLabel='UNDO', image='pythonFamily.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.quickUndo()')
     # TODO: timewarp tool
     # TODO: timewarp with path anim, uisng some combo to sync path anim to, anim layer as time warp to keep object anim on same spot on curve
     # TODO: rivet

@@ -939,3 +939,11 @@ def bakeUndo():
         message(que)
     else:
         cmds.undo()
+
+
+def quickUndo():
+    que = 'Undo Action: ' + cmds.undoInfo(q=1, un=1)
+    uiEnable()
+    cmds.undo()
+    uiEnable()
+    message(que, maya=True)
