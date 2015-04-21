@@ -8,6 +8,19 @@ cn = web.mod('constraint_lib')
 fr = web.mod('frameRange_lib')
 
 
+def motionPathRandom():
+    # project
+    sel = cmds.ls(sl=1)  # select poly and curve to project
+    cmds.polyProjectCurve(sel[0], sel[1], ch=True, direction=(0, 1, 0))
+
+    # attach truck
+    sel = cmds.ls(sl=1)  # select: control attached to path and new curve
+    moP = cmds.listConnections(sel[0], source=True, destination=False, type='motionPath')[0]
+    cmds.select(sel[1])
+    shape = cmds.pickWalk(d='down')[0]
+    cmds.connectAttr(shape + '.worldSpace[0]', moP + '.geometryPath', force=True)
+
+
 def mocapSkelAnim():
     '''
     forgot what this is for
