@@ -261,7 +261,7 @@ def win(*args):
     atom_spln_falloff_text = cmds.text('atom_spln_falloff_text', align='left', label='Falloff:', width=92)
     atom_spln_falloff_floatField = cmds.floatField('atom_spln_falloff_floatField', v=1.0, pre=1, width=34)
 
-    atom_spln_spline_button = cmds.button('atom_spln_spline_button', c='from atom import atom_splineStage_lib\natom_splineStage_lib.splineStage(4)', label='Create Spline', h=25)
+    atom_spln_spline_button = cmds.button('atom_spln_spline_button', c='import atom_splineStage_lib\natom_splineStage_lib.splineStage(4)', label='Create Spline', h=25)
     atom_spln_spacerText = cmds.text('atom_spln_spacerText', label=' ', h=5)
 
     cmds.formLayout(atom_spln_formLayout, edit=True,
