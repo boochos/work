@@ -4,6 +4,8 @@ import maya.mel as mel
 import math
 import json
 import tempfile
+import urllib
+import imp
 #
 # import display_lib as ds
 import webrImport as web
@@ -119,8 +121,7 @@ def jobValue(*args):
 def jobUndo(*args):
     # need to reset globals if an undo is detected
     que = cmds.undoInfo(q=1, rn=1)
-    print que
-    if 'jobValue' in que:
+    if 'import curveSoftSelect as css' in que or 'jobValue' in que:
         cmds.undo()
     killValueJob()
     activateValueJob()
@@ -167,7 +168,7 @@ def activateValueJob(*args):
         globalInitiate()
         cmds.scriptJob(ac=[plug(), "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobValue()"])
         # cmds.scriptJob(ac=[plug(), "import curveSoftSelect as css\ncss.jobValue()"])
-        # message('Value script ON', maya=True)
+        message('Value script ON', maya=True)
     else:
         # message('nothing selected ____coudn\'t activate')
         pass
@@ -221,6 +222,37 @@ def toggleSelJob(*args):
         activateUndoJob()
         toggleButton()
         message('Soft key Selection ON', maya=True)
+
+
+def makeLocal(*args):
+    # var
+    modulename = 'curveSoftSelect'
+    varPath = os.path.expanduser('~') + '/maya/scripts/'
+    webPath = 'https://raw.githubusercontent.com/boochos/work/master/'
+    # download module
+    url = 'https://raw.github.com/boochos/work/master/download_lib.py'
+    dir = cmds.internalVar(usd=1)
+    dir = dir.partition('maya')
+    dir = os.path.join(dir[0], dir[1])
+    dir = os.path.join(dir, 'scripts')
+    urllib.urlretrieve(url, os.path.join(dir, 'download_lib.py'))
+
+    # create module
+    urlPath = webPath + modulename + '.py'
+    localPath = varPath + modulename + '.py'
+    infile = open(localPath, 'r')
+    contents = infile.read()
+
+    # create module
+    # must be exec mode
+    codeobj = compile(contents, '', 'exec')
+    module = imp.new_module(modulename)
+    exec(codeobj, module.__dict__)
+    return module
+
+
+def importLocal(*args):
+    pass
 
 
 def globalReset(*args):
