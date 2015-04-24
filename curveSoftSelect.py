@@ -6,6 +6,7 @@ import json
 import tempfile
 import urllib
 import imp
+import shutil
 #
 # import display_lib as ds
 import webrImport as web
@@ -13,7 +14,7 @@ import webrImport as web
 ds = web.mod('display_lib')
 
 # FUTURE: use Castejeau method to draw nicer curve
-
+# TODO: too many module imports for cloud usage... fix
 # globals
 idB = None
 glPlg = None
@@ -212,6 +213,9 @@ def toggleSelJob(*args):
         toggleButton()
         if os.path.isfile(globalPath()):
             os.remove(globalPath())
+            '''
+        if os.path.isdir(dir):'''
+
         message('Soft key Selection OFF', maya=True)
     else:
         idB = False
@@ -225,17 +229,25 @@ def toggleSelJob(*args):
 
 
 def makeLocal(*args):
+    # download module
+    modulename = 'curveSoftSelect'
+    url = 'https://raw.github.com/boochos/work/master/' + modulename + '.py'
+    dir = tempfile.gettempdir() + '/' + modulename
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+    urllib.urlretrieve(url, os.path.join(dir, modulename + '.py'))
+
+
+def removeLocal(*args):
+    path = ''
+    shutil.rmtree(path)
+
+
+def importLocal(*args):
     # var
     modulename = 'curveSoftSelect'
     varPath = os.path.expanduser('~') + '/maya/scripts/'
     webPath = 'https://raw.githubusercontent.com/boochos/work/master/'
-    # download module
-    url = 'https://raw.github.com/boochos/work/master/download_lib.py'
-    dir = cmds.internalVar(usd=1)
-    dir = dir.partition('maya')
-    dir = os.path.join(dir[0], dir[1])
-    dir = os.path.join(dir, 'scripts')
-    urllib.urlretrieve(url, os.path.join(dir, 'download_lib.py'))
 
     # create module
     urlPath = webPath + modulename + '.py'
@@ -249,10 +261,6 @@ def makeLocal(*args):
     module = imp.new_module(modulename)
     exec(codeobj, module.__dict__)
     return module
-
-
-def importLocal(*args):
-    pass
 
 
 def globalReset(*args):
@@ -303,6 +311,10 @@ def globalDump(G, *args):
 def globalPath(*args):
     # return os.path.expanduser('~') + '/softSelect_Temp.json'
     return tempfile.gettempdir() + '/softSelect_Temp.json'
+
+
+def globalTempPath(*arg):
+    pass
 
 
 def globs():
