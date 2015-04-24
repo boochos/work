@@ -2,6 +2,8 @@ import os
 import maya.cmds as cmds
 import maya.mel as mel
 import math
+import json
+import tempfile
 #
 # import display_lib as ds
 import webrImport as web
@@ -9,24 +11,14 @@ import webrImport as web
 ds = web.mod('display_lib')
 
 # FUTURE: use Castejeau method to draw nicer curve
-# BUG: off button broken
 
-# global job id
+# globals
 idB = None
-idV = None
-idS = None
-idUndo = False
-# global vars
-glVal = []
-glFrm = []
-glCrv = []
 glPlg = None
 
 
 def message(what='', maya=False):
     what = '-- ' + what + ' --'
-    global tell
-    tell = what
     if maya:
         mel.eval('print \"' + what + '\";')
     else:
@@ -41,8 +33,9 @@ def jobValue(*args):
         lcCrv = cmds.keyframe(q=True, name=True, sl=True)
         lcVal = []
         # set
-        global glVal
-        global glCrv
+        G = globalLoad()
+        glVal = G['glVal']
+        glCrv = G['glCrv']
         if not glCrv or glCrv != lcCrv:  # set globals
             # set local
             glCrv = lcCrv
@@ -110,49 +103,48 @@ def jobValue(*args):
                             b = b + 1
                         # reset global, stops loop from running!!!
                         glVal[c][v] = lcVal
-                        #message('did math')
+                        # message('did math')
                         # message('\n\n')
                     else:
                         pass
                         # print '________________________value variable is the same'
                     v = v + 1
                 c = c + 1
+            globalInitiate()
         else:
-            message('_____________________________________________________nothing to act on')
+            # message('nothing to act on')
+            pass
 
 
 def jobUndo(*args):
     # need to reset globals if an undo is detected
     que = cmds.undoInfo(q=1, rn=1)
-    if 'import curveSoftSelect as css' in que:
+    print que
+    if 'jobValue' in que:
         cmds.undo()
     killValueJob()
     activateValueJob()
 
 
 def killUndoJob(*args):
-    global idUndo
-    # print idUndo, '___killing undo job'
+    # print '___killing undo job'
     getJobs = cmds.scriptJob(lj=True)
     # print getJobs
     jobs = []
     for job in getJobs:
-        if "jobUndo()" in job:
+        if "jobUndo" in job:
             # print job, '______________ undo job'
             jobs.append(job.split(':')[0])
     if len(jobs) > 0:
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
-    global idUndo
-    idUndo = None
-    message('Undo script OFF', maya=True)
+    # message('Undo script OFF', maya=True)
 
 
 def activateUndoJob(*args):
-    global idUndo
-    idUndo = cmds.scriptJob(e=["Undo", "import curveSoftSelect as css\ncss.jobUndo()"])
-    # print idUndo
-    message('Undo script ON', maya=True)
+    cmds.scriptJob(e=["Undo", "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobUndo()"])
+    # cmds.scriptJob(e=["Undo", "import curveSoftSelect as css\ncss.jobUndo()"])
+    # message('Undo script ON', maya=True)
 
 
 def killValueJob(*args):
@@ -160,28 +152,29 @@ def killValueJob(*args):
     # print getJobs
     jobs = []
     for job in getJobs:
-        if "jobValue()" in job:
+        if "jobValue" in job:
             # print job, '______________ value job'
             jobs.append(job.split(':')[0])
     if len(jobs) > 0:
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
     globalReset()
-    message('Value script OFF', maya=True)
+    # message('Value script OFF', maya=True)
 
 
 def activateValueJob(*args):
     if plug():
         globalInitiate()
-        idV = cmds.scriptJob(ac=[plug(), "import curveSoftSelect as css\ncss.jobValue()"])
-        message('Value script ON', maya=True)
+        cmds.scriptJob(ac=[plug(), "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobValue()"])
+        # cmds.scriptJob(ac=[plug(), "import curveSoftSelect as css\ncss.jobValue()"])
+        # message('Value script ON', maya=True)
     else:
-        print 'nothing selected ____coudn\'t activate'
+        # message('nothing selected ____coudn\'t activate')
+        pass
 
 
 def jobSel(*args):
     # local curves
-    # globalReset()
     lcCrv = cmds.keyframe(q=True, name=True, sl=True)
     if lcCrv:
         killValueJob()
@@ -197,12 +190,12 @@ def killSelJob(*args):
     # print getJobs
     jobs = []
     for job in getJobs:
-        if "jobSel()" in job:
+        if "jobSel" in job:
             jobs.append(job.split(':')[0])
     if len(jobs) > 0:
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
-        message('Sel script OFF', maya=True)
+        # message('Sel script OFF', maya=True)
         return True
     else:
         return False
@@ -216,12 +209,14 @@ def toggleSelJob(*args):
         killValueJob()
         killUndoJob()
         toggleButton()
+        if os.path.isfile(globalPath()):
+            os.remove(globalPath())
         message('Soft key Selection OFF', maya=True)
-        # globalReset()
     else:
         idB = False
         killUndoJob()
-        cmds.scriptJob(e=["SelectionChanged", "import curveSoftSelect as css\ncss.jobSel()"])
+        cmds.scriptJob(e=["SelectionChanged", "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobSel()"])
+        # cmds.scriptJob(e=["SelectionChanged", "import curveSoftSelect as css\ncss.jobSel()"])
         jobSel()
         activateUndoJob()
         toggleButton()
@@ -229,21 +224,16 @@ def toggleSelJob(*args):
 
 
 def globalReset(*args):
-    global glFrm
-    glFrm = []
-    global glVal
-    glVal = []
-    global glCrv
-    glCrv = []
     global glPlg
     glPlg = None
-    print '___reset globals'
+    #
+    G = globs()
+    globalDump(G)
+    # print '___reset globals'
 
 
 def globalInitiate(*args):
-    global glCrv
-    global glVal
-    global glFrm
+    glVal = []
     frmTmp = []
     valTmp = []
     glCrv = cmds.keyframe(q=True, name=True, sl=True)
@@ -255,14 +245,37 @@ def globalInitiate(*args):
         for frame in frames:
             frmTmp.append(frame)
             valTmp.append(cmds.keyframe(crv, q=True, vc=True, time=(frame, frame))[0])
-        glFrm.append(frmTmp)
         glVal.append(valTmp)
         frmTmp = []
         valTmp = []
-    # print glCrv
-    # print glVal
-    # print glFrm
-    print '___initiate globals'
+    G = globs()
+    G['glCrv'] = glCrv
+    G['glVal'] = glVal
+    globalDump(G)
+    # print '___initiate globals'
+
+
+def globalLoad(*args):
+    path = globalPath()
+    fileObj = open(path, 'r')
+    G = json.load(fileObj)
+    return G
+
+
+def globalDump(G, *args):
+    path = globalPath()
+    fileObj = open(path, 'wb')
+    json.dump(G, fileObj, indent=2)
+
+
+def globalPath(*args):
+    # return os.path.expanduser('~') + '/softSelect_Temp.json'
+    return tempfile.gettempdir() + '/softSelect_Temp.json'
+
+
+def globs():
+    # needed for jobValue()
+    return {'glCrv': None, 'glVal': None}
 
 
 def plug(*args):
@@ -282,7 +295,7 @@ def toggleButton(*args):
     global idB
     # List shelf buttons
     buttons = cmds.lsUI(type='button')
-    # interate through buttons to find one using appropriate images
+    # iterate through buttons to find one using appropriate images
     for btn in buttons:
         if ui.sftSel in btn:
             if idB:
