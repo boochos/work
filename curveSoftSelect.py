@@ -5,9 +5,7 @@ import math
 import json
 import tempfile
 import urllib
-import imp
 import shutil
-import sys
 import py_compile
 
 #
@@ -17,7 +15,6 @@ import webrImport as web
 ds = web.mod('display_lib')
 
 # FUTURE: use Castejeau method to draw nicer curve
-# TODO: too many module imports for cloud usage... fix
 # globals
 idB = None
 glPlg = None
@@ -237,7 +234,7 @@ def makeLocal(*args):
     py_compile.compile(tempModDownloadPath())
     os.remove(tempModDownloadPath())
     removeLocal()
-    os.rename(tempModDownloadPath() + 'c', tempModPath())
+    shutil.move(tempModDownloadPath() + 'c', tempModPath())
 
 
 def removeLocal(*args):
