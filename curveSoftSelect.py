@@ -7,6 +7,9 @@ import tempfile
 import urllib
 import imp
 import shutil
+import sys
+import py_compile
+
 #
 # import display_lib as ds
 import webrImport as web
@@ -36,7 +39,7 @@ def jobValue(*args):
         lcCrv = cmds.keyframe(q=True, name=True, sl=True)
         lcVal = []
         # set
-        G = globalLoad()
+        G = varLoad()
         glVal = G['glVal']
         glCrv = G['glCrv']
         if not glCrv or glCrv != lcCrv:  # set globals
@@ -113,7 +116,7 @@ def jobValue(*args):
                         # print '________________________value variable is the same'
                     v = v + 1
                 c = c + 1
-            globalInitiate()
+            varInitiate()
         else:
             # message('nothing to act on')
             pass
@@ -144,8 +147,8 @@ def killUndoJob(*args):
 
 
 def activateUndoJob(*args):
-    cmds.scriptJob(e=["Undo", "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobUndo()"])
-    # cmds.scriptJob(e=["Undo", "import curveSoftSelect as css\ncss.jobUndo()"])
+    # cmds.scriptJob(e=["Undo", "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobUndo()"])
+    cmds.scriptJob(e=["Undo", "import %s as css\ncss.jobUndo()" % (tempModName())])
     # message('Undo script ON', maya=True)
 
 
@@ -160,15 +163,15 @@ def killValueJob(*args):
     if len(jobs) > 0:
         for job in jobs:
             cmds.scriptJob(kill=int(job), force=True)
-    globalReset()
+    varReset()
     # message('Value script OFF', maya=True)
 
 
 def activateValueJob(*args):
     if plug():
-        globalInitiate()
-        cmds.scriptJob(ac=[plug(), "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobValue()"])
-        # cmds.scriptJob(ac=[plug(), "import curveSoftSelect as css\ncss.jobValue()"])
+        varInitiate()
+        # cmds.scriptJob(ac=[plug(), "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobValue()"])
+        cmds.scriptJob(ac=[plug(), "import %s as css\ncss.jobValue()" % (tempModName())])
         message('Value script ON', maya=True)
     else:
         # message('nothing selected ____coudn\'t activate')
@@ -211,17 +214,16 @@ def toggleSelJob(*args):
         killValueJob()
         killUndoJob()
         toggleButton()
-        if os.path.isfile(globalPath()):
-            os.remove(globalPath())
-            '''
-        if os.path.isdir(dir):'''
-
+        if os.path.isfile(varFilePath()):
+            os.remove(varFilePath())
+        removeLocal()
         message('Soft key Selection OFF', maya=True)
     else:
         idB = False
         killUndoJob()
-        cmds.scriptJob(e=["SelectionChanged", "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobSel()"])
-        # cmds.scriptJob(e=["SelectionChanged", "import curveSoftSelect as css\ncss.jobSel()"])
+        makeLocal()
+        # cmds.scriptJob(e=["SelectionChanged", "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.jobSel()"])
+        cmds.scriptJob(e=["SelectionChanged", "import %s as css\ncss.jobSel()" % (tempModName())])
         jobSel()
         activateUndoJob()
         toggleButton()
@@ -230,49 +232,42 @@ def toggleSelJob(*args):
 
 def makeLocal(*args):
     # download module
-    modulename = 'curveSoftSelect'
-    url = 'https://raw.github.com/boochos/work/master/' + modulename + '.py'
-    dir = tempfile.gettempdir() + '/' + modulename
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-    urllib.urlretrieve(url, os.path.join(dir, modulename + '.py'))
+    url = 'https://raw.github.com/boochos/work/master/curveSoftSelect.py'
+    urllib.urlretrieve(url, tempModDownloadPath())
+    py_compile.compile(tempModDownloadPath())
+    os.remove(tempModDownloadPath())
+    removeLocal()
+    os.rename(tempModDownloadPath() + 'c', tempModPath())
 
 
 def removeLocal(*args):
-    path = ''
-    shutil.rmtree(path)
+    d = tempModPath()
+    if os.path.isfile(d):
+        os.remove(d)
 
 
-def importLocal(*args):
-    # var
-    modulename = 'curveSoftSelect'
-    varPath = os.path.expanduser('~') + '/maya/scripts/'
-    webPath = 'https://raw.githubusercontent.com/boochos/work/master/'
-
-    # create module
-    urlPath = webPath + modulename + '.py'
-    localPath = varPath + modulename + '.py'
-    infile = open(localPath, 'r')
-    contents = infile.read()
-
-    # create module
-    # must be exec mode
-    codeobj = compile(contents, '', 'exec')
-    module = imp.new_module(modulename)
-    exec(codeobj, module.__dict__)
-    return module
+def tempModPath(*arg):
+    return os.path.join(cmds.internalVar(usd=True) + tempModName() + '.pyc')
 
 
-def globalReset(*args):
+def tempModDownloadPath(*args):
+    return os.path.join(tempfile.gettempdir(), tempModName() + '.py')
+
+
+def tempModName(*args):
+    return 'curveSoftSel_Temp'
+
+
+def varReset(*args):
     global glPlg
     glPlg = None
     #
-    G = globs()
-    globalDump(G)
+    G = vars()
+    varDump(G)
     # print '___reset globals'
 
 
-def globalInitiate(*args):
+def varInitiate(*args):
     glVal = []
     frmTmp = []
     valTmp = []
@@ -288,36 +283,31 @@ def globalInitiate(*args):
         glVal.append(valTmp)
         frmTmp = []
         valTmp = []
-    G = globs()
+    G = vars()
     G['glCrv'] = glCrv
     G['glVal'] = glVal
-    globalDump(G)
+    varDump(G)
     # print '___initiate globals'
 
 
-def globalLoad(*args):
-    path = globalPath()
+def varLoad(*args):
+    path = varFilePath()
     fileObj = open(path, 'r')
     G = json.load(fileObj)
     return G
 
 
-def globalDump(G, *args):
-    path = globalPath()
+def varDump(G, *args):
+    path = varFilePath()
     fileObj = open(path, 'wb')
     json.dump(G, fileObj, indent=2)
 
 
-def globalPath(*args):
-    # return os.path.expanduser('~') + '/softSelect_Temp.json'
+def varFilePath(*args):
     return tempfile.gettempdir() + '/softSelect_Temp.json'
 
 
-def globalTempPath(*arg):
-    pass
-
-
-def globs():
+def vars():
     # needed for jobValue()
     return {'glCrv': None, 'glVal': None}
 
