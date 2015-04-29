@@ -7,7 +7,6 @@ cs = web.mod('characterSet_lib')
 cn = web.mod('constraint_lib')
 ds = web.mod('display_lib')
 ac = web.mod('animCurve_lib')
-# TODO: add new locators in rigs to character sets if they are attached
 
 
 def message(what='', maya=True):
@@ -16,6 +15,21 @@ def message(what='', maya=True):
         mel.eval('print \"' + what + '\";')
     else:
         print what
+
+
+def matchCharSet(source=None, objs=[]):
+    '''
+    source = get character set if connected
+    objs = make members of list in same set as source
+    '''
+    char = cmds.listConnections(source, t='character', s=False, d=True)
+    if char:
+        char = list(set(char))
+        if len(char) == 1:
+            for obj in objs:
+                cmds.character(obj, include=char[0])
+        else:
+            message('Object not added to Charecter set. More than one option found.')
 
 
 def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False):
@@ -193,64 +207,80 @@ def switchRHand():
     cmds.group(th, ind, mid, rin, pin, n='__RIGHT_HAND__')
 
 
-def aimRig(target='', obj='', size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False):
-    # TODO: add option to not keep current anim (don't bake offset or up controls )
-    # TODO: change first 2 vars to be None by default
+def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True):
     # BUG: does not support negative numbers for aim vectors, use for offset direction
-    # TODO: add parent option for aim control
     locs = []
-    if target == '':
+    if not target:
         sel = cmds.ls(sl=1)  # order = tip,base
-        target = sel[0]
-        obj = sel[1]
-    # sort axis
-    aAxs = ['.tx', '.ty', '.tz']
-    aAxs = aAxs[aim.index(1.0)]
-    uAxs = ['.tx', '.ty', '.tz']
-    uAxs = uAxs[u.index(1.0)]
-    # distance
-    offset = ds.measureDis(obj1=target, obj2=obj)
-    # place locator at locale A and constrain
-    locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__')[0]
-    locs.append(locA)
-    # match keys
-    cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
-    # bake locator A
-    cn.bakeConstrained(locA, removeConstraint=True, timeLine=False, sim=False)
-    # bake locator on location B
-    locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
-    locs.append(locB)
-    # place up locator on location B
-    locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 0.5, color=29, suffix='__UP__')[0]
-    # print locUp
-    # parent up locator, move up in ty, unparent
-    cmds.parent(locUp, locB)
-    cmds.setAttr(locUp + uAxs, offset)
-    # constraint up locator to locator B
-    cmds.parentConstraint(obj, locUp, mo=1)
-    # parent locUp to locator A, bake up locator
-    cmds.parent(locUp, locA)
-    cn.matchKeyedFrames(A=target, B=locUp, subtractive=True)
-    cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
-    # aim offset
-    locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__')[0]
-    cmds.parent(locAim, locB)
-    cmds.setAttr(locAim + aAxs, offset)
-    cmds.parent(locAim, locA)
-    cmds.parentConstraint(obj, locAim, mo=1)
-    cn.matchKeyedFrames(A=target, B=locAim, subtractive=True)
-    cn.bakeConstrained(locAim, removeConstraint=True, timeLine=False, sim=False)
-    # delete helper
-    con = cn.getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
-    cmds.delete(con, locB)
-    # aim constrain Locator A to B, using up locator as up vector
-    cmds.aimConstraint(locAim, obj, wut='obj', wuo=locUp, aim=aim, u=u, mo=mo)
-    # group
-    cmds.group(locA, n='__AIMRIG__#')
-    # select offset loc
-    cmds.select(locAim)
+        if len(sel) == 2:
+            target = sel[0]
+            obj = sel[1]
+        else:
+            cmds.warning('-- function requires 2 objects to be selected or fed as variables --')
+            return None
+    if target is not None and obj is not None:
+        # sort axis
+        aAxs = ['.tx', '.ty', '.tz']
+        aAxs = aAxs[aim.index(1.0)]
+        uAxs = ['.tx', '.ty', '.tz']
+        uAxs = uAxs[u.index(1.0)]
+        # distance
+        offset = ds.measureDis(obj1=target, obj2=obj)
+        # place locator at locale A and constrain
+        locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__')[0]
+        locs.append(locA)
+        # match keys
+        cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
+        # bake locator A
+        cn.bakeConstrained(locA, removeConstraint=True, timeLine=False, sim=False)
+        # bake locator on location B
+        locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
+        locs.append(locB)
+        # place up locator on location B
+        locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 0.5, color=29, suffix='__UP__')[0]
+        locs.append(locUp)
+        # print locUp
+        # parent up locator, move up in ty, unparent
+        cmds.parent(locUp, locB)
+        cmds.setAttr(locUp + uAxs, offset)
+        # constraint up locator to locator B
+        cmds.parentConstraint(obj, locUp, mo=1)
+        # parent locUp to locator A, bake up locator
+        cmds.parent(locUp, locA)
+        cn.matchKeyedFrames(A=target, B=locUp, subtractive=True)
+        cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
+        # aim offset
+        locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__')[0]
+        locs.append(locAim)
+        cmds.parent(locAim, locB)
+        cmds.setAttr(locAim + aAxs, offset)
+        cmds.parent(locAim, locA)
+        cmds.parentConstraint(obj, locAim, mo=1)
+        cn.matchKeyedFrames(A=target, B=locAim, subtractive=True)
+        cn.bakeConstrained(locAim, removeConstraint=True, timeLine=False, sim=False)
+        # delete helper
+        con = cn.getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
+        cmds.delete(con, locB)
+        locs.remove(locB)
+        # aim constrain Locator A to B, using up locator as up vector
+        cmds.aimConstraint(locAim, obj, wut='object', wuo=locUp, aim=aim, u=u, mo=mo)
+        # bake
+        if not bake:
+            for loc in locs:
+                attrs = ['rotateX', 'rotateY', 'rotateZ', 'translateX', 'translateY', 'translateZ']
+                ac.deleteAnim(loc, attrs=attrs)
+        else:
+            print bake
+        # cleanup
+        cmds.group(locA, n='__AIMRIG__#')
+        matchCharSet(obj, locs)
+        cmds.select(locAim)
 
-    return locs
+        message('Aim rig built', maya=True)
+        return locs
+    else:
+        cmds.warning('-- function requires 2 objects to be selected or fed as variables --')
+        return None
 
 
 def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, masterControl=False, masterPosition=0):
@@ -277,10 +307,15 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         uAxs = ['.tx', '.ty', '.tz']
         uAxs = uAxs[u.index(1.0)]
         # place locators on selection
+        locs = []
         coreL = cn.locator(obj=sel, constrain=False, X=5, color=15, suffix='__CORE__')[0]
+        locs.append(coreL)
         rootL = cn.locator(obj=sel, constrain=False, X=2, color=15, suffix='__ROOT__')[0]
+        locs.append(rootL)
         aimL = cn.locator(obj=sel, constrain=False, X=5, color=28, suffix='__AIM__')[0]
+        locs.append(aimL)
         upL = cn.locator(obj=sel, constrain=False, X=5, color=29, suffix='__UP__')[0]
+        locs.append(upL)
         upG = cn.null(obj=sel, suffix='__UP_GRP')
         # heirarchy, prep for offsets
         cmds.parent(rootL, coreL)
@@ -362,36 +397,47 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         cmds.pointConstraint(aimL, coreL, mo=True)
         ac.deleteAnim(coreL, attrs=['translateX', 'translateY', 'translateZ'], lock=True)
         cn.matchKeyedFrames(A=sel, B=coreL, subtractive=True)
+        # match char Set
+        matchCharSet(sel, locs)
+        # done
     else:
         message('select an object')
 
 
-def parentRig(*args):
+def parentRig(bake=True, *args):
     '''
     sometimes adds 2 pairblends, needs to be fixed as it breaks active char set key ticks.
     '''
-    # TODO: add option to not bake anim
     # store selection
     sel = cmds.ls(sl=True)
-    # place 3 locators on selection
-    offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__')[0]
-    root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__')[0]
-    spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__')[0]
-    # heirarchy
-    cmds.parent(offset, spin)
-    cmds.parent(spin, root)
-    cmds.parentConstraint(sel[1], root, mo=True)
-    # bake anim to offset loc
-    cmds.parentConstraint(sel[0], offset, mo=True)
-    cn.matchKeyedFrames(A=sel[0], B=offset, subtractive=True)
-    cn.bakeConstrained(offset, removeConstraint=True, timeLine=False, sim=False)
-    # cn.matchKeyedFrames(A=sel[0], B=offset, subtractive=True)
-    # create final rig constraints
-    cn.constrainEnabled(offset, sel[0], mo=True)
-    # cmds.parentConstraint(offset, sel[0], mo=True)
-    # cn.locSize(root, X=0.1)
-    cmds.select(offset)
-    # group
-    cmds.group(root, n='__PARENTRIG__#')
-    # select new control
-    cmds.select(offset)
+    if len(sel) == 2:
+        # place 3 locators on selection
+        offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__')[0]
+        root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__')[0]
+        spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__')[0]
+        # heirarchy
+        cmds.parent(offset, spin)
+        cmds.parent(spin, root)
+        cmds.parentConstraint(sel[1], root, mo=True)
+        # bake anim to offset loc
+        cmds.parentConstraint(sel[0], offset, mo=True)
+        cn.matchKeyedFrames(A=sel[0], B=offset, subtractive=True)
+        if bake:
+            cn.bakeConstrained(offset, removeConstraint=True, timeLine=False, sim=False)
+        else:
+            con = cn.getConstraint(offset)
+            if con:
+                cmds.delete(con)
+        # create final rig constraints
+        cn.constrainEnabled(offset, sel[0], mo=True)
+        # cn.locSize(root, X=0.1)
+        cmds.select(offset)
+        # group
+        cmds.group(root, n='__PARENTRIG__#')
+        # match char set
+        matchCharSet(sel[0], [offset])
+        # select new control
+        cmds.select(offset)
+        message('Parent rig built. -- New control Selected ', maya=True)
+    else:
+        cmds.warning('-- Select 2 objects --')

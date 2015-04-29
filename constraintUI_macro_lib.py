@@ -196,12 +196,10 @@ class CSUI(object):
     def cmdParentRig(self, *args):
         ar = web.mod('animRig_lib')
         ar.parentRig()
-        message('parent rig built. -- new control Selected ', maya=True)
 
     def cmdAimRig(self, *args):
         ar = web.mod('animRig_lib')
-        ar.aimRig(mo=False)
-        message('aimRig: -- ', maya=True)
+        ar.aimRig(mo=False, bake=False)
 
     def cmdDistributeKeys(self, *args):
         al = web.mod('anim_lib')

@@ -1,6 +1,7 @@
 import maya.cmds as cmds
 import maya.mel as mel
 import os
+import urllib2
 #
 import webrImport as web
 # web
@@ -462,11 +463,28 @@ def panelOnSelection():
         message('Select 4 objects', maya=True)
 
 
-def importCurveShape(name='', scale=1.0, overRide=False):
-    # TODO: not working yet
-    path = os.path.expanduser('~') + '/maya/controlShapes/'
+def loadCurveShape(name=None, local=False, *args):
+    # paths
+    if name:
+        if local:
+            path = os.path.expanduser('~') + '/maya/controlShapes/'
+        else:
+            url = 'https://raw.githubusercontent.com/boochos/controlShapes/master/'
+            url = url + name + '.txt'
+            req = urllib2.Request(url)
+            response = urllib2.urlopen(req)
+            contents = response.read()
+            contents = contents.split("\n")
+            shape = []
+            for line in contents:
+                if line:
+                    shape.append(line)
+            # returns 3 floats in string form
+            return shape
+
+
+def importCurveShape(name='loc_ctrl', scale=1.0, overRide=False):
     selection = cmds.ls(selection=True, tr=True)
-    path = path + '/' + name + '.txt'
     # change the shape of multiple selected curves
     if len(selection) > 0:
         for sel in selection:
@@ -475,16 +493,14 @@ def importCurveShape(name='', scale=1.0, overRide=False):
             # cvInfo is populated then interated through later
             cvInfo = []
             if cmds.nodeType(shapeNode) == 'nurbsCurve':
-                inFile = open(path, 'r')
-                for line in inFile.readlines():
-                    # extract the position data stored in the file
-                    cvLine = line.strip('\n')
-                    cvLine = cvLine.split(' ')
+                shape = loadCurveShape(name)
+                for line in shape:
+                    # split string floats, and convert to real floats
+                    cvLine = line.split(' ')
                     tmp = float(cvLine[0]) * scale, float(cvLine[1]) * scale, float(cvLine[2]) * scale
                     cvInfo.append(tmp)
-                inFile.close()
                 # Shape the curve
-                if overRide != False:
+                if not overRide:
                     cmds.setAttr(shapeNode + '.overrideEnabled', 1)
                     cmds.setAttr(shapeNode + '.overrideColor', overRide)
 
@@ -493,6 +509,6 @@ def importCurveShape(name='', scale=1.0, overRide=False):
                         cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=cvInfo[i])
                 else:
                     # Curves with different CV counts are not compatible
-                    OpenMaya.MGlobal.displayError('CV count[' + str(len(cmds.getAttr(shapeNode + '.cv[*]'))) + '] from selected does not match import CV count[' + str(len(cvInfo)) + ']')
+                    message('CV count[' + str(len(cmds.getAttr(shapeNode + '.cv[*]'))) + '] from selected does not match import CV count[' + str(len(cvInfo)) + ']')
     else:
-        OpenMaya.MGlobal.displayError('Select a NURBS curve if you truly want to proceed...')
+        message('Select a NURBS curve if you truly want to proceed...')

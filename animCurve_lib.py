@@ -188,7 +188,7 @@ def deleteAnim(obj, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=False, keyable
         pass
     for attr in attrs:
         cmds.setAttr(obj + '.' + attr, lock=lock)
-        cmds.setAttr(obj + '.' + attr, keyable=keyable, cb=True)
+        cmds.setAttr(obj + '.' + attr, keyable=keyable)
 
 
 def unifyKeys():
@@ -383,6 +383,7 @@ def distributeKeys(step=3.0, destructive=True, forceWholeFrames=True):
 
 
 class GraphSelection():
+
     def __init__(self):
         self.selection = cmds.ls(sl=True)
         self.crvs = cmds.keyframe(q=True, name=True, sl=True)
