@@ -591,10 +591,7 @@ def clearKey():
 
 
 def altFrame(*args):
-    # BUG: fails if shape node is selected
     # cmds.nodeType(sel), object type
-    # cmds.listRelatives(sel, parent=1), use that to find parent of objects in selection
-    # try using while loop to iterate through parents
     pnl = cmds.getPanel(withFocus=True)
     typ = cmds.getPanel(typeOf=pnl)
     if typ == 'modelPanel':
@@ -603,8 +600,15 @@ def altFrame(*args):
         locs = []
         if sel:
             for item in sel:
-                loc = cn.locator(obj=item, ro='zxy', X=0.35, constrain=False)[0]
-                locs.append(loc)
+                if cmds.objectType(item, i='transform'):
+                    loc = cn.locator(obj=item, ro='zxy', X=0.35, constrain=False)[0]
+                    locs.append(loc)
+                else:
+                    try:
+                        loc = cn.locator(obj=cmds.listRelatives(item, parent=True)[0], ro='zxy', X=0.35, constrain=False)[0]
+                        locs.append(loc)
+                    except:
+                        message('didnt frame object: ' + item)
             cmds.select(locs)
             mel.eval("fitPanel -selected;")
             cmds.delete(locs)

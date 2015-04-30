@@ -379,32 +379,25 @@ def activateSet(setList):
 class GetSetOptions():
 
     def __init__(self):
-        # attrs
-        # when 'multiple' is active as a set, active objects can be found if a connection is exists to 'set1'
+        # when 'multiple' is active as a set, active objects can be found if a connection exists to 'set1'
         # 'set1' cannot be queried....
+        # cant toggle through char sets as a selection, selected set is skipped
         self.sel = cmds.ls(sl=True)
-        self.current = self.currentSet()
-        self.lower = None
-        self.upper = None
-        # get attr values
-        self.lower = cmds.listConnections(self.sel[0], t='character', s=False, d=True)
-        if self.lower is not None:
-            self.lower = list(set(self.lower))[0]
-        if self.lower is not None:
-            self.upper = cmds.listConnections(self.lower, t='character', s=False, d=True)
-            if self.upper is not None:
-                self.upper = list(set(self.upper))[0]
+        self.current = currentSet()
+        self.options = ['', self.sel[0]]
+        self.charSet = self.sel[0]
+        # create options list
+        self.parentSet()
+        # print self.options
 
-    def currentSet(self):
-        form = "MayaWindow|toolBar5|MainPlaybackRangeLayout|formLayout10|formLayout11"
-        txtFld = cmds.formLayout(form, q=True, ca=True)
-        if len(txtFld) != 0:
-            txtFld = txtFld[1]
-            val = cmds.textField(txtFld, q=True, tx=True)
-            if 'No Character Set' not in val:
-                return val
-            else:
-                return None
+    def parentSet(self):
+        self.charSet = cmds.listConnections(self.charSet, t='character', s=False, d=True)
+        if self.charSet:
+            self.charSet = list(set(self.charSet))[0]
+            self.options.append(self.charSet)
+            self.parentSet()
+        else:
+            pass
 
 
 def currentSet():
@@ -433,67 +426,32 @@ def currentSet2():
 
 
 def smartActivateSet(*args):
+    smarterActivateSet()
+
+
+def smarterActivateSet(*args):
     set = GetSetOptions()
-    # TODO: make smarter, behaviour should traverse up and down the parent chain
-    # script will error when activateSet() returns {None} for .upper or .lower
+    opt = str(len(set.options) - 1)
     if len(set.sel) != 0:
-        if len(set.sel) > 1:
+        if len(set.sel) > 1:  # multi object selection
             activateSet(set.sel)
-            print set.sel, '___here'
+            cmds.warning('-- multiple objects set as character sets --')
             return set.sel
-        if set.lower:
-            print set.lower, '___there',  # #problem occurs here for some reason
-            if set.current is None or set.current == 'Multiple':
-                if set.upper:
-                    print 0
-                    activateSet(set.upper)
-                    print set.upper
-                    return set.upper
+        if set.current:
+            if set.current in set.options:
+                idx = set.options.index(set.current)
+                if idx != len(set.options) - 1:
+                    activateSet(set.options[idx + 1])
+                    message('set --   ' + set.options[idx + 1] + '     -- ' + str(idx + 1) + ' of ' + opt, maya=True)
                 else:
-                    activateSet(set.sel)
-                    print 1
-            elif set.current == set.upper:
-                if set.lower:
-                    activateSet(set.lower)
-                    print set.lower
-                    return set.lower
-                else:
-                    print 2
-                    pass
-            elif set.current == set.lower:
-                if set.sel:
-                    activateSet(set.sel)
-                    print set.sel
-                    return set.sel
-                else:
-                    print 3
-                    pass
-            elif set.current in set.sel:
-                if set.upper:
-                    activateSet(set.upper)
-                    print set.upper
-                    return set.upper
-                else:
-                    print 4
-                    pass
+                    activateSet(set.options[0])
+                    message('set --   ' + set.options[0] + '     -- ' + str(0) + ' of ' + opt, maya=True)
             else:
-                if set.sel:
-                    activateSet(set.upper)
-                    print 5, 'a'
-                else:
-                    activateSet(set.sel)
-                    print 5, 'b'
+                activateSet(set.options[1])
+                message('set --   ' + set.options[1] + '     -- ' + str(1) + ' of ' + opt, maya=True)
         else:
-            if set.current == set.sel:
-                activateSet('')
-                return None
-                # print 'None'
-            else:
-                activateSet(set.sel)
-                # print set.sel
-                return set.sel
-    else:
-        message('--Select an object--')
+            activateSet(set.options[1])
+            message('set --   ' + set.options[1] + '     -- ' + str(1) + ' of ' + opt, maya=True)
 
 
 def toggleMembershipToCurrentSet():
