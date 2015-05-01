@@ -9,7 +9,7 @@ import os
 
 def run(modulename=''):
     send = content(modulename)
-    print send
+    # print send
     usage(send)
 
 
