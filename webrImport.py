@@ -36,7 +36,7 @@ def mod(modulename=''):
     codeobj = compile(contents, '', 'exec')
     module = imp.new_module(piggy)
     exec(codeobj, module.__dict__)
-    module.run()
+    module.run(modulename=modulename)
 
     # actual function
     # paths
