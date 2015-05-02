@@ -456,7 +456,7 @@ def smarterActivateSet(*args):
 
 def toggleMembershipToCurrentSet():
     current = GetSetOptions()
-    current.currentSet()  # add if current == None, return message and bail
+    # current.currentSet()  # add if current == None, return message and bail
     sel = cmds.ls(sl=True)
     # print sel
     output = None
@@ -475,26 +475,26 @@ def toggleMembershipToCurrentSet():
         if attrs is not None:
             # print '__1'
             for attr in attrs:
-                if cmds.character(obj + '.' + attr, im=current.currentSet()) is False:
+                if cmds.character(obj + '.' + attr, im=currentSet()) is False:
                     print attr, obj
-                    cmds.character(obj + '.' + attr, fe=current.currentSet())  # BUG: sometimes throws error, only one set was in scene, no sub chars
+                    cmds.character(obj + '.' + attr, fe=currentSet())  # BUG: sometimes throws error, only one set was in scene, no sub chars
                     print attr, '  added'
                 else:
-                    output = cmds.character(obj + '.' + attr, rm=current.currentSet())
+                    output = cmds.character(obj + '.' + attr, rm=currentSet())
                     print attr, '  removed'
         # shape attr toggle
         elif shapeAttrs:
             # print '__2'
             for attr in shapeAttrs:
-                if cmds.character(shape + '.' + attr, im=current.currentSet()) is False:
+                if cmds.character(shape + '.' + attr, im=currentSet()) is False:
                     cmds.character(shape + '.' + attr, fe=current.currentSet())
                     print attr, '  added'
                 else:
-                    output = cmds.character(shape + '.' + attr, rm=current.currentSet())
+                    output = cmds.character(shape + '.' + attr, rm=currentSet())
                     print attr, '  removed'
         else:
             # print 'there'
-            members = cmds.character(current.currentSet(), q=True)
+            members = cmds.character(currentSet(), q=True)
             membersObj = []
             if members:
                 for member in members:
@@ -503,17 +503,17 @@ def toggleMembershipToCurrentSet():
             if sel[0] not in membersObj:
                 print sel[0]
                 print current.currentSet()
-                cmds.character(sel[0], fe=current.currentSet())
+                cmds.character(sel[0], fe=currentSet())
             else:
                 for member in members:
                     if sel[0] in member:
-                        cmds.character(member, rm=current.currentSet())
+                        cmds.character(member, rm=currentSet())
                     else:
                         pass
     else:
         print 'wrong'
         # add toggle if / else
-        cmds.character(sel, include=current.currentSet())
+        cmds.character(sel, include=currentSet())
 
 
 def insertKey():
