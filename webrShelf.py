@@ -172,6 +172,8 @@ def shelfAddButtons(*args):
                      h=wh, imageOverlayLabel='_UI_', image='pythonFamily.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.uiEnable()')
     cmds.shelfButton(label='quick undo', annotation='quick undo, viewport hide while executing undo', w=wh,
                      h=wh, imageOverlayLabel='UNDO', image='pythonFamily.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.quickUndo()')
+    cmds.shelfButton(label='clip library', annotation='Clip Library', w=wh,
+                     h=wh, imageOverlayLabel='', image='AnimStore.xpm', command='import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()')
     # TODO: timewarp tool
     # TODO: timewarp with path anim, uisng some combo to sync path anim to, anim layer as time warp to keep object anim on same spot on curve
     # TODO: rivet
