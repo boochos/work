@@ -99,6 +99,28 @@ def blastRange():
     return min, max
 
 
+def camName():
+    pnl = cmds.getPanel(withFocus=True)
+    typ = cmds.getPanel(typeOf=pnl)
+    if typ == 'modelPanel':
+        cam = cmds.modelPanel(pnl, q=True, cam=True)
+        if cam:
+            typ = cmds.objectType(cam)
+            if typ == 'camera':
+                p = cmds.listRelatives(cam, p=True)[0]
+                if ':' in p:
+                    p = p.split(':')[1]
+                return p
+            else:
+                if ':' in cam:
+                    cam = cam.split(':')[1]
+                return cam
+        else:
+            print 'no model returned', cam
+    else:
+        print 'not model panel', pnl
+
+
 def sceneName(full=False, suffix=None):
     sceneName = cmds.file(q=True, sn=True)
     if full:
@@ -193,6 +215,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
+    camName()
     min, max = blastRange()
     if useGlobals:
         w = cmds.getAttr('defaultResolution.width')
@@ -211,12 +234,13 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
             if os.path.exists(pbName):
                 # print True
                 pass
+            blastName = blastDir(forceTemp=False) + sceneName() + '____' + camName()
             if 'image' not in format:
-                path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+                path = cmds.playblast(format=format, filename=blastName, sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
                 createPath(blastDir(forceTemp=False))
                 # forcing qt blast
-                path = cmds.playblast(format='qt', filename=blastDir(forceTemp=False) + sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression='H.264', width=1920, height=1080)
+                path = cmds.playblast(format='qt', filename=blastName, sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression='H.264', width=1920, height=1080)
                 '''
                 createPath( blastDir( forceTemp=False ) + shotDir() )
                 path = cmds.playblast( format='image', filename=blastDir( forceTemp=False ) + shotDir() + sceneName(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h )
