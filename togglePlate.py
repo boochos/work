@@ -1,6 +1,5 @@
 import maya.cmds as cmds
 import maya.mel as mel
-from playblast_lib import camName
 
 
 def message(what='', maya=True):

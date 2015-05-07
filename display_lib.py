@@ -474,7 +474,8 @@ def distanceExp(sel, sel2, attr):
     '''
     builds expression string
     '''
-    exp0 = "python \"import display_lib as dis\";\npython \"reload(dis)\";\n"
+    print 'here'
+    exp0 = "python \"import webrImport as web\";\npython \"dis = web.mod('display_lib')\";\n"
     exp1 = sel + "." + attr + " = `python \"dis.measureDis('" + sel + "','" + sel2 + "')\"`;"
     exp = exp0 + exp1
     return exp
@@ -484,10 +485,11 @@ def distance(obj1=None, obj2=None):
     '''
     assembles distance relationship
     '''
+    # BUG: second loop turns distanceExp() into noneType...
     attr = 'distance'
     if not obj1:
         selected = cmds.ls(sl=True, fl=True)
-        print selected, 'here'
+        # print selected, 'here'
     else:
         selected = [obj1, obj2]
         print '_____'
@@ -495,8 +497,7 @@ def distance(obj1=None, obj2=None):
         i = 1
         #
         for sel in selected:
-            print i
-            print sel, selected[i]
+            print type(distanceExp)
             exp = distanceExp(sel, selected[i], attr)
             if not cmds.attributeQuery(attr, node=sel, ex=True):
                 createDisAttr(sel, attr, exp)

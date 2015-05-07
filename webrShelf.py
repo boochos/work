@@ -165,7 +165,7 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='speed attribute is added', annotation='speed attribute is added', w=wh,
                      h=wh, image='kmh.xpm', command='import webrImport as web\nds = web.mod("display_lib")\nds.speed(local=0)')
     '''
-    cmds.shelfButton(label='select 2 objects', annotation='select 2 objects\ndistance attribue is added\nattr only updates on frame changes',
+    cmds.shelfButton(label='select 2 objects', annotation='select 2 objects\ndistance attribute is added\nattr only updates on frame changes',
                      w=wh, h=wh, imageOverlayLabel='dst', image='pythonFamily.png', command='import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()')
     '''
     cmds.shelfButton(label='quick undo', annotation='viewport toggle', w=wh,
