@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import maya.mel as mel
+from playblast_lib import camName
 
 
 def message(what='', maya=True):
@@ -10,63 +11,95 @@ def message(what='', maya=True):
         print what
 
 
-def togglePlate():
-    # BUG: only works sometimes
-    # TODO: add proper UI for plate management
-    sel = cmds.ls(sl=True)
-    # make sure 1 object selected
-    if len(sel) == 1:
-        # conditions, try, exception, else(no exception)
-        try:
-            # select shape node
-            try:
-                shape = cmds.listRelatives(shapes=True)[0]  # first item only
-            except:
-                if cmds.nodeType(sel) == 'camera':
-                    shape = sel
-        except:
-            # if no shape node exists in selection
-            message('Selection is not of camera type')
-        else:
-            # is shape node a camera
-            if cmds.nodeType(shape) == 'camera':
-                connections = cmds.listConnections(shape, sh=True, t='imagePlane')
-                print connections
-                if connections:
-                    # loop through connections
-                    for item in connections:
-                        # if imagePlane exists...
-                        if cmds.nodeType(item) == 'imagePlane':
-                            print item
-                            # find what message is connected too, connect to opposite
-                            node = cmds.listConnections((item + '.message'), p=True)
-                            for connection in node:
-                                if 'imagePlane[' in connection:
-                                    # check for 'imagePlane' string in node
-                                    connectionNode = connection.rpartition('.')[0]
-                                    connectionAttr = connection.rpartition('.')[2]
-                                    connectionAttr = connectionAttr.replace('[', 'XXX').replace(']', 'ZZZ')
-                                    attr = 'plateOff_' + connectionAttr
-                                    cmds.addAttr(connectionNode, ln=attr, at='message')
-                                    cmds.connectAttr((item + '.message'), (connectionNode + '.' + attr), f=True)
-                                    cmds.disconnectAttr((item + '.message'), connection)
-                                    message('Image sequence OFF')
-                                elif 'plateOff' in connection:
-                                    # check for 'plateOff' string in node
-                                    connectionNode = connection.rpartition('.')[0]
-                                    connectionAttr = connection.rpartition('.')[2]
-                                    cmds.deleteAttr(connectionNode, at=connectionAttr)
-                                    reConnectAttr = connectionAttr.replace('XXX', '[').replace('ZZZ', ']')
-                                    reConnectAttr = reConnectAttr.rpartition('_')[2]
-                                    cmds.connectAttr(item + '.message', connectionNode + '.' + reConnectAttr, f=True)
-                                    message('Image sequence ON')
-                        else:
-                            pass
-                            #mel.eval('warning \"' + '////...imagePlane node not present on ' + sel[0] + '...////' + '\";')
-                else:
-                    pass
-                    #message('No connections found on ' + sel[0])
+def camName():
+    pnl = cmds.getPanel(withFocus=True)
+    typ = cmds.getPanel(typeOf=pnl)
+    if typ == 'modelPanel':
+        cam = cmds.modelPanel(pnl, q=True, cam=True)
+        if cam:
+            typ = cmds.objectType(cam)
+            if typ == 'camera':
+                return cam
             else:
-                message('Selection is not of camera type')
+                return cam
+        else:
+            # print 'no model returned', cam
+            pass
     else:
-        message('Select a camera with an imagePlane node')
+        # print 'not model panel', pnl
+        pass
+
+
+def togglePlate():
+    # TODO: add proper UI for plate management
+    cam = camName()
+    # print cam
+    if cam:
+        connections = cmds.listConnections(cam, sh=True, t='imagePlane')
+        if connections:
+            connections = list(set(connections))
+            plates = platesOnly(connections)
+            # print plates
+            # check state of one plate
+            st = plateState(plates[0])
+            for plate in plates:
+                if st:
+                    # off
+                    # print plate, '\n'
+                    plateState(plate, toggle=True)
+                else:
+                    # on
+                    # print plate, '\n'
+                    plateState(plate, toggle=True)
+        else:
+            message('No plates')
+    else:
+        message('Not a camera')
+
+
+def plateState(plate, toggle=False):
+    node = list(set(cmds.listConnections((plate + '.message'), p=True)))
+    # print node
+    for connection in node:
+        # print '\n', connection, '\n'
+        if 'imagePlane[' in connection:
+            if toggle:
+                plateOff(plate, connection)
+            else:
+                return True
+        elif 'plateOff' in connection:
+            if toggle:
+                plateOn(plate, connection)
+            else:
+                return False
+
+
+def platesOnly(connections):
+    plates = []
+    for item in connections:
+        if cmds.nodeType(item) == 'imagePlane':
+            plates.append(item)
+    return plates
+
+
+def plateOff(plate, connection):
+    # check for 'imagePlane' string in node
+    connectionNode = connection.rpartition('.')[0]
+    connectionAttr = connection.rpartition('.')[2]
+    connectionAttr = connectionAttr.replace('[', 'XXX').replace(']', 'ZZZ')
+    attr = 'plateOff_' + connectionAttr
+    cmds.addAttr(connectionNode, ln=attr, at='message')
+    cmds.connectAttr((plate + '.message'), (connectionNode + '.' + attr), f=True)
+    cmds.disconnectAttr((plate + '.message'), connection)
+    message('plates OFF')
+
+
+def plateOn(plate, connection):
+    # check for 'plateOff' string in node
+    connectionNode = connection.rpartition('.')[0]
+    connectionAttr = connection.rpartition('.')[2]
+    cmds.deleteAttr(connectionNode, at=connectionAttr)
+    reConnectAttr = connectionAttr.replace('XXX', '[').replace('ZZZ', ']')
+    reConnectAttr = reConnectAttr.rpartition('_')[2]
+    cmds.connectAttr(plate + '.message', connectionNode + '.' + reConnectAttr, f=True)
+    message('plates ON')
