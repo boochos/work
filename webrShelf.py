@@ -28,7 +28,7 @@ class Depend():
 
 
 def shelfRefresh():
-    getIcons(download=False)
+    getIcons(download=True)
     shelfBuild()
 
 
