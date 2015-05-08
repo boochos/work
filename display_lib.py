@@ -485,7 +485,7 @@ def distance(obj1=None, obj2=None):
     '''
     assembles distance relationship
     '''
-    # BUG: second loop turns distanceExp() into noneType...
+    # BUG: second loop turns distanceExp() into noneType... use distance node, foprget expression
     attr = 'distance'
     if not obj1:
         selected = cmds.ls(sl=True, fl=True)
