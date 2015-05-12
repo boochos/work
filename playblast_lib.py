@@ -233,6 +233,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
         if not blastDir():
             message('Set project', maya=True)
         else:
+            print blastDir(forceTemp=False), '__________print blast directory'
             pbName = blastDir(forceTemp=False) + sceneName()
             if os.path.exists(pbName):
                 # print True
