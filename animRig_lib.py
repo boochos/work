@@ -308,13 +308,13 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         uAxs = uAxs[u.index(1.0)]
         # place locators on selection
         locs = []
-        coreL = cn.locator(obj=sel, constrain=False, X=5, color=15, suffix='__CORE__')[0]
+        coreL = cn.locator(obj=sel, constrain=False, X=3 * size, color=15, suffix='__CORE__')[0]
         locs.append(coreL)
-        rootL = cn.locator(obj=sel, constrain=False, X=2, color=15, suffix='__ROOT__')[0]
+        rootL = cn.locator(obj=sel, constrain=False, X=5 * size, color=15, suffix='__ROOT__')[0]
         locs.append(rootL)
-        aimL = cn.locator(obj=sel, constrain=False, X=5, color=28, suffix='__AIM__')[0]
+        aimL = cn.locator(obj=sel, constrain=False, X=5 * size, color=28, suffix='__AIM__')[0]
         locs.append(aimL)
-        upL = cn.locator(obj=sel, constrain=False, X=5, color=29, suffix='__UP__')[0]
+        upL = cn.locator(obj=sel, constrain=False, X=4 * size, color=29, suffix='__UP__')[0]
         locs.append(upL)
         upG = cn.null(obj=sel, suffix='__UP_GRP')
         # heirarchy, prep for offsets
@@ -346,16 +346,16 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         # add master control if necessary
         if masterControl:
             if masterPosition == 0:
-                masterL = cn.locator(obj=coreL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=coreL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
                 cmds.parentConstraint(coreL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 1:
-                masterL = cn.locator(obj=rootL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=rootL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
                 cmds.parentConstraint(rootL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 2:
-                masterL = cn.locator(obj=aimL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=aimL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
                 cmds.parentConstraint(aimL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 3:
-                masterL = cn.locator(obj=upL, constrain=False, X=5, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=upL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
                 cmds.parentConstraint(upL, masterL, mo=True, sr=('x', 'y', 'z'))
             # bake master
             cmds.parent(masterL, masterGrp)

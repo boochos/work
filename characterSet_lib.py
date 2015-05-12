@@ -502,7 +502,7 @@ def toggleMembershipToCurrentSet():
             membersObj = list(set(membersObj))
             if sel[0] not in membersObj:
                 print sel[0]
-                print current.currentSet()
+                print currentSet()
                 cmds.character(sel[0], fe=currentSet())
             else:
                 for member in members:
