@@ -136,10 +136,10 @@ def sceneName(full=False, suffix=None, bracket=False):
         if '(' in sceneName or ')' in sceneName:
             sceneName = sceneName.replace('(', '__')
             sceneName = sceneName.replace(')', '__')
-    print sceneName, '_______get name'
+    # print sceneName, '_______get name'
     if suffix:
         sceneName = sceneName + suffix
-    print sceneName
+    # print sceneName
     return sceneName
 
 
@@ -234,7 +234,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
         if not blastDir():
             message('Set project', maya=True)
         else:
-            print blastDir(forceTemp=False), '__________print blast directory'
+            # print blastDir(forceTemp=False), '__________print blast directory'
             pbName = blastDir(forceTemp=False) + sceneName()
             if os.path.exists(pbName):
                 # print True
