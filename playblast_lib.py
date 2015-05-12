@@ -178,7 +178,7 @@ def createBlastPath(suffix=None):
     return path
 
 
-def blastDir(forceTemp=False):
+def blastDir(forceTemp=False, brackets=False):
     '''
     forceTemp = use get default function to force a specified location, otherwise standard maya locations are used
     '''
@@ -187,10 +187,11 @@ def blastDir(forceTemp=False):
             project = cmds.workspace(q=True, rd=True)
             scene = sceneName(full=True)
             if project in scene:
-                if '(' in project or ')' in project:
-                    project = project.replace('(', '__')
-                    project = project.replace(')', '__')
-                # print project
+                if brackets:
+                    if '(' in project or ')' in project:
+                        project = project.replace('(', '__')
+                        project = project.replace(')', '__')
+                    # print project
                 return project + 'movies/'
             else:
                 message('Project likely not set', maya=True)
