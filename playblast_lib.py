@@ -136,8 +136,10 @@ def sceneName(full=False, suffix=None, bracket=False):
         if '(' in sceneName or ')' in sceneName:
             sceneName = sceneName.replace('(', '__')
             sceneName = sceneName.replace(')', '__')
+    print sceneName, '_______get name'
     if suffix:
         sceneName = sceneName + suffix
+    print sceneName
     return sceneName
 
 
