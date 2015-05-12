@@ -121,7 +121,7 @@ def camName():
         print 'not model panel', pnl
 
 
-def sceneName(full=False, suffix=None):
+def sceneName(full=False, suffix=None, bracket=False):
     sceneName = cmds.file(q=True, sn=True)
     if full:
         return sceneName
@@ -132,9 +132,10 @@ def sceneName(full=False, suffix=None):
     slash = sceneName.rfind('/')
     sceneName = sceneName[slash + 1:]
     # print sceneName, '___'
-    if '(' in sceneName or ')' in sceneName:
-        sceneName = sceneName.replace('(', '__')
-        sceneName = sceneName.replace(')', '__')
+    if bracket:
+        if '(' in sceneName or ')' in sceneName:
+            sceneName = sceneName.replace('(', '__')
+            sceneName = sceneName.replace(')', '__')
     if suffix:
         sceneName = sceneName + suffix
     return sceneName
@@ -215,7 +216,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
-    camName()
+    # camName()
     min, max = blastRange()
     if useGlobals:
         w = cmds.getAttr('defaultResolution.width')
