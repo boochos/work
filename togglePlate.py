@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import maya.mel as mel
+from pymel.core import *
 
 
 def message(what='', maya=True):
@@ -20,7 +21,11 @@ def camName():
             if typ == 'camera':
                 return cam
             else:
-                return cam
+                if typ == 'transform':
+                    trans = PyNode(cam)
+                    # get the transform's shape, aka the camera node
+                    cam = trans.getShape()
+                    return str(cam)
         else:
             # print 'no model returned', cam
             pass
@@ -34,7 +39,9 @@ def togglePlate():
     cam = camName()
     # print cam
     if cam:
+        # print cam, '____'
         connections = cmds.listConnections(cam, sh=True, t='imagePlane')
+        # print connections, '____'
         if connections:
             connections = list(set(connections))
             plates = platesOnly(connections)
