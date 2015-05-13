@@ -17,6 +17,41 @@ def message(what='', maya=True):
         print what
 
 
+def clstrOnCV(curve, clstrSuffix):
+    clstr = []
+    i = 0
+    num = cmds.getAttr((curve + '.cv[*]'))
+    for item in num:
+        c = cmds.cluster((curve + '.cv[' + str(i) + ']'), n=(clstrSuffix + str(i)), envelope=True)[1]
+        i = i + 1
+        clstr.append(c)
+    return clstr
+
+
+def guideLine(obj1, obj2, name=''):
+    """\n
+    Connects 2 objects with curve\n
+    Create curve with 2 points\n
+    pointConstrain cv[0] to obj1, cv[1] to obj2\n
+    """
+    result = []
+    curveTmp = cmds.curve(d=1, p=[(0, 0, 0), (0, 0, 0)], k=[0, 1])
+    curve = cmds.rename(curveTmp, (name + '_crv#'))
+    cmds.setAttr(curve + '.overrideEnabled', 1)
+    cmds.setAttr(curve + '.overrideDisplayType', 1)
+    clstr = clstrOnCV(curve, name + '___' + obj1 + '___' + obj2)
+    cmds.setAttr(clstr[0] + '.visibility', 0)
+    cmds.setAttr(clstr[1] + '.visibility', 0)
+    cmds.pointConstraint(obj1, clstr[0], mo=False, w=1.0)
+    cmds.pointConstraint(obj2, clstr[1], mo=False, w=1.0)
+    result.append(curve)
+    result.append(clstr)
+    null = cmds.group(name=name, em=True)
+    cmds.parent(result[0], null)
+    cmds.parent(result[1], null)
+    return null
+
+
 def matchCharSet(source=None, objs=[]):
     '''
     source = get character set if connected
@@ -333,8 +368,11 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         coreCn = cmds.parentConstraint(sel, coreL, mo=True)
         cmds.pointConstraint(rootL, upG, mo=True)
         cmds.pointConstraint(aimL, upG, mo=True)
+        #cmds.parentConstraint(rootL, upG, mo=True, sr=("x", "y", "z"))
+        #cmds.parentConstraint(aimL, upG, mo=True, sr=("x", "y", "z"))
         # check if 2nd object was selected
         if selectedMaster:
+
             masterGrp = cn.null(obj=selectedMaster, suffix='temp')
             masterGrp = cmds.rename(masterGrp, '__PIVOTAIM_RIG__#')
             cmds.parentConstraint(selectedMaster, masterGrp, mo=False)
@@ -393,13 +431,21 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         cmds.delete(coreCn)
         cmds.parentConstraint(coreL, sel, mo=True)
         # final constraints
+        # cmds.parentConstraint(masterGrp, upG, mo=True, st='none')
         cmds.pointConstraint(rootL, coreL, mo=True)
         cmds.pointConstraint(aimL, coreL, mo=True)
         ac.deleteAnim(coreL, attrs=['translateX', 'translateY', 'translateZ'], lock=True)
         cn.matchKeyedFrames(A=sel, B=coreL, subtractive=True)
         # match char Set
         matchCharSet(sel, locs)
-        # done
+        # cleanup
+        cleanupGrp = cmds.group(name='__PIVOTAIM_GRP__#', em=True)
+        cmds.parent(masterGrp, cleanupGrp)
+        # guideLines
+        cmds.parent(guideLine(coreL, rootL, name=masterGrp + '_guides__'), cleanupGrp)
+        cmds.parent(guideLine(rootL, upL, name=masterGrp + '_guides__'), cleanupGrp)
+        cmds.parent(guideLine(upL, aimL, name=masterGrp + '_guides__'), cleanupGrp)
+        cmds.parent(guideLine(aimL, coreL, name=masterGrp + '_guides__'), cleanupGrp)
     else:
         message('select an object')
 
