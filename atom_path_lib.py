@@ -4,7 +4,7 @@ import atom_placement_lib as place
 import constraint_lib as cn
 
 
-def attach(*args):
+def attach(up='', reverse=False):
     # select control and path namespace
     sel = cmds.ls(sl=True)
     path = sel[len(sel) - 1]
@@ -24,7 +24,10 @@ def attach(*args):
         max = cmds.playbackOptions(q=True, maxTime=True)
         cmds.parentConstraint(loc, ct, mo=True)
         # add world up object to path
-        cmds.pathAnimation(loc, c=path, startTimeU=min, endTimeU=max, startU=s, endU=e, follow=True)
+        if not reverse:
+            cmds.pathAnimation(loc, c=path, startTimeU=min, endTimeU=max, startU=s, endU=e, follow=True, wut='object', wuo=up)
+        else:
+            cmds.pathAnimation(loc, c=path, startTimeU=min, endTimeU=max, startU=e, endU=s, follow=True, wut='object', wuo=up)
         i = i + 1
         s = s + mlt
         e = e + mlt
