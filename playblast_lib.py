@@ -266,7 +266,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 # print True
                 pass
             if 'image' not in format:
-                path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(), showOrnaments=False, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+                path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
                 playLo, playHi, current = getRange()
                 w = w * x
