@@ -748,7 +748,9 @@ def clipPath(name='', temp=False):
 
 def clipDefaultPath():
     user = os.path.expanduser('~')
-    path = user + '/maya/clipLibrary/'
+    print user, '__________________user'
+    path = os.path.join(user, 'maya/clipLibrary')
+    print path, '__________________rebuild path'
     return path
 
 
