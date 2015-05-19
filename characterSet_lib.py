@@ -384,10 +384,13 @@ class GetSetOptions():
         # cant toggle through char sets as a selection, selected set is skipped
         self.sel = cmds.ls(sl=True)
         self.current = currentSet()
-        self.options = ['', self.sel[0]]
-        self.charSet = self.sel[0]
-        # create options list
-        self.parentSet()
+        if self.sel:
+            self.options = ['', self.sel[0]]
+            self.charSet = self.sel[0]
+            # create options list
+            self.parentSet()
+        else:
+            self.options = [None]
         # print self.options
 
     def parentSet(self):
@@ -431,6 +434,7 @@ def smartActivateSet(*args):
 
 def smarterActivateSet(*args):
     set = GetSetOptions()
+    print set.options, '_________'
     opt = str(len(set.options) - 1)
     if len(set.sel) != 0:
         if len(set.sel) > 1:  # multi object selection
@@ -452,6 +456,8 @@ def smarterActivateSet(*args):
         else:
             activateSet(set.options[1])
             message('set --   ' + set.options[1] + '     -- ' + str(1) + ' of ' + opt, maya=True)
+    else:
+        activateSet(set.options[0])
 
 
 def toggleMembershipToCurrentSet():

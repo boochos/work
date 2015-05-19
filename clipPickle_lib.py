@@ -741,6 +741,7 @@ def clipPath(name='', temp=False):
     if os.path.isdir(path):
         return os.path.join(path, name)
     else:
+        print "__________________________Patricia Error", path
         os.mkdir(path)
         return os.path.join(path, name)
 
