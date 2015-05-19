@@ -741,7 +741,6 @@ def clipPath(name='', temp=False):
     if os.path.isdir(path):
         return os.path.join(path, name)
     else:
-        print "__________________________Patricia Error", path
         os.mkdir(path)
         return os.path.join(path, name)
 
@@ -752,9 +751,7 @@ def clipDefaultPath():
         user = os.path.join(user, 'Documents')
     else:
         user = os.path.expanduser('~')
-    print user, '__________________user'
     path = os.path.join(user, 'maya/clipLibrary')
-    print path, '__________________rebuild path'
     return path
 
 
