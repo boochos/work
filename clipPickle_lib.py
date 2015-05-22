@@ -3,6 +3,7 @@ import maya.mel as mel
 import time
 import getpass
 import os
+import platform
 import json
 # TODO: add new class to deal with multi ref selections
 
@@ -746,12 +747,13 @@ def clipPath(name='', temp=False):
 
 
 def clipDefaultPath():
-    if os.name == 'posix':
-        user = os.path.expanduser('~')
+    # print os.name
+    user = os.path.expanduser('~')
+    if platform.system() == 'Darwin':
+        # mac maya dir location
         user = os.path.join(user, 'Documents')
-    else:
-        user = os.path.expanduser('~')
     path = os.path.join(user, 'maya/clipLibrary')
+    # print path
     return path
 
 

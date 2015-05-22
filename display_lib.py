@@ -351,7 +351,7 @@ def shapeSize(obj=None, mltp=1):
         # run the loop on list
         for item in obj:
             shape = cmds.listRelatives(item, s=True, f=True)
-            if shape != None:
+            if shape:
                 for node in shape:
                     if 'SharedAttr' not in node:
                         cmds.scale(mltp, mltp, mltp, node + '.cv[*]')
@@ -389,17 +389,17 @@ def localSpdExp(sel, attr):
 def createSpeedAttr(sel, attr, exp):
     cmds.addAttr(sel, longName=attr, attributeType='float', k=0)
     cmds.setAttr(sel + "." + attr, cb=1)
-    e = cmds.expression(o=sel, s=exp)
+    cmds.expression(o=sel, s=exp)
 
 
 def speed(world=True, local=True):
     selected = cmds.ls(sl=True)
     if len(selected) != 0:
         for sel in selected:
-            if world == True:
+            if world:
                 attr = 'worldSpeed'
                 exp = worldSpdExp(sel, attr)
-                if cmds.attributeQuery(attr, node=sel, ex=True) == False:
+                if not cmds.attributeQuery(attr, node=sel, ex=True):
                     createSpeedAttr(sel, attr, exp)
                 else:
                     cmds.warning('-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --')
@@ -408,7 +408,7 @@ def speed(world=True, local=True):
             if local:
                 attr = 'localSpeed'
                 exp = localSpdExp(sel, attr)
-                if cmds.attributeQuery(attr, node=sel, ex=True) == False:
+                if not cmds.attributeQuery(attr, node=sel, ex=True):
                     createSpeedAttr(sel, attr, exp)
                 else:
                     cmds.warning('-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --')
@@ -435,7 +435,7 @@ def plotAttr():
         sel = selected[0]
         attr = 'plot'
         exp = plotExp(sel, attr)
-        if cmds.attributeQuery(attr, node=sel, ex=True) == False:
+        if not cmds.attributeQuery(attr, node=sel, ex=True):
             createPlotAttr(sel, attr, exp)
         else:
             cmds.warning('-- Plotted attr (' + attr + ') already exists - ' + sel + ' ! --')
@@ -443,15 +443,6 @@ def plotAttr():
             return None
     else:
         message('Select an object.')
-
-
-def createDisAttr(sel, attr, exp):
-    '''
-    creates attr and applies expression
-    '''
-    cmds.addAttr(sel, longName=attr, attributeType='float', k=True)
-    cmds.setAttr(sel + "." + attr, cb=1)
-    cmds.expression(o=sel, s=exp)
 
 
 def measureDis(obj1, obj2):
@@ -470,56 +461,88 @@ def measureDis(obj1, obj2):
     return distance
 
 
-def distanceExp(sel, sel2, attr):
+def createDisAttr(sel, attr):
     '''
-    builds expression string
+    creates attr and applies expression
     '''
-    print 'here'
-    exp0 = "python \"import webrImport as web\";\npython \"dis = web.mod('display_lib')\";\n"
-    exp1 = sel + "." + attr + " = `python \"dis.measureDis('" + sel + "','" + sel2 + "')\"`;"
-    exp = exp0 + exp1
-    return exp
+    cmds.addAttr(sel, longName=attr, attributeType='float', k=True)
+    cmds.setAttr(sel + "." + attr, cb=1)
+
+
+def createDisNode(name=''):
+    dis = cmds.createNode('distanceBetween', name=name + '_dis')
+    return dis
 
 
 def distance(obj1=None, obj2=None):
     '''
     assembles distance relationship
     '''
-    # BUG: second loop turns distanceExp() into noneType... use distance node, foprget expression
     attr = 'distance'
+    st = []
+    disNode = None
     if not obj1:
         selected = cmds.ls(sl=True, fl=True)
-        # print selected, 'here'
     else:
         selected = [obj1, obj2]
-        print '_____'
     if len(selected) == 2:
-        i = 1
-        #
-        for sel in selected:
-            print type(distanceExp)
-            exp = distanceExp(sel, selected[i], attr)
-            if not cmds.attributeQuery(attr, node=sel, ex=True):
-                createDisAttr(sel, attr, exp)
+        st.append(cmds.attributeQuery(attr, node=selected[0], ex=True))
+        st.append(cmds.attributeQuery(attr, node=selected[1], ex=True))
+        st = list(set(st))
+        if len(st) == 1:
+            st = st[0]
+            # toggle distance attr
+            for sel in selected:
+                if not st:
+                    createDisAttr(sel, attr)
+                else:
+                    # list
+                    if not disNode:
+                        disNode = clean(cmds.listConnections(sel + '.worldMatrix[0]', s=False, d=True, type='distanceBetween'))
+                    cmds.deleteAttr(sel + '.' + attr)
+            # toggle distance node
+            if st:
+                if disNode:
+                    cmds.delete(disNode)
             else:
-                message('Distance attr off')
-                try:
-                    deleteExp(sel=selected[0], attr=attr)
-                    deleteExp(sel=selected[1], attr=attr)
-                    if cmds.attributeQuery(attr, node=selected[0], ex=True):
-                        cmds.deleteAttr(selected[0] + '.' + attr)
-                    if cmds.attributeQuery(attr, node=selected[1], ex=True):
-                        cmds.deleteAttr(selected[1] + '.' + attr)
-                        break
-                except:
-                    pass
-            if i == 1:
-                i = 0
+                # connect to distance node
+                disNode = createDisNode(name='dstnc___' + selected[0] + '___' + selected[1])
+                cmds.connectAttr(selected[0] + '.worldMatrix[0]', disNode + '.inMatrix1')
+                cmds.connectAttr(selected[1] + '.worldMatrix[0]', disNode + '.inMatrix2')
+                # feed distance attrs
+                cmds.connectAttr(disNode + '.distance', selected[0] + '.' + attr)
+                cmds.connectAttr(disNode + '.distance', selected[1] + '.' + attr)
+                # reselect objects
+                cmds.select(selected)
+        else:
+            message('one object already have a distance attr, aborting.')
+    elif cmds.attributeQuery(attr, node=selected[0], ex=True):
+        # remove distance from pair, delete dis node
+        disNode = clean(cmds.listConnections(selected[0] + '.worldMatrix[0]', s=False, d=True, type='distanceBetween'))
+        if disNode:
+            nodes = clean(cmds.listConnections(disNode + '.distance', s=False, d=True))
+            if len(nodes) == 2:
+                distance(obj1=nodes[0], obj2=nodes[1])
+            else:
+                message('A pair to the selection was not found')
     else:
-        message('Select 2 objects to toggle distance attributes.')
+        cmds.warning('--  Select 2 objects to toggle distance attributes. --')
 
 
-def deleteUserAttr(sel=None, exp=True, att=''):
+def clean(obj):
+    if obj:
+        if isinstance(obj, list):
+            if len(obj) == 1:
+                return obj[0]
+            else:
+                return list(set(obj))
+        else:
+            return obj
+    else:
+        return None
+
+
+def deleteUserAttr(sel=None, att=''):
     if sel is None:
         sel = cmds.ls(sl=True)
         if len(sel) != 1:
@@ -528,36 +551,16 @@ def deleteUserAttr(sel=None, exp=True, att=''):
         else:
             sel = sel[0]
     selectedAttr = cmds.channelBox('mainChannelBox', q=True, sma=True)
-    userAttr = cmds.listAttr(sel, ud=True)
+    # userAttr = cmds.listAttr(sel, ud=True)
     if att != '':
-        deleteExp(sel=sel, attr=att)
         cmds.deleteAttr(sel + '.' + att)
         message('Attribute ' + att + ' deleted')
         return None
     if selectedAttr is not None:
         for attr in selectedAttr:
-            deleteExp(sel=sel, attr=attr)
             cmds.deleteAttr(sel + '.' + attr)
     else:
         message('Select an attribute(s) in the channelBox.')
-
-
-def deleteExp(sel=None, attr=None, exp=True):
-    if sel is None:
-        sel = cmds.ls(sl=True)
-        if len(sel) != 1:
-            message('Select one object')
-            return None
-        else:
-            sel = sel[0]
-    if attr:
-        con = cmds.listConnections(sel + '.' + attr, d=False, s=True)
-        if con is not None:
-            if exp:
-                if cmds.nodeType(con[0]) == 'expression':
-                    cmds.delete(con[0])
-                else:
-                    message('No expression node was found.')
 
 
 def rotateManip():

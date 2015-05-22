@@ -780,16 +780,6 @@ def constrainEnabled(obj1, obj2, mo=True):
         return result[0]
 
 
-def collectEnabled():
-    # BUG: broken, likely not used anywhere
-    # check keyable transforms
-    tState = cmds.getAttr(obj2 + attrStrings(rot=False)[0][0], k=True)
-    rState = cmds.getAttr(obj2 + attrStrings(pos=False)[0][0], k=True)
-    attrs = []
-    if tState:
-        pass
-
-
 def stickAttr():
     return 'STICKY'
 
