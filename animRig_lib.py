@@ -8,6 +8,46 @@ cn = web.mod('constraint_lib')
 ds = web.mod('display_lib')
 ac = web.mod('animCurve_lib')
 
+'''
+import webrImport as web
+ar = web.mod("animRig_lib")
+sel = [
+'Scarecrow_BodyRig_v35:rt_index_fk_4_hdl',
+'Scarecrow_BodyRig_v35:rt_index_fk_3_hdl',
+'Scarecrow_BodyRig_v35:rt_index_fk_2_hdl',
+'head'
+]
+ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+sel = [
+'Scarecrow_BodyRig_v35:rt_mid_fk_4_hdl',
+'Scarecrow_BodyRig_v35:rt_mid_fk_3_hdl',
+'Scarecrow_BodyRig_v35:rt_mid_fk_2_hdl',
+'head'
+]
+ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+sel = [
+'Scarecrow_BodyRig_v35:rt_ring_fk_4_hdl',
+'Scarecrow_BodyRig_v35:rt_ring_fk_3_hdl',
+'Scarecrow_BodyRig_v35:rt_ring_fk_2_hdl',
+'head'
+]
+ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+sel = [
+'Scarecrow_BodyRig_v35:rt_pinky_fk_4_hdl',
+'Scarecrow_BodyRig_v35:rt_pinky_fk_3_hdl',
+'Scarecrow_BodyRig_v35:rt_pinky_fk_2_hdl',
+'head'
+]
+ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+sel = [
+'Scarecrow_BodyRig_v35:rt_thumb_fk_4_hdl',
+'Scarecrow_BodyRig_v35:rt_thumb_fk_3_hdl',
+'Scarecrow_BodyRig_v35:rt_thumb_fk_2_hdl',
+'head'
+]
+ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+'''
+
 
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
@@ -67,7 +107,7 @@ def matchCharSet(source=None, objs=[]):
             message('Object not added to Charecter set. More than one option found.')
 
 
-def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False):
+def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False, parentTarget=False):
     '''
     obj[0] = tip control
     obj[1] = mid control
@@ -124,8 +164,11 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, ba
     # 2 loc (tip target)
     tipTarget = cn.locator(obj=obj[0], ro='zxy', X=size, constrain=False, toSelection=True, suffix='__TARGET__')[0]
     cmds.parent(tipTarget, tip)
-    cmds.setAttr(tipTarget + '.tx', offset)
-    cmds.parent(tipTarget, w=1)
+    cmds.setAttr(tipTarget + '.tx', offset * mlt)
+    if parentTarget:
+        cmds.parent(tipTarget, master)
+    else:
+        cmds.parent(tipTarget, w=1)
     cmds.parentConstraint(tip, tipTarget, mo=1)
     cn.bakeConstrained(tipTarget, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(A=obj[0], B=tipTarget, subtractive=True)
@@ -150,7 +193,10 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, ba
     cmds.aimConstraint(tipTarget, obj[0], wut='object', wuo=tipUp, aim=aim, u=u, mo=1)  # mid @ tip
 
     # group
-    gr = cmds.group(tipTarget, master, n='__' + name + '__')
+    if parentTarget:
+        gr = cmds.group(master, n='__' + name + '__')
+    else:
+        gr = cmds.group(tipTarget, master, n='__' + name + '__')
 
     return gr
 
