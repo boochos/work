@@ -2,6 +2,7 @@ import maya.cmds as cmds
 import webrImport as web
 reload(web)
 pt = web.mod("atom_path_lib")
+anm = web.mod("anim_lib")
 
 
 def nsPaths():
@@ -13,7 +14,22 @@ def nsPaths():
     return nsPathsList
 
 
-def rootsOnPath(path='C:/VFX/projects/Hollow/_image/_projects/SI/HOL/_Assets/ScareCrow/scenes/Anim_Asset/Path_v01.ma', reverse=False):
+def nsHollow(roots):
+    nsList = cmds.namespaceInfo(lon=True)
+    newRoots = []
+    newRoot = []
+    ns = None
+    for ns in nsList:
+        if 'Scarecrow_' in ns:
+            for root in roots:
+                for ct in root:
+                    newRoot.append(ns + ':' + ct.split(':')[1])
+                newRoots.append(newRoot)
+                newRoot = []
+            return newRoots
+
+
+def rootsOnPath(path='X:/_image/_projects/SI/HOL/_Assets/ScareCrow/scenes/Anim_Asset/Path_v01.ma', reverse=False):
     # root list
     roots = [[
         'Scarecrow_BodyRig_v35:ct_root_a_6_hdl',
@@ -141,11 +157,15 @@ def rootsOnPath(path='C:/VFX/projects/Hollow/_image/_projects/SI/HOL/_Assets/Sca
         'Scarecrow_BodyRig_v35:ct_root_j_13_hdl'
     ]]
     if not nsPaths():
+        roots = nsHollow(roots)
         for root in roots:
             nsA = nsPaths()
             f = cmds.file(path, r=True, type="mayaAscii", gl=True, loadReferenceDepth="all", mergeNamespacesOnClash=False, namespace="Path_v01")
             nsB = nsPaths()
             ns = list(set(nsB) - set(nsA))[0]
+            # move master path control to first root control
+            cmds.select(ns + ':master', root[0])
+            anm.matchObj()
             cmds.select(root)
             cmds.select(ns + ':path', add=True)
             pt.attach(up=ns + ':up', reverse=reverse)
