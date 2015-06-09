@@ -255,7 +255,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 #subprocess.Popen(rvString)
                 '''
     elif os.name == 'posix':
-        print '__Patricia__\n'
+        # print '__Patricia__\n'
         # could be linux or mac os
         # i = 1
         if not blastDir():
@@ -267,6 +267,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 # print True
                 pass
             if 'image' not in format:
+                print 'Patricia   ', sound()
                 path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
                 playLo, playHi, current = getRange()
@@ -279,8 +280,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 else:
                     print snd
                 # blast
-                print 'Patricia   ', sound()
-                path = cmds.playblast(format='image', filename=os.path.join(createBlastPath(), sceneName()), sound=sound(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                path = cmds.playblast(format='image', filename=os.path.join(createBlastPath(), sceneName()), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
                 if path:
                     if snd:
                         rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # not escaped
