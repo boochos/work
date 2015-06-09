@@ -59,13 +59,13 @@ def selRange():
 def sound(path=True):
     gPlayBackSlider = mel.eval('$tmpVar=$gPlayBackSlider')
     node = cmds.timeControl(gPlayBackSlider, q=True, sound=True)
-    if path == False:
+    if not path:
         return node
     else:
         if node:
             fileName = cmds.sound(node, q=True, f=True)
             if fileName:
-                print fileName
+                # print fileName
                 return fileName
             else:
                 return None
@@ -242,7 +242,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 pass
             blastName = blastDir(forceTemp=False) + sceneName() + '____' + camName()
             if 'image' not in format:
-                path = cmds.playblast(format=format, filename=blastName, sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+                path = cmds.playblast(format=format, filename=blastName, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
                 createPath(blastDir(forceTemp=False))
                 # forcing qt blast
@@ -267,8 +267,8 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 # print True
                 pass
             if 'image' not in format:
-                print 'Patricia   ', sound()
-                path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+                print 'Patricia   ', sound(path=False)
+                path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
             else:
                 playLo, playHi, current = getRange()
                 w = w * x
