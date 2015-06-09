@@ -65,6 +65,7 @@ def sound(path=True):
         if node:
             fileName = cmds.sound(node, q=True, f=True)
             if fileName:
+                print fileName
                 return fileName
             else:
                 return None
@@ -278,7 +279,8 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                 else:
                     print snd
                 # blast
-                path = cmds.playblast(format='image', filename=os.path.join(createBlastPath(), sceneName()), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+                print 'Patricia   ', sound()
+                path = cmds.playblast(format='image', filename=os.path.join(createBlastPath(), sceneName()), sound=sound(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
                 if path:
                     if snd:
                         rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # not escaped
