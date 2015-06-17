@@ -1,5 +1,104 @@
 import maya.cmds as cmds
 import maya.mel as mel
+import webrImport as web
+# web
+cn = web.mod('constraint_lib')
+anm = web.mod('anim_lib')
+
+# R
+keysR = [
+    'Scarecrow_BodyRig_v35:rt_pinky_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_fk_4_hdl'
+]
+
+pvR = [
+    'Scarecrow_BodyRig_v35:rt_pinky_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_ik_up_hdl',
+]
+
+ikR = [
+    'Scarecrow_BodyRig_v35:rt_pinky_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_ik_tip_hdl',
+]
+
+fkR = [
+    'Scarecrow_BodyRig_v35:rt_pinky_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_fk_5_hdl'
+]
+
+# L
+keysL = [
+    'Scarecrow_BodyRig_v35:rt_pinky_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_fk_4_hdl'
+]
+
+pvL = [
+    'Scarecrow_BodyRig_v35:rt_pinky_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_ik_up_hdl',
+]
+
+ikL = [
+    'Scarecrow_BodyRig_v35:rt_pinky_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_ik_tip_hdl',
+]
+
+fkL = [
+    'Scarecrow_BodyRig_v35:rt_pinky_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_ring_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_mid_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_index_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:rt_thumb_fk_5_hdl'
+]
+
+
+def ikFingersL():
+    i = 0
+    for item in ikL:
+        cmds.select([item, fkL[i]])
+        anm.matchObj()
+        print item
+        print fkL[i]
+        cmds.pointConstraint(fkL[i], item, mo=False)
+        cn.matchKeyedFrames(A=keysL[i], B=item, subtractive=True)
+        cn.matchKeyedFrames(A=keysL[i], B=pvL[i], subtractive=True)
+        cn.bakeConstrained(item, removeConstraint=True, timeLine=False, sim=False, uiOff=True)
+        i = i + 1
+
+
+def ikFingersR():
+    i = 0
+    for item in ikR:
+        cmds.select([item, fkR[i]])
+        anm.matchObj()
+        print item
+        print fkR[i]
+        cmds.pointConstraint(fkR[i], item, mo=False)
+        cn.matchKeyedFrames(A=keysR[i], B=item, subtractive=True)
+        cn.matchKeyedFrames(A=keysR[i], B=pvR[i], subtractive=True)
+        cn.bakeConstrained(item, removeConstraint=True, timeLine=False, sim=False, uiOff=True)
+        i = i + 1
+
 
 # OFF
 off = ['head_low_cut_geo', 'body_low_cut_geo', 'body_lo', 'roots_lo', 'body_cut_geo', 'head_cut_geo', 'head_chop_geo',
