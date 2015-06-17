@@ -40,35 +40,35 @@ fkR = [
 
 # L
 keysL = [
-    'Scarecrow_BodyRig_v35:rt_pinky_fk_4_hdl',
-    'Scarecrow_BodyRig_v35:rt_ring_fk_4_hdl',
-    'Scarecrow_BodyRig_v35:rt_mid_fk_4_hdl',
-    'Scarecrow_BodyRig_v35:rt_index_fk_4_hdl',
-    'Scarecrow_BodyRig_v35:rt_thumb_fk_4_hdl'
+    'Scarecrow_BodyRig_v35:lf_pinky_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:lf_ring_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:lf_mid_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:lf_index_fk_4_hdl',
+    'Scarecrow_BodyRig_v35:lf_thumb_fk_4_hdl'
 ]
 
 pvL = [
-    'Scarecrow_BodyRig_v35:rt_pinky_ik_up_hdl',
-    'Scarecrow_BodyRig_v35:rt_ring_ik_up_hdl',
-    'Scarecrow_BodyRig_v35:rt_mid_ik_up_hdl',
-    'Scarecrow_BodyRig_v35:rt_index_ik_up_hdl',
-    'Scarecrow_BodyRig_v35:rt_thumb_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:lf_pinky_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:lf_ring_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:lf_mid_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:lf_index_ik_up_hdl',
+    'Scarecrow_BodyRig_v35:lf_thumb_ik_up_hdl',
 ]
 
 ikL = [
-    'Scarecrow_BodyRig_v35:rt_pinky_ik_tip_hdl',
-    'Scarecrow_BodyRig_v35:rt_ring_ik_tip_hdl',
-    'Scarecrow_BodyRig_v35:rt_mid_ik_tip_hdl',
-    'Scarecrow_BodyRig_v35:rt_index_ik_tip_hdl',
-    'Scarecrow_BodyRig_v35:rt_thumb_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:lf_pinky_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:lf_ring_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:lf_mid_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:lf_index_ik_tip_hdl',
+    'Scarecrow_BodyRig_v35:lf_thumb_ik_tip_hdl',
 ]
 
 fkL = [
-    'Scarecrow_BodyRig_v35:rt_pinky_fk_5_hdl',
-    'Scarecrow_BodyRig_v35:rt_ring_fk_5_hdl',
-    'Scarecrow_BodyRig_v35:rt_mid_fk_5_hdl',
-    'Scarecrow_BodyRig_v35:rt_index_fk_5_hdl',
-    'Scarecrow_BodyRig_v35:rt_thumb_fk_5_hdl'
+    'Scarecrow_BodyRig_v35:lf_pinky_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:lf_ring_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:lf_mid_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:lf_index_fk_5_hdl',
+    'Scarecrow_BodyRig_v35:lf_thumb_fk_5_hdl'
 ]
 
 

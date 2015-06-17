@@ -313,10 +313,10 @@ def matchObj():
     # queries dont work correctly when constraints, pairBlends and characterSets get involved
     # objs
     # BUG: works like a turd, if rotations are locked it works half the time
-    print ' run '
+    # print ' run '
     sel = cmds.ls(sl=True, fl=True)
     if len(sel) == 2:
-        print ' if '
+        # print ' if '
         # collect get
         get = sel[1]
         '''
@@ -332,7 +332,7 @@ def matchObj():
         # cmds.xform(put, m=mtrx, ws=True)
         #
         try:
-            print ' try '
+            # print ' try '
             # put
             # cmds.setAttr(put + '.rotateOrder', roo)
             # cmds.xform(put, ws=True, t=t)
@@ -340,7 +340,7 @@ def matchObj():
             # cmds.xform(put, roo=origRO)
             cmds.xform(put, m=mtrx, ws=True)
         except:
-            print 'exception'
+            # print 'exception'
             # intermediate object
             loc = cmds.spaceLocator(name='getSpace_deleteMe')[0]
             cmds.setAttr(loc + '.rotateOrder', roo)
@@ -356,7 +356,8 @@ def matchObj():
             # delete
             cmds.delete(loc)
         else:
-            print 'else'
+            # print 'else'
+            pass
         # reselect objects
         cmds.select(sel)
     else:

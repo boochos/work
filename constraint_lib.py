@@ -539,7 +539,7 @@ def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, u
         cmds.warning('Select constrained object(s)')
 
 
-def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1.0, uiOff=True, color=07, suffix='__BAKE__'):
+def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=4.5, uiOff=True, color=07, suffix='__BAKE__'):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
