@@ -101,9 +101,9 @@ def pathAnimPose(root='', i=0, length=0, ns='', point=''):
     pathControls = 47
     # number of points left
     numOfCt = pathControls - i
-    print numOfCt, '___controls'
-    print length, '___length'
-    print length / numOfCt, '___frame'
+    # print numOfCt, '___controls'
+    # print length, '___length'
+    # print length / numOfCt, '___frame'
     # advance every nframe
     nframe = 1
     # if frame length is larger than points left, skip frames
@@ -117,8 +117,8 @@ def pathAnimPose(root='', i=0, length=0, ns='', point=''):
         t = cmds.xform(root, q=True, ws=True, t=True)
         n = pad(i)
         pnt = ns + ':' + point + n
-        print pnt
-        print cmds.currentTime(current + nframe)
+        # print pnt
+        # print cmds.currentTime(current + nframe)
         cmds.xform(pnt, ws=True, t=t)
         i = i + 1
 
