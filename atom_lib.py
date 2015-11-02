@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 import atom_ui_lib as uil
 reload(uil)
-#import atom_tag_lib as atl
+import atom_tag_lib as atl
 import os
 from pymel.core import *
 
@@ -145,11 +145,35 @@ def ratFrameLayout(*args):
     atom_rrig_earBuild_checkBox = cmds.checkBox('atom_rat_earCheck', l='Build Ear Rig', al='left', v=True)
     cmds.separator()
 
-    atom_rrig_prerigBut = cmds.button(l='Build Rat Pre-Rig', c='import atom\natom.atom_rat_lib.preBuild()')
-    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Appendages', c='import atom\natom.atom_rat_lib.buildAppendages()')
-    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Splines', c='import atom\natom.atom_rat_lib.buildSplines()')
-    atom_rrig_buildDeformBut = cmds.button(l='Build Rig Deformation', c='import atom\natom.atom_rat_lib.deform()')
-    atom_rrig_faceRig = cmds.button(l='Build Face Rig', c='import atom\natom.atom_face_lib.buildFace()')
+    atom_rrig_prerigBut = cmds.button(l='Build Rat Pre-Rig', c='import atom_rat_lib as atm\natm.preBuild()')
+    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Appendages', c='import atom_rat_lib as atm\natm.buildAppendages()')
+    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Splines', c='import atom_rat_lib as atm\natm.buildSplines()')
+    atom_rrig_buildDeformBut = cmds.button(l='Build Rig Deformation', c='import atom_rat_lib as atm\natm.deform()')
+    atom_rrig_faceRig = cmds.button(l='Build Face Rig', c='import atom_face_lib as face\nface.buildFace()')
+    atom_rrig_faceRig = cmds.button(l='Finalize Rig', c=createTagGroups)
+
+    cmds.setParent('..')
+    cmds.setParent('..')
+    return main
+
+
+def bipedFrameLayout(*args):
+    refresh = RefreshCallBack('atom_win')
+    main = cmds.frameLayout('atom_biped_frameLayout', label='Biped Setup',
+                            cc=refresh.RefreshCall, ec=refresh.RefreshCall,
+                            mh=5, mw=5, cll=True, cl=False)
+
+    atom_rrig_columnLayout = cmds.columnLayout('atom_rat_main_columnLayout', adj=True, rs=5)
+    atom_rrig_faceBuild_checkBox = cmds.checkBox('atom_rat_faceCheck', l='Build Face Dependencies Only', al='left')
+    cmds.separator()
+    atom_rrig_earBuild_checkBox = cmds.checkBox('atom_rat_earCheck', l='Build Ear Rig', al='left', v=True)
+    cmds.separator()
+
+    atom_rrig_prerigBut = cmds.button(l='Build Biped Pre-Rig', c='import atom_biped_lib as atm\nreload(atm)\natm.preBuild()')
+    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Appendages', c='import atom_biped_lib as atm\nreload(atm)\natm.buildAppendages()')
+    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Splines', c='import atom_biped_lib as atm\natm.buildSplines()')
+    # atom_rrig_buildDeformBut = cmds.button(l='Build Rig Deformation', c='import atom_biped_lib as atm\natm.deform()')
+    atom_rrig_faceRig = cmds.button(l='Build Geo Inputs', c='import atom_face_lib as face\nreload(face)\nface.getGeoInputs()')
     atom_rrig_faceRig = cmds.button(l='Finalize Rig', c=createTagGroups)
 
     cmds.setParent('..')
@@ -161,7 +185,7 @@ def reindeerFrameLayout(*args):
     refresh = RefreshCallBack('atom_win')
     main = cmds.frameLayout('atom_reindeer_frameLayout', label='Reindeer Setup',
                             cc=refresh.RefreshCall, ec=refresh.RefreshCall,
-                            mh=5, mw=5, cll=True, cl=False)
+                            mh=5, mw=5, cll=True, cl=True)
 
     atom_rnrig_columnLayout = cmds.columnLayout('atom_reindeer_main_columnLayout', adj=True, rs=5)
     atom_rnrig_faceBuild_checkBox = cmds.checkBox('atom_reindeer_faceCheck', l='Build Face Dependencies Only', al='left')
@@ -329,8 +353,8 @@ def win(*args):
     atom_bls_setChannel_text = cmds.text('atom_bls_setChannel_text', align='left', label='Set Channels:', width=72)
     atom_bls_setChannel_checkBox = cmds.checkBox('atom_bls_setChannel_checkBox', label='', v=1)
 
-    atom_bls_createLimb_button = cmds.button('atom_bls_createLimb_button', c='from atom import atom_appendage_lib\natom_appendage_lib.create3jointIK("' + atom_bls_setChannel_checkBox + '")', label='Create Limb', h=25)
-    atom_bls_createDigit_button = cmds.button('atom_bls_createDigit_button', c='from atom import atom_appendage_lib\natom_appendage_lib.createDigitCMD("' + atom_bls_setChannel_checkBox + '")', label='Create Digit', h=25)
+    atom_bls_createLimb_button = cmds.button('atom_bls_createLimb_button', c='import atom_appendage_lib\natom_appendage_lib.create3jointIK("' + atom_bls_setChannel_checkBox + '")', label='Create Limb', h=25)
+    atom_bls_createDigit_button = cmds.button('atom_bls_createDigit_button', c='import atom_appendage_lib\natom_appendage_lib.createDigitCMD("' + atom_bls_setChannel_checkBox + '")', label='Create Digit', h=25)
     atom_bls_spacerText = cmds.text('atom_bls_spacerText', label=' ', h=5)
 
     cmds.formLayout(atom_bls_formLayout, edit=True,
@@ -372,7 +396,7 @@ def win(*args):
     atom_qls_formLayout = cmds.formLayout('atom_qls_formLayout', numberOfDivisions=100)
 
     atom_qls_limb_preset_text = cmds.text('atom_qls_limb_preset_text', align='left', label='Limb Preset:', width=77)
-    atom_qls_limb_preset_optionMenu = cmds.optionMenu('atom_qls_limb_preset_optionMenu', width=120, cc='from atom import atom_ui_lib\natom_ui_lib.setPreset()')
+    atom_qls_limb_preset_optionMenu = cmds.optionMenu('atom_qls_limb_preset_optionMenu', width=120, cc='import atom_ui_lib\natom_ui_lib.setPreset()')
     cmds.menuItem(label='Back Left Leg')
     cmds.menuItem(label='Back Right Leg')
     cmds.menuItem(label='Front Left Leg')
@@ -409,7 +433,7 @@ def win(*args):
     atom_qls_paw_scale_text = cmds.text('atom_qls_paw_scale_text', align='left', label='Paw Digit Loc Scale:', width=104)
     atom_qls_paw_scale_floatField = cmds.floatField('atom_qls_paw_scale_floatField', v=.5, pre=1, width=34)
 
-    atom_qls_createLimb_button = cmds.button('atom_qls_createLimb_button', c='from atom import atom_appendage_lib\natom_appendage_lib.createReverseLeg()', label='Create Quadruped Limb', h=25)
+    atom_qls_createLimb_button = cmds.button('atom_qls_createLimb_button', c='import atom_appendage_lib\natom_appendage_lib.createReverseLeg()', label='Create Quadruped Limb', h=25)
     atom_qls_spacerText = cmds.text('atom_qls_spacerText', label=' ', h=5)
 
     cmds.formLayout(atom_qls_formLayout, edit=True,
@@ -498,6 +522,8 @@ def win(*args):
 
     atom_reindeer_frameLayout = reindeerFrameLayout()
 
+    atom_biped_frameLayout = bipedFrameLayout()
+
     #---------------------------
     # Control Curve Shape Toolbox
     #---------------------------
@@ -507,12 +533,13 @@ def win(*args):
 
     atom_ccst_columnLayout = cmds.columnLayout('atom_ccst_main_columnLayout', adj=True, rs=5)
     atom_ccst_path = os.path.expanduser('~') + '/GitHub/controlShapes/'
+    #print atom_ccst_path, '________________'
     atom_ccst_formLayout = cmds.formLayout('atom_csst_formLayout', numberOfDivisions=100)
     atom_csst_exportPath_text = cmds.text('atom_csst_exportPath_text', label='Export Path:', align='left', width=70, height=14)
     atom_csst_exportPath_textField = cmds.textField('atom_csst_exportPath_textField', text=atom_ccst_path)
     atom_csst_exportName_text = cmds.text('atom_csst_exportName_text', label='Export Name:', align='left', width=71, height=14)
-    atom_csst_exportName_textField = cmds.textField('atom_csst_exportName_textField', text='None', cc='from atom import atom_ui_lib\natom_ui_lib.validateFieldTextInput("atom_csst_exportName_textField")')
-    atom_csst_exportName_button = cmds.button('atom_csst_exportName_button', label='Export Curve Shape', c='from atom import atom_ui_lib\natom_ui_lib.exportCurveShape()')
+    atom_csst_exportName_textField = cmds.textField('atom_csst_exportName_textField', text='None', cc='import atom_ui_lib\natom_ui_lib.validateFieldTextInput("atom_csst_exportName_textField")')
+    atom_csst_exportName_button = cmds.button('atom_csst_exportName_button', label='Export Curve Shape', c='import atom_ui_lib\natom_ui_lib.exportCurveShape()')
     atom_csst_separatorTop = cmds.separator('atom_csst_separatorTop', h=5)
     atom_csst_importName_text = cmds.text('atom_csst_importName_text', label='Import Curve Shape')
     atom_csst_separatorBottom = cmds.separator('atom_csst_separatorBottom')
@@ -564,6 +591,7 @@ def win(*args):
                                 (atom_ghstDog_frameLayout, 'left', 5), (atom_ghstDog_frameLayout, 'right', 5),
                                 (atom_rat_frameLayout, 'left', 5), (atom_rat_frameLayout, 'right', 5),
                                 (atom_reindeer_frameLayout, 'left', 5), (atom_reindeer_frameLayout, 'right', 5),
+                                (atom_biped_frameLayout, 'left', 5), (atom_biped_frameLayout, 'right', 5),
                                 (atom_ccst_frameLayout, 'left', 5), (atom_ccst_frameLayout, 'right', 5)],
 
                     attachControl=[(atom_prefix_textField, 'left', 5, atom_prefix_text),
@@ -583,7 +611,8 @@ def win(*args):
                                    (atom_ghstDog_frameLayout, 'top', 5, atom_srig_frameLayout),
                                    (atom_rat_frameLayout, 'top', 5, atom_ghstDog_frameLayout),
                                    (atom_reindeer_frameLayout, 'top', 5, atom_rat_frameLayout),
-                                   (atom_ccst_frameLayout, 'top', 5, atom_reindeer_frameLayout)]
+                                   (atom_biped_frameLayout, 'top', 5, atom_reindeer_frameLayout),
+                                   (atom_ccst_frameLayout, 'top', 5, atom_biped_frameLayout)]
                     )
     cmds.showWindow(atom_win)
     cmds.window('atom_win', edit=True, width=254)

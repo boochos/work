@@ -93,12 +93,15 @@ def refreshWindow(control):
 
 
 def addControlCurveButton(path):
+    print path
     files = os.listdir(path)
+    print files
     files.sort()
     for file in files:
+        print 'here'
         txtSplit = file.split('.')
         if txtSplit[1] == 'txt':
-            cmds.button(label=txtSplit[0], c='from atom import atom_ui_lib\natom_ui_lib.importCurveShape("' + txtSplit[0] + '","' + path + '")')
+            cmds.button(label=txtSplit[0], c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + txtSplit[0] + '","' + path + '")')
 # end def addControlCurveButton
 
 #-------------
@@ -119,19 +122,19 @@ def exportCurveShape(*args):
         if uiName != 'None':
             path = os.path.join(uiPath, uiName) + '.txt'
             # if the file exists, stop here
-            if os.path.isfile(path) == False:
-                # extract the curves shape node
-                shapeNode = cmds.listRelatives(sel[0], shapes=True)[0]
-                if cmds.nodeType(shapeNode) == 'nurbsCurve':
-                    cvInfo = cmds.getAttr(shapeNode + '.cv[*]')
-                    outFile = open(path, 'w')
-                    for i in range(0, len(cvInfo), 1):
-                        info = cmds.xform(shapeNode + '.cv[' + str(i) + ']', query=True, os=True, t=True)
-                        outFile.write('%s %s %s\n' % (info[0], info[1], info[2]))
-                    outFile.close()
-                    # add the butto
-                    cmds.button(label=uiName, c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + uiName + '","' + uiPath + '")', p='atom_ccst_main_columnLayout')
-                    refreshWindow('atom_win')
+            # if os.path.isfile(path) == False:
+            # extract the curves shape node
+            shapeNode = cmds.listRelatives(sel[0], shapes=True)[0]
+            if cmds.nodeType(shapeNode) == 'nurbsCurve':
+                cvInfo = cmds.getAttr(shapeNode + '.cv[*]')
+                outFile = open(path, 'w')
+                for i in range(0, len(cvInfo), 1):
+                    info = cmds.xform(shapeNode + '.cv[' + str(i) + ']', query=True, os=True, t=True)
+                    outFile.write('%s %s %s\n' % (info[0], info[1], info[2]))
+                outFile.close()
+                # add the butto
+                cmds.button(label=uiName, c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + uiName + '","' + uiPath + '")', p='atom_ccst_main_columnLayout')
+                refreshWindow('atom_win')
     else:
         print 'Select one curve to export'
 # end def exportCurveShape
@@ -162,6 +165,7 @@ def importCurveShape(name, path, codeScale=False, overRide=False):
                 curveScale = codeScale
 
             if cmds.nodeType(shapeNode) == 'nurbsCurve':
+                # print path, 'shape__________'
                 inFile = open(path, 'r')
                 for line in inFile.readlines():
                     # extract the position data stored in the file

@@ -663,8 +663,8 @@ def run():
     leaf1 = '*\\images\\*'
     path2 = 'C:\\VFX\\projects\\Scarecrow\\Work'
     leaf2 = '*\\Maya\\movies'
-    path3 = 'C:\\VFX\\projects\\DINO\\DINO_VFX_15'
-    leaf3 = 'maya\\movies\\DinoBty'
+    path3 = 'C:\\Users\\Sebastian\\Dropbox (Personal)\\share'
+    leaf3 = ''
     path4 = '/var/tmp/rv_playblasts'
     leaf4 = '*/*'
     path = path3
@@ -674,7 +674,7 @@ def run():
         os.mkdir(path, 0777)
 
     app = QApplication(sys.argv)
-    app.setWindowIcon((QIcon('/home/sebastianw/maya/2014-x64/prefs/icons/rvBlast.png')))
+    app.setWindowIcon((QIcon('/home/sebastianw/maya/2015-x64/prefs/icons/rvBlast.png')))
     controlWin = KeyToolsPlayblastManagerWindow(path, 'mov', leaf)
     controlWin.show()
     controlWin.redrawAllTables()

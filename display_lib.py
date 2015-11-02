@@ -310,8 +310,10 @@ def toggleGeo():
         state = cmds.modelEditor(pnl, q=True, polymeshes=True)
         if state:
             cmds.modelEditor(pnl, e=True, polymeshes=0)
+            # cmds.modelEditor(pnl, e=True, nurbsSurfaces=0)
         else:
             cmds.modelEditor(pnl, e=True, polymeshes=1)
+            # cmds.modelEditor(pnl, e=True, nurbsSurfaces=1)
 
 
 def toggleRes():
@@ -609,7 +611,10 @@ def altFrame(*args):
                     locs.append(loc)
                 else:
                     try:
-                        loc = cn.locator(obj=cmds.listRelatives(item, parent=True)[0], ro='zxy', X=0.35, constrain=False)[0]
+                        print cmds.listRelatives(item, parent=True)[0], '_______________'
+                        loc = cn.locator(obj=cmds.listRelatives(item, parent=True)[0], ro='zxy', X=0.35, constrain=False)
+                        print loc, '_____________________'
+                        loc = loc[0]
                         locs.append(loc)
                     except:
                         message('didnt frame object: ' + item)

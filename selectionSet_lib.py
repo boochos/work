@@ -473,5 +473,6 @@ def remapMultiNs(sel=None, assets={}):
         ns = ''
         for n in assets:
             ns = ns + ' -- ' + n
+        # BUG: fix for scarecrow, mid fingers, shouldve worked, only one ref with available objects
         message('WRONG MESSAGE -- Objects were not remapped for these namespaces: ' + ns, warning=True)
     return converted

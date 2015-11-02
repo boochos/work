@@ -116,7 +116,7 @@ class Key():
                         self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
                 if self.weightedTangents:
                     cmds.keyTangent(self.crv, edit=True, time=(
-                        self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock,)
+                        self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock)
                     if self.inWeight:
                         cmds.keyTangent(self.crv, edit=True, time=(
                             self.frame + self.offset, self.frame + self.offset), inWeight=self.inWeight)

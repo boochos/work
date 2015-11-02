@@ -316,21 +316,23 @@ def matchObj():
     # print ' run '
     sel = cmds.ls(sl=True, fl=True)
     if len(sel) == 2:
-        # print ' if '
-        # collect get
+        # collect
         get = sel[1]
+        put = sel[0]
+        mtrx = cmds.xform(get, q=True, m=True, ws=True)
         '''
         roo = cmds.getAttr(get + '.rotateOrder')
         r = cmds.xform(get, q=True, ws=True, ro=True )
         t = cmds.xform(get, q=True, ws=True, t=True )
         '''
-        mtrx = cmds.xform(get, q=True, m=True, ws=True)
         # collect put
-        put = sel[0]
         # origRO = cmds.xform(put, q=True, roo=True)
-        #
         # cmds.xform(put, m=mtrx, ws=True)
         #
+        if cmds.nodeType(put) == 'nurbsSurface':
+            t = cmds.xform(get, q=True, t=True, ws=True)
+            cmds.xform(put, t=t, ws=True)
+            return None
         try:
             # print ' try '
             # put
@@ -356,7 +358,7 @@ def matchObj():
             # delete
             cmds.delete(loc)
         else:
-            # print 'else'
+            print 'else'
             pass
         # reselect objects
         cmds.select(sel)

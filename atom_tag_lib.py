@@ -168,7 +168,8 @@ class Atom_Tag_Core(object):
     getMasters       -- Get all the masters in the scene.
     '''
 
-    def __init__(self, path=os.path.join(os.getenv('KEY_PROJECT_PATH'), 'tags'), mShapeType='mesh'):
+    def __init__(self, path='C:\\Element\\VFX\\projects\\projects_rigTags\\Spooky_Buddies\\tags', mShapeType='mesh'):
+        path = 'C:\\VFX\\projects\\projects_rigTags\\Spooky_Buddies\\tags'
         self.tlp = path
         self.mShapeType = mShapeType
         # Nested dictionary that reflects the folder convention
@@ -347,6 +348,9 @@ class Atom_Tag(Atom_Tag_Core):
 
                         for attr in self.tagDict[self.base_type][self.base_name][self.master].keys():
                             for inObjStr in self.tagDict[self.base_type][self.base_name][self.master][attr]:
+                                print objExists('__CLASHCLASH___ZBrush_defualt_group002'), '  +++  ', '__CLASHCLASH___ZBrush_defualt_group002', '+++'
+                                print objExists(inObjStr.rstrip()), '  +++  ', inObjStr.rstrip(), '+++'
+                                inObjStr = inObjStr.rstrip()
                                 if objExists(inObjStr):
                                     inObj = ls(inObjStr)[0]
                                     if self.master != inObj.name():

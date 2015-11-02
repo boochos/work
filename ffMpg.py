@@ -2,8 +2,8 @@ import subprocess
 
 
 def renderFrames(*args):
-    filein = '/data/jobs/CHP/reference/onSetData/witnessCams/6J_take1_A.MP4'
-    fileout = '/home/sebastianw/Desktop/witcam/6J_take1_A.%05d.png'
+    filein = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002.mp4'
+    fileout = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002.%05d.png'
     # All
     cmd = ['ffmpeg', '-i', filein, '-vcodec', 'png', fileout]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

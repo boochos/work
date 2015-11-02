@@ -191,7 +191,7 @@ def null2(nllSuffix, obj, orient=True):
         pos = cmds.xform(obj, q=True, rp=True, ws=True)
         rot = cmds.xform(obj, q=True, ro=True, ws=True)
         n = cmds.group(name=nllSuffix, em=True)
-        cmds.xform(n, t=pos, ro=rot)
+        cmds.xform(n, t=pos, ro=rot, ws=True)
         if orient == False:
             cmds.xform(n, ro=(0, 0, 0))
         null.append(n)
@@ -201,7 +201,7 @@ def null2(nllSuffix, obj, orient=True):
             pos = cmds.xform(item, q=True, rp=True, ws=True)
             rot = cmds.xform(item, q=True, ro=True, ws=True)
             n = cmds.group(name=nllSuffix, em=True)
-            cmds.xform(n, t=pos, ro=rot)
+            cmds.xform(n, t=pos, ro=rot, ws=True)
             if orient == False:
                 cmds.xform(n, ro=(0, 0, 0))
             null.append(n)

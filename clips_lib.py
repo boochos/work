@@ -122,6 +122,7 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
                 pass
         else:
             create = True
+        '''
         if create:
             # cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-vframes', '1', fileout]
             cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-y', '-frames:v', '1', fileout]
@@ -135,6 +136,7 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
             if err:
                 print "========= error ========"
                 print err
+        '''
     return fileout
 
 
