@@ -8,6 +8,7 @@ import shutil
 import tempfile
 from functools import partial
 
+
 # rgb gl color guide ## http://prideout.net/archive/colors.php
 # http://www.tweaksoftware.com/static/documentation/rv/current/html/rv_manual.html
 # layers = inputs in square brackets are layers
@@ -29,7 +30,7 @@ def getTempPath():
     blastD = '___A___PLAYBLAST___A___'
     tempD = tempfile.gettempdir()
     return os.path.join(tempD, blastD)
-    # print tempfile.gettempdir()
+    print tempfile.gettempdir()
     # return '/var/tmp/rv_playblasts/'
     # return '/var/tmp/___A___PLAYBLAST___A___/'
 
