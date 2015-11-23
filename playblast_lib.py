@@ -2,8 +2,11 @@ import os
 import maya.cmds as cmds
 import maya.mel as mel
 import subprocess
+from subprocess import call
 import datetime
 import shutil
+import tempfile
+from functools import partial
 
 # rgb gl color guide ## http://prideout.net/archive/colors.php
 # http://www.tweaksoftware.com/static/documentation/rv/current/html/rv_manual.html
@@ -22,8 +25,12 @@ def message(what='', maya=False):
         print what
 
 
-def getDefaultPath():
-    return '/var/tmp/rv_playblasts/'
+def getTempPath():
+    blastD = '___A___PLAYBLAST___A___'
+    tempD = tempfile.gettempdir()
+    return os.path.join(tempD, blastD)
+    # print tempfile.gettempdir()
+    # return '/var/tmp/rv_playblasts/'
     # return '/var/tmp/___A___PLAYBLAST___A___/'
 
 
@@ -144,12 +151,6 @@ def sceneName(full=False, suffix=None, bracket=False):
     return sceneName
 
 
-def shotDir():
-    shotDir = sceneName()
-    shotDir = shotDir + '/'
-    return shotDir
-
-
 def shotDir2(idx=7):
     shotDir = sceneName(full=1)
     shotDir = shotDir.split('/')[idx]
@@ -158,7 +159,9 @@ def shotDir2(idx=7):
 
 
 def createPath(path):
+    print path
     if not os.path.isdir(path):
+        print path
         os.mkdir(path)
     else:
         pass
@@ -166,16 +169,17 @@ def createPath(path):
     return path
 
 
-def createBlastPath(suffix=None):
+def createBlastPath(suffix=None, forceTemp=False):
     '''
-    tie in with Bates blast module
+    bla
     '''
-    createPath(path=blastDir())
-    path = createPath(path=blastDir() + shotDir2())
+    createPath(path=blastDir(forceTemp=forceTemp))
+    path = os.path.join(blastDir(forceTemp=forceTemp), sceneName())
+    path = createPath(path)
     if suffix:
-        path = createPath(blastDir() + shotDir2() + sceneName() + suffix + '/') + sceneName() + suffix
+        path = path + sceneName() + suffix + '/' + sceneName() + suffix
     else:
-        path = createPath(blastDir() + shotDir2() + sceneName())
+        path = os.path.join(path, sceneName())
     return path
 
 
@@ -211,12 +215,12 @@ def blastDir(forceTemp=False, brackets=False):
                 # print project, 'here'
                 # print scene, 'here'
         else:
-            return getDefaultPath()
+            return getTempPath()
     else:
-        return getDefaultPath()
+        return getTempPath()
 
 
-def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=False):
+def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=False, forceTemp=True):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
@@ -230,93 +234,37 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
     w = int(float(w) * float(x))
     h = int(float(h) * float(x))
     print w, h
-    if os.name == 'nt':
-        # windows os
-        # i = 1
-        if not blastDir():
-            message('Set project', maya=True)
-        else:
-            # print blastDir(forceTemp=False), '__________print blast directory'
-            pbName = blastDir(forceTemp=False) + sceneName()
-            if os.path.exists(pbName):
-                # print True
-                pass
-            print '___'
-            print blastDir(forceTemp=False)
-            print sceneName()
-            print camName()
-            blastName = blastDir(forceTemp=False) + sceneName() + '____' + camName()
-            if 'image' not in format:
-                path = cmds.playblast(format=format, filename=blastName, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
-            else:
-                createPath(blastDir(forceTemp=False))
-                # forcing qt blast
-                path = cmds.playblast(format=format, filename=blastName, sound=sound(), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
-                '''
-                createPath( blastDir( forceTemp=False ) + shotDir() )
-                path = cmds.playblast( format='image', filename=blastDir( forceTemp=False ) + shotDir() + sceneName(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h )
-                #rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(min) + " -out " + str(max) + " ]"
-                #print rvString
-                #subprocess.Popen(rvString)
-                '''
-    elif os.name == 'posix':
-        # print '__Patricia__\n'
-        # could be linux or mac os
-        # i = 1
-        if not blastDir():
-            message('Set project', maya=True)
-        else:
-            pbName = shotDir2() + sceneName()
-            pbName = blastDir(forceTemp=False) + sceneName()
-            if os.path.exists(pbName):
-                # print True
-                pass
-            if 'image' not in format:
-                print 'Patricia   ', sound(path=False)
-                path = cmds.playblast(format=format, filename=blastDir(forceTemp=False) + sceneName(), sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
-            else:
-                playLo, playHi, current = getRange()
-                w = w * x
-                h = h * x
-                # sound
-                snd = copySound(toPath=createBlastPath())
-                if snd:
-                    print snd
-                else:
-                    print snd
-                # blast
-                path = cmds.playblast(format='image', filename=os.path.join(createBlastPath(), sceneName()), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
-                if path:
-                    if snd:
-                        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # not escaped
-                    else:
-                        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'  # not escaped
-                else:
-                    if snd:
-                        rvString = 'rv ' + '[ ' + createBlastPath('') + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # escaped
-                    else:
-                        rvString = 'rv ' + '[ ' + createBlastPath('') + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'  # escaped
-                # play blast
-                print rvString
-                os.system(rvString)
-                cmds.currentTime(current)
+    blastName = createBlastPath('', forceTemp=forceTemp) + '____' + camName()
+    if not blastDir(forceTemp=forceTemp):
+        message('Set project', maya=True)
     else:
-        # ? whatever else, doesnt get used much and will likely break...
-        createPath(path=blastDir())
-        createPath(path=blastDir() + shotDir2())
-        playLo, playHi, current = getRange()
-        w = w * x
-        h = h * x
-        path = cmds.playblast(format='image', filename=blastDir() + shotDir2() + sceneName(), showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
-        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
-        print rvString
-        os.system(rvString)
-        cmds.currentTime(current)
-    # blastWin()
+        if 'image' not in format:
+            path = cmds.playblast(format=format, filename=blastName, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+        else:
+            playLo, playHi, current = getRange()
+            # sound
+            snd = copySound(toPath=createBlastPath('', forceTemp=forceTemp))
+            # blast
+            path = cmds.playblast(format='image', filename=blastName, showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+            if path:
+                if snd:
+                    rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # not escaped
+                else:
+                    rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'  # not escaped
+            else:
+                if snd:
+                    rvString = 'rv ' + '[ ' + createBlastPath('', forceTemp=forceTemp) + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # escaped
+                else:
+                    rvString = 'rv ' + '[ ' + createBlastPath('', forceTemp=forceTemp) + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'  # escaped
+            # play blast
+            print rvString
+            os.system(rvString)
+            cmds.currentTime(current)
 
 
 def blastWin():
-    rootDir = getDefaultPath()
+    rootDir = getTempPath()
+    # print rootDir, ' here'
     suf = '_PB'
     winName = 'PB_Man'
     if not cmds.window(winName, q=1, ex=1):
@@ -326,13 +274,14 @@ def blastWin():
         cmds.showWindow()
         # text field
         # field        = cmds.textField('defaultPath1', text=rootDir)
-        field = cmds.button('defaultPath1', label=rootDir, align='left', h=24, c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (rootDir))
+        # field = cmds.button('defaultPath1', label=rootDir, align='left', h=24, c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (rootDir))
+        field = cmds.button('defaultPath1', label=rootDir, align='left', h=24, c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % (rootDir.replace('\\', '\\\\')))
         cmds.formLayout(f1, e=1, af=(field, 'top', 5))
         cmds.formLayout(f1, e=1, af=(field, 'left', 5))
         cmds.formLayout(f1, e=1, af=(field, 'right', 5))
         cmds.refresh(f=1)
         # refresh button
-        refBtn = cmds.button('refresh' + suf, l='REFRESH', c='import playblast_lib as pb\nreload(pb)\npb.blastWin()', h=24)
+        refBtn = cmds.button('refresh' + suf, l='REFRESH', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.blastWin()", h=24)
         attachForm = [(refBtn, 'top', 2, field)]
         cmds.formLayout(f1, edit=True, attachControl=attachForm)
         cmds.formLayout(f1, e=1, af=(refBtn, 'left', 5))
@@ -379,6 +328,8 @@ def blastWin():
         # status
         detectCompatibleStructure(rootDir)
         blastDirs = getBlastDirs(rootDir)
+        # print blastDirs, '++++++++++++++++'
+
         # print blastDirs
         if blastDirs:
             f2 = cmds.formLayout('subForm' + suf, h=height * len(blastDirs), w=width, bgc=[0.17, 0.17, 0.17])
@@ -390,8 +341,9 @@ def blastWin():
             num = len(blastDirs) - 1
             # print blastDirs
             for blastDir in blastDirs:
-                contents = os.listdir(blastDir)
+                contents = os.listdir(os.path.join(getTempPath(), blastDir))
                 if contents:
+                    # print 'here'
                     cmds.setParent(f2)
                     if j == 0:
                         attach = ''
@@ -414,6 +366,8 @@ def blastWin():
                     break
             cmds.window(win, e=1, w=width + wAdd, h=(height * 4) + scrollBarOffset)
             cmds.refresh(f=1)
+        else:
+            message('no playblasts found', maya=True)
     else:
         cmds.deleteUI(winName)
         blastWin()
@@ -432,25 +386,28 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
 
     # stuff
     allCols = col[0] + col[1] + col[2] + col[3]
-    path = blastDir
+    path = os.path.join(getTempPath(), blastDir)
     # print path
-
+    # print '   rowwwwwww'
     # parse row name from directory path
     blastDir = blastDir.split('/')
     shot = blastDir[len(blastDir) - 2]
     blastDir = blastDir[len(blastDir) - 1]
     suf = '_RowForm__'
     blastDir = blastDir + suf + shot
+    # print 'lol'
 
     imageRange = getImageRange(path)
     imageName = getImageName(path)
-
+    # print 'lal'
     # iconSize
     icon = getIcon(path)
+    # print 'icon'
     w, h = getIconSize(icon)
-
+    # print 'size'
     # row form
     f = cmds.formLayout(blastDir, h=height, bgc=[0.2, 0.2, 0.2], ann=path)
+    # print f, '+++++++'
     if attachRow:
         # create above row name from path
         shot = attachRow.split('/')
@@ -464,15 +421,17 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
     cmds.formLayout(parent, e=1, af=(f, 'top', offset))
     cmds.formLayout(parent, e=1, af=(f, 'left', 0))
     cmds.formLayout(parent, e=1, af=(f, 'right', 0))
+    # print parent
     if attachRow:
         attachForm = [(f, 'top', offset, attachRow)]
         # print parent
+        # print attachRow
         cmds.formLayout(parent, edit=True, attachControl=attachForm)
 
     # checkbox
     chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0],
-                          onc="import playblast_lib as pb\nreload(pb)\npb.addChecked(%s)" % (getString(strings=[path])),
-                          ofc="import playblast_lib as pb\nreload(pb)\npb.removeChecked(%s)" % (getString(strings=[path])))
+                          onc="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.addChecked(%s)" % (getString(strings=[path])),
+                          ofc="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeChecked(%s)" % (getString(strings=[path])))
     cmds.formLayout(f, e=1, af=(chkBx, 'top', height / 2 - 8))
     cmds.formLayout(f, e=1, af=(chkBx, 'left', 4))
 
@@ -491,6 +450,7 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
         padW = int((col[1] - iconW) / 2)
     if iconH < height:
         padH = int((height - iconH) / 2)
+    # print blastDir
     iconBtn = cmds.iconTextButton(blastDir + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13],)
     # cmds.formLayout(f, e=1, af=(iconBtn, 'bottom', padH))
     cmds.formLayout(f, e=1, af=(iconBtn, 'top', padH))
@@ -499,13 +459,15 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
     # delete
     cmds.setParent(f)
     st = getString(strings=[f, attachRow, belowRow])
-    delBtn = cmds.button(blastDir + '_Delete', c="import playblast_lib as pb\nreload(pb)\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
+    # print st
+    delBtn = cmds.button(blastDir + '_Delete', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
+    # print delBtn, '  del button'
     cmds.formLayout(f, e=1, af=(delBtn, 'bottom', padBtns / 2))
     cmds.formLayout(f, e=1, af=(delBtn, 'top', padBtns / 2))
     cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
 
     # meta
-    pt = path.split(getDefaultPath())[1].split('/')[0] + '\n'
+    pt = path.split(getTempPath())[1].split('/')[0] + '\n'
     # sc    = 'Scene Name:  ' + blastDir + '\n'
     im = imageName + '\n'
     di = str(int(w)) + ' x ' + str(int(h)) + '\n'
@@ -515,7 +477,8 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
     label = pt + im + di + fr + le + dt
     #
     # metaBtn = cmds.button(blastDir + '_Meta', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height, w=col[2], align='left')
-    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height - padBtns, align='center', fn='boldLabelFont', bgc=[0.23, 0.23, 0.23], w=col[2])
+    # metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height - padBtns, align='center', fn='boldLabelFont', bgc=[0.23, 0.23, 0.23], w=col[2])
+    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % (path.replace('\\', '\\\\')), l=label, h=height - padBtns, align='center', fn='boldLabelFont', bgc=[0.23, 0.23, 0.23], w=col[2])
     cmds.formLayout(f, e=1, af=(metaBtn, 'bottom', padBtns / 2))
     cmds.formLayout(f, e=1, af=(metaBtn, 'top', padBtns / 2))
     cmds.formLayout(f, e=1, af=(metaBtn, 'left', col[1] + col[0]))
@@ -523,12 +486,12 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
     #
     attachForm = [(metaBtn, 'right', 0, delBtn)]
     cmds.formLayout(f, edit=True, attachControl=attachForm)
-
+    # print f
     return f
 
 
 def flushDefaultDir(*args):
-    path = getDefaultPath()
+    path = getTempPath()
     shutil.rmtree(path)
     createPath(path)
 
@@ -628,7 +591,12 @@ def removeRow(row='', attachRow='', belowRow='', deleteDir=True):
         # remove scene dir
         shutil.rmtree(path)
         # check if shot dir is empty, delete if it is
-        shot = path.split('/' + path.split('/')[len(path.split('/')) - 1])[0]
+        print path
+        if os.name == 'posix':
+            shot = path.split('/' + path.split('/')[len(path.split('/')) - 1])[0]
+        else:
+            shot = path.split('\\' + path.split('\\')[len(path.split('\\')) - 1])[0]
+        print shot
         contents = os.listdir(shot)
         if not contents:
             shutil.rmtree(shot)
@@ -646,7 +614,7 @@ def updateRows(row='', attachRow='', belowRow=''):
         # print parent
     updateRowCmd(row, attachRow, belowRow)
     # update height scroll, form
-    num = getBlastDirs(getDefaultPath())
+    num = getBlastDirs(getTempPath())
     if num:
         num = len(num)
         num = getDefaultHeight() * num
@@ -689,6 +657,20 @@ def deleteCmd():
     pass
 
 
+def cmdOpen(path=''):
+    #path = getTempPath()
+    if os.name == 'nt':
+        # print path
+        #path = path.replace('\'', '\\')
+        print path
+        if os.path.isdir(path):
+            subprocess.Popen(r'explorer /open, ' + path)
+    else:
+        message('Close file window to regain control over MAYA.')
+        app = "nautilus"
+        call([app, path])
+
+
 def confirmCmd():
     '''
     confrim cmd, default cmd for delete buttons
@@ -706,7 +688,7 @@ def detectCompatibleStructure(path='', destructive=True):
     if root:
         for r in root:
             # print r, '======'
-            shot = getContentsType(r, directory=1, destructive=True)
+            shot = getContentsType(r, directory=0, destructive=True)
             if shot:
                 # print shot, '======'
                 for s in shot:
@@ -722,8 +704,10 @@ def getContentsType(path='', directory=False, destructive=False):
     directory = False (returns path if file found in given path)
     returns None if criteria is not met
     '''
+    # print directory, '+++++++++++++++++++++++++'
     d = not directory
     fullPaths = []
+    # print path, '____deleting paths'
     if os.path.isdir(path) and os.access(path, os.R_OK):
         # list contents
         pathContents = os.listdir(path)
@@ -763,11 +747,16 @@ def getIcon(path=''):
 
 def getIconSize(path=''):
     if path:
-        dim = subprocess.Popen(["identify", "-format", "\"%w,%h\"", path], stdout=subprocess.PIPE).communicate()[0]
-        s = dim.split(',')
-        w = float(s[0].split('"')[1])
-        h = float(s[1].split('"')[0])
-        return w, h
+        # print 'size'
+        if os.name == 'posix':
+            dim = subprocess.Popen(["identify", "-format", "\"%w,%h\"", path], stdout=subprocess.PIPE).communicate()[0]
+            # print 'dim'
+            s = dim.split(',')
+            w = float(s[0].split('"')[1])
+            h = float(s[1].split('"')[0])
+            return w, h
+        else:
+            return 50, 50
     else:
         return 0, 0
 
@@ -804,6 +793,7 @@ def getImageName(path=''):
 
 
 def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
+    print '___qualify image seq', path
     images = os.listdir(str(path))
     if images:
         i = 0
@@ -854,10 +844,12 @@ def getDirectoryDate(path=''):
 
 def getShotDirs(path=''):
     shots = os.listdir(path)
+    # print shots
     shotPaths = []
     for shot in shots:
         shotPaths.append(os.path.join(path, shot))
-    return shotPaths
+    return shots
+    # return shotPaths
 
 
 def getBlastDirs(path=''):
@@ -865,6 +857,7 @@ def getBlastDirs(path=''):
     if os.path.isdir(path) and os.access(path, os.R_OK):
         # shot dirs
         shots = getShotDirs(path)
+        print shots, 'shots____________'
         if shots:
             # print shots, '  shots'
             # Populate the directories and non-directories for organization
@@ -873,12 +866,14 @@ def getBlastDirs(path=''):
             sortedDir = []
             # list shots in the default path
             for shot in shots:
-                mtime = lambda f: os.stat(os.path.join(shot, f)).st_ctime  # this doesnt work, remove!
-                if os.path.isdir(shot):
-                    contents = list(sorted(os.listdir(shot), key=mtime))
+                shotPath = os.path.join(getTempPath(), shot)
+                mtime = lambda f: os.stat(os.path.join(shotPath, f)).st_ctime  # this doesn't work, remove!
+                if os.path.isdir(shotPath):
+                    contents = list(sorted(os.listdir(shotPath), key=mtime))
+                    # print contents
                 else:
-                    message('skipping ' + shot + '  Expected directory! DELETING!')
-                    os.remove(shot)  # do this where inappropriate stuff is found
+                    message('skipping ' + shotPath + '  Expected directory! DELETING!')
+                    os.remove(shotPath)  # do this where inappropriate stuff is found
                 # print contents
                 if len(contents) > 0:
                     # This will error if 'u' objects are fed into a list
@@ -896,7 +891,8 @@ def getBlastDirs(path=''):
             for i in reversed(dirs):
                 sortedDir.append(i)
 
-            return sortedDir
+            return shots
+            # return sortedDir # turned off to get it working need to sort this list according to creation time
         else:
             return None
     else:
