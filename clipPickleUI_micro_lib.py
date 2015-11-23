@@ -16,6 +16,7 @@ def message(what=''):
 
 class Action(object):
     # builds row of buttons for bottom of window
+
     def __init__(self, name, parent=None, h=15, w=80, cmdAction='', label=''):
         self.fn = 'obliqueLabelFont'
         self.bld = 'boldLabelFont'
@@ -74,6 +75,8 @@ class Action(object):
         self.col1 = ''
         self.r1 = ''
         self.r2 = ''
+        self.typGrpEx = ''
+        self.typGrpIm = ''
         self.label = label
         self.cmdAction = cmdAction
         self.ui = [self.form, self.form1, self.opt, self.button1, self.button2, self.button3, self.button4, self.field1, self.heading1, self.field2, self.heading2, self.heading3, self.heading4, self.heading5, self.heading6, self.heading7, self.heading8, self.heading9, self.heading10, self.heading11, self.heading12, self.heading13, self.heading14, self.heading15, self.heading16, self.heading17, self.heading18, self.heading19, self.heading20, self.heading21, self.heading22, self.scroll1, self.scroll2, self.scroll3, self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.s0, self.s1, self.s2, self.s3, self.s4, self.opt1, self.col1, self.r1, self.r2]
@@ -121,6 +124,7 @@ class Action(object):
         self.field1 = cmds.textField(self.field1, tx='')
         self.heading2 = cmds.text(self.heading2, label='Comment:', al='left', fn=self.fn)
         self.field2 = cmds.textField(self.field2, tx='')
+        self.typGrpEx = cmds.radioButtonGrp(label='Export:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
         self.button1 = cmds.button(self.button1, label='Export', c=self.cmdAction, bgc=greyD,
                                    ann='Export selected controls to a clip file')
         self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
@@ -177,6 +181,7 @@ class Action(object):
         self.c5 = cmds.checkBox(label='Use selection namespace', v=True, ann='...annotation...')
         self.c6 = cmds.checkBox(label='Merge with Existing Layers', v=True, ann='...annotation...')
         self.c7 = cmds.checkBox(label='Apply Layer Attributes', v=True, ann='...annotation...')
+        self.typGrpIm = cmds.radioButtonGrp(label='Import:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
         self.button3 = cmds.button(self.button3, label='Import', c=self.cmdAction, bgc=blue)
         # self.heading22 = cmds.text(self.heading22, label='\n', al='left')
         # self.s4 = cmds.separator( height=self.sepH, style=self.sepStl )

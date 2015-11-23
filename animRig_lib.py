@@ -288,11 +288,19 @@ def switchRHand():
     cmds.group(th, ind, mid, rin, pin, n='__RIGHT_HAND__')
 
 
-def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True):
+def inverseDir(arry=[]):
+    # sort inverse
+    for index, item in enumerate(arry):
+        if item == 1:
+            arry[index] = item * -1
+    return arry
+
+
+def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True, inverseA=False, inverseU=False):
     # BUG: does not support negative numbers for aim vectors, use for offset direction
     locs = []
     if not target:
-        sel = cmds.ls(sl=1)  # order = tip,base
+        sel = cmds.ls(sl=1)  # order = target,base
         if len(sel) == 2:
             target = sel[0]
             obj = sel[1]
@@ -307,6 +315,17 @@ def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
         uAxs = uAxs[u.index(1.0)]
         # distance
         offset = ds.measureDis(obj1=target, obj2=obj)
+        # sort inverse
+        if inverseA:
+            aim = inverseDir(aim)
+            offsetA = offset * -1
+        else:
+            offsetA = offset
+        if inverseU:
+            u = inverseDir(u)
+            offsetU = offset * -1
+        else:
+            offsetU = offset
         # place locator at locale A and constrain
         locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__')[0]
         locs.append(locA)
@@ -323,7 +342,7 @@ def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
         # print locUp
         # parent up locator, move up in ty, unparent
         cmds.parent(locUp, locB)
-        cmds.setAttr(locUp + uAxs, offset)
+        cmds.setAttr(locUp + uAxs, offsetU)
         # constraint up locator to locator B
         cmds.parentConstraint(obj, locUp, mo=1)
         # parent locUp to locator A, bake up locator
@@ -334,7 +353,7 @@ def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
         locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__')[0]
         locs.append(locAim)
         cmds.parent(locAim, locB)
-        cmds.setAttr(locAim + aAxs, offset)
+        cmds.setAttr(locAim + aAxs, offsetA)
         cmds.parent(locAim, locA)
         cmds.parentConstraint(obj, locAim, mo=1)
         cn.matchKeyedFrames(A=target, B=locAim, subtractive=True)

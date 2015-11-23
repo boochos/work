@@ -10,7 +10,7 @@ import webrImport as web
 ui = web.mod('clipPickleUI_micro_lib')
 cp = web.mod('clipPickle_lib')
 al = web.mod('anim_lib')
-# TODO: add pose import and pose percentage import
+# TODO: add pose percentage import
 # TODO: add UI support for multi ref import/exports
 # each ref gets its on class, objects with no namespace get their own class
 
@@ -68,6 +68,20 @@ class CPUI(object):
         cmds.showWindow(self.win)
         self.populateClipList()
 
+    def cmdTypeEx(self):
+        # type of export
+        typ = [None, False, True]
+        v = cmds.radioButtonGrp(self.control.typGrpEx, q=True, select=True)
+        print typ[v]
+        return typ[v]
+
+    def cmdTypeIm(self):
+        # type of export
+        typ = [None, False, True]
+        v = cmds.radioButtonGrp(self.control.typGrpIm, q=True, select=True)
+        print typ[v]
+        return typ[v]
+
     def cmdExport(self, *args):
         # TODO: overwrite or insert option
         # collect selections in UI
@@ -77,7 +91,8 @@ class CPUI(object):
         comment = cmds.textField(self.control.field2, q=True, tx=True)
         version = '.' + self.cmdCreateVersionNumber()
         #
-        cp.clipSave(name=name + version, comment=comment)
+        poseOnly = self.cmdTypeEx()
+        cp.clipSave(name=name + version, comment=comment, poseOnly=poseOnly)
         cmds.textScrollList(self.control.scroll1, edit=True, ra=True)
         self.populateClipList()
         path = os.path.join(self.path, name + '.clip')
@@ -130,9 +145,11 @@ class CPUI(object):
             # apply layer settings
             c7 = cmds.checkBox(self.control.c7, q=True, v=True)
             # print c7
+            # get import type
+            poseOnly = self.cmdTypeIm()
             # import
             cp.clipApply(path=path, ns=c5, onCurrentFrame=c1, mergeExistingLayers=c6, applyLayerSettings=c7, putLayerList=putLayerList, putObjectList=putObjectList,
-                         start=None, end=None)
+                         start=None, end=None, poseOnly=poseOnly)
         else:
             message('Select a clip to import.')
 

@@ -199,7 +199,13 @@ class CSUI(object):
 
     def cmdAimRig(self, *args):
         ar = web.mod('animRig_lib')
-        ar.aimRig(mo=False, bake=False)
+        axs = [None, [1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        inverseA = cmds.checkBox(self.actionColumn.c15, q=True, v=True)
+        aimGp = cmds.radioButtonGrp(self.actionColumn.aimGrp, q=True, select=True)
+        inverseU = cmds.checkBox(self.actionColumn.c16, q=True, v=True)
+        upGp = cmds.radioButtonGrp(self.actionColumn.upGrp, q=True, select=True)
+        ar.aimRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=False, inverseA=inverseA, inverseU=inverseU)
+        #ar.aimRig(mo=False, bake=False)
 
     def cmdDistributeKeys(self, *args):
         al = web.mod('anim_lib')

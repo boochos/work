@@ -130,7 +130,7 @@ class Key():
 
 class Attribute(Key):
 
-    def __init__(self, obj='', attr='', offset=0, auto=True):
+    def __init__(self, obj='', attr='', offset=0, auto=True, poseOnly=False):
         '''
         add get/put keys from Key class to this one
         '''
@@ -147,6 +147,7 @@ class Attribute(Key):
         self.weightedTangents = None
         self.baked = False
         self.auto = auto
+        self.poseOnly = poseOnly
         '''
         if auto:
             self.getCurve()
@@ -154,10 +155,11 @@ class Attribute(Key):
 
     def get(self):
         #
-        self.crv = cmds.findKeyframe(self.obj, at=self.name, c=True)
         self.value = cmds.getAttr(self.obj + '.' + self.name)
-        if self.auto:
-            self.getCurve()
+        if not self.poseOnly:
+            self.crv = cmds.findKeyframe(self.obj, at=self.name, c=True)
+            if self.auto:
+                self.getCurve()
 
     def getCurve(self):
         if self.crv:
@@ -189,26 +191,33 @@ class Attribute(Key):
             self.keys.append(a)
 
     def putCurve(self):
-        if self.keys:
-            for k in self.keys:
-                k.obj = self.obj
-                k.offset = self.offset
-                k.crv = self.crv
-                # make sure attr exists, is not locked
-                if cmds.objExists(self.obj + '.' + self.name):
-                    if not cmds.getAttr(self.obj + '.' + self.name, l=True):
-                        k.putKey()
-                        self.putCurveAttrs()
+        if not self.poseOnly:
+            if self.keys:
+                for k in self.keys:
+                    k.obj = self.obj
+                    k.offset = self.offset
+                    k.crv = self.crv
+                    # make sure attr exists, is not locked
+                    if cmds.objExists(self.obj + '.' + self.name):
+                        if not cmds.getAttr(self.obj + '.' + self.name, l=True):
+                            k.putKey()
+                            self.putCurveAttrs()
+            else:
+                self.putAttr()
         else:
-            if cmds.objExists(self.obj + '.' + self.name):
-                if not cmds.getAttr(self.obj + '.' + self.name, l=True):
-                    if cmds.getAttr(self.obj + '.' + self.name, se=True):
-                        # TODO: set attr does not make a key, pose is lost if live scene has keys
-                        # should set key if curve exists in scene, or inform user or potential problem
-                        # TODO: on clicking clip, find potential problems, try and find a remedy
-                        # TODO: replace parts of clip feature, manual value attr change
-                        # TODO: auto refresh ui for new files
-                        cmds.setAttr(self.obj + '.' + self.name, self.value)
+            self.putAttr()
+
+    def putAttr(self):
+        print self.obj, self.name
+        if cmds.objExists(self.obj + '.' + self.name):
+            if not cmds.getAttr(self.obj + '.' + self.name, l=True):
+                if cmds.getAttr(self.obj + '.' + self.name, se=True):
+                    # TODO: set attr does not make a key, pose is lost if live scene has keys
+                    # should set key if curve exists in scene, or inform user or potential problem
+                    # TODO: on clicking clip, find potential problems, try and find a remedy
+                    # TODO: replace parts of clip feature, manual value attr change
+                    # TODO: auto refresh ui for new files
+                    cmds.setAttr(self.obj + '.' + self.name, self.value)
 
     def putCurveAttrs(self):
         # need to update curve name, isnt the same as stored, depends on how
@@ -222,11 +231,12 @@ class Attribute(Key):
 
 class Obj(Attribute):
 
-    def __init__(self, obj='', offset=0):
+    def __init__(self, obj='', offset=0, poseOnly=False):
         self.name = obj
         self.offset = offset
         self.attributes = []
         self.attributesDriven = []
+        self.poseOnly = poseOnly
         '''
         self.getAllDriven()
         self.getAttribute()
@@ -247,7 +257,7 @@ class Obj(Attribute):
                     # hacky -- if attr.attr format, remove first attr
                     if '.' in attr:
                         attr = attr.split('.')[1]
-                    a = Attribute(self.name, attr)
+                    a = Attribute(self.name, attr, poseOnly=self.poseOnly)
                     a.get()
                     self.attributes.append(a)
 
@@ -263,7 +273,7 @@ class Obj(Attribute):
             # instantiate class for every driven attr
             attributesBaked = []
             for a in self.attributesDriven:
-                attr = Attribute(self.name, a, auto=False)
+                attr = Attribute(self.name, a, auto=False, poseOnly=self.poseOnly)
                 attr.get()
                 attr.preInfinity = 0
                 attr.postInfinity = 0
@@ -345,7 +355,7 @@ class Obj(Attribute):
 
 class Layer(Obj):
 
-    def __init__(self, sel=[], name=None, offset=0, ns=None, comment=''):
+    def __init__(self, sel=[], name=None, offset=0, ns=None, comment='', poseOnly=False):
         '''
         can use to copy and paste animation
         '''
@@ -357,6 +367,7 @@ class Layer(Obj):
         self.objects = []
         self.offset = offset
         self.ns = ns
+        self.poseOnly = poseOnly
         # layer attrs
         self.name = name
         self.mute = None
@@ -383,7 +394,7 @@ class Layer(Obj):
 
     def getObjects(self):
         for obj in self.sel:
-            a = Obj(obj)
+            a = Obj(obj, poseOnly=self.poseOnly)
             a.get()
             self.objects.append(a)
 
@@ -520,7 +531,7 @@ class Clip(Layer):
                         # build class
                         # print layer, '_________'
                         clp = Layer(
-                            name=layer, sel=currentLayerMembers, comment=self.comment)
+                            name=layer, sel=currentLayerMembers, comment=self.comment, poseOnly=self.poseOnly)
                         clp.get()
                         self.layers.append(clp)
                 else:
@@ -703,7 +714,7 @@ def populate_from_json(cls, dct={}):
 
 
 def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, putLayerList=[], putObjectList=[],
-              start=None, end=None):
+              start=None, end=None, poseOnly=False):
     '''
     apply animation from file
     #FIX: note <>
@@ -726,6 +737,8 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
         clp = pruneObjects(clp, putObjectList)  # not working
     if putLayerList:
         clp = pruneLayers(clp, putLayerList)  # working
+    # set type of import
+    clp = setType(clp, poseOnly=poseOnly)
     #
     # clp = cutKeysToRange(clp, 1020.0, 1090)
     clp.putLayers(mergeExistingLayers, applyLayerSettings)
@@ -921,6 +934,18 @@ def pruneObjects(clp, objects=[]):
                 isolated.append(obj)
         layer.objects = isolated
         isolated = []
+    return clp
+
+
+def setType(clp, poseOnly=False):
+    # remove objects from clip that arent in 'objects' list arg
+    clp.poseOnly = poseOnly
+    for layer in clp.layers:
+        layer.poseOnly = poseOnly
+        for obj in layer.objects:
+            obj.poseOnly = poseOnly
+            for attr in obj.attributes:
+                attr.poseOnly = poseOnly
     return clp
 
 
