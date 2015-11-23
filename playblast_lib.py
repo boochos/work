@@ -793,7 +793,7 @@ def getImageName(path=''):
 
 
 def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
-    print '___qualify image seq', path
+    # print '___qualify image seq', path
     images = os.listdir(str(path))
     if images:
         i = 0
@@ -810,6 +810,7 @@ def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
 
 def openSelected(path=''):
     # audio
+    # print path, '_audio'
     snd = getAudio(path)
     # os
     if os.name is 'nt':
@@ -857,7 +858,7 @@ def getBlastDirs(path=''):
     if os.path.isdir(path) and os.access(path, os.R_OK):
         # shot dirs
         shots = getShotDirs(path)
-        print shots, 'shots____________'
+        # print shots, 'shots____________'
         if shots:
             # print shots, '  shots'
             # Populate the directories and non-directories for organization
