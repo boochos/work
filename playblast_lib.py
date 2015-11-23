@@ -30,7 +30,7 @@ def getTempPath():
     blastD = '___A___PLAYBLAST___A___'
     tempD = tempfile.gettempdir()
     return os.path.join(tempD, blastD)
-    print tempfile.gettempdir()
+    # print tempfile.gettempdir()
     # return '/var/tmp/rv_playblasts/'
     # return '/var/tmp/___A___PLAYBLAST___A___/'
 
