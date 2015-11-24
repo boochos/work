@@ -781,6 +781,7 @@ def getAudio(path='', format=['wav', 'aiff']):
             if f in image:
                 # audio.append(image)
                 return os.path.join(path, image)
+    return None
 
 
 def getImageName(path=''):
@@ -811,7 +812,7 @@ def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
 
 def openSelected(path=''):
     # audio
-    # print path, '_audio'
+    print path, '_audio'
     snd = getAudio(path)
     # os
     if os.name is 'nt':
@@ -889,12 +890,25 @@ def getBlastDirs(path=''):
                 else:
                     shutil.rmtree(shot)
             mtime = lambda f: os.path.getmtime(f)
+            '''
             dirs = sorted(dirs, key=mtime)
             for i in reversed(dirs):
                 sortedDir.append(i)
+            '''
+            sortedShots = []
+            shotsPaths = []
+            for shot in shots:
+                shotsPaths.append(os.path.join(getTempPath(), shot))
+            shotsD = sorted(shotsPaths, key=mtime)
+            for shot in shots:
+                for sd in shotsD:
+                    if shot in sd:
+                        sortedShots.append(shot)
+            for i in reversed(sortedShots):
+                sortedDir.append(i)
 
-            return shots
-            # return sortedDir # turned off to get it working need to sort this list according to creation time
+            # return shots
+            return sortedDir # turned off to get it working need to sort this list according to creation time
         else:
             return None
     else:
