@@ -204,7 +204,7 @@ class CSUI(object):
         aimGp = cmds.radioButtonGrp(self.actionColumn.aimGrp, q=True, select=True)
         inverseU = cmds.checkBox(self.actionColumn.c16, q=True, v=True)
         upGp = cmds.radioButtonGrp(self.actionColumn.upGrp, q=True, select=True)
-        ar.aimRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=False, inverseA=inverseA, inverseU=inverseU)
+        ar.aimRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
         #ar.aimRig(mo=False, bake=False)
 
     def cmdDistributeKeys(self, *args):

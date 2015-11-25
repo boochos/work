@@ -384,7 +384,8 @@ def convertPathToRow(row, path):
 
 
 def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], attachRow='', belowRow=''):
-
+    # FIXME: breaks if 2 periods are in file name
+    # FIXME: breaks if file name starts with a number
     # stuff
     allCols = col[0] + col[1] + col[2] + col[3]
     path = os.path.join(getTempPath(), blastDir)
