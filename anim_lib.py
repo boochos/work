@@ -174,6 +174,7 @@ def changeRO(obj, ro):
 class SpaceSwitch():
 
     def __init__(self, obj):
+        self.name = obj
         self.obj = obj
         self.mtrx = []
         self.pos = []

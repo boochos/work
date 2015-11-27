@@ -208,7 +208,7 @@ class Attribute(Key):
             self.putAttr()
 
     def putAttr(self):
-        print self.obj, self.name
+        # print self.obj, self.name
         if cmds.objExists(self.obj + '.' + self.name):
             if not cmds.getAttr(self.obj + '.' + self.name, l=True):
                 if cmds.getAttr(self.obj + '.' + self.name, se=True):
@@ -442,13 +442,20 @@ class Layer(Obj):
                 self.offset = ((self.start - current) * -1.0) + 0.0
             # print self.offset
         # put
+        num = len(self.objects)
+        i = 0
+        uiEnable()
         for obj in self.objects:
             if cmds.objExists(obj.name):
+                message(str(i) + ' of ' + str(num) + ' --  ' + obj.name, maya=True)
+                cmds.refresh(f=1)
                 obj.offset = self.offset
                 obj.putAttribute()
             else:
                 cmds.warning(
                     'Object   ' + obj.name + '   does not exist, skipping.')
+            i = i + 1
+        uiEnable()
         cmds.autoKeyframe(state=autoKey)
 
     def putLayerAttrs(self):
@@ -948,6 +955,26 @@ def setType(clp, poseOnly=False):
                 attr.poseOnly = poseOnly
     return clp
 
+
+def updateObjName(clp, names=[]):
+    '''
+    only for single object
+    '''
+    if len(clp.layers) == 1:
+        for layer in clp.layers:
+            if len(names) == len(layer.objects):
+                for obj in layer.objects:
+                    obj.name = name
+                    for attr in obj.attributes:
+                        attr.obj = name
+                        for key in attr.keys:
+                            key.obj = name
+                # print clp.layers[0].objects[0].name
+                return clp
+            else:
+                message('new names list does not match object number in clip', maya=True)
+    else:
+        message('multi animlayers not supported', maya=True)
 
 def selectObjectsInClip(clp):
     select = []
