@@ -443,7 +443,7 @@ class Layer(Obj):
             # print self.offset
         # put
         num = len(self.objects)
-        i = 0
+        i = 1
         uiEnable()
         for obj in self.objects:
             if cmds.objExists(obj.name):
@@ -964,11 +964,11 @@ def updateObjName(clp, names=[]):
         for layer in clp.layers:
             if len(names) == len(layer.objects):
                 for obj in layer.objects:
-                    obj.name = name
+                    obj.name = names[0]
                     for attr in obj.attributes:
-                        attr.obj = name
+                        attr.obj = names[0]
                         for key in attr.keys:
-                            key.obj = name
+                            key.obj = names[0]
                 # print clp.layers[0].objects[0].name
                 return clp
             else:
