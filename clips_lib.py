@@ -6,6 +6,7 @@ import glob
 import itertools
 import datetime
 import os
+import tempfile
 from pymel.core import *
 
 
@@ -13,6 +14,7 @@ class Clip():
 
     def __init__(self):
         self.name = ''
+        self.dir = ''
         self.start = 0
         self.end = 0
         self.ext = ''
@@ -23,6 +25,12 @@ class Clip():
         self.height = 0
         self.path = ''
         self.movPath = ''
+
+
+def getTempPath():
+    blastD = '___A___THUMBNAILS___A___'
+    tempD = tempfile.gettempdir()
+    return os.path.join(tempD, blastD)
 
 
 def getClips(path='', leaf=''):
@@ -122,6 +130,7 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
                 pass
         else:
             create = True
+        # add new directory in tmp for thumbs, deleting clip in pb man will need to delete thumbnail as well
         '''
         if create:
             # cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-vframes', '1', fileout]
@@ -191,6 +200,10 @@ def buildMov(content, path='', createThumb=True):
     # print meta, '\n-------------'
     if meta:
         clip.name = content[0].split('.')[0]
+        if os.name == 'nt':
+            clip.dir = clip.path.split('\\')[len(clip.path.split('\\')) - 2]
+        else:
+            clip.dir = clip.path.split('/')[len(clip.path.split('/')) - 1]
         clip.ext = content[0].split('.')[1]
         clip.movPath = os.path.join(path, content[0])
         # print clip.movPath
@@ -215,6 +228,10 @@ def buildImg(content=[], path=''):
     clip.movPath = os.path.join(path, content[0])
     clip.path = path
     clip.name = content[0].split('.')[0]
+    if os.name == 'nt':
+        clip.dir = clip.path.split('\\')[len(clip.path.split('\\')) - 2]
+    else:
+        clip.dir = clip.path.split('/')[len(clip.path.split('/')) - 1]
     clip.ext = content[0].split('.')[2]
     clip.start = content[0].split('.')[1]
     clip.end = content[len(content) - 1].split('.')[1]

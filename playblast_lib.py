@@ -7,6 +7,10 @@ import datetime
 import shutil
 import tempfile
 from functools import partial
+#
+import webrImport as web
+# web
+cl = web.mod('clips_lib')
 
 
 # rgb gl color guide ## http://prideout.net/archive/colors.php
@@ -30,9 +34,6 @@ def getTempPath():
     blastD = '___A___PLAYBLAST___A___'
     tempD = tempfile.gettempdir()
     return os.path.join(tempD, blastD)
-    # print tempfile.gettempdir()
-    # return '/var/tmp/rv_playblasts/'
-    # return '/var/tmp/___A___PLAYBLAST___A___/'
 
 
 def getWipe():
@@ -318,7 +319,6 @@ def blastWin():
         cmds.formLayout(f1, e=1, af=(scrollLayout, 'right', 0))
         cmds.refresh(f=1)
         # row setup
-        offset = 0
         height = getDefaultHeight()
         col0 = 20
         col1 = 200
@@ -331,34 +331,27 @@ def blastWin():
         blastDirs = getBlastDirs(rootDir)
         # print blastDirs, '++++++++++++++++'
 
-        # print blastDirs
         if blastDirs:
-            f2 = cmds.formLayout('subForm' + suf, h=height * len(blastDirs), w=width, bgc=[0.17, 0.17, 0.17])
+            f2 = cmds.columnLayout('column' + suf, w=width, bgc=[0.17, 0.17, 0.17], adj=True)
             cmds.refresh(f=1)
             # print f2
-
             # build rows
-            j = 0
-            num = len(blastDirs) - 1
             # print blastDirs
             for blastDir in blastDirs:
                 contents = os.listdir(os.path.join(getTempPath(), blastDir))
                 if contents:
                     # print 'here'
-                    cmds.setParent(f2)
-                    if j == 0:
-                        attach = ''
-                    else:
-                        attach = blastDirs[j - 1]
-                    if j >= num:
-                        below = ''
-                    else:
-                        below = blastDirs[j + 1]
-                    # print blastDir
-                    buildRow(blastDir, offset=offset, height=height, parent=f2, col=[col0, col1, col2, col3], attachRow=attach, belowRow=below)
-                    j = j + 1
+                    clips = getClips(path=os.path.join(getTempPath(), blastDir))
+                    print clips, '___clips'
+                    if clips:
+                        for clip in clips:
+                            cmds.setParent(f2)
+                            print blastDir
+                            print clip.name
+                            print clip.path
+                            print clip.dir
+                            buildRow_new(clip, height=height, parent=f2, col=[col0, col1, col2, col3])
                     cmds.refresh(f=1)
-                    # print j
                 else:
                     # rebuild
                     shutil.rmtree(blastDir)
@@ -374,72 +367,28 @@ def blastWin():
         blastWin()
 
 
-def convertPathToRow(row, path):
-    r = row.split('|')
-    r = r[len(r) - 1]
-    p = path.split('/')
-    p = p[len(p) - 1]
-    newRow = row.replace(r, p).replace('-', '_')
-    return newRow
-
-
-def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], attachRow='', belowRow=''):
+def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     # FIXME: breaks if 2 periods are in file name
     # FIXME: breaks if file name starts with a number
     # stuff
-    allCols = col[0] + col[1] + col[2] + col[3]
-    path = os.path.join(getTempPath(), blastDir)
-    # print path
-    # print '   rowwwwwww'
-    # parse row name from directory path
-    blastDir = blastDir.split('/')
-    shot = blastDir[len(blastDir) - 2]
-    blastDir = blastDir[len(blastDir) - 1]
-    suf = '_RowForm__'
-    blastDir = blastDir + suf + shot
-    # print 'lol'
+    path = blastDir.path
 
-    imageRange = getImageRange(path)
-    imageName = getImageName(path)
-    # print 'lal'
     # iconSize
     icon = getIcon(path)
     # print 'icon'
-    w, h = getIconSize(icon)
-    # print 'size'
-    # row form
-    f = cmds.formLayout(blastDir, h=height, bgc=[0.2, 0.2, 0.2], ann=path)
-    # print f, '+++++++'
-    if attachRow:
-        # create above row name from path
-        shot = attachRow.split('/')
-        shot = suf + shot[len(shot) - 2].replace('-', '_')
-        attachRow = convertPathToRow(f, attachRow) + shot
-    if belowRow:
-        # create below row name from path
-        shot = belowRow.split('/')
-        shot = suf + shot[len(shot) - 2].replace('-', '_')
-        belowRow = convertPathToRow(f, belowRow) + shot
-    cmds.formLayout(parent, e=1, af=(f, 'top', offset))
-    cmds.formLayout(parent, e=1, af=(f, 'left', 0))
-    cmds.formLayout(parent, e=1, af=(f, 'right', 0))
-    # print parent
-    if attachRow:
-        attachForm = [(f, 'top', offset, attachRow)]
-        # print parent
-        # print attachRow
-        cmds.formLayout(parent, edit=True, attachControl=attachForm)
 
+    # row form
+    f = cmds.rowLayout('row__' + blastDir.name, numberOfColumns=4, columnWidth4=(col[0], col[1], col[2], col[3]), adjustableColumn=3, columnAttach=[(1, 'both', 0), (2, 'both', 0), (3, 'left', 0), (4, 'both', 0)], h=height, bgc=[0.2, 0.2, 0.2], ann=blastDir.path)
     # checkbox
-    chkBx = cmds.checkBox(blastDir + '_Check', l='', w=col[0],
+    chkBx = cmds.checkBox('check__' + blastDir.name, l='', w=col[0],
                           onc="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.addChecked(%s)" % (getString(strings=[path])),
                           ofc="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeChecked(%s)" % (getString(strings=[path])))
-    cmds.formLayout(f, e=1, af=(chkBx, 'top', height / 2 - 8))
-    cmds.formLayout(f, e=1, af=(chkBx, 'left', 4))
 
     # icon
     padW = 0
     padH = 0
+    w = float(blastDir.width)
+    h = float(blastDir.height)
     padBtns = 4
     cmdI = 'partial( openSelected, path = path )'
     iconH = col[1] * (h / w)
@@ -453,42 +402,25 @@ def buildRow(blastDir='', offset=1, height=1, parent='', col=[10, 10, 10, 10], a
     if iconH < height:
         padH = int((height - iconH) / 2)
     # print blastDir
-    iconBtn = cmds.iconTextButton(blastDir + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13],)
-    # cmds.formLayout(f, e=1, af=(iconBtn, 'bottom', padH))
-    cmds.formLayout(f, e=1, af=(iconBtn, 'top', padH))
-    cmds.formLayout(f, e=1, af=(iconBtn, 'left', col[0] + padW))
-
-    # delete
-    cmds.setParent(f)
-    st = getString(strings=[f, attachRow, belowRow])
-    # print st
-    delBtn = cmds.button(blastDir + '_Delete', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
-    # print delBtn, '  del button'
-    cmds.formLayout(f, e=1, af=(delBtn, 'bottom', padBtns / 2))
-    cmds.formLayout(f, e=1, af=(delBtn, 'top', padBtns / 2))
-    cmds.formLayout(f, e=1, af=(delBtn, 'right', 0))
+    iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
 
     # meta
     pt = path.split(getTempPath())[1].split('/')[0] + '\n'
     # sc    = 'Scene Name:  ' + blastDir + '\n'
-    im = imageName + '\n'
+    im = blastDir.name + '\n'
     di = str(int(w)) + ' x ' + str(int(h)) + '\n'
-    fr = str(int(imageRange[0])) + 'f  -  ' + str(int(imageRange[1])) + 'f\n'
-    le = str(int(imageRange[1] - imageRange[0] + 1)) + ' frames\n'
-    dt = getDirectoryDate(path)
+    fr = str(int(blastDir.start)) + 'f  -  ' + str(int(blastDir.end)) + 'f\n'
+    le = str(int(blastDir.length)) + ' frames\n'
+    dt = blastDir.path
     label = pt + im + di + fr + le + dt
     #
-    # metaBtn = cmds.button(blastDir + '_Meta', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height, w=col[2], align='left')
-    # metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (path), l=label, h=height - padBtns, align='center', fn='boldLabelFont', bgc=[0.23, 0.23, 0.23], w=col[2])
-    metaBtn = cmds.iconTextButton(blastDir + '_Meta', st='textOnly', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % (path.replace('\\', '\\\\')), l=label, h=height - padBtns, align='center', fn='boldLabelFont', bgc=[0.23, 0.23, 0.23], w=col[2])
-    cmds.formLayout(f, e=1, af=(metaBtn, 'bottom', padBtns / 2))
-    cmds.formLayout(f, e=1, af=(metaBtn, 'top', padBtns / 2))
-    cmds.formLayout(f, e=1, af=(metaBtn, 'left', col[1] + col[0]))
-    # cmds.formLayout(f, e=1, af=(metaBtn, 'right', col[3]))
-    #
-    attachForm = [(metaBtn, 'right', 0, delBtn)]
-    cmds.formLayout(f, edit=True, attachControl=attachForm)
-    # print f
+    metaBtn = cmds.iconTextButton(blastDir.name + '_Meta', st='textOnly', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % (path.replace('\\', '\\\\')), l=label, h=height - padBtns, align='left', bgc=[0.23, 0.23, 0.23])
+
+    # delete
+    st = getString(strings=[f])
+    # print st
+    delBtn = cmds.button(blastDir.name + '_Delete', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
+
     return f
 
 
@@ -586,8 +518,8 @@ def getString(strings=[]):
     return s
 
 
-def removeRow(row='', attachRow='', belowRow='', deleteDir=True):
-    path = cmds.formLayout(row, q=1, ann=1)
+def removeRow(row='', deleteDir=True):
+    path = cmds.rowLayout(row, q=1, ann=1)
     cmds.deleteUI(row)
     if deleteDir:
         # remove scene dir
@@ -602,61 +534,6 @@ def removeRow(row='', attachRow='', belowRow='', deleteDir=True):
         contents = os.listdir(shot)
         if not contents:
             shutil.rmtree(shot)
-    # shift lower rows
-    updateRows(row, attachRow, belowRow)
-
-
-def updateRows(row='', attachRow='', belowRow=''):
-    parent = row.split('|')[3]
-    if attachRow:
-        # parent = attachRow.split('|')[3]
-        if belowRow:
-            attachForm = [(belowRow, 'top', 0, attachRow)]
-            cmds.formLayout(parent, edit=True, attachControl=attachForm)
-        # print parent
-    updateRowCmd(row, attachRow, belowRow)
-    # update height scroll, form
-    num = getBlastDirs(getTempPath())
-    if num:
-        num = len(num)
-        num = getDefaultHeight() * num
-        if num:
-            cmds.formLayout(parent, e=1, h=num)
-        else:
-            cmds.formLayout(parent, e=1, h=1)
-    else:
-        cmds.formLayout(parent, e=1, h=1)
-
-
-def updateRowCmd(row='', attachRow='', belowRow=''):
-    # attach
-    if attachRow:
-        attachDel = findDeleteControl(attachRow)
-        cmdA = cmds.button(attachDel, q=1, c=1)
-        # from attachRow cmd replace 'row' with belowRow
-        cmdA = cmdA.replace(row, belowRow)
-        cmds.button(attachDel, e=1, c=cmdA)
-    # below
-    if belowRow:
-        belowDel = findDeleteControl(belowRow)
-        cmdB = cmds.button(belowDel, q=1, c=1)
-        # from belowRow cmd replace 'row' with attachRow
-        cmdB = cmdB.replace(row, attachRow)
-        cmds.button(belowDel, e=1, c=cmdB)
-
-
-def updateDelCmd(*args):
-    '''
-    use to change delete cmd from confirm to delete
-    '''
-    pass
-
-
-def deleteCmd():
-    '''
-    delete command, confrim command for deleting rows
-    '''
-    pass
 
 
 def cmdOpen(path=''):
@@ -728,13 +605,6 @@ def getContentsType(path='', directory=False, destructive=False):
                         os.remove(fp)
                     message('DELETING:   ' + fp)
         return fullPaths
-
-
-def findDeleteControl(row=''):
-    childs = cmds.formLayout(row, q=1, ca=1)
-    for child in childs:
-        if 'Delete' in child:
-            return child
 
 
 def getIcon(path=''):
@@ -809,6 +679,10 @@ def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
                     images.pop(i)
             i = i + 1
     return images
+
+
+def getClips(path=''):
+    return cl.getClips(path=path)
 
 
 def openSelected(path=''):
@@ -909,7 +783,7 @@ def getBlastDirs(path=''):
                 sortedDir.append(i)
 
             # return shots
-            return sortedDir # turned off to get it working need to sort this list according to creation time
+            return sortedDir  # turned off to get it working need to sort this list according to creation time
         else:
             return None
     else:
