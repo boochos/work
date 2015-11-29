@@ -95,7 +95,7 @@ def addControlCurveButton(path):
     if os.path.isdir(path):
         files = os.listdir(path)
         if files:
-            print files
+            # print files
             files.sort()
             for file in files:
                 # print 'here'
