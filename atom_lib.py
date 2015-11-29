@@ -110,36 +110,6 @@ def createTagGroups(self):
                     obj.setParent(tag_grp_name)
 
 
-def ghostDogFrameLayout(*args):
-    '''
-    refresh = RefreshCallBack('atom_win')
-    main = cmds.frameLayout('atom_ghostBuddy_frameLayout', label='Ghost Dog Setup',
-                            cc=refresh.RefreshCall, ec=refresh.RefreshCall,
-                            mh=5, mw=5, cll=True, cl=True)
-
-    atom_gdrig_columnLayout = cmds.columnLayout('atom_ghstDog_main_columnLayout', adj=True, rs=5)
-    atom_gdrig_faceBuild_checkBox = cmds.checkBox('atom_ghstDog_faceCheck', l='Build Face Dependencies Only', al='left')
-    cmds.separator()
-    atom_gdrig_earBuild_checkBox = cmds.checkBox('atom_ghstDog_earCheck', l='Build Ear Rig', al='left', v=True)
-    cmds.separator()
-    cmds.text('Controller Scale:', width=30, al='left')
-    atom_gdrig_faceBuild_conScale = cmds.floatField('atom_ghstDog_conScale', minValue=0, maxValue=100, value=1, precision=2)
-    cmds.separator()
-
-    atom_gdrig_prerigBut = cmds.button(l='Build Ghost Dog Pre-Rig', c='import atom\natom.atom_ghostDog_lib.ghostDogPreBuild()')
-    atom_gdrig_buildSpineBut = cmds.button(l='Build Ghost Dog Appendages', c='import atom\natom.atom_ghostDog_lib.buildGostDogAppendages()')
-    atom_gdrig_buildSpineBut = cmds.button(l='Build Ghost Dog Splines', c='import atom\natom.atom_ghostDog_lib.quadSplines()')
-    atom_gdrig_buildDeformBut = cmds.button(l='Build Ghost Dog Deformation', c='import atom\natom.atom_ghostDog_lib.deform()')
-    atom_gdrig_faceRig = cmds.button(l='Build Face Rig', c='import atom\natom.atom_face_lib.buildGhostDogFace()')
-    atom_gdrig_faceRig = cmds.button(l='Finalize Rig', c=createTagGroups)
-
-    cmds.setParent('..')
-    cmds.setParent('..')
-    return main
-    '''
-    pass
-
-
 def ratFrameLayout(*args):
     refresh = RefreshCallBack('atom_win')
     main = cmds.frameLayout('atom_rat_frameLayout', label='Rat Setup',
@@ -521,9 +491,6 @@ def win(*args):
 
     cmds.setParent('..')
     cmds.setParent('..')
-
-    # Ghost Buddy
-    # atom_ghstDog_frameLayout = ghostDogFrameLayout()
 
     atom_rat_frameLayout = ratFrameLayout()
 

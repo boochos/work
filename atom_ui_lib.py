@@ -211,8 +211,7 @@ def shapeLocal(shape=''):
             inFile.close()
             return cvInfo
         else:
-            pass
-            # print 'not a file'
+            print 'shape:  ' + shape + '  is missing, default shape will be used'
     else:
         pass
         # print 'not a directory'
@@ -237,7 +236,7 @@ def shapeWeb(shape=''):
         else:
             return None
     except:
-        print 'could not reach internet'
+        print 'shape:  ' + shape + '  is missing or internet problem'
 
 
 def shapeScale(shape=[], scale=1.0):
