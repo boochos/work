@@ -1,12 +1,15 @@
 from __future__ import with_statement
 from pymel.core import *
-import key_ui
-import key_ui_core
 import maya.OpenMaya as OpenMaya
 import pickle
 import time
+import os
 import maya.mel as mm
 from xml.dom import minidom
+import webrImport as web
+# web
+key_ui = web.mod('key_ui')
+key_ui_core = web.mod('key_ui_core')
 
 
 def removeDeformedFromName(*args):

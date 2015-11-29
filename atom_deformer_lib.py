@@ -1,7 +1,10 @@
 import maya.cmds as cmds
-import atom_placement_lib as place
-import atom_miscellaneous_lib as misc
-import atom_joint_lib as find
+import webrImport as web
+place = web.mod('atom_place_lib')
+# misc = web.mod('atom_miscellaneous_lib')
+find = web.mod('atom_joint_lib')
+stage = web.mod('atom_splineStage_lib')
+posFrom = web.mod('atom_spline_lib')
 
 
 def cleanUp(obj, deformer=False, maskAnim=False, maskClone=False,
@@ -14,52 +17,52 @@ def cleanUp(obj, deformer=False, maskAnim=False, maskClone=False,
 
     '''
     # Deformer
-    if deformer == True:
+    if deformer:
         deformer = nameMaster(deformer=True)
         cmds.parent(obj, deformer)
     # Mask
-    if maskAnim == True:
+    if maskAnim:
         maskAnim = nameMaster(mask=True)[1]
         cmds.parent(obj, maskAnim)
-    if maskClone == True:
+    if maskClone:
         maskClone = nameMaster(mask=True)[2]
         cmds.parent(obj, maskClone)
     # Muzzle
-    if muzzleAnim == True:
+    if muzzleAnim:
         muzzleAnim = nameMaster(muzzle=True)[1]
         cmds.parent(obj, muzzleAnim)
-    if muzzleClone == True:
+    if muzzleClone:
         muzzleClone = nameMaster(muzzle=True)[2]
         cmds.parent(obj, muzzleClone)
     # upperMuzzle
-    if upperMuzzleAnim == True:
+    if upperMuzzleAnim:
         upperMuzzleAnim = nameMaster(upperMuzzle=True)[1]
         cmds.parent(obj, upperMuzzleAnim)
-    if upperMuzzleClone == True:
+    if upperMuzzleClone:
         upperMuzzleClone = nameMaster(upperMuzzle=True)[2]
         cmds.parent(obj, upperMuzzleClone)
     # lowerMuzzle
-    if lowerMuzzleAnim == True:
+    if lowerMuzzleAnim:
         lowerMuzzleAnim = nameMaster(lowerMuzzle=True)[1]
         cmds.parent(obj, lowerMuzzleAnim)
-    if lowerMuzzleClone == True:
+    if lowerMuzzleClone:
         lowerMuzzleClone = nameMaster(lowerMuzzle=True)[2]
         cmds.parent(obj, lowerMuzzleClone)
     # Sculpt
-    if sculptAnim == True:
+    if sculptAnim:
         sculptAnim = nameMaster(sculpt=True)[1]
         cmds.parent(obj, sculptAnim)
-    if sculptClone == True:
+    if sculptClone:
         sculptClone = nameMaster(sculpt=True)[2]
         cmds.parent(obj, sculptClone)
-    if sculptGeo == True:
+    if sculptGeo:
         sculptGeo = nameMaster(sculpt=True)[3]
         cmds.parent(obj, sculptGeo)
     # Spline
-    if splineAnim == True:
+    if splineAnim:
         splineAnim = nameMaster(spline=True)[1]
         cmds.parent(obj, splineAnim)
-    if splineClone == True:
+    if splineClone:
         splineClone = nameMaster(spline=True)[2]
         cmds.parent(obj, splineClone)
 
@@ -73,9 +76,9 @@ def makeClone(obj, maskClone=False, muzzleClone=False, orient=False):
     offset = place.null2(obj + '_CloneOffstGrp', obj, orient)[0]
     cmds.parent(offset, child)
     cmds.parent(child, parent)
-    if maskClone == True:
+    if maskClone:
         cleanUp(parent, maskClone=True)
-    if muzzleClone == True:
+    if muzzleClone:
         cleanUp(parent, muzzleClone=True)
     return offset, child, parent
 
@@ -94,10 +97,10 @@ def makeJointClone(root, name='_clone', pad=2, suffix=None):
     original = cmds.ls(sl=True, l=True)
     # cloned joints
     dup = cmds.duplicate(root, rc=True)
-    clones = misc.renameHierarchy(dup[0], name, pad, suffix)
+    clones = place.renameHierarchy(dup[0], name, pad, suffix)
     # connect joints
     for i in range(1, len(clones), 1):
-        misc.hijack(original[i], clones[i])
+        place.hijack(original[i], clones[i])
     return clones
 
 
@@ -114,19 +117,19 @@ def nameMaster(deformer=False, mask=False, muzzle=False, upperMuzzle=False, lowe
     Default names of master groups\n
     Only use one at a time. All other should remain as 'False'\n
     '''
-    if deformer == True:
+    if deformer:
         result = 'deformerGrp'
-    if mask == True:
+    if mask:
         result = ['maskGrp', 'mask_AnimGrp', 'mask_CloneGrp']
-    if muzzle == True:
+    if muzzle:
         result = ['muzzleGrp', 'muzzle_AnimGrp', 'muzzle_CloneGrp']
-    if upperMuzzle == True:
+    if upperMuzzle:
         result = ['upperMuzzleGrp', 'upperMuzzle_AnimGrp', 'upperMuzzle_CloneGrp']
-    if lowerMuzzle == True:
+    if lowerMuzzle:
         result = ['lowerMuzzleGrp', 'lowerMuzzle_AnimGrp', 'lowerMuzzle_CloneGrp']
-    if sculpt == True:
+    if sculpt:
         result = ['sculptGrp', 'sculpt_AnimGrp', 'sculpt_CloneGrp', 'sculpt_GeoGrp']
-    if spline == True:
+    if spline:
         result = ['splineGrp', 'spline_AnimGrp', 'spline_CloneGrp']
     return result
 
@@ -142,52 +145,52 @@ def master(deformer=False, mask=False, muzzle=False, upperMuzzle=False, lowerMuz
     Lmzzle = nameMaster(lowerMuzzle=True)
     sclpt = nameMaster(sculpt=True)
     spln = nameMaster(spline=True)
-    if deformer == True:
+    if deformer:
         dfrmr = nameMaster(deformer=True)
         null = cmds.group(em=True, n=dfrmr)
-        if cleanUp == True:
-            misc.cleanUp(null, Ctrl=True)
-    if mask == True:
+        if cleanUp:
+            place.cleanUp(null, Ctrl=True)
+    if mask:
         null = cmds.group(em=True, n=msk[0])
         nullAnim = cmds.group(em=True, n=msk[1])
         nullClone = cmds.group(em=True, n=msk[2])
         cmds.parent(nullAnim, null)
         cmds.parent(nullClone, null)
         cmds.parent(null, dfrmr)
-        misc.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-    if muzzle == True:
+        place.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+    if muzzle:
         null = cmds.group(em=True, n=mzzle[0])
         nullAnim = cmds.group(em=True, n=mzzle[1])
         nullClone = cmds.group(em=True, n=mzzle[2])
         cmds.parent(nullAnim, null)
         cmds.parent(nullClone, null)
         cmds.parent(null, dfrmr)
-        misc.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-    if upperMuzzle == True:
+        place.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+    if upperMuzzle:
         null = cmds.group(em=True, n=Umzzle[0])
         nullAnim = cmds.group(em=True, n=Umzzle[1])
         nullClone = cmds.group(em=True, n=Umzzle[2])
         cmds.parent(nullAnim, null)
         cmds.parent(nullClone, null)
         cmds.parent(null, dfrmr)
-        misc.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-    if lowerMuzzle == True:
+        place.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+    if lowerMuzzle:
         null = cmds.group(em=True, n=Lmzzle[0])
         nullAnim = cmds.group(em=True, n=Lmzzle[1])
         nullClone = cmds.group(em=True, n=Lmzzle[2])
         cmds.parent(nullAnim, null)
         cmds.parent(nullClone, null)
         cmds.parent(null, dfrmr)
-        misc.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-    if sculpt == True:
+        place.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+    if sculpt:
         null = cmds.group(em=True, n=sclpt[0])
         nullAnim = cmds.group(em=True, n=sclpt[1])
         nullClone = cmds.group(em=True, n=sclpt[2])
@@ -196,23 +199,23 @@ def master(deformer=False, mask=False, muzzle=False, upperMuzzle=False, lowerMuz
         cmds.parent(nullClone, null)
         cmds.parent(nullGeo, null)
         cmds.parent(null, dfrmr)
-        misc.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullGeo, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-    if spline == True:
+        place.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullGeo, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+    if spline:
         null = cmds.group(em=True, n=spln[0])
         nullAnim = cmds.group(em=True, n=spln[1])
         nullClone = cmds.group(em=True, n=spln[2])
         cmds.parent(nullAnim, null)
         cmds.parent(nullClone, null)
         cmds.parent(null, dfrmr)
-        misc.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-    if sculpt == True:
+        place.setChannels(null, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullAnim, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(nullClone, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+    if sculpt:
         return null, nullAnim, nullClone, nullGeo
-    elif deformer == True:
+    elif deformer:
         return null
     else:
         return null, nullAnim, nullClone
@@ -223,50 +226,49 @@ def childrenOf(obj, root=False):
 
     '''
     cmds.select(obj, hi=True)
-    if root == False:
+    if not root:
         sel = cmds.ls(sl=True, fl=True)[1:]
     else:
         sel = cmds.ls(sl=True, fl=True)
     return sel
 
 
-def muzzle(root='muzzle_jnt_001', name='muzzle', cleanUp=False, size=9.5, m=True, uM=False, lM=False, shape='ballRoll_ctrl'):
+def muzzle(root='muzzle_jnt_001', name='muzzle', clean=False, size=9.5, m=True, uM=False, lM=False, shape='ballRoll_ctrl'):
     '''\n
     root = joint from which to start placing controllers down chain
     name = prefix
     size = size of controllers
     '''
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
-    import atom_deformer_lib as dfrmr
     Master = None
-    if cleanUp == True:
+    if clean:
         rootJnt = find.root(root)
-        misc.cleanUp(rootJnt, SknJnts=True)
+        place.cleanUp(rootJnt, SknJnts=True)
     if 'upperMuzzle' in root:
-        masterNames = dfrmr.nameMaster(upperMuzzle=True)
+        masterNames = nameMaster(upperMuzzle=True)
     elif 'lowerMuzzle' in root:
-        masterNames = dfrmr.nameMaster(lowerMuzzle=True)
+        masterNames = nameMaster(lowerMuzzle=True)
     elif 'muzzle' in root:
-        masterNames = dfrmr.nameMaster(muzzle=True)
+        masterNames = nameMaster(muzzle=True)
     if cmds.objExists(masterNames[0]) == 0:
         if 'upperMuzzle' in root:
-            Master = dfrmr.master(upperMuzzle=True)
+            Master = master(upperMuzzle=True)
         elif 'lowerMuzzle' in root:
-            Master = dfrmr.master(lowerMuzzle=True)
+            Master = master(lowerMuzzle=True)
         elif 'muzzle' in root:
-            Master = dfrmr.master(muzzle=True)
+            Master = master(muzzle=True)
     else:
         print '--------THIS IS BROKEN---------\n'
     controls, clones = place.controllerDownChain(root, name, pad=3, base=None, parent=None, shape=shape, color=31, size=X * size, groups=True, orient=True, suffix=None, scale=True, setChannel=True, clone=True, fk=True)
     if 'upperMuzzle' in root:
-        dfrmr.cleanUp(controls[0][0], upperMuzzleAnim=True)
-        dfrmr.cleanUp(clones[0][0], upperMuzzleClone=True)
+        cleanUp(controls[0][0], upperMuzzleAnim=True)
+        cleanUp(clones[0][0], upperMuzzleClone=True)
     if 'lowerMuzzle' in root:
-        dfrmr.cleanUp(controls[0][0], lowerMuzzleAnim=True)
-        dfrmr.cleanUp(clones[0][0], lowerMuzzleClone=True)
+        cleanUp(controls[0][0], lowerMuzzleAnim=True)
+        cleanUp(clones[0][0], lowerMuzzleClone=True)
     if 'muzzle' in root:
-        dfrmr.cleanUp(controls[0][0], muzzleAnim=True)
-        dfrmr.cleanUp(clones[0][0], muzzleClone=True)
+        cleanUp(controls[0][0], muzzleAnim=True)
+        cleanUp(clones[0][0], muzzleClone=True)
     # return controls[0][0], Master[1]
     return Master[1]
 
@@ -283,7 +285,6 @@ def sculptSpheres():
     '''
     i = 0
     name = nameSculpt()
-    deformerSculpt = None
     while i <= 4:
         deformerTool = cmds.sphere(name='deformer_' + name[i], p=(0, 0, 0), ax=(0, 1, 0), ssw=0, esw=360, r=1, d=3, ut=0, tol=0.01, s=12, nsp=6, ch=1)
         if i > 1:
@@ -312,7 +313,7 @@ def sculptMirror(objL, group=False):
     mirrorGrp = place.null2(objR[:len(objR) - 1] + 'Grp_' + objR[len(objR) - 1:], objL, orient=True)
     mirrorObj = cmds.duplicate(objL, rr=True, un=True, n=objR)
     # duplicate history node
-    #mirrorHis = cmds.listHistory(mirrorObj)
+    # mirrorHis = cmds.listHistory(mirrorObj)
     # rename history node on mirror
     '''
 	for item in mirrorHis:
@@ -328,7 +329,7 @@ def sculptMirror(objL, group=False):
     # delete mirror group
     cmds.parent(mirrorGrp, w=True)
     cmds.delete(tmp)
-    if group == False:
+    if not group:
         cmds.parent(mirrorObj, w=True)
         cmds.delete(mirrorGrp)
         return mirrorObj[0]
@@ -344,7 +345,7 @@ def sculpt(geo, deformer=False, name='sculptTool', size=2, orient=False):
     '''
     color = 15
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
-    import atom_deformer_lib as dfrmr
+    # dfrmr = web.mod('atom_deformer_lib')
 
     def hijackSculpt(node, obj, name=name, envelope=True, outsideFalloffDist=True):
         '''\n
@@ -353,18 +354,18 @@ def sculpt(geo, deformer=False, name='sculptTool', size=2, orient=False):
         name = prefix tag for attrs\n
         '''
         if envelope == True:
-            misc.hijackAttrs(node, obj, 'envelope', name + '_Envelope')
+            place.hijackAttrs(node, obj, 'envelope', name + '_Envelope')
             cmds.setAttr(obj + '.' + name + '_Envelope', 0.5)
         if outsideFalloffDist == True:
-            misc.hijackAttrs(node, obj, 'outsideFalloffDist', name + '_Dropoff')
+            place.hijackAttrs(node, obj, 'outsideFalloffDist', name + '_Dropoff')
             cmds.setAttr(obj + '.' + name + '_Dropoff', k=True)
 
     defObj = None
     Master = None
     # master
-    masterNames = dfrmr.nameMaster(sculpt=True)
+    masterNames = nameMaster(sculpt=True)
     if cmds.objExists(masterNames[0]) == 0:
-        Master = dfrmr.master(sculpt=True)
+        Master = master(sculpt=True)
     else:
         Master = masterNames
     # deformer
@@ -382,7 +383,7 @@ def sculpt(geo, deformer=False, name='sculptTool', size=2, orient=False):
     i = 0
     for item in controls:
         cmds.setAttr(item[2] + '.Offset_Vis', 1)
-        misc.hijackScale(clones[i][2], item[3])
+        place.hijackScale(clones[i][2], item[3])
         cmds.setAttr(item[3] + '.scaleX', k=True, l=False)
         cmds.setAttr(item[3] + '.scaleY', k=True, l=False)
         cmds.setAttr(item[3] + '.scaleZ', k=True, l=False)
@@ -393,8 +394,8 @@ def sculpt(geo, deformer=False, name='sculptTool', size=2, orient=False):
     sculpt[2] = cmds.rename(sculpt[2], name + '_Base')
     cmds.setAttr(sculpt[2] + '.overrideEnabled', 1)
     cmds.setAttr(sculpt[2] + '.overrideColor', color)
-    misc.optEnum(controls[0][3])
-    ##misc.hijackVis(sculpt[1], controls[0][2], name='Def', default=0)
+    place.optEnum(controls[0][3])
+    ##place.hijackVis(sculpt[1], controls[0][2], name='Def', default=0)
     hijackSculpt(sculpt[0], controls[0][3], name='Def')
     # structure
     cmds.parent(controls[0][0], Master[1])
@@ -403,13 +404,13 @@ def sculpt(geo, deformer=False, name='sculptTool', size=2, orient=False):
     cmds.delete(defObj)
     cmds.parent(sculpt[2], clones[0][1])
     cmds.parent(sculpt[1], clones[0][2])
-    misc.zero(sculpt[2])
-    misc.zero(sculpt[1])
+    place.zero(sculpt[2])
+    place.zero(sculpt[1])
     cmds.setAttr(clones[0][0] + '.visibility', 0)
     return Master[1]
 
 
-def mask(root='maskEdge_jnt_root', top='maskEdge_jnt_top', bottom='maskEdge_jnt_bottom', root_L='maskEdge_jnt_root_L', root_R='maskEdge_jnt_root_R', cleanUp=False, size=2):
+def mask(root='maskEdge_jnt_root', top='maskEdge_jnt_top', bottom='maskEdge_jnt_bottom', root_L='maskEdge_jnt_root_L', root_R='maskEdge_jnt_root_R', clean=False, size=2):
     '''\n
     ***All variables should be skinned joints\n
     root    = root joint\n
@@ -418,16 +419,16 @@ def mask(root='maskEdge_jnt_root', top='maskEdge_jnt_top', bottom='maskEdge_jnt_
     root_L  = root joint for left side\n
     root_R  = root joint for right side\n
     '''
-    import atom_deformer_lib as dfrmr
+    # dfrmr = web.mod('atom_deformer_lib')
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
     Master = None
     masterNames = nameMaster(mask=True)
     if cmds.objExists(masterNames[0]) == 0:
-        Master = dfrmr.master(mask=True)
+        Master = master(mask=True)
     else:
         Master = masterNames
-    if cleanUp == True:
-        misc.cleanUp(root, SknJnts=True)
+    if clean:
+        place.cleanUp(root, SknJnts=True)
     mask_L = childrenOf(root_L)
     mask_L.sort()
     mask_R = childrenOf(root_R)
@@ -435,56 +436,56 @@ def mask(root='maskEdge_jnt_root', top='maskEdge_jnt_top', bottom='maskEdge_jnt_
     # change to groups instead of controller
     maskRoot = place.Controller('Mask_Root', root, False, 'loc_ctrl', X * size, 31, 8, 1, (0, 0, 1), True, True)
     MaskRootCt = maskRoot.createController()
-    dfrmr.cleanUp(MaskRootCt[0], maskAnim=True)
+    cleanUp(MaskRootCt[0], maskAnim=True)
 
     maskTop = place.Controller('Mask_Top', top, False, 'diamond_ctrl', X * size, 31, 8, 1, (0, 0, 1), True, True)
     MaskTopCt = maskTop.createController()
-    dfrmr.cleanUp(MaskTopCt[0], maskAnim=True)
-    clone = dfrmr.makeClone(MaskTopCt[2], maskClone=True)
-    misc.hijack(clone[1], MaskTopCt[2], visibility=False)
-    misc.hijack(clone[0], MaskTopCt[3], visibility=False, scale=False)
-    misc.hijack(MaskTopCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
+    cleanUp(MaskTopCt[0], maskAnim=True)
+    clone = makeClone(MaskTopCt[2], maskClone=True)
+    place.hijack(clone[1], MaskTopCt[2], visibility=False)
+    place.hijack(clone[0], MaskTopCt[3], visibility=False, scale=False)
+    place.hijack(MaskTopCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
     fullConstraint(clone[0], top)
     cmds.parentConstraint(MaskRootCt[4], MaskTopCt[0], mo=True)
-    misc.scaleUnlock(MaskTopCt[2])
+    place.scaleUnlock(MaskTopCt[2])
 
     maskBottom = place.Controller('Mask_Bottom', bottom, False, 'diamond_ctrl', X * size, 31, 8, 1, (0, 0, 1), True, True)
     MaskBottomCt = maskBottom.createController()
-    dfrmr.cleanUp(MaskBottomCt[0], maskAnim=True)
-    clone = dfrmr.makeClone(MaskBottomCt[2], maskClone=True)
-    misc.hijack(clone[1], MaskBottomCt[2], visibility=False)
-    misc.hijack(clone[0], MaskBottomCt[3], visibility=False, scale=False)
-    misc.hijack(MaskBottomCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
+    cleanUp(MaskBottomCt[0], maskAnim=True)
+    clone = makeClone(MaskBottomCt[2], maskClone=True)
+    place.hijack(clone[1], MaskBottomCt[2], visibility=False)
+    place.hijack(clone[0], MaskBottomCt[3], visibility=False, scale=False)
+    place.hijack(MaskBottomCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
     fullConstraint(clone[0], bottom)
     cmds.parentConstraint(MaskRootCt[4], MaskBottomCt[0], mo=True)
-    misc.scaleUnlock(MaskBottomCt[2])
+    place.scaleUnlock(MaskBottomCt[2])
 
     i = 0
     for item in mask_L:
-        mask = place.Controller('Mask_' + str(('%0' + str(3) + 'd') % (i + 1)) + '_L', item, False, 'diamond_ctrl', X * size, 30, 8, 1, (0, 0, 1), True, True)
-        MaskCt = mask.createController()
-        dfrmr.cleanUp(MaskCt[0], maskAnim=True)
-        clone = dfrmr.makeClone(MaskCt[2], maskClone=True)
-        misc.hijack(clone[1], MaskCt[2], visibility=False)
-        misc.hijack(clone[0], MaskCt[3], visibility=False, scale=False)
-        misc.hijack(MaskCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
+        maskC = place.Controller('Mask_' + str(('%0' + str(3) + 'd') % (i + 1)) + '_L', item, False, 'diamond_ctrl', X * size, 30, 8, 1, (0, 0, 1), True, True)
+        MaskCt = maskC.createController()
+        cleanUp(MaskCt[0], maskAnim=True)
+        clone = makeClone(MaskCt[2], maskClone=True)
+        place.hijack(clone[1], MaskCt[2], visibility=False)
+        place.hijack(clone[0], MaskCt[3], visibility=False, scale=False)
+        place.hijack(MaskCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
         fullConstraint(clone[0], item)
         cmds.parentConstraint(MaskRootCt[4], MaskCt[0], mo=True)
-        misc.scaleUnlock(MaskCt[2])
+        place.scaleUnlock(MaskCt[2])
         i = i + 1
 
     i = 0
     for item in mask_R:
-        mask = place.Controller('Mask_' + str(('%0' + str(3) + 'd') % (i + 1)) + '_R', item, False, 'diamond_ctrl', X * size, 30, 8, 1, (0, 0, 1), True, True)
-        MaskCt = mask.createController()
-        dfrmr.cleanUp(MaskCt[0], maskAnim=True)
-        clone = dfrmr.makeClone(MaskCt[2], maskClone=True)
-        misc.hijack(clone[1], MaskCt[2], visibility=False)
-        misc.hijack(clone[0], MaskCt[3], visibility=False, scale=False)
-        misc.hijack(MaskCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
+        maskC = place.Controller('Mask_' + str(('%0' + str(3) + 'd') % (i + 1)) + '_R', item, False, 'diamond_ctrl', X * size, 30, 8, 1, (0, 0, 1), True, True)
+        MaskCt = maskC.createController()
+        cleanUp(MaskCt[0], maskAnim=True)
+        clone = makeClone(MaskCt[2], maskClone=True)
+        place.hijack(clone[1], MaskCt[2], visibility=False)
+        place.hijack(clone[0], MaskCt[3], visibility=False, scale=False)
+        place.hijack(MaskCt[2], MaskRootCt[2], translate=False, rotate=False, scale=False)
         fullConstraint(clone[0], item)
         cmds.parentConstraint(MaskRootCt[4], MaskCt[0], mo=True)
-        misc.scaleUnlock(MaskCt[2])
+        place.scaleUnlock(MaskCt[2])
         i = i + 1
     # return MaskRootCt[0], Master[1]
     return Master[1]
@@ -513,9 +514,7 @@ def spline(SPLN_Name='SPLN', SPLN_Size=0.5, SPLN_Dist=3.0, SPLN_Falloff=0, SPLN_
         cmds.setAttr(obj + '.' + attr, cb=True)
 
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
-    import atom_deformer_lib as dfrmr
-    from atom import atom_splineStage_lib as stage
-    from atom import atom_spline_lib as posFrom
+    dfrmr = web.mod('atom_deformer_lib')
 
     # master groups
     Master = None
@@ -613,7 +612,7 @@ def spline(SPLN_Name='SPLN', SPLN_Size=0.5, SPLN_Dist=3.0, SPLN_Falloff=0, SPLN_
         cmds.setAttr(SPLN_Name + '_E_IK_Cntrl.LockOrientOffOn', 1)
         # attrs
         OptAttr(strt_Ct[3], SPLN_Name + 'Spline')
-        misc.hijackCustomAttrs(SPLN_Name + '_IK_CtrlGrp', strt_Ct[3])
+        place.hijackCustomAttrs(SPLN_Name + '_IK_CtrlGrp', strt_Ct[3])
         cmds.setAttr(strt_Ct[3] + '.' + SPLN_Name + 'Vis', l=True)
         cmds.setAttr(strt_Ct[3] + '.ClstrVis', l=True)
         cmds.setAttr(strt_Ct[3] + '.VctrVis', l=True)
@@ -621,12 +620,12 @@ def spline(SPLN_Name='SPLN', SPLN_Size=0.5, SPLN_Dist=3.0, SPLN_Falloff=0, SPLN_
     # connect/mirror controllers to clones
     midInt = str(int((float(len(jntList)) / 2 + 0.5)))
     # start
-    misc.hijack(SPLN_Name + '_S_IK_Cntrl', strt_Ct[2], translate=True, rotate=True, scale=False, visibility=False)
+    place.hijack(SPLN_Name + '_S_IK_Cntrl', strt_Ct[2], translate=True, rotate=True, scale=False, visibility=False)
     # mid
-    misc.hijack(SPLN_Name + '_Clstr_M' + midInt + '_Ctrl', mid_Ct[2], translate=True, rotate=True, scale=False, visibility=False)
-    misc.hijack(mid_Ct[1], SPLN_Name + '_Clstr_M' + midInt + '_PrntGrp', translate=True, rotate=True, scale=False, visibility=False)
+    place.hijack(SPLN_Name + '_Clstr_M' + midInt + '_Ctrl', mid_Ct[2], translate=True, rotate=True, scale=False, visibility=False)
+    place.hijack(mid_Ct[1], SPLN_Name + '_Clstr_M' + midInt + '_PrntGrp', translate=True, rotate=True, scale=False, visibility=False)
     # end
-    misc.hijack(SPLN_Name + '_E_IK_Cntrl', end_Ct[2], translate=True, rotate=True, scale=False, visibility=False)
+    place.hijack(SPLN_Name + '_E_IK_Cntrl', end_Ct[2], translate=True, rotate=True, scale=False, visibility=False)
     # mirror connections
     if mirror == True:
         mirrorBhv(SPLN_Name + sufStart, strt_Ct[2], SPLN_Name + '_S_IK_Cntrl')
@@ -637,7 +636,7 @@ def spline(SPLN_Name='SPLN', SPLN_Size=0.5, SPLN_Dist=3.0, SPLN_Falloff=0, SPLN_
     if cleanUp == True:
         # joints
         rootJnt = find.root(SPLN[0])
-        misc.cleanUp(rootJnt, SknJnts=True)
+        place.cleanUp(rootJnt, SknJnts=True)
         # anim controls
         dfrmr.cleanUp(strt_Ct[0], splineAnim=True)
         dfrmr.cleanUp(mid_Ct[0], splineAnim=True)
@@ -656,7 +655,7 @@ def retain(geo, deformer, follow, name='sculptTool', size=5, orient=False):
     size      = size of cntrlCtlers\n
     '''
     color = 12
-    import atom_deformer_lib as dfrmr
+    dfrmr = web.mod('atom_deformer_lib')
 
     def hijackSculpt(node, obj, name=name, envelope=True, dropoffDistance=True):
         '''\n
@@ -666,9 +665,9 @@ def retain(geo, deformer, follow, name='sculptTool', size=5, orient=False):
         '''
         attrs = []
         if envelope == True:
-            attrs.append(misc.hijackAttrs(node, obj, 'envelope', name + '_Envelope'))
+            attrs.append(place.hijackAttrs(node, obj, 'envelope', name + '_Envelope'))
         if dropoffDistance == True:
-            attrs.append(misc.hijackAttrs(node, obj, 'dropoffDistance', name + '_Dropoff'))
+            attrs.append(place.hijackAttrs(node, obj, 'dropoffDistance', name + '_Dropoff'))
         print attrs
         return attrs
 
@@ -687,8 +686,8 @@ def retain(geo, deformer, follow, name='sculptTool', size=5, orient=False):
             print sculpt[1]
             if i == 0:
                 print 'here'
-                misc.optEnum(cntrlCt[2])
-                vis = misc.hijackVis(sculpt[1], cntrlCt[2], name='Def', default=0)
+                place.optEnum(cntrlCt[2])
+                vis = place.hijackVis(sculpt[1], cntrlCt[2], name='Def', default=0)
                 attrs = hijackSculpt(sculpt[0], cntrlCt[2], name='Def')
             else:
                 cmds.connectAttr(attrs[0], sculpt[0] + '.envelope')
@@ -697,7 +696,7 @@ def retain(geo, deformer, follow, name='sculptTool', size=5, orient=False):
             cmds.setAttr(sculpt[2] + '.overrideColor', color)
             #hijackSculpt(sculpt[0], cntrlCt[2], name=item + 'Def')
             cmds.parent(sculpt[2], deformer)
-            misc.zero(sculpt[2])
+            place.zero(sculpt[2])
             i = i + 1
     else:
         pass
@@ -705,8 +704,8 @@ def retain(geo, deformer, follow, name='sculptTool', size=5, orient=False):
     cmds.parentConstraint(follow, cntrlCt[0], mo=True)
     cmds.parent(deformer, cntrlCt[4])
     #cmds.parent(sculpt[2], deformer)
-    # misc.zero(sculpt[2])
-    misc.cleanUp(cntrlCt[0], Ctrl=True)
+    # place.zero(sculpt[2])
+    place.cleanUp(cntrlCt[0], Ctrl=True)
 
 
 def floatingControl(name='', parent='', joint='pin_jnt', size=4, shape='facetZup_ctrl'):
@@ -719,6 +718,6 @@ def floatingControl(name='', parent='', joint='pin_jnt', size=4, shape='facetZup
     cntrl = place.Controller(name, joint, True, shape, size, 17, 8, 1, (0, 0, 1), True, True)
     fl2 = cntrl.createController()
     cmds.parentConstraint(parent, fl2[0], mo=True)
-    misc.hijack(fl1[1], fl2[1], translate=True, rotate=True, scale=False, visibility=False)
-    misc.hijack(fl1[2], fl2[2], translate=True, rotate=True, scale=False, visibility=False)
+    place.hijack(fl1[1], fl2[1], translate=True, rotate=True, scale=False, visibility=False)
+    place.hijack(fl1[2], fl2[2], translate=True, rotate=True, scale=False, visibility=False)
     return fl1, fl2

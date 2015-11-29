@@ -5,11 +5,13 @@ import pymel.core as pm
 from maya.OpenMayaAnim import MFnSkinCluster
 from maya.OpenMaya import *
 from maya.OpenMayaMPx import *
-import key_weighting_objects as kwo
-import os
-import key_ui_lib
-reload(key_ui_lib)
 import cPickle
+import os
+#
+import webrImport as web
+# web
+kwo = web.mod('atom_place_lib')
+key_ui_lib = web.mod('key_ui_lib')
 
 
 def getMFnSkinCluster(skinClusterName):

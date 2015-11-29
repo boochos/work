@@ -4,6 +4,7 @@ import os
 
 
 def mod(modulename=''):
+    # print modulename, '____________________'
     '''
     Which source, build module, piggy back functions.
     code doubles up to keep variables hidden

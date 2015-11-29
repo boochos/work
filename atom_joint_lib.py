@@ -1,7 +1,10 @@
 from pymel.core import *
-import atom_miscellaneous_lib as misc
 import maya.OpenMaya as OpenMaya
 import maya.cmds as cmds
+#
+import webrImport as web
+# web
+place = web.mod('atom_place_lib')
 
 
 class CreateTwistJoints(object):
@@ -19,7 +22,7 @@ class CreateTwistJoints(object):
         self.axis = axis
 
         # Get the distance inbetween the two joints for placement
-        self.masterDis = misc.distance2Pts(self.baseJnt.getTranslation(space='world'), self.endJnt.getTranslation(space='world'))
+        self.masterDis = place.distance2Pts(self.baseJnt.getTranslation(space='world'), self.endJnt.getTranslation(space='world'))
         self.disOffset = float(self.masterDis) / (float(self.numJnt) + 1)
         self.jntTwistList = []
 

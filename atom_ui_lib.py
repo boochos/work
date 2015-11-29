@@ -1,8 +1,11 @@
 import os
+import urllib2
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
-import atom_miscellaneous_lib as misc
-reload(misc)
+#
+import webrImport as web
+# web
+# misc = web.mod('atom_miscellaneous_lib')
 
 
 def setPreset(*args):
@@ -49,14 +52,13 @@ def setPreset(*args):
         cmds.floatField(ldf, edit=True, v=10.0)
         cmds.floatField(pldf, edit=True, v=-3.25)
 
-#-------------
-# Name        :validateFieldTextInput
-# Arguements  :<control> : textFieldGrp
-# Description :builds a name based on the selected items in the Daily Maker windows optionMenuGrp's
-#-------------
-
 
 def validateFieldTextInput(control):
+    '''
+    Name        :validateFieldTextInput
+    Arguements  :<control> : textFieldGrp
+    Description :builds a name based on the selected items in the Daily Maker windows optionMenuGrp's
+    '''
     returnStr = cmds.textField(control, query=True, tx=True)
     exp = ' !@#$%^&*()+-={}|[]\\:\"\';<>?,./'
     if len(returnStr) > 0:
@@ -68,51 +70,50 @@ def validateFieldTextInput(control):
                     break
     else:
         cmds.textField(control, edit=True, tx='None')
-# end def validateFieldTextInput
-
-#-------------
-# Name        :refreshWindow
-# Arguements  :<control> : window
-# Description :Change the size of the window by one pixel, then back to its original size.
-#             This forces a refresh on the windows internal controls
-#-------------
 
 
 def refreshWindow(control):
+    '''
+    # Name        :refreshWindow
+    # Arguements  :<control> : window
+    # Description :Change the size of the window by one pixel, then back to its original size.
+    #             This forces a refresh on the windows internal controls
+    '''
     currentSize = cmds.window(control, query=True, width=True)
     cmds.window(control, edit=True, width=currentSize + 1)
     cmds.window(control, edit=True, width=currentSize)
-# end def refreshWindow
-
-#-------------
-# Name        :addControlCurveButton
-# Arguements  :<path>: str
-# Description :Builds a button that called atom_ui_lib.imortCurveShape to shape pre-defined curves
-# Notes       :Used in the Control Curve Shape Toolbox section of the Atom win
-#-------------
 
 
 def addControlCurveButton(path):
-    print path
-    files = os.listdir(path)
-    print files
-    files.sort()
-    for file in files:
-        print 'here'
-        txtSplit = file.split('.')
-        if txtSplit[1] == 'txt':
-            cmds.button(label=txtSplit[0], c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + txtSplit[0] + '","' + path + '")')
-# end def addControlCurveButton
-
-#-------------
-# Name        :exportCurveShape
-# Arguements  :N/A
-# Description :Exports the local transforms of the cvs on the selected curve.
-# Notes       :This is designed to only work with the Atom win
-#-------------
+    '''
+    Name        :addControlCurveButton
+    Arguements  :<path>: str
+    Description :Builds a button that called atom_ui_lib.imortCurveShape to shape pre-defined curves
+    Notes       :Used in the Control Curve Shape Toolbox section of the Atom win
+    '''
+    # print path
+    if os.path.isdir(path):
+        files = os.listdir(path)
+        if files:
+            print files
+            files.sort()
+            for file in files:
+                # print 'here'
+                if os.path.isfile(os.path.join(path, file)):
+                    txtSplit = file.split('.')
+                    if txtSplit[1] == 'txt':
+                        cmds.button(label=txtSplit[0], c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + txtSplit[0] + '","' + path + '")')
+        else:
+            print 'no shapes found in path:  ' + path
 
 
 def exportCurveShape(*args):
+    '''
+    Name        :exportCurveShape
+    Arguements  :N/A
+    Description :Exports the local transforms of the cvs on the selected curve.
+    Notes       :This is designed to only work with the Atom win
+    '''
     # get the selection
     sel = cmds.ls(selection=True)
     if len(sel) == 1:
@@ -137,67 +138,122 @@ def exportCurveShape(*args):
                 refreshWindow('atom_win')
     else:
         print 'Select one curve to export'
-# end def exportCurveShape
-
-#-------------
-# Name        :importCurveShape
-# Arguements  :<name>: str
-#            :<path>: str
-# Description :Imports a curve shape based on the path and name info
-# Notes       :Function expects a .txt file
-#-------------
 
 
 def importCurveShape(name, path, codeScale=False, overRide=False):
+    '''
+    Name        :importCurveShape
+    Arguements  :<name>: str
+    path        :<path>: str
+    Description :Imports a curve shape based on the path and name info
+    Notes       :Function expects a .txt file
+    '''
     selection = cmds.ls(selection=True, tr=True)
     path = path + '/' + name + '.txt'
     # change the shape of multiple selected curves
-    if len(selection) > 0:
+    if selection:
         for sel in selection:
             # get the shape node
             shapeNode = cmds.listRelatives(sel, shapes=True)[0]
             # cvInfo is populated then interated through later
             cvInfo = []
             curveScale = None
-            if codeScale == False:
+            if not codeScale:
                 curveScale = cmds.floatField('atom_csst_curveScale_floatField', query=True, value=True)
             else:
                 curveScale = codeScale
 
             if cmds.nodeType(shapeNode) == 'nurbsCurve':
                 # print path, 'shape__________'
-                inFile = open(path, 'r')
-                for line in inFile.readlines():
-                    # extract the position data stored in the file
-                    cvLine = line.strip('\n')
-                    cvLine = cvLine.split(' ')
-                    tmp = float(cvLine[0]) * curveScale, float(cvLine[1]) * curveScale, float(cvLine[2]) * curveScale
-                    cvInfo.append(tmp)
-                inFile.close()
-                # Shape the curve
-                if overRide != False:
-                    cmds.setAttr(shapeNode + '.overrideEnabled', 1)
-                    cmds.setAttr(shapeNode + '.overrideColor', overRide)
-
-                if len(cvInfo) == len(cmds.getAttr(shapeNode + '.cv[*]')):
-                    for i in range(0, len(cvInfo), 1):
-                        cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=cvInfo[i])
+                inFile = importCurveShapeSource(name)
+                if inFile:
+                    cvInfo = shapeScale(shape=inFile, scale=curveScale)
+                    # Shape the curve
+                    if overRide:
+                        cmds.setAttr(shapeNode + '.overrideEnabled', 1)
+                        cmds.setAttr(shapeNode + '.overrideColor', overRide)
+                    if len(cvInfo) == len(cmds.getAttr(shapeNode + '.cv[*]')):
+                        for i in range(0, len(cvInfo), 1):
+                            cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=cvInfo[i])
+                    else:
+                        # Curves with different CV counts are not compatible
+                        OpenMaya.MGlobal.displayError('CV count[' + str(len(cmds.getAttr(shapeNode + '.cv[*]'))) + '] from selected does not match import CV count[' + str(len(cvInfo)) + ']')
                 else:
-                    # Curves with different CV counts are not compatible
-                    OpenMaya.MGlobal.displayError('CV count[' + str(len(cmds.getAttr(shapeNode + '.cv[*]'))) + '] from selected does not match import CV count[' + str(len(cvInfo)) + ']')
+                    print 'no shape found, tried: local, web'
     else:
         OpenMaya.MGlobal.displayError('Select a NURBS curve if you truly want to proceed...')
-# end def importCurveShape
 
-#-------------
-# Name        :getRadioSelectionAsList
-# Arguements  :<control>: radioButtonGrp
-# Description :Queries the radioButtonGrp for which buttons are on returns a 3 element array
-#            :0 is not selected, 1 is selected
-#-------------
+
+def importCurveShapeSource(shape=''):
+
+    # try default location
+    inFile = shapeLocal(shape=shape)
+    if inFile:
+        return inFile
+    else:
+        return shapeWeb(shape=shape)
+
+
+def shapeLocal(shape=''):
+    ac = web.mod('atom_controlShapes_lib')
+    path = ac.path
+    # print path
+    if os.path.isdir(path):
+        shapePath = os.path.join(path, shape + '.txt')
+        if os.path.isfile(shapePath):
+            inFile = open(shapePath, 'r')
+            cvInfo = []
+            for line in inFile.readlines():
+                cvLine = line.strip('\n')
+                cvLine = cvLine.split(' ')
+                tmp = float(cvLine[0]), float(cvLine[1]), float(cvLine[2])
+                cvInfo.append(tmp)
+            inFile.close()
+            return cvInfo
+        else:
+            pass
+            # print 'not a file'
+    else:
+        pass
+        # print 'not a directory'
+
+
+def shapeWeb(shape=''):
+    webPath = 'https://raw.githubusercontent.com/boochos/controlShapes/master/'
+    urlPath = webPath + shape + '.txt'
+    try:
+        req = urllib2.Request(urlPath)
+        if req:
+            response = urllib2.urlopen(req)
+            inFile = response.read()
+            cvInfo = []
+            lines = inFile.split('\n')
+            for line in lines:
+                cvLine = line.split(' ')
+                if cvLine != ['']:
+                    tmp = float(cvLine[0]), float(cvLine[1]), float(cvLine[2])
+                    cvInfo.append(tmp)
+            return cvInfo
+        else:
+            return None
+    except:
+        print 'could not reach internet'
+
+
+def shapeScale(shape=[], scale=1.0):
+    shapeScaled = []
+    for point in shape:
+        shapeScaled.append([point[0] * scale, point[1] * scale, point[2] * scale])
+    return shapeScaled
 
 
 def getRadioSelectionAsList(control):
+    '''
+    Name        :getRadioSelectionAsList
+    Arguements  :<control>: radioButtonGrp
+    Description :Queries the radioButtonGrp for which buttons are on returns a 3 element array
+    #            :0 is not selected, 1 is selected
+    '''
     returnList = []
     sel = cmds.radioButtonGrp(control, query=True, sl=True)
     nrb = cmds.radioButtonGrp(control, query=True, nrb=True)
@@ -208,7 +264,6 @@ def getRadioSelectionAsList(control):
             returnList.append(0)
 
     return returnList
-# end def getRadioSelectionAsList
 
 
 def createListForTransform(control, value):
@@ -220,31 +275,30 @@ def createListForTransform(control, value):
         valList[i] = valList[i] * axisList[i]
     return valList
 
-#-------------
-# Name        :getCheckBoxSelectionAsList
-# Arguements  :<control>: checkBoxGro
-# Description :Queries the checkBoxGrp for which buttons are on returns a 3 element array
-#            :0 is not selected, 1 is selected
-# Notes       :For some reason maya doesn't want to return this, all though it seems to be
-#             available in the docs
-
 
 def getCheckBoxSelectionAsList(control):
+    '''
+    Name        :getCheckBoxSelectionAsList
+    Arguements  :<control>: checkBoxGro
+    Description :Queries the checkBoxGrp for which buttons are on returns a 3 element array
+    #            :0 is not selected, 1 is selected
+    Notes       :For some reason maya doesn't want to return this, all though it seems to be
+    #             available in the docs
+    '''
     checked = []
     checked.append(cmds.checkBoxGrp(control, query=True, v1=True))
     checked.append(cmds.checkBoxGrp(control, query=True, v2=True))
     checked.append(cmds.checkBoxGrp(control, query=True, v3=True))
 
     return checked
-# end def getCheckBoxSelectionAsList
-
-#-------------
-# Name        :convertAxisNum
-# Arguements  :<num>: int
-# Description :Convert, 1,2,3 to X Y or Z
 
 
 def convertAxisNum(num):
+    '''
+    Name        :convertAxisNum
+    Arguements  :<num>: int
+    Description :Convert, 1,2,3 to X Y or Z
+    '''
     if num == 1:
         return 'X'
     elif num == 2:
@@ -253,4 +307,3 @@ def convertAxisNum(num):
         return 'Z'
     else:
         return None
-# end def convertAxisNum

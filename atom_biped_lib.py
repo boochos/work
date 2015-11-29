@@ -1,17 +1,15 @@
 from pymel.core import *
 import maya.cmds as cmds
-import atom_appendage_lib as aal
-reload(aal)
-import atom_ui_lib as aul
-import atom_placement_lib as place
-import atom_miscellaneous_lib as misc
-import atom_splineStage_lib as stage
-# import atom_joint_lib as ajl
-# import atom_earRig_lib as ael
-import atom_splineFk_lib as splnFk
-# import atom_deformer_lib as adl
-import atom_body_lib as abl
-reload(misc)
+#
+import webrImport as web
+# web
+aal = web.mod('atom_appendage_lib')
+aul = web.mod('atom_ui_lib')
+place = web.mod('atom_place_lib')
+# misc = web.mod('atom_miscellaneous_lib')
+stage = web.mod('atom_splineStage_lib')
+splnFk = web.mod('atom_splineFk_lib')
+abl = web.mod('atom_body_lib')
 
 
 def preBuild(
@@ -40,7 +38,7 @@ def preBuild(
     # cmds.deltaMush('Plane002',smoothingIterations=2, smoothingStep=0.5, pinBorderVertices=1, envelope=1)
     cmds.deltaMush('Group60400', smoothingIterations=8, smoothingStep=0.5, pinBorderVertices=1, envelope=1)
 
-    PreBuild = misc.rigPrebuild(Top=0, Ctrl=True, SknJnts=True, Geo=True, World=True, Master=True, OlSkool=True, Size=150)
+    PreBuild = place.rigPrebuild(Top=0, Ctrl=True, SknJnts=True, Geo=True, World=True, Master=True, OlSkool=True, Size=150)
     CHARACTER = PreBuild[0]
     CONTROLS = PreBuild[1]
     SKIN_JOINTS = PreBuild[2]
@@ -55,7 +53,7 @@ def preBuild(
     Cog = 'cog'
     cog = place.Controller(Cog, COG_jnt, False, 'facetYup_ctrl', X * 75, 12, 8, 1, (0, 0, 1), True, True)
     CogCt = cog.createController()
-    misc.setRotOrder(CogCt[0], 2, True)
+    place.setRotOrder(CogCt[0], 2, True)
     cmds.parent(CogCt[0], CONTROLS)
     cmds.parentConstraint(MasterCt[4], CogCt[0], mo=True)
 
@@ -64,13 +62,13 @@ def preBuild(
     Pelvis = 'pelvis'
     pelvis = place.Controller(Pelvis, PELVIS_jnt, False, 'biped_hip', X * 3.5, 17, 8, 1, (0, 0, 1), True, True)
     PelvisCt = pelvis.createController()
-    misc.setRotOrder(PelvisCt[0], 2, True)
+    place.setRotOrder(PelvisCt[0], 2, True)
     ## GROUP for hip joints, tail ##
     if cmds.objExists(TAIL_jnt):
         PelvisAttch_Gp = place.null2('PelvisAttch_Gp', TAIL_jnt)[0]
         PelvisAttch_CnstGp = place.null2('PelvisAttch_CnstGp', TAIL_jnt)[0]
         cmds.parent(PelvisAttch_CnstGp, PelvisAttch_Gp)
-        misc.setRotOrder(PelvisAttch_CnstGp, 2, False)
+        place.setRotOrder(PelvisAttch_CnstGp, 2, False)
         cmds.parentConstraint(PELVIS_jnt, PelvisAttch_Gp, mo=True)
         cmds.parent(PelvisAttch_Gp, PelvisCt[0])
 
@@ -85,28 +83,28 @@ def preBuild(
     Chest = 'chest'
     chest = place.Controller(Chest, CHEST_jnt, False, 'GDchest_ctrl', X * 7.5, 17, 8, 1, (0, 0, 1), True, True)
     ChestCt = chest.createController()
-    misc.setRotOrder(ChestCt[0], 2, True)
+    place.setRotOrder(ChestCt[0], 2, True)
     ## GROUP for shoulder joints, neck ##
     ChestAttch_Gp = place.null2('ChestAttch_Gp', NECK_jnt)[0]
     ChestAttch_CnstGp = place.null2('ChestAttch_CnstGp', NECK_jnt)[0]
     cmds.parent(ChestAttch_CnstGp, ChestAttch_Gp)
-    misc.setRotOrder(ChestAttch_CnstGp, 2, False)
+    place.setRotOrder(ChestAttch_CnstGp, 2, False)
     cmds.parentConstraint(CHEST_jnt, ChestAttch_Gp, mo=True)
     cmds.parent(ChestAttch_Gp, PelvisCt[0])
     # constrain controllers, parent under Master group
     cmds.parentConstraint(CogCt[4], PelvisCt[0], mo=True)
     cmds.parentConstraint(cstm[4], ChestCt[0], mo=True)
     # setChannels
-    misc.setChannels(PelvisCt[0], [False, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(PelvisCt[1], [True, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(PelvisCt[2], [False, True], [False, True], [True, False], [True, False, False])
-    # misc.setChannels(PelvisCt[3], [False, True], [False, True], [True, False], [False, False, False])
-    misc.setChannels(PelvisCt[4], [True, False], [True, False], [True, False], [True, False, False])
-    misc.setChannels(ChestCt[0], [False, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(ChestCt[1], [True, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(ChestCt[2], [False, True], [False, True], [True, False], [True, False, False])
-    # misc.setChannels(ChestCt[3], [False, True], [False, True], [True, False], [False, False, False])
-    misc.setChannels(ChestCt[4], [True, False], [True, False], [True, False], [True, False, False])
+    place.setChannels(PelvisCt[0], [False, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(PelvisCt[1], [True, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(PelvisCt[2], [False, True], [False, True], [True, False], [True, False, False])
+    # place.setChannels(PelvisCt[3], [False, True], [False, True], [True, False], [False, False, False])
+    place.setChannels(PelvisCt[4], [True, False], [True, False], [True, False], [True, False, False])
+    place.setChannels(ChestCt[0], [False, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(ChestCt[1], [True, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(ChestCt[2], [False, True], [False, True], [True, False], [True, False, False])
+    # place.setChannels(ChestCt[3], [False, True], [False, True], [True, False], [False, False, False])
+    place.setChannels(ChestCt[4], [True, False], [True, False], [True, False], [True, False, False])
     # parent topGp to master
     cmds.parent(PelvisCt[0], CONTROLS)
     cmds.parent(ChestCt[0], CONTROLS)
@@ -115,16 +113,16 @@ def preBuild(
     Neck = 'neck'
     neck = place.Controller(Neck, NECK_jnt, True, 'GDneck_ctrl', X * 4, 12, 8, 1, (0, 0, 1), True, True)
     NeckCt = neck.createController()
-    misc.setRotOrder(NeckCt[0], 2, True)
+    place.setRotOrder(NeckCt[0], 2, True)
     # parent switches
-    misc.parentSwitch(Neck, NeckCt[2], NeckCt[1], NeckCt[0], CogCt[4], ChestAttch_CnstGp, False, True, False, True, 'Chest', 0.0)
+    place.parentSwitch(Neck, NeckCt[2], NeckCt[1], NeckCt[0], CogCt[4], ChestAttch_CnstGp, False, True, False, True, 'Chest', 0.0)
     cmds.parentConstraint(ChestAttch_CnstGp, NeckCt[0], mo=True)
-    misc.setChannels(NeckCt[0], [False, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(NeckCt[1], [True, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(NeckCt[2], [True, False], [False, True], [True, False], [True, False, False])
-    misc.setChannels(NeckCt[3], [True, False], [False, True], [True, False], [False, False, False])
+    place.setChannels(NeckCt[0], [False, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(NeckCt[1], [True, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(NeckCt[2], [True, False], [False, True], [True, False], [True, False, False])
+    place.setChannels(NeckCt[3], [True, False], [False, True], [True, False], [False, False, False])
     cmds.setAttr(NeckCt[3] + '.visibility', cb=False)
-    misc.setChannels(NeckCt[4], [True, False], [True, False], [True, False], [True, False, False])
+    place.setChannels(NeckCt[4], [True, False], [True, False], [True, False], [True, False, False])
     # parent topGp to master
     cmds.parent(NeckCt[0], CONTROLS)
 
@@ -132,25 +130,25 @@ def preBuild(
     Head = 'head'
     head = place.Controller(Head, HEAD_jnt, False, 'biped_head', X * 3.5, 12, 8, 1, (0, 0, 1), True, True)
     HeadCt = head.createController()
-    misc.setRotOrder(HeadCt[0], 2, True)
+    place.setRotOrder(HeadCt[0], 2, True)
     # parent switch
-    misc.parentSwitch(Head, HeadCt[2], HeadCt[1], HeadCt[0], CogCt[4], NeckCt[4], False, False, True, True, 'Neck', 1.0)
+    place.parentSwitch(Head, HeadCt[2], HeadCt[1], HeadCt[0], CogCt[4], NeckCt[4], False, False, True, True, 'Neck', 1.0)
     # insert group under Head, in the same space as Head_offset, name: Head_CnstGp
     Head_CnstGp = place.null2(Head + '_CnstGp', HEAD_jnt)[0]
-    misc.setRotOrder(Head_CnstGp, 2, True)
+    place.setRotOrder(Head_CnstGp, 2, True)
     cmds.parent(Head_CnstGp, HeadCt[2])
     # tip of head constrain to offset
     cmds.orientConstraint(HeadCt[3], 'neck_jnt_06', mo=True)
     # constrain head to neck
     cmds.parentConstraint(NeckCt[4], HeadCt[0], mo=True)
     # set channels
-    misc.setChannels(HeadCt[0], [False, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(HeadCt[1], [False, False], [False, False], [True, False], [True, False, False])
-    misc.setChannels(HeadCt[2], [False, True], [False, True], [True, False], [True, False, False])
-    misc.setChannels(HeadCt[3], [True, False], [False, True], [True, False], [False, False, False])
+    place.setChannels(HeadCt[0], [False, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(HeadCt[1], [False, False], [False, False], [True, False], [True, False, False])
+    place.setChannels(HeadCt[2], [False, True], [False, True], [True, False], [True, False, False])
+    place.setChannels(HeadCt[3], [True, False], [False, True], [True, False], [False, False, False])
     cmds.setAttr(HeadCt[3] + '.visibility', cb=False)
-    misc.setChannels(HeadCt[4], [True, False], [True, False], [True, False], [True, False, False])
-    misc.setChannels(Head_CnstGp, [True, False], [True, False], [True, False], [True, False, False])
+    place.setChannels(HeadCt[4], [True, False], [True, False], [True, False], [True, False, False])
+    place.setChannels(Head_CnstGp, [True, False], [True, False], [True, False], [True, False, False])
     # parent topGp to master
     cmds.parent(HeadCt[0], CONTROLS)
     # add extra group to 'HeadCt'
@@ -171,57 +169,57 @@ def preBuild(
         hipL = 'hip_L'
         hipL = place.Controller(hipL, HIP_L_jnt, False, 'diamond_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
         HipLCt = hipL.createController()
-        misc.setRotOrder(HipLCt[0], 2, True)
+        place.setRotOrder(HipLCt[0], 2, True)
         cmds.parentConstraint(PelvisAttch_CnstGp, HipLCt[0], mo=True)
         cmds.parentConstraint(HipLCt[4], 'back_hip_dbl_jnt_L', mo=True)
         cmds.parent(HipLCt[0], CONTROLS)
 
-        misc.setChannels(HipLCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(HipLCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(HipLCt[2], [True, False], [True, False], [True, False], [False, False, False])
-        misc.setChannels(HipLCt[3], [True, False], [True, False], [True, False], [False, False, False])
+        place.setChannels(HipLCt[0], [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(HipLCt[1], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(HipLCt[2], [True, False], [True, False], [True, False], [False, False, False])
+        place.setChannels(HipLCt[3], [True, False], [True, False], [True, False], [False, False, False])
         cmds.setAttr(HipLCt[3] + '.visibility', cb=False)
-        misc.setChannels(HipLCt[4], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(HipLCt[4], [True, False], [True, False], [True, False], [True, False, False])
 
         # HIP R #
         hipR = 'hip_R'
         hipR = place.Controller(hipR, HIP_R_jnt, False, 'diamond_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
         HipRCt = hipR.createController()
-        misc.setRotOrder(HipRCt[0], 2, True)
+        place.setRotOrder(HipRCt[0], 2, True)
         cmds.parentConstraint(PelvisAttch_CnstGp, HipRCt[0], mo=True)
         cmds.parentConstraint(HipRCt[4], 'back_hip_dbl_jnt_R', mo=True)
         cmds.parent(HipRCt[0], CONTROLS)
-        misc.setChannels(HipRCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(HipRCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(HipRCt[2], [True, False], [True, False], [True, False], [False, False, False])
-        misc.setChannels(HipRCt[3], [True, False], [True, False], [True, False], [False, False, False])
+        place.setChannels(HipRCt[0], [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(HipRCt[1], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(HipRCt[2], [True, False], [True, False], [True, False], [False, False, False])
+        place.setChannels(HipRCt[3], [True, False], [True, False], [True, False], [False, False, False])
         cmds.setAttr(HipRCt[3] + '.visibility', cb=False)
-        misc.setChannels(HipRCt[4], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(HipRCt[4], [True, False], [True, False], [True, False], [True, False, False])
 
         # SHOULDER L #
         shldrL = 'shldr_L'
         shldrL = place.Controller(shldrL, SHLDR_L_jnt, False, 'shldrL_ctrl', X * 25, 17, 8, 1, (0, 0, 1), True, True)
         ShldrLCt = shldrL.createController()
-        misc.setRotOrder(ShldrLCt[0], 2, True)
+        place.setRotOrder(ShldrLCt[0], 2, True)
         cmds.parentConstraint(ChestAttch_CnstGp, ShldrLCt[0], mo=True)
         # scap stretch
         scapStrtchL = cmds.parentConstraint(ShldrLCt[4], 'front_shoulder_dbl_jnt_L', mo=True)[0]
         UsrAttrL = cmds.listAttr(scapStrtchL, ud=True)[0]
         cmds.addAttr(scapStrtchL + '.' + UsrAttrL, e=True, max=1)
-        misc.hijackAttrs(scapStrtchL, ShldrLCt[2], UsrAttrL, 'ScapulaStretch', default=1)
+        place.hijackAttrs(scapStrtchL, ShldrLCt[2], UsrAttrL, 'ScapulaStretch', default=1)
         # clav stretch
         clavStrtchL = cmds.parentConstraint(ShldrLCt[4], 'clavicle_jnt_03_L', mo=True)[0]
         UsrAttrL = cmds.listAttr(clavStrtchL, ud=True)[0]
         cmds.addAttr(clavStrtchL + '.' + UsrAttrL, e=True, max=1)
-        misc.hijackAttrs(clavStrtchL, ShldrLCt[2], UsrAttrL, 'ClavicleStretch', default=0)
+        place.hijackAttrs(clavStrtchL, ShldrLCt[2], UsrAttrL, 'ClavicleStretch', default=0)
         #
         cmds.parent(ShldrLCt[0], CONTROLS)
-        misc.setChannels(ShldrLCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(ShldrLCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(ShldrLCt[2], [False, True], [True, False], [True, False], [True, False, False])
-        misc.setChannels(ShldrLCt[3], [False, True], [True, False], [True, False], [False, False, False])
+        place.setChannels(ShldrLCt[0], [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(ShldrLCt[1], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(ShldrLCt[2], [False, True], [True, False], [True, False], [True, False, False])
+        place.setChannels(ShldrLCt[3], [False, True], [True, False], [True, False], [False, False, False])
         cmds.setAttr(ShldrLCt[3] + '.visibility', cb=False)
-        misc.setChannels(ShldrLCt[4], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(ShldrLCt[4], [True, False], [True, False], [True, False], [True, False, False])
         # cmds.setAttr(ShldrLCt[2] + '.tx', l=True, k=False)
         # cmds.setAttr(ShldrLCt[3] + '.tx', l=True, k=False)
 
@@ -229,26 +227,26 @@ def preBuild(
         shldrR = 'shldr_R'
         shldrR = place.Controller(shldrR, SHLDR_R_jnt, False, 'shldrR_ctrl', X * 25, 17, 8, 1, (0, 0, 1), True, True)
         ShldrRCt = shldrR.createController()
-        misc.setRotOrder(ShldrRCt[0], 2, True)
+        place.setRotOrder(ShldrRCt[0], 2, True)
         cmds.parentConstraint(ChestAttch_CnstGp, ShldrRCt[0], mo=True)
         # scap stretch
         scapStrtchR = cmds.parentConstraint(ShldrRCt[4], 'front_shoulder_dbl_jnt_R', mo=True)[0]
         UsrAttrR = cmds.listAttr(scapStrtchR, ud=True)[0]
         cmds.addAttr(scapStrtchR + '.' + UsrAttrR, e=True, max=1)
-        misc.hijackAttrs(scapStrtchR, ShldrRCt[2], UsrAttrR, 'ScapulaStretch', default=1)
+        place.hijackAttrs(scapStrtchR, ShldrRCt[2], UsrAttrR, 'ScapulaStretch', default=1)
         # clav stretch
         clavStrtchR = cmds.parentConstraint(ShldrRCt[4], 'clavicle_jnt_03_R', mo=True)[0]
         UsrAttrL = cmds.listAttr(clavStrtchR, ud=True)[0]
         cmds.addAttr(clavStrtchR + '.' + UsrAttrR, e=True, max=1)
-        misc.hijackAttrs(clavStrtchR, ShldrRCt[2], UsrAttrR, 'ClavicleStretch', default=0)
+        place.hijackAttrs(clavStrtchR, ShldrRCt[2], UsrAttrR, 'ClavicleStretch', default=0)
         #
         cmds.parent(ShldrRCt[0], CONTROLS)
-        misc.setChannels(ShldrRCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(ShldrRCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(ShldrRCt[2], [False, True], [True, False], [True, False], [True, False, False])
-        misc.setChannels(ShldrRCt[3], [False, True], [True, False], [True, False], [False, False, False])
+        place.setChannels(ShldrRCt[0], [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(ShldrRCt[1], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(ShldrRCt[2], [False, True], [True, False], [True, False], [True, False, False])
+        place.setChannels(ShldrRCt[3], [False, True], [True, False], [True, False], [False, False, False])
         cmds.setAttr(ShldrRCt[3] + '.visibility', cb=False)
-        misc.setChannels(ShldrRCt[4], [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(ShldrRCt[4], [True, False], [True, False], [True, False], [True, False, False])
         # cmds.setAttr(ShldrRCt[2] + '.tx', l=True, k=False)
         # cmds.setAttr(ShldrRCt[3] + '.tx', l=True, k=False)
 
@@ -265,27 +263,27 @@ def preBuild(
         cmds.parent(PawBckLCt[0], CONTROLS)
         # More parent group Options
         cmds.select(PawBckLCt[0])
-        PawBckL_TopGrp2 = misc.insert('null', 1, PawBckL + '_TopGrp2')[0][0]
-        PawBckL_CtGrp2 = misc.insert('null', 1, PawBckL + '_CtGrp2')[0][0]
-        PawBckL_TopGrp1 = misc.insert('null', 1, PawBckL + '_TopGrp1')[0][0]
-        PawBckL_CtGrp1 = misc.insert('null', 1, PawBckL + '_CtGrp1')[0][0]
+        PawBckL_TopGrp2 = place.insert('null', 1, PawBckL + '_TopGrp2')[0][0]
+        PawBckL_CtGrp2 = place.insert('null', 1, PawBckL + '_CtGrp2')[0][0]
+        PawBckL_TopGrp1 = place.insert('null', 1, PawBckL + '_TopGrp1')[0][0]
+        PawBckL_CtGrp1 = place.insert('null', 1, PawBckL + '_CtGrp1')[0][0]
         # set RotateOrders for new groups
-        misc.setRotOrder(PawBckL_TopGrp2, 2, True)
+        place.setRotOrder(PawBckL_TopGrp2, 2, True)
         # attr
-        misc.optEnum(PawBckLCt[2], attr=assist, enum='OPTNS')
+        place.optEnum(PawBckLCt[2], attr=assist, enum='OPTNS')
         for item in attrCstm:
             cmds.addAttr(PawBckLCt[2], ln=item, at='float', h=False)
             cmds.setAttr((PawBckLCt[2] + '.' + item), cb=True)
             cmds.setAttr((PawBckLCt[2] + '.' + item), k=True)
         # parentConstrain top group
         cmds.parentConstraint(MasterCt[4], PawBckL_TopGrp2, mo=True)
-        misc.parentSwitch('PRNT2_' + PawBckL, PawBckLCt[2], PawBckL_CtGrp2, PawBckL_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        misc.parentSwitch('PRNT1_' + PawBckL, PawBckLCt[2], PawBckL_CtGrp1, PawBckL_TopGrp1, PawBckL_CtGrp2, PelvisCt[4], False, False, True, False, 'Pelvis', 0.0)
-        misc.parentSwitch('PNT_' + PawBckL, PawBckLCt[2], PawBckLCt[1], PawBckLCt[0], PawBckL_CtGrp1, PelvisCt[4], True, False, False, False, 'Pelvis', 0.0)
+        place.parentSwitch('PRNT2_' + PawBckL, PawBckLCt[2], PawBckL_CtGrp2, PawBckL_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
+        place.parentSwitch('PRNT1_' + PawBckL, PawBckLCt[2], PawBckL_CtGrp1, PawBckL_TopGrp1, PawBckL_CtGrp2, PelvisCt[4], False, False, True, False, 'Pelvis', 0.0)
+        place.parentSwitch('PNT_' + PawBckL, PawBckLCt[2], PawBckLCt[1], PawBckLCt[0], PawBckL_CtGrp1, PelvisCt[4], True, False, False, False, 'Pelvis', 0.0)
         # attrVis
-        misc.optEnum(PawBckLCt[2], attr=vis, enum='OPTNS')
+        place.optEnum(PawBckLCt[2], attr=vis, enum='OPTNS')
         for item in attrVis:
-            misc.addAttribute(PawBckLCt[2], item, 0, 1, False, 'long')
+            place.addAttribute(PawBckLCt[2], item, 0, 1, False, 'long')
 
         # BACK R  #
         PawBckR = 'foot_R'
@@ -294,27 +292,27 @@ def preBuild(
         cmds.parent(PawBckRCt[0], CONTROLS)
         # More parent group Options
         cmds.select(PawBckRCt[0])
-        PawBckR_TopGrp2 = misc.insert('null', 1, PawBckR + '_TopGrp2')[0][0]
-        PawBckR_CtGrp2 = misc.insert('null', 1, PawBckR + '_CtGrp2')[0][0]
-        PawBckR_TopGrp1 = misc.insert('null', 1, PawBckR + '_TopGrp1')[0][0]
-        PawBckR_CtGrp1 = misc.insert('null', 1, PawBckR + '_CtGrp1')[0][0]
+        PawBckR_TopGrp2 = place.insert('null', 1, PawBckR + '_TopGrp2')[0][0]
+        PawBckR_CtGrp2 = place.insert('null', 1, PawBckR + '_CtGrp2')[0][0]
+        PawBckR_TopGrp1 = place.insert('null', 1, PawBckR + '_TopGrp1')[0][0]
+        PawBckR_CtGrp1 = place.insert('null', 1, PawBckR + '_CtGrp1')[0][0]
         # set RotateOrders for new groups
-        misc.setRotOrder(PawBckR_TopGrp2, 2, True)
+        place.setRotOrder(PawBckR_TopGrp2, 2, True)
         # attr
-        misc.optEnum(PawBckRCt[2], attr=assist, enum='OPTNS')
+        place.optEnum(PawBckRCt[2], attr=assist, enum='OPTNS')
         for item in attrCstm:
             cmds.addAttr(PawBckRCt[2], ln=item, at='float', h=False)
             cmds.setAttr((PawBckRCt[2] + '.' + item), cb=True)
             cmds.setAttr((PawBckRCt[2] + '.' + item), k=True)
         # parentConstrain top group
         cmds.parentConstraint(MasterCt[4], PawBckR_TopGrp2, mo=True)
-        misc.parentSwitch('PRNT2_' + PawBckR, PawBckRCt[2], PawBckR_CtGrp2, PawBckR_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        misc.parentSwitch('PRNT1_' + PawBckR, PawBckRCt[2], PawBckR_CtGrp1, PawBckR_TopGrp1, PawBckR_CtGrp2, PelvisCt[4], False, False, True, False, 'Pelvis', 0.0)
-        misc.parentSwitch('PNT_' + PawBckR, PawBckRCt[2], PawBckRCt[1], PawBckRCt[0], PawBckR_CtGrp1, PelvisCt[4], True, False, False, False, 'Pelvis', 0.0)
+        place.parentSwitch('PRNT2_' + PawBckR, PawBckRCt[2], PawBckR_CtGrp2, PawBckR_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
+        place.parentSwitch('PRNT1_' + PawBckR, PawBckRCt[2], PawBckR_CtGrp1, PawBckR_TopGrp1, PawBckR_CtGrp2, PelvisCt[4], False, False, True, False, 'Pelvis', 0.0)
+        place.parentSwitch('PNT_' + PawBckR, PawBckRCt[2], PawBckRCt[1], PawBckRCt[0], PawBckR_CtGrp1, PelvisCt[4], True, False, False, False, 'Pelvis', 0.0)
         # attrVis
-        misc.optEnum(PawBckRCt[2], attr=vis, enum='OPTNS')
+        place.optEnum(PawBckRCt[2], attr=vis, enum='OPTNS')
         for item in attrVis:
-            misc.addAttribute(PawBckRCt[2], item, 0, 1, False, 'long')
+            place.addAttribute(PawBckRCt[2], item, 0, 1, False, 'long')
 
         # FRONT L  #
         PawFrntL = 'hand_L'
@@ -323,27 +321,27 @@ def preBuild(
         cmds.parent(PawFrntLCt[0], CONTROLS)
         # More parent group Options
         cmds.select(PawFrntLCt[0])
-        PawFrntL_TopGrp2 = misc.insert('null', 1, PawFrntL + '_TopGrp2')[0][0]
-        PawFrntL_CtGrp2 = misc.insert('null', 1, PawFrntL + '_CtGrp2')[0][0]
-        PawFrntL_TopGrp1 = misc.insert('null', 1, PawFrntL + '_TopGrp1')[0][0]
-        PawFrntL_CtGrp1 = misc.insert('null', 1, PawFrntL + '_CtGrp1')[0][0]
+        PawFrntL_TopGrp2 = place.insert('null', 1, PawFrntL + '_TopGrp2')[0][0]
+        PawFrntL_CtGrp2 = place.insert('null', 1, PawFrntL + '_CtGrp2')[0][0]
+        PawFrntL_TopGrp1 = place.insert('null', 1, PawFrntL + '_TopGrp1')[0][0]
+        PawFrntL_CtGrp1 = place.insert('null', 1, PawFrntL + '_CtGrp1')[0][0]
         # set RotateOrders for new groups
-        misc.setRotOrder(PawFrntL_TopGrp2, 2, True)
+        place.setRotOrder(PawFrntL_TopGrp2, 2, True)
         # attr
-        misc.optEnum(PawFrntLCt[2], attr=assist, enum='OPTNS')
+        place.optEnum(PawFrntLCt[2], attr=assist, enum='OPTNS')
         for item in attrCstm:
             cmds.addAttr(PawFrntLCt[2], ln=item, at='float', h=False)
             cmds.setAttr((PawFrntLCt[2] + '.' + item), cb=True)
             cmds.setAttr((PawFrntLCt[2] + '.' + item), k=True)
         # parentConstrain top group, switches
         cmds.parentConstraint(MasterCt[4], PawFrntL_TopGrp2, mo=True)
-        misc.parentSwitch('PRNT2_' + PawFrntL, PawFrntLCt[2], PawFrntL_CtGrp2, PawFrntL_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        misc.parentSwitch('PRNT1_' + PawFrntL, PawFrntLCt[2], PawFrntL_CtGrp1, PawFrntL_TopGrp1, PawFrntL_CtGrp2, ChestCt[4], False, False, True, False, 'Chest', 0.0)
-        misc.parentSwitch('PNT_' + PawFrntL, PawFrntLCt[2], PawFrntLCt[1], PawFrntLCt[0], PawFrntL_CtGrp1, ChestCt[4], True, False, False, False, 'Chest', 0.0)
+        place.parentSwitch('PRNT2_' + PawFrntL, PawFrntLCt[2], PawFrntL_CtGrp2, PawFrntL_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
+        place.parentSwitch('PRNT1_' + PawFrntL, PawFrntLCt[2], PawFrntL_CtGrp1, PawFrntL_TopGrp1, PawFrntL_CtGrp2, ChestCt[4], False, False, True, False, 'Chest', 0.0)
+        place.parentSwitch('PNT_' + PawFrntL, PawFrntLCt[2], PawFrntLCt[1], PawFrntLCt[0], PawFrntL_CtGrp1, ChestCt[4], True, False, False, False, 'Chest', 0.0)
         # attrVis
-        misc.optEnum(PawFrntLCt[2], attr=vis, enum='OPTNS')
+        place.optEnum(PawFrntLCt[2], attr=vis, enum='OPTNS')
         for item in attrVis:
-            misc.addAttribute(PawFrntLCt[2], item, 0, 1, False, 'long')
+            place.addAttribute(PawFrntLCt[2], item, 0, 1, False, 'long')
 
         # FRONT R  #
         PawFrntR = 'hand_R'
@@ -352,27 +350,27 @@ def preBuild(
         cmds.parent(PawFrntRCt[0], CONTROLS)
         # More parent group Options
         cmds.select(PawFrntRCt[0])
-        PawFrntR_TopGrp2 = misc.insert('null', 1, PawFrntR + '_TopGrp2')[0][0]
-        PawFrntR_CtGrp2 = misc.insert('null', 1, PawFrntR + '_CtGrp2')[0][0]
-        PawFrntR_TopGrp1 = misc.insert('null', 1, PawFrntR + '_TopGrp1')[0][0]
-        PawFrntR_CtGrp1 = misc.insert('null', 1, PawFrntR + '_CtGrp1')[0][0]
+        PawFrntR_TopGrp2 = place.insert('null', 1, PawFrntR + '_TopGrp2')[0][0]
+        PawFrntR_CtGrp2 = place.insert('null', 1, PawFrntR + '_CtGrp2')[0][0]
+        PawFrntR_TopGrp1 = place.insert('null', 1, PawFrntR + '_TopGrp1')[0][0]
+        PawFrntR_CtGrp1 = place.insert('null', 1, PawFrntR + '_CtGrp1')[0][0]
         # set RotateOrders for new groups
-        misc.setRotOrder(PawFrntR_TopGrp2, 2, True)
+        place.setRotOrder(PawFrntR_TopGrp2, 2, True)
         # attr
-        misc.optEnum(PawFrntRCt[2], attr=assist, enum='OPTNS')
+        place.optEnum(PawFrntRCt[2], attr=assist, enum='OPTNS')
         for item in attrCstm:
             cmds.addAttr(PawFrntRCt[2], ln=item, at='float', h=False)
             cmds.setAttr((PawFrntRCt[2] + '.' + item), cb=True)
             cmds.setAttr((PawFrntRCt[2] + '.' + item), k=True)
         # parentConstrain top group, switches
         cmds.parentConstraint(MasterCt[4], PawFrntR_TopGrp2, mo=True)
-        misc.parentSwitch('PRNT2_' + PawFrntR, PawFrntRCt[2], PawFrntR_CtGrp2, PawFrntR_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        misc.parentSwitch('PRNT1_' + PawFrntR, PawFrntRCt[2], PawFrntR_CtGrp1, PawFrntR_TopGrp1, PawFrntR_CtGrp2, ChestCt[4], False, False, True, False, 'Chest', 0.0)
-        misc.parentSwitch('PNT_' + PawFrntR, PawFrntRCt[2], PawFrntRCt[1], PawFrntRCt[0], PawFrntR_CtGrp1, ChestCt[4], True, False, False, False, 'Chest', 0.0)
+        place.parentSwitch('PRNT2_' + PawFrntR, PawFrntRCt[2], PawFrntR_CtGrp2, PawFrntR_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
+        place.parentSwitch('PRNT1_' + PawFrntR, PawFrntRCt[2], PawFrntR_CtGrp1, PawFrntR_TopGrp1, PawFrntR_CtGrp2, ChestCt[4], False, False, True, False, 'Chest', 0.0)
+        place.parentSwitch('PNT_' + PawFrntR, PawFrntRCt[2], PawFrntRCt[1], PawFrntRCt[0], PawFrntR_CtGrp1, ChestCt[4], True, False, False, False, 'Chest', 0.0)
         # attrVis
-        misc.optEnum(PawFrntRCt[2], attr=vis, enum='OPTNS')
+        place.optEnum(PawFrntRCt[2], attr=vis, enum='OPTNS')
         for item in attrVis:
-            misc.addAttribute(PawFrntRCt[2], item, 0, 1, False, 'long')
+            place.addAttribute(PawFrntRCt[2], item, 0, 1, False, 'long')
     cmds.floatField('atom_qrig_conScale', edit=True, v=current_scale)
     if face == False:
         return MasterCt, CogCt, PelvisCt, ChestCt, NeckCt, HeadCt, HipLCt, HipRCt, ShldrLCt, ShldrRCt, PawBckLCt, PawBckRCt, PawFrntLCt, PawFrntRCt,
@@ -416,9 +414,9 @@ def buildAppendages(*args):
     # return None
     aal.createReverseLeg(traversDepth=3, ballRollOffset=0.3)
     # return None
-    misc.cleanUp('Back_knee_pv_grp_L', Ctrl=True)
-    misc.cleanUp('Back_auto_ankle_parent_grp_L', Ctrl=True)
-    misc.cleanUp('Back_limb_ctrl_grp_L', Ctrl=True)
+    place.cleanUp('Back_knee_pv_grp_L', Ctrl=True)
+    place.cleanUp('Back_auto_ankle_parent_grp_L', Ctrl=True)
+    place.cleanUp('Back_limb_ctrl_grp_L', Ctrl=True)
     cmds.setAttr('Back_leg_ankle_ctrl_L.AutoAnkle', 0)
     print 4
     # return None
@@ -438,9 +436,9 @@ def buildAppendages(*args):
     cmds.floatField('atom_paw_qls_ldf_floatField', edit=True, v=-8)
     # aal.createReverseLeg()
     aal.createReverseLeg(traversDepth=3)
-    misc.cleanUp('Back_knee_pv_grp_R', Ctrl=True)
-    misc.cleanUp('Back_auto_ankle_parent_grp_R', Ctrl=True)
-    misc.cleanUp('Back_limb_ctrl_grp_R', Ctrl=True)
+    place.cleanUp('Back_knee_pv_grp_R', Ctrl=True)
+    place.cleanUp('Back_auto_ankle_parent_grp_R', Ctrl=True)
+    place.cleanUp('Back_limb_ctrl_grp_R', Ctrl=True)
     cmds.setAttr('Back_leg_ankle_ctrl_R.AutoAnkle', 0)
 
     cmds.floatFieldGrp('atom_qls_anklePvFlip_floatFieldGrp', edit=True, v2=-2)
@@ -471,17 +469,17 @@ def buildAppendages(*args):
     aal.createBoneScale(name='', joint='front_shoulder_jnt_L', control='shldr_L', lengthAttr='scaleZ')
     # scale lower arm
     aal.createBoneScale(name='', joint='front_lower_knee_jnt_L', control='Front_pv_ctrl_L_Twist', lengthAttr='scaleZ')
-    misc.hijackScale('front_twist_01_jnt_L', 'front_lower_knee_jnt_L')
-    misc.hijackScale('front_twist_02_jnt_L', 'front_lower_knee_jnt_L')
-    misc.hijackScale('front_twist_03_jnt_L', 'front_lower_knee_jnt_L')
+    place.hijackScale('front_twist_01_jnt_L', 'front_lower_knee_jnt_L')
+    place.hijackScale('front_twist_02_jnt_L', 'front_lower_knee_jnt_L')
+    place.hijackScale('front_twist_03_jnt_L', 'front_lower_knee_jnt_L')
     # return None
     # scale hand
     aal.createBoneScale(name='', joint='Front_limb_ctrl_grp_L', control='hand_L', newAttr='hand', unified=True)
     # return None
     # clean
-    misc.cleanUp('Front_knee_pv_grp_L', Ctrl=True)
-    misc.cleanUp('Front_auto_ankle_parent_grp_L', Ctrl=True)
-    misc.cleanUp('Front_limb_ctrl_grp_L', Ctrl=True)
+    place.cleanUp('Front_knee_pv_grp_L', Ctrl=True)
+    place.cleanUp('Front_auto_ankle_parent_grp_L', Ctrl=True)
+    place.cleanUp('Front_limb_ctrl_grp_L', Ctrl=True)
     # return None
     cmds.setAttr('Front_leg_ankle_ctrl_L.AutoAnkle', 0)
     cmds.setAttr('Front_pv_ctrl_L_Twist.TwistOff_On', 0)
@@ -512,15 +510,15 @@ def buildAppendages(*args):
     aal.createBoneScale(name='', joint='front_shoulder_jnt_R', control='shldr_R', lengthAttr='scaleZ')
     # scale lower arm
     aal.createBoneScale(name='', joint='front_lower_knee_jnt_R', control='Front_pv_ctrl_R_Twist', lengthAttr='scaleZ')
-    misc.hijackScale('front_twist_01_jnt_R', 'front_lower_knee_jnt_R')
-    misc.hijackScale('front_twist_02_jnt_R', 'front_lower_knee_jnt_R')
-    misc.hijackScale('front_twist_03_jnt_R', 'front_lower_knee_jnt_R')
+    place.hijackScale('front_twist_01_jnt_R', 'front_lower_knee_jnt_R')
+    place.hijackScale('front_twist_02_jnt_R', 'front_lower_knee_jnt_R')
+    place.hijackScale('front_twist_03_jnt_R', 'front_lower_knee_jnt_R')
     # scale hand
     aal.createBoneScale(name='', joint='Front_limb_ctrl_grp_R', control='hand_R', newAttr='hand', unified=True)
 
-    misc.cleanUp('Front_knee_pv_grp_R', Ctrl=True)
-    misc.cleanUp('Front_auto_ankle_parent_grp_R', Ctrl=True)
-    misc.cleanUp('Front_limb_ctrl_grp_R', Ctrl=True)
+    place.cleanUp('Front_knee_pv_grp_R', Ctrl=True)
+    place.cleanUp('Front_auto_ankle_parent_grp_R', Ctrl=True)
+    place.cleanUp('Front_limb_ctrl_grp_R', Ctrl=True)
     cmds.setAttr('Front_leg_ankle_ctrl_R.AutoAnkle', 0)
     cmds.setAttr('Front_pv_ctrl_R_Twist.TwistOff_On', 0)
 
@@ -567,7 +565,7 @@ def buildSplines(*args):
     '''
     face = None
     check = cmds.checkBox('atom_rat_faceCheck', query=True, v=True)
-    X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
+    # X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
     X = 3
     if check == 0:
         face = False
@@ -597,8 +595,8 @@ def buildSplines(*args):
 
         # tailRig.placeIkJnts()
         for i in tailRig.topGrp2:
-            misc.cleanUp(i, World=True)
-        #misc.cleanUp('tail_mid_UpVctrGdGrp', Ctrl=True)
+            place.cleanUp(i, World=True)
+        #place.cleanUp('tail_mid_UpVctrGdGrp', Ctrl=True)
         '''
 
     # SPINE
@@ -624,7 +622,7 @@ def buildSplines(*args):
     cmds.parentConstraint(spineStrt, spineName + '_S_IK_PrntGrp', mo=True)
     cmds.parentConstraint(spineEnd, spineName + '_E_IK_PrntGrp', mo=True)
     cmds.parentConstraint(spineName + '_S_IK_Jnt', spineRoot, mo=True)
-    misc.hijackCustomAttrs(spineName + '_IK_CtrlGrp', spineAttr)
+    place.hijackCustomAttrs(spineName + '_IK_CtrlGrp', spineAttr)
     # set options
     cmds.setAttr(spineAttr + '.' + spineName + 'Vis', 0)
     cmds.setAttr(spineAttr + '.' + spineName + 'Root', 0)
@@ -659,7 +657,7 @@ def buildSplines(*args):
     cmds.parentConstraint(neckPrnt, neckName + '_IK_CtrlGrp')
     cmds.parentConstraint(neckStrt, neckName + '_S_IK_PrntGrp')
     cmds.parentConstraint(neckEnd, neckName + '_E_IK_PrntGrp')
-    misc.hijackCustomAttrs(neckName + '_IK_CtrlGrp', neckAttr)
+    place.hijackCustomAttrs(neckName + '_IK_CtrlGrp', neckAttr)
     # set options
     cmds.setAttr(neckAttr + '.' + neckName + 'Vis', 0)
     cmds.setAttr(neckAttr + '.' + neckName + 'Root', 0)
@@ -700,7 +698,7 @@ def hairSplines(X=1):
         cmds.parentConstraint(neckPrnt, name + '_IK_CtrlGrp', mo=True)
         cmds.parentConstraint(neckStrt, name + '_S_IK_PrntGrp', mo=True)
         cmds.parentConstraint(neckEnd, name + '_E_IK_PrntGrp', mo=True)
-        misc.hijackCustomAttrs(name + '_IK_CtrlGrp', neckAttr)
+        place.hijackCustomAttrs(name + '_IK_CtrlGrp', neckAttr)
         # set options
         cmds.setAttr(neckAttr + '.' + name + 'Vis', 1)
         cmds.setAttr(neckAttr + '.' + name + 'Root', 0)
@@ -830,10 +828,10 @@ def deform(*args):
         cmds.setAttr(abdomenName + '_E_IK_Cntrl.LockOrientOffOn', 1)
         # attrs
         OptAttr(abdomenAttr, 'AbdomenSpline')
-        misc.hijackCustomAttrs(abdomenName + '_IK_CtrlGrp', AbCt[2])
-        misc.hijackVis(AbCt[2], 'cog', name='abdomen', default=None, suffix=False)
+        place.hijackCustomAttrs(abdomenName + '_IK_CtrlGrp', AbCt[2])
+        place.hijackVis(AbCt[2], 'cog', name='abdomen', default=None, suffix=False)
         # cleanup
-        misc.cleanUp(AbCt[0], Ctrl=True)
+        place.cleanUp(AbCt[0], Ctrl=True)
 
     # SEMISPINALESTHORACIS
     SSTName = 'SST'
@@ -873,10 +871,10 @@ def deform(*args):
     cmds.setAttr(SSTName + '_E_IK_Cntrl.LockOrientOffOn', 1)
     # attrs
     OptAttr(sstCt[2], 'SSTSpline')
-    misc.hijackCustomAttrs(SSTName + '_IK_CtrlGrp', sstCt[2])
-    misc.hijackVis(sstCt[2], 'cog', name='semispinalesThoracis', default=None, suffix=False)
+    place.hijackCustomAttrs(SSTName + '_IK_CtrlGrp', sstCt[2])
+    place.hijackVis(sstCt[2], 'cog', name='semispinalesThoracis', default=None, suffix=False)
     # cleanup
-    misc.cleanUp(sstCt[0], Ctrl=True)
+    place.cleanUp(sstCt[0], Ctrl=True)
 
     # LONGISSIMUSCAPITIS
     LCName = 'LC'
@@ -916,10 +914,10 @@ def deform(*args):
     cmds.setAttr(LCName + '_E_IK_Cntrl.LockOrientOffOn', 1)
     # attrs
     OptAttr(lcCt[2], 'LCSpline')
-    misc.hijackCustomAttrs(LCName + '_IK_CtrlGrp', lcCt[2])
-    misc.hijackVis(lcCt[2], 'cog', name='longissimusCapitis', default=None, suffix=False)
+    place.hijackCustomAttrs(LCName + '_IK_CtrlGrp', lcCt[2])
+    place.hijackVis(lcCt[2], 'cog', name='longissimusCapitis', default=None, suffix=False)
     # cleanup
-    misc.cleanUp(lcCt[0], Ctrl=True)
+    place.cleanUp(lcCt[0], Ctrl=True)
 
     # STERNOCLEIDOMASTOID
     if cmds.objExists('sternocleidomastoid_jnt_01'):
@@ -960,10 +958,10 @@ def deform(*args):
         cmds.setAttr(SCMName + '_E_IK_Cntrl.LockOrientOffOn', 1)
         # attrs
         OptAttr(scmCt[2], 'SCMSpline')
-        misc.hijackCustomAttrs(SCMName + '_IK_CtrlGrp', scmCt[2])
-        misc.hijackVis(scmCt[2], 'cog', name='sternocleidomastoid', default=None, suffix=False)
+        place.hijackCustomAttrs(SCMName + '_IK_CtrlGrp', scmCt[2])
+        place.hijackVis(scmCt[2], 'cog', name='sternocleidomastoid', default=None, suffix=False)
         # cleanup
-        misc.cleanUp(scmCt[0], Ctrl=True)
+        place.cleanUp(scmCt[0], Ctrl=True)
 
     ###
         # STERNOCLEIDOMASTOID_L
@@ -1005,10 +1003,10 @@ def deform(*args):
         cmds.setAttr(SCM_L_Name + '_E_IK_Cntrl.LockOrientOffOn', 1)
         # attrs
         OptAttr(scm_L_Ct[2], 'SCM_L_Spline')
-        misc.hijackCustomAttrs(SCM_L_Name + '_IK_CtrlGrp', scm_L_Ct[2])
-        misc.hijackVis(scm_L_Ct[2], 'cog', name='sternocleidomastoid_L', default=None, suffix=False)
+        place.hijackCustomAttrs(SCM_L_Name + '_IK_CtrlGrp', scm_L_Ct[2])
+        place.hijackVis(scm_L_Ct[2], 'cog', name='sternocleidomastoid_L', default=None, suffix=False)
         # cleanup
-        misc.cleanUp(scm_L_Ct[0], Ctrl=True)
+        place.cleanUp(scm_L_Ct[0], Ctrl=True)
     ###
 
     # STERNOCLEIDOMASTOID_R
@@ -1050,10 +1048,10 @@ def deform(*args):
         cmds.setAttr(SCM_R_Name + '_E_IK_Cntrl.LockOrientOffOn', 1)
         # attrs
         OptAttr(scm_R_Ct[2], 'SCM_R_Spline')
-        misc.hijackCustomAttrs(SCM_R_Name + '_IK_CtrlGrp', scm_R_Ct[2])
-        misc.hijackVis(scm_R_Ct[2], 'cog', name='sternocleidomastoid_R', default=None, suffix=False)
+        place.hijackCustomAttrs(SCM_R_Name + '_IK_CtrlGrp', scm_R_Ct[2])
+        place.hijackVis(scm_R_Ct[2], 'cog', name='sternocleidomastoid_R', default=None, suffix=False)
         # cleanup
-        misc.cleanUp(scm_R_Ct[0], Ctrl=True)
+        place.cleanUp(scm_R_Ct[0], Ctrl=True)
 
     # STERNALTHYROID
     if cmds.objExists('sternalThyroid_jnt_01'):
@@ -1094,10 +1092,10 @@ def deform(*args):
         cmds.setAttr(STName + '_E_IK_Cntrl.LockOrientOffOn', 1)
         # attrs
         OptAttr(stCt[2], 'STSpline')
-        misc.hijackCustomAttrs(STName + '_IK_CtrlGrp', stCt[2])
-        misc.hijackVis(stCt[2], 'cog', name='sternalThyroid', default=None, suffix=False)
+        place.hijackCustomAttrs(STName + '_IK_CtrlGrp', stCt[2])
+        place.hijackVis(stCt[2], 'cog', name='sternalThyroid', default=None, suffix=False)
         # cleanup
-        misc.cleanUp(stCt[0], Ctrl=True)
+        place.cleanUp(stCt[0], Ctrl=True)
 
     # CLEIDOCERVICALIS_L
     if cmds.objExists('cleidocervicalis_jnt_01_L'):
@@ -1141,10 +1139,10 @@ def deform(*args):
         cmds.setAttr(CC_LName + '_E_IK_Cntrl.LockOrientOffOn', 1)
         # attrs
         OptAttr(cc_lCt[2], 'CC_LSpline')
-        misc.hijackCustomAttrs(CC_LName + '_IK_CtrlGrp', cc_lCt[2])
-        misc.hijackVis(cc_lCt[2], 'cog', name='cleidocervicalisL', default=None, suffix=False)
+        place.hijackCustomAttrs(CC_LName + '_IK_CtrlGrp', cc_lCt[2])
+        place.hijackVis(cc_lCt[2], 'cog', name='cleidocervicalisL', default=None, suffix=False)
         # cleanup
-        misc.cleanUp(cc_lCt[0], Ctrl=True)
+        place.cleanUp(cc_lCt[0], Ctrl=True)
 
     # CLEIDOCERVICALIS_R
     if cmds.objExists('cleidocervicalis_jnt_01_R'):
@@ -1188,10 +1186,10 @@ def deform(*args):
         cmds.setAttr(CC_RName + '_E_IK_Cntrl.LockOrientOffOn', 1)
         ##
         OptAttr(cc_rCt[2], 'CC_RSpline')
-        misc.hijackCustomAttrs(CC_RName + '_IK_CtrlGrp', cc_rCt[2])
-        misc.hijackVis(cc_rCt[2], 'cog', name='cleidocervicalisR', default=None, suffix=False)
+        place.hijackCustomAttrs(CC_RName + '_IK_CtrlGrp', cc_rCt[2])
+        place.hijackVis(cc_rCt[2], 'cog', name='cleidocervicalisR', default=None, suffix=False)
         # cleanup
-        misc.cleanUp(cc_rCt[0], Ctrl=True)
+        place.cleanUp(cc_rCt[0], Ctrl=True)
     # Check for any corrective blendshapes
     abl.buildCorrectiveBody()
 

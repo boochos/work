@@ -3,7 +3,9 @@ import os
 import maya.OpenMaya as OpenMaya
 import maya.cmds as cmds
 import maya.mel as mm
-import atom_ui_lib as ui
+import webrImport as web
+# web
+ui = web.mod('atom_ui_lib')
 
 
 class modelPanelUtils(object):

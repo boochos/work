@@ -1,9 +1,10 @@
 import maya.cmds as cmds
-import atom_ui_lib as uil
-reload(uil)
-import atom_tag_lib as atl
-import os
 from pymel.core import *
+import os
+import webrImport as web
+# web
+uil = web.mod('atom_ui_lib')
+atl = web.mod('atom_tag_lib')
 
 
 class RefreshCallBack(object):
@@ -19,8 +20,12 @@ class RefreshCallBack(object):
 class BuildSnakeFacerigCallback(object):
 
     def CMD(self, *args):
-        import atom_face_lib
-        atom_face_lib.buildSnakeFace()
+        pass
+
+        import webrImport as web
+        af = web.mod('atom_face_lib')
+        af.buildSnakeFace()
+
 
 #-------------
 # Name        :createTagGroups
@@ -103,10 +108,10 @@ def createTagGroups(self):
                 for cObj in cObjList:
                     obj = ls(cObj)[0]
                     obj.setParent(tag_grp_name)
-# GhostDog Frame Layout
 
 
 def ghostDogFrameLayout(*args):
+    '''
     refresh = RefreshCallBack('atom_win')
     main = cmds.frameLayout('atom_ghostBuddy_frameLayout', label='Ghost Dog Setup',
                             cc=refresh.RefreshCall, ec=refresh.RefreshCall,
@@ -131,6 +136,8 @@ def ghostDogFrameLayout(*args):
     cmds.setParent('..')
     cmds.setParent('..')
     return main
+    '''
+    pass
 
 
 def ratFrameLayout(*args):
@@ -516,7 +523,7 @@ def win(*args):
     cmds.setParent('..')
 
     # Ghost Buddy
-    atom_ghstDog_frameLayout = ghostDogFrameLayout()
+    # atom_ghstDog_frameLayout = ghostDogFrameLayout()
 
     atom_rat_frameLayout = ratFrameLayout()
 
@@ -532,8 +539,9 @@ def win(*args):
                                              mh=5, mw=5, cll=True, cl=True)
 
     atom_ccst_columnLayout = cmds.columnLayout('atom_ccst_main_columnLayout', adj=True, rs=5)
-    atom_ccst_path = os.path.expanduser('~') + '/GitHub/controlShapes/'
-    #print atom_ccst_path, '________________'
+    import atom_controlShapes_lib as ac
+    reload(ac)
+    atom_ccst_path = ac.path
     atom_ccst_formLayout = cmds.formLayout('atom_csst_formLayout', numberOfDivisions=100)
     atom_csst_exportPath_text = cmds.text('atom_csst_exportPath_text', label='Export Path:', align='left', width=70, height=14)
     atom_csst_exportPath_textField = cmds.textField('atom_csst_exportPath_textField', text=atom_ccst_path)
@@ -588,7 +596,6 @@ def win(*args):
                                 (atom_qls_frameLayout, 'left', 5), (atom_qls_frameLayout, 'right', 5),
                                 (atom_qrig_frameLayout, 'left', 5), (atom_qrig_frameLayout, 'right', 5),
                                 (atom_srig_frameLayout, 'left', 5), (atom_srig_frameLayout, 'right', 5),
-                                (atom_ghstDog_frameLayout, 'left', 5), (atom_ghstDog_frameLayout, 'right', 5),
                                 (atom_rat_frameLayout, 'left', 5), (atom_rat_frameLayout, 'right', 5),
                                 (atom_reindeer_frameLayout, 'left', 5), (atom_reindeer_frameLayout, 'right', 5),
                                 (atom_biped_frameLayout, 'left', 5), (atom_biped_frameLayout, 'right', 5),
@@ -608,8 +615,7 @@ def win(*args):
                                    (atom_qls_frameLayout, 'top', 5, atom_bls_frameLayout),
                                    (atom_qrig_frameLayout, 'top', 5, atom_qls_frameLayout),
                                    (atom_srig_frameLayout, 'top', 5, atom_qrig_frameLayout),
-                                   (atom_ghstDog_frameLayout, 'top', 5, atom_srig_frameLayout),
-                                   (atom_rat_frameLayout, 'top', 5, atom_ghstDog_frameLayout),
+                                   (atom_rat_frameLayout, 'top', 5, atom_srig_frameLayout),
                                    (atom_reindeer_frameLayout, 'top', 5, atom_rat_frameLayout),
                                    (atom_biped_frameLayout, 'top', 5, atom_reindeer_frameLayout),
                                    (atom_ccst_frameLayout, 'top', 5, atom_biped_frameLayout)]

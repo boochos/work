@@ -1,8 +1,10 @@
-import key_ui_core
 import maya.cmds as cmds
 import maya.mel as mm
 import os
-import key_sys_lib
+import webrImport as web
+# web
+key_sys_lib = web.mod('key_sys_lib')
+key_ui_core = web.mod('key_ui_core')
 
 
 #--------------------------------

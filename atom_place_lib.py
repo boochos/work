@@ -1,10 +1,386 @@
 import maya.OpenMaya as OpenMaya
 import maya.cmds as cmds
 import maya.mel as mel
+import os
 #
 import webrImport as web
 # web
-place = web.mod('atom_placement_lib')
+ui = web.mod('atom_ui_lib')
+
+
+# place Clusters on CV derived from 'curve' variable
+# curve
+# curve from which to make clusters
+# clstrSuffix
+# suffix for cluster
+
+
+def clstrOnCV(curve, clstrSuffix):
+    clstr = []
+    i = 0
+    num = cmds.getAttr((curve + '.cv[*]'))
+    for item in num:
+        c = cmds.cluster((curve + '.cv[' + str(i) + ']'), n=(clstrSuffix + str(i)), envelope=True)[1]
+        i = i + 1
+        clstr.append(c)
+    return clstr
+
+# places curve on points derived from selection
+
+
+def curve(name, points):
+    '''\n
+    name = name...
+    points = list of objects from which xfrom can be derived
+    '''
+    pos = []
+    if len(points) > 2:
+        for item in points:
+            x = cmds.xform(item, q=True, t=True, ws=True)
+            pos.append(x)
+        curve = cmds.curve(p=pos, name=(name), d=2)
+        return curve
+    else:
+        mel.eval('warning \"' + '////... select 3 objects ...////' + '\";')
+        return None
+
+# place joints on positions derived from selection
+# order(boolean) = placement order
+# 0 = first to last selected object
+# 1 = last to first selected object
+# jntSuffix
+# suffix for joints
+
+
+def joint(order, jntSuffix, pad=2, rpQuery=True):
+    sel = cmds.ls(sl=True, fl=True, l=True)
+    if len(sel) > 0:
+        if order == 0:
+            jnt = []
+            cmds.select(cl=True)
+            i = 1
+            for item in sel:
+                if rpQuery == True:
+                    pos = cmds.xform(item, q=True, rp=True, ws=True)
+                else:
+                    pos = cmds.xform(item, q=True, t=True, ws=True)
+                plc = cmds.joint(name=(jntSuffix + '_' + str(('%0' + str(pad) + 'd') % (i))), p=pos)
+                jnt.append(plc)
+                i = i + 1
+            cmds.select(sel)
+            return jnt
+        elif order == 1:
+            rvrsSel = []
+            for i in range(len(sel), 0, -1):  # (reverse order loop - range(size of(array),stop@,increment by)
+                rvrsSel.append(sel[i - 1])
+            sel = list(rvrsSel)
+            jnt = []
+            cmds.select(cl=True)
+            for item in sel:
+                if rpQuery == True:
+                    pos = cmds.xform(item, q=True, rp=True, ws=True)
+                else:
+                    pos = cmds.xform(item, q=True, t=True, ws=True)
+                plc = cmds.joint(name=(jntSuffix + '#'), p=pos)
+                jnt.append(plc)
+            cmds.select(sel)
+            return jnt
+    else:
+        mel.eval('warning \"' + '////... select at least one object ...////' + '\";')
+        return None
+
+# place locators on positions derived from selection
+# locSuffix
+# suffix for spaceLocators
+
+
+def loc(locSuffix, obj=None):
+    sel = []
+    if obj == None:
+        sel = cmds.ls(sl=True, fl=True, l=True)
+    else:
+        sel.append(obj)
+    if len(sel) > 0:
+        loc = []
+        cmds.select(cl=True)
+        for item in sel:
+            pos = cmds.xform(item, q=True, t=True, ws=True)
+            rot = cmds.xform(item, q=True, ro=True, ws=True)
+            n = cmds.spaceLocator(name=locSuffix)[0]
+            cmds.xform(n, t=(pos), ro=(rot))
+            loc.append(n)
+        cmds.select(sel)
+        # returns list
+        return loc
+    else:
+        mel.eval('warning \"' + '////... select at least one object ...////' + '\";')
+        return None
+
+# place nulls on positions derived from selection
+# nllSuffix
+# suffix for null
+
+
+def null(nllSuffix, order=None):
+    sel = cmds.ls(sl=True, fl=True, l=True)
+    if len(sel) > 0:
+        null = []
+        cmds.select(cl=True)
+        for item in sel:
+            pos = cmds.xform(item, q=True, rp=True, ws=True)
+            rot = cmds.xform(item, q=True, ro=True, ws=True)
+            n = cmds.group(name=nllSuffix, em=True)
+            if order != None:
+                cmds.xform(n, roo=order)
+            cmds.xform(n, t=pos, ro=rot)
+            null.append(n)
+        cmds.select(sel)
+        return null
+
+    else:
+        mel.eval('warning \"' + '////... select at least one object ...////' + '\";')
+        return None
+
+
+def circle(name, obj, shape, size, color, sections=8, degree=1, normal=(0, 0, 1), orient=True):
+    '''
+    place circle
+    name     = name of circle
+    obj      = object whose position to match
+    shape    = shape of circle to import(name of text file)
+    sections = number of CVs
+    degree   = Linear(1) or Cubic(3) ,has to be int
+    normal   = plane on which to build circle
+    '''
+    path = os.path.expanduser('~') + '/GitHub/controlShapes/'
+    Circle = []
+    if type(obj) != list:
+        pos = cmds.xform(obj, q=True, rp=True, ws=True)
+        rot = cmds.xform(obj, q=True, ro=True, ws=True)
+        n = cmds.circle(name=name, center=(0, 0, 0), normal=normal, sweep=360, radius=1, degree=degree, sections=sections, constructionHistory=1)[0]
+        cmds.xform(n, t=pos)
+        if orient:
+            cmds.xform(n, ro=rot)
+        else:
+            print 'no orient'
+        Circle.append(n)
+        # import shape
+        cmds.select(n)
+        ui.importCurveShape(shape, path, size, color)
+        return Circle
+    elif len(obj) > 0:
+        for item in obj:
+            pos = cmds.xform(item, q=True, rp=True, ws=True)
+            rot = cmds.xform(item, q=True, ro=True, ws=True)
+            n = cmds.circle(name=name, center=(0, 0, 0), normal=normal, sweep=360, radius=1, degree=degree, sections=sections, constructionHistory=1)[0]
+            cmds.xform(n, t=pos, ro=rot)
+            Circle.append(n)
+            cmds.select(n)
+            ui.importCurveShape(shape, path, size, color)
+        return Circle
+
+    else:
+        mel.eval('warning \"' + '////... No object specified under \'obj\' variable ...////' + '\";')
+        return None
+
+# Version 2 (no selection required, state object(s) to match as variable "obj")
+# place nulls on positions derived from selection
+# nllSuffix
+# suffix for null
+
+
+def null2(nllSuffix, obj, orient=True):
+    null = []
+    if type(obj) != list:
+        pos = cmds.xform(obj, q=True, rp=True, ws=True)
+        rot = cmds.xform(obj, q=True, ro=True, ws=True)
+        n = cmds.group(name=nllSuffix, em=True)
+        cmds.xform(n, t=pos, ro=rot, ws=True)
+        if orient == False:
+            cmds.xform(n, ro=(0, 0, 0))
+        null.append(n)
+        return null
+    elif len(obj) > 0:
+        for item in obj:
+            pos = cmds.xform(item, q=True, rp=True, ws=True)
+            rot = cmds.xform(item, q=True, ro=True, ws=True)
+            n = cmds.group(name=nllSuffix, em=True)
+            cmds.xform(n, t=pos, ro=rot, ws=True)
+            if orient == False:
+                cmds.xform(n, ro=(0, 0, 0))
+            null.append(n)
+        return null
+    else:
+        mel.eval('warning \"' + '////... \"obj\" variable must be a single object or list type ...////' + '\";')
+        return None
+
+# places controller object(controller, controllerOffset, group)
+
+
+class Controller():
+    # initialize
+
+    def __init__(self, name, obj, orient=True, shape='diamond_ctrl', size=1, color=8, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=False):
+        self.name = name
+        self.obj = obj
+        self.orient = orient
+        self.shape = shape
+        self.size = size
+        self.color = color
+        self.sections = sections
+        self.degree = degree
+        self.normal = normal
+        self.setChannels = setChannels
+        self.groups = groups
+
+    # conditions
+    def condition(self):
+        if type(self.obj) == list:
+            if len(self.obj) == 1:
+                self.createController()
+            else:
+                mel.eval('warning \"' + '////... \'obj\' variable has to be only item in list ...////' + '\";')
+        elif len(self.obj) > 0:
+            self.createController()
+        else:
+            mel.eval('warning \"' + '////... \'obj\' variable can only be one object...////' + '\";')
+
+    # create
+    def createController(self):
+        ct = circle(self.name, self.obj, self.shape, self.size * (0.3), self.color, self.sections, self.degree, self.normal)[0]
+        ctO = circle(self.name + '_Offset', self.obj, self.shape, self.size * (0.25), self.color, self.sections, self.degree, self.normal)[0]
+        gp = null2(self.name + '_Grp', self.obj)[0]
+        if self.groups == True:
+            ctgp = null2(self.name + '_CtGrp', self.obj)[0]
+            topgp = null2(self.name + '_TopGrp', self.obj)[0]
+            cmds.parent(ct, ctgp)
+            cmds.parent(ctgp, topgp)
+            if self.setChannels == True:
+                setChannels(ctgp, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False], other=[False, True])
+                setChannels(topgp, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False], other=[False, True])
+
+        # parent
+        cmds.parent(gp, ctO)
+        cmds.parent(ctO, ct)
+        # align orient query
+        if self.orient == False:
+            if self.groups == True:
+                cmds.setAttr(topgp + '.rotate', 0, 0, 0)
+            else:
+                cmds.setAttr(ct + '.rotate', 0, 0, 0)
+        elif self.orient != False and self.orient != True:
+            rot = cmds.xform(self.orient, query=True, ws=True, ro=True)
+            if self.groups == True:
+                cmds.setAttr(topgp + '.rotate', rot[0], rot[1], rot[2])
+            else:
+                cmds.setAttr(ct + '.rotate', rot[0], rot[1], rot[2])
+        # attrs
+        # ct
+        attr = 'Offset_Vis'
+        addAttribute(ct, 'Offset_Vis', 0, 1, False, 'long')
+        # ctO
+        cmds.connectAttr(ct + '.' + attr, ctO + '.visibility')
+        # gp
+        # Done
+        cmds.select(cl=True)
+        if self.setChannels == True:
+            setChannels(ct, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False], other=[False, True])
+            setChannels(ctO, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[False, False, False], other=[False, True])
+            setChannels(gp, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False], other=[False, True])
+            cmds.setAttr(ctO + '.visibility', cb=False)
+            i = cmds.getAttr(ctO + '.visibility', cb=True)
+
+        if self.groups == True:
+            return topgp, ctgp, ct, ctO, gp
+        else:
+            return ct, ctO, gp
+
+
+def twoJointPV(name, ik, distance=1, constrain=True, size=1):
+    sj = cmds.ikHandle(ik, q=True, sj=True)
+    Gp = null2(name + '_PvGrp', sj, False)[0]
+    Pv = circle(name + '_PV', sj, 'diamond_ctrl', size * 1, 17, 8, 1, (0, 0, 1))[0]
+    cmds.parent(Pv, Gp)
+    X = cmds.getAttr(ik + '.poleVectorX')
+    Y = cmds.getAttr(ik + '.poleVectorY')
+    Z = cmds.getAttr(ik + '.poleVectorZ')
+    cmds.setAttr(Pv + '.translateX', distance * X)
+    cmds.setAttr(Pv + '.translateY', distance * Y)
+    cmds.setAttr(Pv + '.translateZ', distance * Z)
+    if constrain == True:
+        cmds.poleVectorConstraint(Pv, ik)
+    return Gp, Pv
+
+
+def controllerDownChain(root, name, pad=2, base=None, parent=None, shape='loc_ctrl',
+                        color=17, size=10, groups=True, orient=False, suffix=None,
+                        scale=True, setChannel=True, clone=False, fk=False):
+    '''\n
+
+    '''
+    result = []
+    control_chain = []
+    clone_chain = []
+    cmds.select(root, hi=True)
+    sel = cmds.ls(sl=True, typ='transform')
+    i = 1
+    for obj in sel:
+        if pad > 0:
+            num = '_' + str(('%0' + str(pad) + 'd') % (i))
+        else:
+            num = ''
+        # SUFFIX
+        if suffix != None:
+            ctrl = Controller(name + num + '_' + suffix, obj, shape=shape, color=color, size=size, groups=groups, orient=orient)
+        else:
+            ctrl = Controller(name + num, obj, shape=shape, color=color, size=size, groups=groups, orient=orient)
+        Control = ctrl.createController()
+        control_chain.append(Control)
+        # CLONE
+        if clone == False:
+            cmds.parentConstraint(Control[4], obj, mo=True)
+        else:
+            clone_parent = null2(Control[2] + '_CloneTopGrp', obj, orient)[0]
+            clone_child = null2(Control[2] + '_CloneCtGrp', obj, orient)[0]
+            clone_offset = null2(Control[2] + '_CloneOffstGrp', obj, orient)[0]
+            cmds.parentConstraint(clone_offset, obj, mo=True)
+            clone_set = [clone_parent, clone_child, clone_offset]
+            clone_chain.append(clone_set)
+            cmds.parent(clone_offset, clone_child)
+            cmds.parent(clone_child, clone_parent)
+            hijack(clone_offset, Control[3], scale=False, visibility=False)
+            hijack(clone_child, Control[2], scale=False, visibility=False)
+        # BASE
+        if base != None:
+            cmds.parentConstraint(base, Control[0], mo=True)
+        # PARENT
+        if parent != None:
+            cmds.parent(Control[0], parent)
+        # SETCHANNEL
+        if setChannel != True:
+            for item in Control:
+                setChannels(item, translate=[False, True], rotate=[False, True], scale=[False, True], visibility=[True, False, False])
+        # SCALE
+        if scale == True:
+            if clone == False:
+                hijackScale(obj, Control[2])
+            else:
+                hijackScale(obj, clone_child)
+                hijackScale(clone_child, Control[2])
+                scaleUnlock(Control[2])
+        i = i + 1
+    # FK
+    if fk == True:
+        num = len(control_chain)
+        j = 1
+        for item in control_chain:
+            if num > j:
+                cmds.parent(control_chain[j][0], item[2])
+                cmds.parentConstraint(item[3], control_chain[j][0], mo=True)
+                if clone == True:
+                    cmds.parent(clone_chain[j][0], clone_chain[j - 1][2])
+            j = j + 1
+    return control_chain, clone_chain
 
 
 def convertFlipValue(flipVar):
@@ -196,14 +572,14 @@ def insert(what, where, name, order=None):
         obj = None
         if what == 'null':
             if order != None:
-                obj = place.null(name, order)
+                obj = null(name, order)
             else:
-                obj = place.null(name)
+                obj = null(name)
         elif what == 'loc':
             if order != None:
-                obj = place.loc(name, order)[0]
+                obj = loc(name, order)[0]
             else:
-                obj = place.loc(name)[0]
+                obj = loc(name)[0]
 
         else:
             mel.eval('warning \"' + '////...  -what-  has two options: \'loc\' or \'null\' ...////' + '\";')
@@ -251,11 +627,6 @@ def insert(what, where, name, order=None):
     else:
         mel.eval('warning \"' + '////... select at least one object ...////' + '\";')
         return None
-
-
-def selectionList():
-    sel = cmds.ls(sl=True)
-    return sel
 
 
 def addAttribute(objList, attrList, minimum, maximum, keyable, attrType):
@@ -528,7 +899,7 @@ def guideLine(obj1, obj2, Name):
     curve = cmds.rename(curveTmp, (Name + '_crv#'))
     cmds.setAttr(curve + '.overrideEnabled', 1)
     cmds.setAttr(curve + '.overrideDisplayType', 1)
-    clstr = place.clstrOnCV(curve, Name + '___' + obj1 + '___' + obj2)
+    clstr = clstrOnCV(curve, Name + '___' + obj1 + '___' + obj2)
     cmds.setAttr(clstr[0] + '.visibility', 0)
     cmds.setAttr(clstr[1] + '.visibility', 0)
     cmds.pointConstraint(obj1, clstr[0], mo=False, w=1.0)
@@ -595,8 +966,8 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
     # create point switch
     if Pos == True:
         # create and constrain matching Obj1Gp and Obj2Gp
-        PosOffGp = place.null2(name + '_PosOffGp', Ct)[0]
-        PosOnGp = place.null2(name + '_PosOnGp', Ct)[0]
+        PosOffGp = null2(name + '_PosOffGp', Ct)[0]
+        PosOnGp = null2(name + '_PosOnGp', Ct)[0]
         cmds.parent(PosOffGp, TopGp)
         cmds.parent(PosOnGp, TopGp)
         cmds.pointConstraint(ObjOff, PosOffGp, w=1.0, mo=True)
@@ -618,8 +989,8 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
             mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + CtGp + ObjOff + ObjOn + '\";')
         else:
             # constrain matching Obj1Gp and Obj2Gp
-            OrntOffGp = place.null2(name + '_OrntOffGp', Ct)[0]
-            OrntOnGp = place.null2(name + '_OrntOnGp', Ct)[0]
+            OrntOffGp = null2(name + '_OrntOffGp', Ct)[0]
+            OrntOnGp = null2(name + '_OrntOnGp', Ct)[0]
             setRotOrder(OrntOffGp, RO)
             setRotOrder(OrntOnGp, RO)
             cmds.parent(OrntOffGp, TopGp)
@@ -643,8 +1014,8 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
             mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + CtGp + ObjOff + ObjOn + '\";')
         else:
             # constrain matching Obj1Gp and Obj2Gp
-            PrntOffGp = place.null2(name + '_PrntOffGp', CtGp)[0]
-            PrntOnGp = place.null2(name + '_PrntOnGp', CtGp)[0]
+            PrntOffGp = null2(name + '_PrntOffGp', CtGp)[0]
+            PrntOnGp = null2(name + '_PrntOnGp', CtGp)[0]
             setRotOrder(PrntOffGp, RO)
             setRotOrder(PrntOnGp, RO)
             cmds.parent(PrntOffGp, TopGp)
@@ -965,7 +1336,7 @@ def rigPrebuild(Top=0, Ctrl=True, SknJnts=True, Geo=True, World=True, Master=Tru
     if Master == True:
         Master = namePrebuild(Master=True)
         world = cmds.group(em=True)
-        master = place.Controller(Master, world, False, 'facetYup_ctrl', Size, 12, 8, 1, (0, 1, 0), True, True)
+        master = Controller(Master, world, False, 'facetYup_ctrl', Size, 12, 8, 1, (0, 1, 0), True, True)
         MasterCt = master.createController()
         setRotOrder(MasterCt[0], 2, True)
         cmds.delete(world)
@@ -1174,24 +1545,6 @@ def attrBlend(obj1, obj2, objOpt, pos=False, rot=False, scale=False, specific=[[
             cmds.connectAttr(rotB + '.outputR', obj2 + '.' + attr)
 
 
-def labelJoint(joint, hi=False):
-    '''\n
-
-        '''
-    sel = None
-    if hi == True:
-        cmds.select(joint, hi=True)
-        sel = cmds.ls(sl=True)
-        for jnt in sel:
-            cmds.setAttr(jnt + '.drawLabel', 1)
-            cmds.setAttr(jnt + '.type', 18)
-            cmds.setAttr(jnt + '.otherType', jnt, type='string')
-    else:
-        cmds.setAttr(joint + '.drawLabel', 1)
-        cmds.setAttr(joint + '.type', 18)
-        cmds.setAttr(joint + '.otherType', joint, type='string')
-
-
 def sortObj(objs):
     '''\n
     Sort objects alphabetically and reposition in hierarchy.
@@ -1207,77 +1560,6 @@ def sortObj(objs):
     #reorder in scene
     for item in objs:
         cmds.reorder(item, b=True)
-
-
-class convertTrack():
-
-    '''\n
-    Converts boujou track to camera space.\n
-    Needs 3 objects.
-    -camera(shot camera with plate)
-    -boujou Locator(motion track baked from boujou)
-    -obj(character controller thats constrained to boujouNode)
-    '''
-
-    def __init__(self):
-        sel = cmds.ls(sl=True)
-        if len(sel) == 3:
-            self.cam = sel[0]
-            self.track = sel[1]
-            self.obj = sel[2]
-            self.trackCt = None
-            self.start = None
-            self.end = None
-            self.trackController()
-            self.frameRange()
-            self.bakeMotion()
-        else:
-            OpenMaya.MGlobal.displayError('////... select three objects,   --CAMERA--,   --TRACK--,   --CONSTRAINED CONTROLLER--')
-
-    def trackController(self):
-        '''\n
-        creates tracking controllers
-        '''
-        name = 'Track'
-        i = 1
-        if cmds.objExists(name) == 1:
-            while cmds.objExists(name) == 1:
-                if i > 1:
-                    name = name.replace(str(i - 1), str(i))
-                else:
-                    name = name + str(1)
-                i = i + 1
-        '''
-        if exists == 1:
-            name = name + nameS 
-        '''
-        ct = place.Controller(name, self.track, shape='loc_ctrl', size=3, color=7)
-        self.trackCt = ct.createController()
-        cmds.parent(self.trackCt[0], self.cam)
-        setRotOrder(self.trackCt[0], 2, True)
-
-    def frameRange(self):
-        '''\n
-        get frame range
-        '''
-        self.start = cmds.playbackOptions(q=True, min=True)
-        self.end = cmds.playbackOptions(q=True, max=True)
-
-    def bakeMotion(self):
-        '''\n
-        Constrains trackCt[0] object to self.track object, bakes the constraint.
-        '''
-        constraint = cmds.parentConstraint(self.track, self.trackCt[0], mo=True)
-        #self.start = cmds.playbackOptions(q=True, min=True)
-        #self.end   = cmds.playbackOptions(q=True, max=True)
-        cmds.bakeResults(self.trackCt[0], t=(self.start, self.end), sb=1, at=["tx", "ty", "tz", "rx", "ry", "rz"], hi="none")
-        cmds.delete(constraint)
-        constraint = cmds.parentConstraint(self.trackCt[2], self.obj, mo=True)[0]
-        UsrAttr = cmds.listAttr(constraint, ud=True)
-        for attr in UsrAttr:
-            if self.trackCt[2] not in attr:
-                cmds.setAttr(constraint + '.' + attr, 0)
-        cmds.select(self.trackCt[0])
 
 
 def flatten(obj):

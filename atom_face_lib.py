@@ -1,24 +1,17 @@
 import maya.cmds as cmds
 import maya.mel as mm
 import os
-import atom_deformer_lib as dfrm
-import atom_miscellaneous_lib as misc
-import atom_faceRig_lib as faceRig
-import atom_placement_lib as place
-import atom_olSkoolFix_lib as ol
-import atom_ghostDog_lib as agd
-import key_util_lib
-import key_rig_lib as skn
-import atom_splineFk_lib as splnFk
-reload(dfrm)
-reload(misc)
-reload(faceRig)
-reload(place)
-reload(ol)
-reload(agd)
-reload(key_util_lib)
-reload(skn)
-reload(splnFk)
+import webrImport as web
+# web
+dfrm = web.mod('atom_deformer_lib')
+# misc = web.mod('atom_miscellaneous_lib')
+faceRig = web.mod('atom_faceRig_lib')
+place = web.mod('atom_place_lib')
+ol = web.mod('atom_olSkoolFix_lib')
+# agd = web.mod('atom_ghostDog_lib')
+# key_util_lib = web.mod('key_util_lib') # could be used somewhere with, originally imported as *
+skn = web.mod('key_rig_lib')
+splnFk = web.mod('atom_splineFk_lib')
 
 
 def importFaceAssets(path, importList):
@@ -129,9 +122,9 @@ def parentNonParentedMesh(*args):
                 # wanting mesh nodeTypes to group
                 if cmds.nodeType(shapeNode[0]) == 'mesh':
                     if trans.rfind('mask') > -1 or trans.rfind('muzzle') > -1 or trans.rfind('sculpt') > -1 or trans.rfind('intermediate') > -1 or trans.rfind('hood') > -1:
-                        misc.cleanUp(trans, Utility=True)
+                        place.cleanUp(trans, Utility=True)
                     else:
-                        misc.cleanUp(trans, Body=True)
+                        place.cleanUp(trans, Body=True)
 
 
 def buildFace(*args):
@@ -196,7 +189,7 @@ def buildFace(*args):
                   'Lf_eyewater_FrGeo', 'Rt_eye_FrGeo', 'Rt_eyeouter_FrGeo', 'Rt_eyewater_FrGeo', 'tongue_FrGeo', 'muzzle_Geo', 'special_Geo']
 
     # Connect the blendShape to the Orig node
-    cmds.connectAttr(blendNode[0] + '.outputGeometry[0]', headOrig + '.inMesh', force=True, )
+    cmds.connectAttr(blendNode[0] + '.outputGeometry[0]', headOrig + '.inMesh', force=True)
 
     setFaceItemsVis(setVisList)
 
@@ -209,15 +202,15 @@ def buildFace(*args):
     if cmds.objExists(setVisList[1]) == True:
         msk = dfrm.mask(cleanUp=True)
         cmds.parentConstraint(Attach, msk, mo=True)
-        misc.optEnum(Vis)
-        misc.hijackVis(msk, Vis, name='mask', default=0)
+        place.optEnum(Vis)
+        place.hijackVis(msk, Vis, name='mask', default=0)
     # muzzle
     if cmds.objExists(setVisList[0]) == True:
         # single chain muzzle
         if cmds.objExists('muzzle_jnt_001') == True:
             mzzl = dfrm.muzzle(cleanUp=True)
             cmds.parentConstraint(Attach, mzzl, mo=True)
-            misc.hijackVis(mzzl, Vis, name='muzzle', default=0)
+            place.hijackVis(mzzl, Vis, name='muzzle', default=0)
         # double chain muzzle
         upper = 'upperMuzzle_jnt_001'
         nU = 'muzzleUpper'
@@ -227,11 +220,11 @@ def buildFace(*args):
             # upper
             U_mzzl = dfrm.muzzle(root=upper, name=nU, cleanUp=True, shape='ballRoll_ctrl', size=X)
             cmds.parentConstraint(Attach, U_mzzl, mo=True)
-            misc.hijackVis(U_mzzl, Vis, name=nU, default=0)
+            place.hijackVis(U_mzzl, Vis, name=nU, default=0)
             # lower
             L_mzzl = dfrm.muzzle(root=lower, name=nL, cleanUp=True, shape='ballRoll_ctrl', size=X)
             cmds.parentConstraint(Attach, L_mzzl, mo=True)
-            misc.hijackVis(L_mzzl, Vis, name=nL, default=0)
+            place.hijackVis(L_mzzl, Vis, name=nL, default=0)
     # sculpt
     if cmds.objExists(setVisList[3]) == True:
         # _OLD_## mirrorList = dfrm.nameSculpt()[2:5:]
@@ -243,18 +236,18 @@ def buildFace(*args):
         for item in defTool:
             sclpt = dfrm.sculpt('sculpt_Geo', deformer='deformer_' + item, name='sculpt_' + item)
         cmds.parentConstraint(Attach, sclpt, mo=True)
-        misc.hijackVis(sclpt, Vis, name='sculpt', default=0)
+        place.hijackVis(sclpt, Vis, name='sculpt', default=0)
     # tongue
     if cmds.objExists('root_tongue_jnt') == True:
         skin = skn.getSkinCluster('tongue_FrGeo')
         cmds.setAttr(skin + '.envelope', 0)
         grp = place.null2('jawAssist', 'jaw', orient=True)[0]
         cmds.setAttr(grp + '.rotateOrder', 2)
-        misc.cleanUp(grp, World=True)
+        place.cleanUp(grp, World=True)
         cmds.parentConstraint('jaw', grp, mo=True)
         spine = splnFk.SplineFK('tongue_rig', 'root_tongue_jnt', 'tongue_08_jnt', None, rootParent=grp, parent1=grp, segIteration=3, controllerSize=X * 4, ik='splineIK', stretch=1)
-        misc.shapeSize(spine.rootCt[2], 3)
-        misc.shapeSize(spine.rootCt[3], 3)
+        place.shapeSize(spine.rootCt[2], 3)
+        place.shapeSize(spine.rootCt[3], 3)
 
     # clean up OL_SKOOL rig, add to Finalize later
     cmds.setAttr('Up_lip_2x|faceSharedAttr.macroVisibility', 0)
@@ -325,11 +318,12 @@ def buildGhostDogFace(*args):
     # setup the objects to connect
     connectionList = [headFr, headInter]
     # Build the ears
+    '''
     if cmds.checkBox('atom_ghstDog_earCheck', q=True, v=True):
         agd.buildGhostDogEars()
         ear = extractShapeNode('earRig_head_Geo', False)
         cmds.setAttr('earRig_head_Geo.visibility', 0)
-
+    '''
     # create the blendShape
     blendNode = cmds.blendShape(headFr, ear, headInter, n='face_blendshape')
 
@@ -369,8 +363,8 @@ def buildGhostDogFace(*args):
     ##constrain
     cmds.parentConstraint(Attach, sclpt, mo=True)
     ##connect vis attr
-    misc.optEnum(Vis)
-    misc.hijackVis(sclpt, Vis, name='sculpt', default=0)
+    place.optEnum(Vis)
+    place.hijackVis(sclpt, Vis, name='sculpt', default=0)
     '''
 
     # clean up OL_SKOOL rig, add to Finalize later
@@ -518,8 +512,8 @@ def buildSnakeFace(*args):
     cmds.parentConstraint(fangRCt[4], 'fang_jnt_R', mo=True)
     cmds.parentConstraint('head_jnt', fangLCt[0], mo=True)
     cmds.parentConstraint('head_jnt', fangRCt[0], mo=True)
-    misc.cleanUp(fangLCt[0], Ctrl=True)
-    misc.cleanUp(fangRCt[0], Ctrl=True)
+    place.cleanUp(fangLCt[0], Ctrl=True)
+    place.cleanUp(fangRCt[0], Ctrl=True)
     #--end--#
 
 
@@ -563,17 +557,17 @@ def getGeoInputs(importList=['pin', 'breast'], *args):
     X = cmds.floatField('atom_srig_conScale', query=True, value=True)
     # clean up geo and joints
     for geo in corr:
-        misc.cleanUp(geo, Utility=True)
+        place.cleanUp(geo, Utility=True)
     # floaters
     slave, master = dfrm.floatingControl(name='pin', parent='clavicle_jnt_02_L', joint='pin_jnt', size=X * 6, shape='arrow_ctrl')
-    misc.cleanUp(slave[0], World=True)
-    misc.cleanUp(master[0], Ctrl=True)
+    place.cleanUp(slave[0], World=True)
+    place.cleanUp(master[0], Ctrl=True)
     slave, master = dfrm.floatingControl(name='breast_L', parent='spine_jnt_06', joint='breast_jnt_L', size=X * 15, shape='arrow_ctrl')
-    misc.cleanUp(slave[0], World=True)
-    misc.cleanUp(master[0], Ctrl=True)
+    place.cleanUp(slave[0], World=True)
+    place.cleanUp(master[0], Ctrl=True)
     slave, master = dfrm.floatingControl(name='breast_R', parent='spine_jnt_06', joint='breast_jnt_R', size=X * 15, shape='arrowInv_ctrl')
-    misc.cleanUp(slave[0], World=True)
-    misc.cleanUp(master[0], Ctrl=True)
+    place.cleanUp(slave[0], World=True)
+    place.cleanUp(master[0], Ctrl=True)
 
 
 def getGeoInputsOld(resultGeo='ZBrush_defualt_group002', correctiveGeo=['breast_Geo', 'pin_Geo'], importList=['pin', 'breast'], *args):
@@ -617,14 +611,14 @@ def getGeoInputsOld(resultGeo='ZBrush_defualt_group002', correctiveGeo=['breast_
     X = cmds.floatField('atom_srig_conScale', query=True, value=True)
     # clean up geo and joints
     for geo in corr:
-        misc.cleanUp(geo, Utility=True)
+        place.cleanUp(geo, Utility=True)
     # floaters
     slave, master = dfrm.floatingControl(name='pin', parent='clavicle_jnt_02_L', joint='pin_jnt', size=X * 6, shape='arrow_ctrl')
-    misc.cleanUp(slave[0], World=True)
-    misc.cleanUp(master[0], Ctrl=True)
+    place.cleanUp(slave[0], World=True)
+    place.cleanUp(master[0], Ctrl=True)
     slave, master = dfrm.floatingControl(name='breast_L', parent='spine_jnt_06', joint='breast_jnt_L', size=X * 15, shape='arrow_ctrl')
-    misc.cleanUp(slave[0], World=True)
-    misc.cleanUp(master[0], Ctrl=True)
+    place.cleanUp(slave[0], World=True)
+    place.cleanUp(master[0], Ctrl=True)
     slave, master = dfrm.floatingControl(name='breast_R', parent='spine_jnt_06', joint='breast_jnt_R', size=X * 15, shape='arrowInv_ctrl')
-    misc.cleanUp(slave[0], World=True)
-    misc.cleanUp(master[0], Ctrl=True)
+    place.cleanUp(slave[0], World=True)
+    place.cleanUp(master[0], Ctrl=True)

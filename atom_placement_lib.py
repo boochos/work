@@ -1,9 +1,13 @@
 import maya.cmds as cmds
 import maya.mel as mel
-import atom_placement_lib as place
-import atom_miscellaneous_lib as misc
-import atom_ui_lib as ui
 import os
+#
+import webrImport as web
+# web
+# place = web.mod('atom_placement_lib')
+misc = web.mod('atom_miscellaneous_lib')
+ui = web.mod('atom_ui_lib')
+
 
 # place Clusters on CV derived from 'curve' variable
 # curve
@@ -138,16 +142,17 @@ def null(nllSuffix, order=None):
         mel.eval('warning \"' + '////... select at least one object ...////' + '\";')
         return None
 
-# place circle
-# name     = name of circle
-# obj      = object whose position to match
-# shape    = shape of circle to import(name of text file)
-# sections = number of CVs
-# degree   = Linear(1) or Cubic(3) ,has to be int
-# normal   = plane on which to build circle
-
 
 def circle(name, obj, shape, size, color, sections=8, degree=1, normal=(0, 0, 1), orient=True):
+    '''
+    place circle
+    name     = name of circle
+    obj      = object whose position to match
+    shape    = shape of circle to import(name of text file)
+    sections = number of CVs
+    degree   = Linear(1) or Cubic(3) ,has to be int
+    normal   = plane on which to build circle
+    '''
     path = os.path.expanduser('~') + '/GitHub/controlShapes/'
     Circle = []
     if type(obj) != list:
@@ -155,12 +160,12 @@ def circle(name, obj, shape, size, color, sections=8, degree=1, normal=(0, 0, 1)
         rot = cmds.xform(obj, q=True, ro=True, ws=True)
         n = cmds.circle(name=name, center=(0, 0, 0), normal=normal, sweep=360, radius=1, degree=degree, sections=sections, constructionHistory=1)[0]
         cmds.xform(n, t=pos)
-        if orient == True:
+        if orient:
             cmds.xform(n, ro=rot)
         else:
             print 'no orient'
         Circle.append(n)
-        ##import shape
+        # import shape
         cmds.select(n)
         ui.importCurveShape(shape, path, size, color)
         return Circle
@@ -243,12 +248,12 @@ class Controller():
 
     # create
     def createController(self):
-        ct = place.circle(self.name, self.obj, self.shape, self.size * (0.3), self.color, self.sections, self.degree, self.normal)[0]
-        ctO = place.circle(self.name + '_Offset', self.obj, self.shape, self.size * (0.25), self.color, self.sections, self.degree, self.normal)[0]
-        gp = place.null2(self.name + '_Grp', self.obj)[0]
+        ct = circle(self.name, self.obj, self.shape, self.size * (0.3), self.color, self.sections, self.degree, self.normal)[0]
+        ctO = circle(self.name + '_Offset', self.obj, self.shape, self.size * (0.25), self.color, self.sections, self.degree, self.normal)[0]
+        gp = null2(self.name + '_Grp', self.obj)[0]
         if self.groups == True:
-            ctgp = place.null2(self.name + '_CtGrp', self.obj)[0]
-            topgp = place.null2(self.name + '_TopGrp', self.obj)[0]
+            ctgp = null2(self.name + '_CtGrp', self.obj)[0]
+            topgp = null2(self.name + '_TopGrp', self.obj)[0]
             cmds.parent(ct, ctgp)
             cmds.parent(ctgp, topgp)
             if self.setChannels == True:
@@ -294,8 +299,8 @@ class Controller():
 
 def twoJointPV(name, ik, distance=1, constrain=True, size=1):
     sj = cmds.ikHandle(ik, q=True, sj=True)
-    Gp = place.null2(name + '_PvGrp', sj, False)[0]
-    Pv = place.circle(name + '_PV', sj, 'diamond_ctrl', size * 1, 17, 8, 1, (0, 0, 1))[0]
+    Gp = null2(name + '_PvGrp', sj, False)[0]
+    Pv = circle(name + '_PV', sj, 'diamond_ctrl', size * 1, 17, 8, 1, (0, 0, 1))[0]
     cmds.parent(Pv, Gp)
     X = cmds.getAttr(ik + '.poleVectorX')
     Y = cmds.getAttr(ik + '.poleVectorY')
@@ -327,18 +332,18 @@ def controllerDownChain(root, name, pad=2, base=None, parent=None, shape='loc_ct
             num = ''
         # SUFFIX
         if suffix != None:
-            ctrl = place.Controller(name + num + '_' + suffix, obj, shape=shape, color=color, size=size, groups=groups, orient=orient)
+            ctrl = Controller(name + num + '_' + suffix, obj, shape=shape, color=color, size=size, groups=groups, orient=orient)
         else:
-            ctrl = place.Controller(name + num, obj, shape=shape, color=color, size=size, groups=groups, orient=orient)
+            ctrl = Controller(name + num, obj, shape=shape, color=color, size=size, groups=groups, orient=orient)
         Control = ctrl.createController()
         control_chain.append(Control)
         # CLONE
         if clone == False:
             cmds.parentConstraint(Control[4], obj, mo=True)
         else:
-            clone_parent = place.null2(Control[2] + '_CloneTopGrp', obj, orient)[0]
-            clone_child = place.null2(Control[2] + '_CloneCtGrp', obj, orient)[0]
-            clone_offset = place.null2(Control[2] + '_CloneOffstGrp', obj, orient)[0]
+            clone_parent = null2(Control[2] + '_CloneTopGrp', obj, orient)[0]
+            clone_child = null2(Control[2] + '_CloneCtGrp', obj, orient)[0]
+            clone_offset = null2(Control[2] + '_CloneOffstGrp', obj, orient)[0]
             cmds.parentConstraint(clone_offset, obj, mo=True)
             clone_set = [clone_parent, clone_child, clone_offset]
             clone_chain.append(clone_set)
@@ -378,7 +383,8 @@ def controllerDownChain(root, name, pad=2, base=None, parent=None, shape='loc_ct
             j = j + 1
     return control_chain, clone_chain
 
-
+'''
+# likely isn't used anywhere
 def match(obj1, obj2, p=True, r=True):
     if p == True:
         pos1 = cmds.xform(obj1, q=True, t=True, ws=True)
@@ -391,3 +397,4 @@ def match(obj1, obj2, p=True, r=True):
     if r == True:
         rot = cmds.xform(obj1, q=True, ro=True, ws=True)
         cmds.xform(obj2, ro=(rot))
+'''

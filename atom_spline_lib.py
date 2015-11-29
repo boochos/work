@@ -1,9 +1,11 @@
 from __future__ import division
 import maya.cmds as cmds
 import maya.mel as mel
-import atom_joint_lib as jnt
 import math
-import atom_placement_lib as place
+import webrImport as web
+# web
+place = web.mod('atom_place_lib')
+jnt = web.mod('atom_joint_lib')
 
 # List of joints
 # confirms two joints are selected

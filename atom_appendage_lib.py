@@ -2,10 +2,15 @@ import maya.cmds as cmds
 import maya.mel as mel
 import maya.OpenMaya as OpenMaya
 from pymel.core import *
-import atom_miscellaneous_lib as misc
-import atom_joint_lib as joint
-import atom_ui_lib as ui
-import atom_placement_lib as place
+import math
+import webrImport as web
+# web
+# misc = web.mod('atom_miscellaneous_lib')
+joint = web.mod('atom_joint_lib')
+ui = web.mod('atom_ui_lib')
+place = web.mod('atom_place_lib')
+z = web.mod('zero')
+anm = web.mod('anim_lib')
 
 
 def extractSebastionsControlSubgroup(obj):
@@ -30,8 +35,8 @@ def createVerticalScapRig(shoulder, shoulder_dbl, shoulder_grp, scapula, control
     x--y(-1 aim)
     '''
 
-    pointDis = misc.distance2Pts(cmds.xform(shoulder, query=True, ws=True, rp=True),
-                                 cmds.xform(scapula, query=True, ws=True, rp=True))
+    pointDis = place.distance2Pts(cmds.xform(shoulder, query=True, ws=True, rp=True),
+                                  cmds.xform(scapula, query=True, ws=True, rp=True))
 
     scap_aimGrp = cmds.group(name='scapula_aimGrp' + suffix, em=True)
     scap_aimLoc = cmds.spaceLocator(n='scapula_aimLoc' + suffix)[0]
@@ -41,7 +46,7 @@ def createVerticalScapRig(shoulder, shoulder_dbl, shoulder_grp, scapula, control
     scap_jnt_pos = cmds.xform(scapula, query=True, ws=True, rp=True)
     # position of aim vector is at shoulder, not forward of scapula joint, as it was prior to this line:
     shoulder_pos = cmds.xform(shoulder_dbl, query=True, ws=True, rp=True)
-    #shoulder_pos = cmds.xform(shoulder_grp,query=True, ws=True, rp=True)
+    # shoulder_pos = cmds.xform(shoulder_grp,query=True, ws=True, rp=True)
     cmds.xform(scap_aimGrp, ws=True, t=[shoulder_pos[0], shoulder_pos[1], shoulder_pos[2]])
 
     scap_upGrp = cmds.group(name='scapula_upGrp' + suffix, em=True)
@@ -98,8 +103,8 @@ def createClavicleRig(obj, aimObj, upParent, suffix, aim, up):
 
 def createQuadScapulaRig(shoulder, shoulder_grp, scapula, control, spine, suffix, setChannels=False):
 
-    pointDis = misc.distance2Pts(cmds.xform(shoulder, query=True, ws=True, rp=True),
-                                 cmds.xform(scapula, query=True, ws=True, rp=True))
+    pointDis = place.distance2Pts(cmds.xform(shoulder, query=True, ws=True, rp=True),
+                                  cmds.xform(scapula, query=True, ws=True, rp=True))
 
     scap_aimGrp = cmds.group(name='scapula_aimGrp' + suffix, em=True)
     scap_aimLoc = cmds.spaceLocator(n='scapula_aimLoc' + suffix)[0]
@@ -126,16 +131,17 @@ def createQuadScapulaRig(shoulder, shoulder_grp, scapula, control, spine, suffix
     cmds.connectAttr(adl + '.output', scapula + '.translateY')
     cmds.connectAttr(control + '.translateY', scap_upLoc + '.translateY')
 
-    if setChannels == True:
-        misc.setChannels(scap_aimGrp, [True, False], [True, False], [True, False], [False, True, False])
-        misc.setChannels(scap_aimLoc, [True, False], [True, False], [True, False], [False, True, False])
+    if setChannels:
+        place.setChannels(scap_aimGrp, [True, False], [True, False], [True, False], [False, True, False])
+        place.setChannels(scap_aimLoc, [True, False], [True, False], [True, False], [False, True, False])
 
-        misc.setChannels(scap_upGrp, [True, False], [True, False], [True, False], [False, True, False])
-        misc.setChannels(scap_upLoc, [True, False], [True, False], [True, False], [False, True, False])
+        place.setChannels(scap_upGrp, [True, False], [True, False], [True, False], [False, True, False])
+        place.setChannels(scap_upLoc, [True, False], [True, False], [True, False], [False, True, False])
 
 
 def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[1, 0, 0], aim=[0, -1, 0]):
-    """creates auto ankle twist rig with on/off switch
+    """
+    creates auto ankle twist rig with on/off switch
     \n*
     Master    = lowest master controller of char          --(not manipulated, 3 objs are constrained to it, for twist value calc)\n
     Top       = shoulder or hip control                   --(not manipulated, ankleTwist group is parented under this object)\n
@@ -150,7 +156,7 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     ie.       = Twist axis should be main axis. If 'y'is main axis, rotate order = 'zxy' or 'xzy'
     """
 
-    import atom_placement_lib as place
+    # import atom_placement_lib as place
 
     aimAxis = None
     upAxis = None
@@ -218,8 +224,8 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     # Groups
     # Master Twist group
     twstGp = place.null2(name + '_TwistGp', Top)[0]
-    ##cmds.parent(twstGp, Top)
-    misc.cleanUp(twstGp, Ctrl=True)
+    # cmds.parent(twstGp, Top)
+    place.cleanUp(twstGp, Ctrl=True)
     cmds.orientConstraint(Top, twstGp, w=1, mo=False)
     cmds.pointConstraint(Top, twstGp, w=1, mo=False)
 
@@ -318,14 +324,14 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     cmds.connectAttr(Add + '.output', TwstBlnd + '.color1G')
     cmds.connectAttr(TwstBlnd + '.outputG', IsoTwstGp + '.rotate' + aimAxis)
 
-    if setChannels == True:
-        misc.setChannels(twstGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(MstrTopGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(IsoTopGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(MstrTwstGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(IsoTwstGp, [True, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(MstrBtmGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(IsoBtmGp, [True, False], [True, False], [True, False], [True, False, False])
+    if setChannels:
+        place.setChannels(twstGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(MstrTopGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(IsoTopGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(MstrTwstGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(IsoTwstGp, [True, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(MstrBtmGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(IsoBtmGp, [True, False], [True, False], [True, False], [True, False, False])
 
     return TwistSwitchGp
 
@@ -348,7 +354,7 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     ie.       = Twist axis should be main axis. If 'y'is main axis, rotate order = 'zxy' or 'xzy'
     """
 
-    import atom_placement_lib as place
+    # import atom_placement_lib as place
     # place.loc('pv___1', pv)
     aimAxis = None
     upAxis = None
@@ -370,9 +376,9 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
         pass
     if cmds.objExists(guideGp) == 0:
         cmds.group(em=True, name=guideGp)
-        if setChannels == True:
-            misc.setChannels(guideGp, [True, False], [True, False], [True, False], [True, False, False])
-    guides = misc.guideLine(midJnt, pv, name + '_gLine')
+        if setChannels:
+            place.setChannels(guideGp, [True, False], [True, False], [True, False], [True, False, False])
+    guides = place.guideLine(midJnt, pv, name + '_gLine')
     pvGds = cmds.group(em=True, name=name + '_PVutlsGp')
 
     cmds.parent(pvGds, guideGp)
@@ -466,7 +472,7 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     cmds.pointConstraint(Top, MstrUpGp, w=1, mo=False)
     # up Object group
     cmds.select(IsoUpGp)
-    upObjGp = (misc.insert('null', 0, name + '_UpVctrGp')[0])[0]
+    upObjGp = (place.insert('null', 0, name + '_UpVctrGp')[0])[0]
     cmds.select(upObjGp)
     # up vector/obj controller
     upObj = place.circle(name + '_UpVctr', upObjGp, 'diamond_ctrl', X, color, 8, 1, (0, 0, 1))[0]
@@ -477,22 +483,22 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     cmds.setAttr(upObjGp + '.translate' + upAxis, 1 * upDir)
     cmds.parent(MstrUpGp, rig)
     # aimConstraint top to bottom group, up group as up space
-    #place.null2(name + '______beforeAim_____', topGp)[0]
+    # place.null2(name + '______beforeAim_____', topGp)[0]
     # print aim, up, '___________ aims'
     cmds.aimConstraint(btmGp, topGp, worldUpType='object', worldUpObject=upObj, mo=False, w=1, aim=aim, u=up)
-    #place.null2(name + '______afterAim_____', topGp)[0]
-    #place.null2(name + '______upObj_____', upObj)[0]
+    # place.null2(name + '______afterAim_____', topGp)[0]
+    # place.null2(name + '______upObj_____', upObj)[0]
 
     # pv weighted group
     pvWtGp = place.null2(name + '_pvWtGp', topGp)[0]
-    #place.null2(name + '______what_____', topGp)[0]
+    # place.null2(name + '______what_____', topGp)[0]
     cmds.parent(pvWtGp, topGp)
     pvWtCt = place.circle(name + '_Twist', topGp, 'facetXup_ctrl', X * 1, color, 8, 1, (0, 1, 0))[0]
     cmds.parent(pvWtCt, pvWtGp)
     cmds.setAttr(pv + '.visibility', False)
-    misc.addAttribute(pvWtCt, 'Pv_Vis', 0, 1, False, 'long')
+    place.addAttribute(pvWtCt, 'Pv_Vis', 0, 1, False, 'long')
     cmds.connectAttr(pvWtCt + '.Pv_Vis', pv + '.visibility')
-    ##misc.hijackAttrs(pv, pvWtCt, 'visibility', 'pvVisibility', set=False)
+    # place.hijackAttrs(pv, pvWtCt, 'visibility', 'pvVisibility', set=False)
     setRotOrder(pvWtGp, rotOrder)
     cmds.pointConstraint(topGp, pvWtGp, w=0.5, mo=False)
     cmds.pointConstraint(btmGp, pvWtGp, w=0.5, mo=False)
@@ -515,28 +521,27 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     cmds.parent(MstrTopGp, twstGp)
     cmds.pointConstraint(Top, MstrTopGp, w=1, mo=False)
     # constraint maintain offset changed... #account for shoulder joint not being at zero world orient
-    #cmds.orientConstraint(Master, MstrTopGp, w=1, mo=False)
+    # cmds.orientConstraint(Master, MstrTopGp, w=1, mo=False)
     cmds.orientConstraint(Master, MstrTopGp, w=1, mo=True)
     cmds.orientConstraint(Top, IsoTopGp, w=1, mo=False)
     # Btm
     MstrBtmGp = place.null2(name + '_MstrBtmGp', Btm)[0]
-    IsoBtmGp = place.null2(name + '_IsoBtmGp', Btm)[0] #likely cause of elbow flipping. interpolated value can be a flipped one 
-    
+    IsoBtmGp = place.null2(name + '_IsoBtmGp', Btm)[0]  # likely cause of elbow flipping. interpolated value can be a flipped one
+
     setRotOrder(MstrBtmGp, rotOrder)
     setRotOrder(IsoBtmGp, rotOrder)
     cmds.parent(IsoBtmGp, MstrBtmGp)
-    
-    ### try and fix flipping ########################
-    #null inserts in a flipped position but cranked values at 180 degrees
-    import zero as z
+
+    # ## try and fix flipping ########################
+    # null inserts in a flipped position but cranked values at 180 degrees
+    # import zero as z
     cmds.select(IsoBtmGp)
     z.zero()
-    import anim_lib as anm
+    # import anim_lib as anm
     cmds.select(IsoBtmGp, Twist)
     anm.matchObj()
-    ### seems to work more reliabley ####################################
-    
-    
+    # ## seems to work more reliabley ####################################
+
     cmds.parent(MstrBtmGp, twstGp)
     cmds.pointConstraint(Btm, MstrBtmGp, w=1, mo=False)
     cmds.orientConstraint(Master, MstrBtmGp, w=1, mo=False)
@@ -550,7 +555,7 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     TwistBlndAttr = 'TwistBlendTopBtm'
     # blend Node
     TwstBlnd = cmds.shadingNode('blendColors', name=name + TwistBlndAttr, asUtility=True)
-    #misc.hijackAttrs(TwstBlnd, pvWtCt, 'blender', OnOff, False)
+    # place.hijackAttrs(TwstBlnd, pvWtCt, 'blender', OnOff, False)
     cmds.addAttr(pvWtCt, ln=OnOff, attributeType='long', k=True, dv=1, min=0, max=1)
     cmds.addAttr(pvWtCt, ln=TwistBlndAttr, attributeType='float', k=True, dv=1.0, min=0.0, max=1.0)
     # mltpl Nodes
@@ -583,32 +588,32 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     cmds.parent(pvPsGp, pvWtCt)
     cmds.connectAttr(slider + '.KneeTwist', pvWtCt + '.ry')
 
-    if setChannels == True:
-        misc.setChannels(pvGds, [True, False], [True, False], [True, False], [False, False, False])
-        misc.setChannels(rig, [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(topGp, [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(btmGp, [False, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(upObj, [False, True], [True, False], [True, False], [False, False, False])
-        misc.setChannels(MstrUpGp, [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(IsoUpGp, [False, False], [False, False], [True, False], [True, False, False])
-        misc.setChannels(pvWtGp, [False, False], [True, False], [True, False], [True, False, False])
+    if setChannels:
+        place.setChannels(pvGds, [True, False], [True, False], [True, False], [False, False, False])
+        place.setChannels(rig, [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(topGp, [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(btmGp, [False, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(upObj, [False, True], [True, False], [True, False], [False, False, False])
+        place.setChannels(MstrUpGp, [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(IsoUpGp, [False, False], [False, False], [True, False], [True, False, False])
+        place.setChannels(pvWtGp, [False, False], [True, False], [True, False], [True, False, False])
 
-        misc.setChannels(pvWtCt, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(pvWtCt, [True, False], [True, False], [True, False], [True, False, False])
         cmds.setAttr(pvWtCt + '.rotate' + aimAxis, l=False)
-        ##cmds.setAttr(pvWtCt+ '.rotateZ', k=False,l=True)
+        # cmds.setAttr(pvWtCt+ '.rotateZ', k=False,l=True)
 
-        misc.setChannels(upObjGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(twstGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(MstrTopGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(IsoTopGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(MstrBtmGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(IsoBtmGp, [True, False], [True, False], [True, False], [True, False, False])
-        misc.setChannels(pvPsGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(upObjGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(twstGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(MstrTopGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(IsoTopGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(MstrBtmGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(IsoBtmGp, [True, False], [True, False], [True, False], [True, False, False])
+        place.setChannels(pvPsGp, [True, False], [True, False], [True, False], [True, False, False])
 
     # done, return rig group
-    ##cmds.parent(rig, Top)
+    # cmds.parent(rig, Top)
     # place.loc('pv___After_1', pv)
-    misc.cleanUp(rig, Ctrl=True)
+    place.cleanUp(rig, Ctrl=True)
     return rig
 
 
@@ -647,7 +652,7 @@ def stepToGoal(goal=[0.0, 0.0, 0.0], sample=0.001, obj=[], operation='<', goalAx
 
 
 def xformDigitLoc(locator, flip, axis, dis, scale):
-    flip = misc.convertFlipValue(flip)
+    flip = place.convertFlipValue(flip)
     dis = flip[2] * dis
     cmds.setAttr(locator + '.translate' + axis, dis)
 
@@ -660,38 +665,38 @@ def create_ik(fstJnt, lstJnt, prefix, suffix, limbName, curveShapePath=None, cre
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
     printMeta(fstJnt + '__' + lstJnt)
     returnList = []
-    ikName = misc.buildName(prefix, suffix, limbName + '_ikh')
+    ikName = place.buildName(prefix, suffix, limbName + '_ikh')
     ikHandle = cmds.ikHandle(name=ikName, sj=fstJnt, ee=lstJnt, sol='ikRPsolver', w=1, pw=1, fs=1, shf=1, s=0)
     printMeta('added ik')
     returnList.append(ikHandle)
     ctrl = None
 
-    if createControl == True:
+    if createControl:
         # create group at the end joint
         lstRot = cmds.xform(lstJnt, query=True, ws=True, ro=True)
         lstPos = cmds.xform(lstJnt, query=True, ws=True, rp=True)
-        orntGrp = place.null(misc.buildName(prefix, suffix, limbName + '_ctrl_ornt_grp'))[0]
+        orntGrp = place.null(place.buildName(prefix, suffix, limbName + '_ctrl_ornt_grp'))[0]
 
         if cmds.xform(lstJnt, q=True, ws=True, t=True)[0] < 0:
             cmds.xform(orntGrp, ws=True, t=lstPos, ro=[lstRot[0] + 180, lstRot[1], lstRot[2]])
         else:
             cmds.xform(orntGrp, ws=True, t=lstPos, ro=lstRot)
 
-        if orient == False:
+        if not orient:
             cmds.setAttr(orntGrp + '.rotateX', 0)
 
-        ctrl = place.circle(misc.buildName(prefix, suffix, limbName + '_ctrl'), orntGrp, 'facetXup_ctrl', X * 1.50, 17, 8, 1, [0, 0, 1])
+        ctrl = place.circle(place.buildName(prefix, suffix, limbName + '_ctrl'), orntGrp, 'facetXup_ctrl', X * 1.50, 17, 8, 1, [0, 0, 1])
         cmds.parent(ctrl, orntGrp)
         cmds.parent(ikHandle[0], ctrl)
         returnList.append(ctrl)
         returnList.append(orntGrp)
 
-        if clean == True:
+        if clean:
             # set the channels for the control
-            misc.setChannels(ctrl[0], [False, True], [False, True], [True, False], [True, False, False], [True, True])
+            place.setChannels(ctrl[0], [False, True], [False, True], [True, False], [True, False, False], [True, True])
 
-    if clean == True:
-        misc.setChannels(ikHandle[0], [False, False], [True, False], [True, False], [False, False, False], [True, True])
+    if clean:
+        place.setChannels(ikHandle[0], [False, False], [True, False], [True, False], [False, False, False], [True, True])
 
     return returnList
 
@@ -699,7 +704,7 @@ def create_ik(fstJnt, lstJnt, prefix, suffix, limbName, curveShapePath=None, cre
 def create_3_joint_pv(stJnt, endJnt, prefix, suffix, limbName, rotControl, aimControl, upControl, disFactor, locScale, curveShapePath, useFlip=True, flipVar=[0, 0, 0]):
     # make a copy of flipVar so the original varaible doesnt get changed
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
-    flip = misc.convertFlipValue(flipVar)
+    flip = place.convertFlipValue(flipVar)
 
     #        A
     #       /|
@@ -719,13 +724,12 @@ def create_3_joint_pv(stJnt, endJnt, prefix, suffix, limbName, rotControl, aimCo
     point_C = cmds.xform(endJnt, query=True, ws=True, rp=True)
 
     # solve the lengths
-    a = misc.distance2Pts(point_B, point_C)
-    b = misc.distance2Pts(point_A, point_C)
-    c = misc.distance2Pts(point_A, point_B)
+    a = place.distance2Pts(point_B, point_C)
+    b = place.distance2Pts(point_A, point_C)
+    c = place.distance2Pts(point_A, point_B)
 
     # solve the angle for A when all lengths are known
     # cos_d is a radian and must be converted
-    import math
     cos_d = (math.pow(c, 2) + math.pow(b, 2) - math.pow(a, 2)) / (2 * b * c)
 
     # convert cos_d to degrees from radians
@@ -747,7 +751,7 @@ def create_3_joint_pv(stJnt, endJnt, prefix, suffix, limbName, rotControl, aimCo
     rotAxis = ui.convertAxisNum(cmds.radioButtonGrp(rotControl, query=True, sl=True))
     flipRot = ui.getCheckBoxSelectionAsList('atom_qls_pvFlip_checkBoxGrp')
     flipIt = [1, 1, 1]
-    if useFlip == True:
+    if useFlip:
         for i in range(0, 3, 1):
             if flipRot[i] == 1:
                 flipIt[i] = -1
@@ -776,10 +780,10 @@ def create_3_joint_pv(stJnt, endJnt, prefix, suffix, limbName, rotControl, aimCo
     cmds.xform(tmpLoc, os=True, t=upList)
 
     cmds.parent(tmpLoc, w=True)
-    #cmds.makeIdentity(tmpLoc, apply=True, t=True, r=True,s=True,n=False)
+    # cmds.makeIdentity(tmpLoc, apply=True, t=True, r=True,s=True,n=False)
     cmds.delete(tmpGrp)
 
-    locName = misc.buildName(prefix, suffix, midJnt + '_pv_loc')
+    locName = place.buildName(prefix, suffix, midJnt + '_pv_loc')
     pvCtrl = place.circle(locName, tmpLoc, 'diamond_ctrl', X * 1, color=17, sections=8, degree=1, normal=(0, 1, 0))[0]
     cmds.delete(tmpLoc)
 
@@ -796,25 +800,25 @@ def createLimb(name, stJnt, endJnt, disPoint, pvLocPos, buildPlane, suffix, scal
     if pv == True:
         pnt_1 = cmds.xform(stJnt, query=True, ws=True, rp=True)
         pnt_2 = cmds.xform(pvLocPos, query=True, ws=True, rp=True)
-        dis = misc.distance2Pts(pnt_1, pnt_2)
+        dis = place.distance2Pts(pnt_1, pnt_2)
         ikLoc = cmds.spaceLocator(name=name + '_pvLoc_' + suffix)[0]
         # move the locator to the second joint
         cmds.xform(ikLoc, ws=True, t=pnt_2)
 
         # move the locator out the distance from the 1st joint to the 2nd
-        mvDis = misc.axisMulti(buildPlane, dis)
+        mvDis = place.axisMulti(buildPlane, dis)
         cmds.xform(ikLoc, ws=True, r=True, t=mvDis)
 
         # create the poleVectorConstraint
         cmds.poleVectorConstraint(ikLoc, ikHandle)
-        if freeze == True:
+        if freeze:
             cmds.makeIdentity(ikLoc, apply=True, t=True, r=True, s=True, n=False)
             cmds.makeIdentity(ikHandle, apply=True, t=True, r=True, s=True, n=False)
         # Set the scale of the locator
 
-        #cmds.setAttr(ikLoc + '.scaleX', scale)
-        #cmds.setAttr(ikLoc + '.scaleY', scale)
-        #cmds.setAttr(ikLoc + '.scaleZ', scale)
+        # cmds.setAttr(ikLoc + '.scaleX', scale)
+        # cmds.setAttr(ikLoc + '.scaleY', scale)
+        # cmds.setAttr(ikLoc + '.scaleZ', scale)
 
     return [ikHandle, ikLoc]
 
@@ -827,25 +831,25 @@ def createStandardDigit(base_digit, end_digit, prefix, suffix, limbName, rotAxis
     end_digit_pos = cmds.xform(end_digit, query=True, ws=True, rp=True)
     if cmds.xform(base_digit, q=True, ws=True, t=True)[0] < 0:
         base_digit_rot[0] = base_digit_rot[0] + 180
-        #cmds.xform(digit_ornt_grp, os=True, ro=[ro[0] + 180,ro[1],ro[2]])
+        # cmds.xform(digit_ornt_grp, os=True, ro=[ro[0] + 180,ro[1],ro[2]])
     if suffix == 'none':
         suffix = ''
     if limbName == 'none':
         limbName = ''
 
-    digit_up_loc = cmds.spaceLocator(name=misc.buildName(prefix, suffix, limbName + '_up_loc'))[0]
-    digit_aim_loc = cmds.spaceLocator(name=misc.buildName(prefix, suffix, limbName + '_aim_loc'))[0]
+    digit_up_loc = cmds.spaceLocator(name=place.buildName(prefix, suffix, limbName + '_up_loc'))[0]
+    digit_aim_loc = cmds.spaceLocator(name=place.buildName(prefix, suffix, limbName + '_aim_loc'))[0]
 
-    digit_ornt_grp = cmds.group(name=misc.buildName(prefix, suffix, limbName + '_ornt_grp'), em=True, w=True)
-    digit_ctrl_grp = cmds.group(name=misc.buildName(prefix, suffix, limbName + '_ctrl_grp'), em=True, w=True)
+    digit_ornt_grp = cmds.group(name=place.buildName(prefix, suffix, limbName + '_ornt_grp'), em=True, w=True)
+    digit_ctrl_grp = cmds.group(name=place.buildName(prefix, suffix, limbName + '_ctrl_grp'), em=True, w=True)
 
     cmds.xform(digit_ornt_grp, ws=True, ro=base_digit_rot)
     cmds.xform(digit_ornt_grp, ws=True, t=base_digit_pos)
     cmds.xform(digit_ctrl_grp, ws=True, t=base_digit_pos)
     cmds.xform(digit_up_loc, r=True, t=base_digit_pos)
 
-    base_ctrl = place.circle(misc.buildName(prefix, suffix, limbName + '_ctrl'), digit_ornt_grp, 'facetXup_ctrl', X * 1.25, 17, 8, 1, [0, 0, 1])
-    end_ctrl = cmds.circle(n=misc.buildName(prefix, suffix, limbName + '_end_ctrl'), ch=False, nr=(0, 0, 0), c=(0, 0, 0), s=8, d=1)
+    base_ctrl = place.circle(place.buildName(prefix, suffix, limbName + '_ctrl'), digit_ornt_grp, 'facetXup_ctrl', X * 1.25, 17, 8, 1, [0, 0, 1])
+    end_ctrl = cmds.circle(n=place.buildName(prefix, suffix, limbName + '_end_ctrl'), ch=False, nr=(0, 0, 0), c=(0, 0, 0), s=8, d=1)
     cmds.select(end_ctrl)
     ui.importCurveShape('diamond_ctrl', curveShapePath, X * 1.25, 17)
 
@@ -879,20 +883,20 @@ def createStandardDigit(base_digit, end_digit, prefix, suffix, limbName, rotAxis
     xformDigitLoc(digit_up_loc, [0, 0, 0], upAxis, disFactor, scale)
     cmds.aimConstraint(digit_aim_loc, base_digit, wuo=digit_up_loc, wut='object', aim=digitAim, u=[0, 1, 0])
     # clean up the locators
-    if clean == True:
+    if clean:
         # set the controls
-        misc.setChannels(base_ctrl[0], [True, False], [False, True], [True, False], [True, False, False], [True, True])
-        misc.setChannels(end_ctrl[0], [False, True], [True, False], [True, False], [True, False, False], [True, True])
+        place.setChannels(base_ctrl[0], [True, False], [False, True], [True, False], [True, False, False], [True, True])
+        place.setChannels(end_ctrl[0], [False, True], [True, False], [True, False], [True, False, False], [True, True])
 
         clean_loc_list = [digit_up_loc, digit_aim_loc]
 
         clean_grp_list = [digit_ctrl_grp, digit_ornt_grp]
 
         for loc in clean_loc_list:
-            misc.setChannels(loc, [True, False], [True, False], [True, False], [False, True, False], [True, True])
+            place.setChannels(loc, [True, False], [True, False], [True, False], [False, True, False], [True, True])
         # Dont lock the transmforms of grps that will later on be reparents. Odd transformation can occure
         for grp in clean_grp_list:
-            misc.setChannels(grp, [False, False], [False, False], [False, False], [True, False, False], [True, True])
+            place.setChannels(grp, [False, False], [False, False], [False, False], [True, False, False], [True, True])
     return digit_ornt_grp
 
 
@@ -903,10 +907,9 @@ def createReverseAnkle(prefix, suffix, name, ankleJnt, paw_fk, aimAxisList, upAx
     ball_pos = cmds.xform(paw_fk, query=True, ws=True, rp=True)
 
     loc_pos = cmds.floatFieldGrp('atom_qls_anklePvFlip_floatFieldGrp', query=True, v=True)
-    curveShapePath = cmds.textField('atom_csst_exportPath_textField', query=True, text=True)
-    #ankle_up_loc = cmds.spaceLocator(name = misc.buildName(prefix, suffix, name + '_ankle_up_loc'))
-    ankle_up_grp = cmds.group(name=misc.buildName(prefix, suffix, name + '_ankle_up_grp'), em=True)
-    ankle_up_loc = place.circle(misc.buildName(prefix, suffix, '_ankle_aim_ctrl'), ankle_up_grp, 'diamond_ctrl', X * 1, 17, 8, 1, [0, 1, 0])
+    # ankle_up_loc = cmds.spaceLocator(name = place.buildName(prefix, suffix, name + '_ankle_up_loc'))
+    ankle_up_grp = cmds.group(name=place.buildName(prefix, suffix, name + '_ankle_up_grp'), em=True)
+    ankle_up_loc = place.circle(place.buildName(prefix, suffix, '_ankle_aim_ctrl'), ankle_up_grp, 'diamond_ctrl', X * 1, 17, 8, 1, [0, 1, 0])
     cmds.parent(ankle_up_loc, ankle_up_grp)
 
     cmds.xform(ankle_up_grp, ws=True, t=ankle_pos)
@@ -918,9 +921,9 @@ def createReverseAnkle(prefix, suffix, name, ankleJnt, paw_fk, aimAxisList, upAx
     cmds.parent(ankle_up_grp, w=True)
 
     # Old moving the ankle_up_grp, didnt work, changed on Oct 13th 2010
-    #cmds.xform(ankle_up_grp, ws=True, t= [ankle_pos[0] + loc_pos[0], ankle_pos[1]+loc_pos[1], ankle_pos[2]+loc_pos[2]], ro=ankle_rot)
+    # cmds.xform(ankle_up_grp, ws=True, t= [ankle_pos[0] + loc_pos[0], ankle_pos[1]+loc_pos[1], ankle_pos[2]+loc_pos[2]], ro=ankle_rot)
 
-    ankle_aim_loc = cmds.spaceLocator(name=misc.buildName(prefix, suffix, '_ankle_aim_loc'))
+    ankle_aim_loc = cmds.spaceLocator(name=place.buildName(prefix, suffix, '_ankle_aim_loc'))
     cmds.xform(ankle_aim_loc, ws=True, t=ball_pos)
 
     # For some reason Maya doesnt seem to want to return all the values at the same time
@@ -935,9 +938,9 @@ def createReverseAnkle(prefix, suffix, name, ankleJnt, paw_fk, aimAxisList, upAx
     cmds.aimConstraint(ankle_aim_loc[0], ankleJnt, wuo=ankle_up_loc[0], wut='object', aim=revAnkleAimAxis, u=revAnkleUpAxis, mo=False)
     '''
     if setChannels == True:
-        misc.setChannels(ankle_up_grp, [True, False], [True, False], [True, False], [True, True,False], [True,True])
-        misc.setChannels(ankle_up_loc[0], [False, True], [True, False], [True, False], [True, True,False], [True,True])
-        misc.setChannels(ankle_aim_loc[0],[False, False], [True, False], [True, False], [False, True,False], [True,True])
+        place.setChannels(ankle_up_grp, [True, False], [True, False], [True, False], [True, True,False], [True,True])
+        place.setChannels(ankle_up_loc[0], [False, True], [True, False], [True, False], [True, True,False], [True,True])
+        place.setChannels(ankle_aim_loc[0],[False, False], [True, False], [True, False], [False, True,False], [True,True])
     '''
     return [ankle_aim_loc[0], ankle_up_loc[0], ankle_up_grp]
 
@@ -1014,7 +1017,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 if limbName == 'none':
                     limbName = ''
                 # Main control
-                limbCtrl_grp = cmds.group(n=misc.buildName(prefix, suffix, 'limb_ctrl_grp'), em=True)
+                limbCtrl_grp = cmds.group(n=place.buildName(prefix, suffix, 'limb_ctrl_grp'), em=True)
                 cmds.xform(limbCtrl_grp, ws=True, t=limbPlacementPos)
                 cmds.makeIdentity(limbCtrl_grp, apply=True, t=True, r=True, s=True, n=False)
                 # connect scales, another scale connection made after the ankleTwist() at the end
@@ -1025,11 +1028,11 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                     if '_phal_' not in jnt and '_end_' not in jnt:
                         pass
                         # print jnt, '_____________'
-                    misc.hijackScale(jnt, limbCtrl_grp)
+                    place.hijackScale(jnt, limbCtrl_grp)
                 # '''
 
                 # Toe Roll Control
-                toeRollCtrl = cmds.circle(n=misc.buildName(prefix, suffix, '_toe_roll_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
+                toeRollCtrl = cmds.circle(n=place.buildName(prefix, suffix, '_toe_roll_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
                 toeShape = cmds.listRelatives(toeRollCtrl[0], typ='shape')[0]
                 cmds.connectAttr(sel[2] + '.Pivot', toeShape + '.visibility')
                 cmds.select(toeRollCtrl)
@@ -1050,7 +1053,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.connectAttr(sel[2] + '.ToeRoll', toeRollCtrl[0] + '.rx')
 
                 # Heel Control
-                heelRollCtrl = cmds.circle(n=misc.buildName(prefix, suffix, '_heel_roll_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
+                heelRollCtrl = cmds.circle(n=place.buildName(prefix, suffix, '_heel_roll_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
                 heelShape = cmds.listRelatives(heelRollCtrl[0], typ='shape')[0]
                 cmds.connectAttr(sel[2] + '.Pivot', heelShape + '.visibility')
                 cmds.select(heelRollCtrl)
@@ -1073,7 +1076,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # Paw FK Control
                 placeGrp = cmds.group(n='sebastianEatThisTemporaryPlacementGroup', em=True, w=True)
                 cmds.xform(placeGrp, ws=True, t=cmds.xform(paw_fk, q=True, ws=True, rp=True))
-                pawFkCtrl = place.circle(misc.buildName(prefix, suffix, '_paw_fk_ctrl'), placeGrp, 'facetXup_ctrl', X * 3.5, 12, 8, 1, [0, 1, 0])
+                pawFkCtrl = place.circle(place.buildName(prefix, suffix, '_paw_fk_ctrl'), placeGrp, 'facetXup_ctrl', X * 3.5, 12, 8, 1, [0, 1, 0])
                 fkShape = cmds.listRelatives(pawFkCtrl[0], typ='shape')[0]
                 cmds.connectAttr(sel[2] + '.Fk', fkShape + '.visibility')
                 cmds.delete(placeGrp)
@@ -1090,7 +1093,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # return None
 
                 # Ball Roll Control
-                ballRollCtrl = place.circle(misc.buildName(prefix, suffix, 'ball_roll_ctrl'), paw_fk, 'ballRoll_ctrl', X * 4, 12, 8, 1, [0, 0, 1])
+                ballRollCtrl = place.circle(place.buildName(prefix, suffix, 'ball_roll_ctrl'), paw_fk, 'ballRoll_ctrl', X * 4, 12, 8, 1, [0, 0, 1])
                 # To accomodate how atom_placement.circle is working
                 cmds.xform(ballRollCtrl[0], ws=True, ro=[0, 0, 0])
 
@@ -1109,7 +1112,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.makeIdentity(ballRollCtrl, apply=True, t=True, r=True, s=True, n=False)
 
                 # create the base rotation group
-                limb_rot_grp = cmds.group(name=misc.buildName(prefix, suffix, '_limb_rot_grp'), em=True)
+                limb_rot_grp = cmds.group(name=place.buildName(prefix, suffix, '_limb_rot_grp'), em=True)
                 cmds.xform(limb_rot_grp, ws=True, rp=cmds.xform(paw_fk, query=True, ws=True, rp=True))
                 cmds.parent(limb_rot_grp, heelRollCtrl)
                 cmds.makeIdentity(limb_rot_grp, apply=True, t=True, r=True, s=True, n=False)
@@ -1117,9 +1120,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # Delete the joints used to get the placment transformation
                 cmds.delete(limbPlacementJnt)
 
-                #--------------------------------------------------
+                # --------------------------------------------------
                 # Create the IK for the main leg and the paw digits
-                #--------------------------------------------------
+                # --------------------------------------------------
 
                 ldf = cmds.floatField('atom_qls_ldf_floatField', query=True, v=True)
                 locScale = cmds.floatField('atom_qls_scale_floatField', query=True, v=True)
@@ -1195,7 +1198,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
 
                             # moved pv creation above ik creation
                             # create a poleVector constraint for the metacarpal IK
-                            meta_pv = cmds.spaceLocator(n=misc.buildName(prefix, '', 'pv_' + metacarpal))
+                            meta_pv = cmds.spaceLocator(n=place.buildName(prefix, '', 'pv_' + metacarpal))
                             cmds.xform(meta_pv, ws=True, t=cmds.xform(metacarpal, query=True, ws=True, rp=True),
                                        ro=cmds.xform(metacarpal, query=True, ws=True, ro=True))
                             # dont want to change the original values, so making a copy
@@ -1227,29 +1230,29 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                             cmds.setAttr(ik[1][0] + '.Tip_Vis', cb=True)
                             ikShape = cmds.listRelatives(ik[1][0], typ='shape')[0]
                             cmds.connectAttr(sel[2] + '.MidDigit', ikShape + '.visibility')
-                            pv_loc_grp = cmds.group(n=misc.buildName(prefix, suffix, name + '_pv_point_grp'), em=True, w=True)
+                            pv_loc_grp = cmds.group(n=place.buildName(prefix, suffix, name + '_pv_point_grp'), em=True, w=True)
                             cmds.xform(pv_loc_grp, ws=True, t=cmds.xform(proximal_phalanx, query=True, ws=True, rp=True))
-                            #cmds.parent(pv_loc, pv_loc_grp)
+                            # cmds.parent(pv_loc, pv_loc_grp)
                             pvShape = cmds.listRelatives(pv_loc, typ='shape')[0]
                             cmds.connectAttr(sel[2] + '.PvDigit', pvShape + '.visibility')
 
-                            #=====Digit Creation=====#
+                            # =====Digit Creation=====#
                             digit_grp = createStandardDigit(distal_phalanx, end_jnt, prefix, suffix, 'tip_' + name, rotAxis, aimAxis, upAxis,
                                                             digitLdf, digitScale, aimAxisList, upAxisList, flipVal, True, curveShapePath)
 
                             printMeta('created standard digit rig')
                             cmds.connectAttr(ik[1][0] + '.Tip_Vis', digit_grp + '.visibility', force=True)
                             '''
-                            baseCtrlGrp = cmds.group(n=misc.buildName(prefix, suffix, name + '_base_ctrl_grp'), em=True, w=True)
-                            pivot_grp = cmds.group(n=misc.buildName(prefix, suffix, name + '_base_pivot_grp'), em=True, w=True)
-                            ornt_grp = cmds.group(n=misc.buildName(prefix, suffix, name + '_base_orient_grp'), em=True, w=True)
+                            baseCtrlGrp = cmds.group(n=place.buildName(prefix, suffix, name + '_base_ctrl_grp'), em=True, w=True)
+                            pivot_grp = cmds.group(n=place.buildName(prefix, suffix, name + '_base_pivot_grp'), em=True, w=True)
+                            ornt_grp = cmds.group(n=place.buildName(prefix, suffix, name + '_base_orient_grp'), em=True, w=True)
                             '''
                             # new type, match digit orientation
-                            baseCtrlGrp = place.null2(misc.buildName(prefix, suffix, name + '_base_ctrl_grp'), proximal_phalanx, orient=True)[0]
-                            pivot_grp = place.null2(misc.buildName(prefix, suffix, name + '_base_pivot_grp'), proximal_phalanx, orient=True)[0]
-                            ornt_grp = place.null2(misc.buildName(prefix, suffix, name + '_base_orient_grp'), proximal_phalanx, orient=True)[0]
+                            baseCtrlGrp = place.null2(place.buildName(prefix, suffix, name + '_base_ctrl_grp'), proximal_phalanx, orient=True)[0]
+                            pivot_grp = place.null2(place.buildName(prefix, suffix, name + '_base_pivot_grp'), proximal_phalanx, orient=True)[0]
+                            ornt_grp = place.null2(place.buildName(prefix, suffix, name + '_base_orient_grp'), proximal_phalanx, orient=True)[0]
                             #
-                            baseCtrl = place.circle(misc.buildName(prefix, suffix, name + '_base_ctrl'), baseCtrlGrp, 'digitBase_ctrl', X * 3.5, 17, 8, 1, [0, 0, 1])
+                            baseCtrl = place.circle(place.buildName(prefix, suffix, name + '_base_ctrl'), baseCtrlGrp, 'digitBase_ctrl', X * 3.5, 17, 8, 1, [0, 0, 1])
                             cmds.parent(pivot_grp, baseCtrlGrp)
                             cmds.parent(ornt_grp, pivot_grp)
                             cmds.parent(baseCtrl, ornt_grp)
@@ -1269,9 +1272,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                                 if i == 3:
                                     break
                                 if cmds.nodeType(jnt) == 'joint':
-                                    # misc.hijackScale(jnt, baseCtrl[0])
-                                    misc.optEnum(baseCtrl[0], attrPrefix[i])
-                                    misc.hijackHybridScale(jnt, baseCtrl[0], lengthAttr='scaleZ', attrPrefix=attrPrefix[i])
+                                    # place.hijackScale(jnt, baseCtrl[0])
+                                    place.optEnum(baseCtrl[0], attrPrefix[i])
+                                    place.hijackHybridScale(jnt, baseCtrl[0], lengthAttr='scaleZ', attrPrefix=attrPrefix[i])
                                 i = i + 1
                             # '''
                             #
@@ -1281,18 +1284,18 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                                 cmds.xform(baseCtrlGrp, ws=True, ro=pp_rot)
 
                             printMeta('moved mystery group' + baseCtrlGrp)
-                            # misc.flatten(ornt_grp)
-                            misc.setChannels(ornt_grp, [True, False], [True, False], [True, False], [True, False, False])
+                            # place.flatten(ornt_grp)
+                            place.setChannels(ornt_grp, [True, False], [True, False], [True, False], [True, False, False])
 
                             # set up the roll grp,
-                            jnt_roll_grp = cmds.group(name=misc.buildName(prefix, suffix, name + '_roll_grp'), em=True)
+                            jnt_roll_grp = cmds.group(name=place.buildName(prefix, suffix, name + '_roll_grp'), em=True)
                             cmds.xform(jnt_roll_grp, ws=True, t=cmds.xform(roll_jnt, query=True, ws=True, rp=True))
                             cmds.parent(jnt_roll_grp, heelRollCtrl)
                             cmds.setAttr(jnt_roll_grp + '.tz', cmds.getAttr(jnt_roll_grp + '.tz') * ballRollOffset)
                             cmds.parent(jnt_roll_grp, baseCtrl)
                             cmds.makeIdentity(jnt_roll_grp, apply=True, t=True, r=True, s=True, n=False)
                             cmds.delete(roll_jnt)
-                            misc.hijack(jnt_roll_grp, ballRollCtrl[0], rotate=False, scale=False, visibility=False)
+                            place.hijack(jnt_roll_grp, ballRollCtrl[0], rotate=False, scale=False, visibility=False)
 
                             printMeta('setup roll group')
                             # parent the metacarpal IK to the jnt_roll_grp
@@ -1305,9 +1308,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                             cmds.parent(baseCtrlGrp, limb_rot_grp)
                             cmds.parent(pv_loc_grp, baseCtrl)
                             cmds.makeIdentity(pv_loc_grp, apply=True, t=True, r=True, s=False, n=False)
-                            pv_loc_ornt_grp = place.null2(misc.buildName(prefix, suffix, name + '_pv_orient_grp'), pv_loc)[0]
+                            pv_loc_ornt_grp = place.null2(place.buildName(prefix, suffix, name + '_pv_orient_grp'), pv_loc)[0]
                             cmds.parent(pv_loc_ornt_grp, pv_loc_grp)
-                            misc.setChannels(pv_loc_ornt_grp, [True, False], [True, False], [True, False], [True, False, False])
+                            place.setChannels(pv_loc_ornt_grp, [True, False], [True, False], [True, False], [True, False, False])
                             cmds.parent(pv_loc, pv_loc_ornt_grp)
                             pvc = cmds.poleVectorConstraint(pv_loc, ik[0][0])
                             printMeta('added pv constraint for digit')
@@ -1318,30 +1321,30 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                             cmds.connectAttr(pawFkCtrl[0] + '.rotate' + rotAxis, pivot_grp + '.rotate' + rotAxis)
                             printMeta('end of loop')
 
-                            if setChannels == True:
-                                misc.setChannels(digit_grp, [False, False], [False, False], [True, False], [False, False, True], [True, True])
-                                misc.setChannels(baseCtrlGrp, [True, False], [True, False], [True, False], [True, True, False], [True, True])
-                                misc.setChannels(baseCtrl[0], [True, False], [False, True], [True, False], [True, True, False], [True, True])
-                                misc.setChannels(pivot_grp, [True, False], [False, False], [True, False], [True, True, False])
-                                misc.setChannels(meta_pv[0], [False, True], [True, False], [True, False], [False, False, True], [True, True])
-                                misc.setChannels(pv_loc, [False, True], [True, False], [True, False], [True, True, False], [True, True])
+                            if setChannels:
+                                place.setChannels(digit_grp, [False, False], [False, False], [True, False], [False, False, True], [True, True])
+                                place.setChannels(baseCtrlGrp, [True, False], [True, False], [True, False], [True, True, False], [True, True])
+                                place.setChannels(baseCtrl[0], [True, False], [False, True], [True, False], [True, True, False], [True, True])
+                                place.setChannels(pivot_grp, [True, False], [False, False], [True, False], [True, True, False])
+                                place.setChannels(meta_pv[0], [False, True], [True, False], [True, False], [False, False, True], [True, True])
+                                place.setChannels(pv_loc, [False, True], [True, False], [True, False], [True, True, False], [True, True])
                 # print 'after loop'
                 # return None
                 printMeta('done digit loop')
                 # Set up the hip autoAnkleParent group
                 hipJntPos = cmds.xform(hipJnt, query=True, ws=True, rp=True)
-                autoAnkleGrp = cmds.group(n=misc.buildName(prefix, suffix, '_auto_ankle_parent_grp'), em=True, world=True)
+                autoAnkleGrp = cmds.group(n=place.buildName(prefix, suffix, '_auto_ankle_parent_grp'), em=True, world=True)
                 cmds.xform(autoAnkleGrp, ws=True, t=hipJntPos)
 
                 # freeze transforms
                 cmds.makeIdentity(autoAnkleGrp, apply=True, t=True, r=True, s=True, n=False)
 
                 # point and orient y the autoAnkleGrp
-                cmds.pointConstraint(hipJnt, autoAnkleGrp, n=misc.buildName(prefix, suffix, '_auto_ankle_parent_grp_pntCon'))
-                cmds.orientConstraint(limbCtrl_grp, autoAnkleGrp, n=misc.buildName(prefix, suffix, '_auto_ankle_parent_grp_ortCon'), mo=True, skip=('x', 'z'))
+                cmds.pointConstraint(hipJnt, autoAnkleGrp, n=place.buildName(prefix, suffix, '_auto_ankle_parent_grp_pntCon'))
+                cmds.orientConstraint(limbCtrl_grp, autoAnkleGrp, n=place.buildName(prefix, suffix, '_auto_ankle_parent_grp_ortCon'), mo=True, skip=('x', 'z'))
 
                 # knee_pv_grp
-                kneePvGrp = cmds.group(n=misc.buildName(prefix, suffix, '_knee_pv_grp'), em=True, world=True)
+                kneePvGrp = cmds.group(n=place.buildName(prefix, suffix, '_knee_pv_grp'), em=True, world=True)
                 cmds.xform(kneePvGrp, ws=True, t=cmds.xform(ankle_pv_loc, query=True, ws=True, rp=True))
                 cmds.parentConstraint(limbCtrl_grp, kneePvGrp)
 
@@ -1351,7 +1354,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.connectAttr(sel[2] + '.AnkleUp', ankleShape + '.visibility')
                 # print 'line 1222'
                 # return None
-                ankleFromToeRollGrp = cmds.group(n=misc.buildName(prefix, suffix, '_ankle_fromToeRoll_grp'), em=True, world=True)
+                ankleFromToeRollGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankle_fromToeRoll_grp'), em=True, world=True)
                 ankleFromToeRollGrpPos = cmds.xform(paw_fk, query=True, ws=True, rp=True)
                 # print 'line 1226'
                 # return None
@@ -1362,9 +1365,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.parent(ankle_aim_loc[2], ankleFromToeRollGrp)
                 # print 'line 1232'
                 # return None
-                autoAnkleUp_loc = cmds.spaceLocator(n=misc.buildName(prefix, suffix, '_autoAnkleParent_up_loc'))
+                autoAnkleUp_loc = cmds.spaceLocator(n=place.buildName(prefix, suffix, '_autoAnkleParent_up_loc'))
 
-                ankleFromToeRollGrp_aim_loc = cmds.spaceLocator(n=misc.buildName(prefix, suffix, '_ankleFromToeRollGrp_aim_loc'))
+                ankleFromToeRollGrp_aim_loc = cmds.spaceLocator(n=place.buildName(prefix, suffix, '_ankleFromToeRollGrp_aim_loc'))
                 cmds.xform(ankleFromToeRollGrp_aim_loc, ws=True, t=cmds.xform(ankleJnt, query=True, ws=True, rp=True))
                 cmds.parent(ankleFromToeRollGrp_aim_loc, ankleJnt)
                 cmds.makeIdentity(ankleFromToeRollGrp_aim_loc, apply=True, t=True, r=True, s=True, n=False)
@@ -1381,7 +1384,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 ankleFromToeRollGrpAim = cmds.aimConstraint(ankleFromToeRollGrp_aim_loc, ankleFromToeRollGrp,
                                                             wuo=autoAnkleUp_loc[0], mo=True, wut='object', aim=[0, 1, 0], u=[0, 0, 1])
 
-                ankleCtrl = cmds.circle(n=misc.buildName(prefix, suffix, limbName + '_ankle_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
+                ankleCtrl = cmds.circle(n=place.buildName(prefix, suffix, limbName + '_ankle_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
                 cmds.select(ankleCtrl)
                 ui.importCurveShape('diamond_ctrl', curveShapePath, X * 4, 17)
                 cmds.xform(ankleCtrl, ws=True, t=anklePos)
@@ -1389,8 +1392,8 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.makeIdentity(ankleCtrl, apply=True, t=True, r=True, s=True, n=False)
 
                 # create a group for pivot the ankle from halfway between the toe tip and foot placement
-                toeRollPivot_ornt_grp = cmds.group(n=misc.buildName(prefix, suffix, '_toeRollPivot_ornt_grp'), em=True, world=True)
-                toeRollPivot_grp = cmds.group(n=misc.buildName(prefix, suffix, '_toeRollPivot_grp'), em=True, parent=toeRollPivot_ornt_grp)
+                toeRollPivot_ornt_grp = cmds.group(n=place.buildName(prefix, suffix, '_toeRollPivot_ornt_grp'), em=True, world=True)
+                toeRollPivot_grp = cmds.group(n=place.buildName(prefix, suffix, '_toeRollPivot_grp'), em=True, parent=toeRollPivot_ornt_grp)
 
                 cmds.xform(toeRollPivot_ornt_grp, ws=True, t=toePlacementPos)
                 cmds.parent(toeRollPivot_ornt_grp, heelRollCtrl)
@@ -1398,11 +1401,11 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.connectAttr(ballRollCtrl[0] + '.rotate' + rotAxis, toeRollPivot_grp + '.rotate' + rotAxis)
 
                 # create a group under the locator
-                ankleCtrlGrp = cmds.group(n=misc.buildName(prefix, suffix, '_ankle_ctrl_grp'), em=True, parent=ankleCtrl[0])
+                ankleCtrlGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankle_ctrl_grp'), em=True, parent=ankleCtrl[0])
                 cmds.xform(ankleCtrlGrp, ws=True, t=cmds.xform(ankleCtrl, query=True, ws=True, rp=True))
                 cmds.makeIdentity(ankleCtrlGrp, apply=True, t=True, r=True, s=True, n=False)
 
-                ankleToToeRollGrp = cmds.group(n=misc.buildName(prefix, suffix, '_ankle_toToeRoll_grp'), em=True, world=True)
+                ankleToToeRollGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankle_toToeRoll_grp'), em=True, world=True)
                 ankleToToeRollGrpPos = cmds.xform(ankleToToeRollGrp, ws=True, t=pawFkPos)
                 cmds.pointConstraint(ankleToToeRollGrp, ankleFromToeRollGrp)
 
@@ -1410,16 +1413,16 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.xform(ankleToToeRollGrp, ws=True, t=pawFkPos)
                 cmds.parent(ankle_aim_loc[0], toeRollPivot_grp)
                 cmds.makeIdentity(ankle_aim_loc[0], apply=True, t=True, r=True, s=True, n=False)
-                misc.hijack(ankle_aim_loc[0], ballRollCtrl[0], rotate=False, scale=False, visibility=False)
+                place.hijack(ankle_aim_loc[0], ballRollCtrl[0], rotate=False, scale=False, visibility=False)
 
                 # create the ankleIkParentGrp
-                ankleIkParentGrp = cmds.group(n=misc.buildName(prefix, suffix, '_ankleIkParent_grp'), em=True, world=True)
+                ankleIkParentGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankleIkParent_grp'), em=True, world=True)
                 cmds.xform(ankleIkParentGrp, ws=True, t=pawFkPos)
                 cmds.parent(ankleIkParentGrp, toeRollPivot_grp)
                 cmds.makeIdentity(ankleIkParentGrp, apply=True, t=True, r=True, s=True, n=False)
-                misc.hijack(ankleIkParentGrp, ballRollCtrl[0], rotate=False, scale=False, visibility=False)
+                place.hijack(ankleIkParentGrp, ballRollCtrl[0], rotate=False, scale=False, visibility=False)
 
-                ankleIkParent_up_loc = cmds.spaceLocator(n=misc.buildName(prefix, suffix, '_ankleIkParent_up_loc'))
+                ankleIkParent_up_loc = cmds.spaceLocator(n=place.buildName(prefix, suffix, '_ankleIkParent_up_loc'))
                 cmds.parent(ankleIkParent_up_loc, ballRollCtrl)
                 cmds.xform(ankleIkParent_up_loc, ws=True, t=[pawFkPos[0], pawFkPos[1] + 1, pawFkPos[2] + 1])
                 cmds.makeIdentity(ankleIkParent_up_loc, apply=True, t=True, r=True, s=True, n=False)
@@ -1434,52 +1437,52 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # print 'before pv rig'
                 # return None
                 # Rig up the reverse ankle aim constraints
-                pvRig(misc.buildName(prefix, suffix, '_pv_ctrl'), 'master_Grp', hip_ctrl, ankleCtrlGrp, heelRollCtrl[0], ankle_pv_loc, kneeJnt, X * 4, sel[2], setChannels)
-                # pvRig(misc.buildName(prefix, suffix, '_pv_ctrl'), 'master_Grp', hip_ctrl, ankleCtrlGrp, heelRollCtrl[0], ankle_pv_loc, kneeJnt, X * 4, sel[2], setChannels)
+                pvRig(place.buildName(prefix, suffix, '_pv_ctrl'), 'master_Grp', hip_ctrl, ankleCtrlGrp, heelRollCtrl[0], ankle_pv_loc, kneeJnt, X * 4, sel[2], setChannels)
+                # pvRig(place.buildName(prefix, suffix, '_pv_ctrl'), 'master_Grp', hip_ctrl, ankleCtrlGrp, heelRollCtrl[0], ankle_pv_loc, kneeJnt, X * 4, sel[2], setChannels)
 
                 cmds.setAttr(ankleToToeRollGrp + '.rotateOrder', 2)
                 cmds.setAttr(ankleCtrl[0] + '.rotateOrder', 2)
                 cmds.setAttr(autoAnkleUp_loc[0] + '.rotateOrder', 2)
                 cmds.setAttr(ankleFromToeRollGrp_aim_loc[0] + '.rotateOrder', 2)
-                ankleScaleGp = ankleTwist(misc.buildName(prefix, suffix, '_ankle_control_grp'), 'master_Grp', hip_ctrl, ankleToToeRollGrp,
+                ankleScaleGp = ankleTwist(place.buildName(prefix, suffix, '_ankle_control_grp'), 'master_Grp', hip_ctrl, ankleToToeRollGrp,
                                           ankleCtrl[0], autoAnkleUp_loc, ankleFromToeRollGrp_aim_loc, setChannels)
 
                 # scale connection
                 # '''
-                misc.hijackScale(ankleScaleGp, limbCtrl_grp)
+                place.hijackScale(ankleScaleGp, limbCtrl_grp)
                 # '''
                 cmds.parentConstraint(limb_ctrl, limbCtrl_grp)
 
                 printMeta('before set channels')
                 # set the channels
-                if setChannels == True:
-                    misc.setChannels(ballRollCtrl[0], [False, True], [False, True], [True, False], [True, False, False], [True, True])
+                if setChannels:
+                    place.setChannels(ballRollCtrl[0], [False, True], [False, True], [True, False], [True, False, False], [True, True])
                     cmds.setAttr(ballRollCtrl[0] + '.rotate' + aimAxis, lock=True, k=False)
                     cmds.setAttr(ballRollCtrl[0] + '.rotate' + upAxis, lock=True, k=False)
-                    #cmds.setAttr(ballRollCtrl[0] + '.translate' + rotAxis, lock=True, k=False)
+                    # cmds.setAttr(ballRollCtrl[0] + '.translate' + rotAxis, lock=True, k=False)
                     cmds.setAttr(ankleFromToeRollGrp_aim_loc[0] + '.visibility', 0)
-                    misc.setChannels(pawFkCtrl[0], [True, False], [False, True], [True, False], [True, False, False], [True, True])
+                    place.setChannels(pawFkCtrl[0], [True, False], [False, True], [True, False], [True, False, False], [True, True])
                     cmds.setAttr(pawFkCtrl[0] + '.rotate' + aimAxis, l=True, k=False)
                     cmds.setAttr(pawFkCtrl[0] + '.rotate' + upAxis, l=True, k=False)
-                    misc.setChannels(kneePvGrp, [False, False], [False, False], [True, False], [True, False, False], [True, True])
-                    misc.setChannels(autoAnkleGrp, [False, True], [False, True], [True, False], [False, False, True], [True, True])
-                    misc.setChannels(autoAnkleUp_loc[0], [True, False], [True, False], [True, False], [False, True, False], [True, True])
-                    misc.setChannels(ankleFromToeRollGrp, [False, False], [False, False], [True, False], [True, True, False], [True, True])
-                    misc.setChannels(ankleCtrl[0], [False, True], [True, False], [True, False], [True, True, False], [True, True])
-                    misc.setChannels(ankleToToeRollGrp, [True, False], [True, False], [True, False], [False, True, False], [True, True])
-                    misc.setChannels(ankleIkParentGrp, [True, False], [True, False], [True, False], [False, True, False], [True, True])
-                    misc.setChannels(ankleIkParent_up_loc[0], [True, False], [True, False], [True, False], [False, True, False], [True, True])
-                    misc.setChannels(limb_rot_grp, [True, False], [False, False], [True, False], [True, False, False])
-                    misc.setChannels(heelRollCtrl[0], [True, False], [False, True], [True, False], [True, True, False])
+                    place.setChannels(kneePvGrp, [False, False], [False, False], [True, False], [True, False, False], [True, True])
+                    place.setChannels(autoAnkleGrp, [False, True], [False, True], [True, False], [False, False, True], [True, True])
+                    place.setChannels(autoAnkleUp_loc[0], [True, False], [True, False], [True, False], [False, True, False], [True, True])
+                    place.setChannels(ankleFromToeRollGrp, [False, False], [False, False], [True, False], [True, True, False], [True, True])
+                    place.setChannels(ankleCtrl[0], [False, True], [True, False], [True, False], [True, True, False], [True, True])
+                    place.setChannels(ankleToToeRollGrp, [True, False], [True, False], [True, False], [False, True, False], [True, True])
+                    place.setChannels(ankleIkParentGrp, [True, False], [True, False], [True, False], [False, True, False], [True, True])
+                    place.setChannels(ankleIkParent_up_loc[0], [True, False], [True, False], [True, False], [False, True, False], [True, True])
+                    place.setChannels(limb_rot_grp, [True, False], [False, False], [True, False], [True, False, False])
+                    place.setChannels(heelRollCtrl[0], [True, False], [False, True], [True, False], [True, True, False])
                     cmds.setAttr(heelRollCtrl[0] + '.rx', l=True)
                     cmds.setAttr(heelRollCtrl[0] + '.rx', k=False)
-                    misc.setChannels(toeRollCtrl[0], [True, False], [False, True], [True, False], [True, True, False])
+                    place.setChannels(toeRollCtrl[0], [True, False], [False, True], [True, False], [True, True, False])
                     cmds.setAttr(toeRollCtrl[0] + '.rx', l=True)
                     cmds.setAttr(toeRollCtrl[0] + '.rx', k=False)
-                    misc.setChannels(ankle_pv_loc, [False, True], [True, False], [True, False], [True, True, False])
-                    misc.setChannels(ankle_aim_loc[2], [True, False], [True, False], [True, False], [True, True, False], [True, True])
-                    misc.setChannels(ankle_aim_loc[1], [False, True], [True, False], [True, False], [True, True, False], [True, True])
-                    misc.setChannels(ankle_aim_loc[0], [False, False], [True, False], [True, False], [False, True, False], [True, True])
+                    place.setChannels(ankle_pv_loc, [False, True], [True, False], [True, False], [True, True, False])
+                    place.setChannels(ankle_aim_loc[2], [True, False], [True, False], [True, False], [True, True, False], [True, True])
+                    place.setChannels(ankle_aim_loc[1], [False, True], [True, False], [True, False], [True, True, False], [True, True])
+                    place.setChannels(ankle_aim_loc[0], [False, False], [True, False], [True, False], [False, True, False], [True, True])
                 printMeta('after set channels')
             else:
                 OpenMaya.MGlobal.displayError('A joint isn\'t selected...joints make skeletons...select a joint')
@@ -1517,9 +1520,9 @@ def create3jointIK(control):
 
                     wristPos = cmds.xform(wristJnt, query=True, ws=True, rp=True)
 
-                    #--------------------------------------------------
+                    # --------------------------------------------------
                     # Create the IK for the main leg and the paw digits
-                    #--------------------------------------------------
+                    # --------------------------------------------------
 
                     rotAxis = ui.convertAxisNum(cmds.radioButtonGrp('atom_bls_limbRot_radioButtonGrp', query=True, sl=True))
                     aimAxis = ui.convertAxisNum(cmds.radioButtonGrp('atom_bls_limbAim_radioButtonGrp', query=True, sl=True))
@@ -1547,8 +1550,8 @@ def create3jointIK(control):
                     wrist_pvc = cmds.poleVectorConstraint(wrist_pv_loc, wristIkh[0][0])
 
                     # set the channels
-                    if setChannels == True:
-                        misc.setChannels(wrist_pv_loc, [False, False], [True, True], [True, True], [False, True, True], [True, True])
+                    if setChannels:
+                        place.setChannels(wrist_pv_loc, [False, False], [True, True], [True, True], [False, True, True], [True, True])
 
         else:
             OpenMaya.MGlobal.displayError('Atom Window not found...open the damn Atom UI(User Interface) to make some magic...')
@@ -1580,9 +1583,9 @@ def createDigitCMD(control):
                     if limbName == 'none':
                         limbName = ''
 
-                    #--------------------------------------------------
+                    # --------------------------------------------------
                     # Create the IK for the main leg and the paw digits
-                    #--------------------------------------------------
+                    # --------------------------------------------------
 
                     rotAxis = ui.convertAxisNum(cmds.radioButtonGrp('atom_bls_limbRot_radioButtonGrp', query=True, sl=True))
                     aimAxis = ui.convertAxisNum(cmds.radioButtonGrp('atom_bls_limbAim_radioButtonGrp', query=True, sl=True))
@@ -1619,7 +1622,7 @@ def parentForarmRigJoints(parent, name, suffix):
     for i in range(1, 4, 1):
         jnt = '%s_%02d_jnt_%s' % (name, i, suffix)
         if cmds.objExists(jnt):
-            if cmds.listRelatives(jnt, parent=True) == None:
+            if not cmds.listRelatives(jnt, parent=True):
                 cmds.parent(jnt, parent)
 
 
@@ -1656,9 +1659,9 @@ def createForarmTwistRig(suffixList, w=0.5):
         cmds.connectAttr('front_twist_02_jnt_%s.rotateZ' % side, midMd + '.input1Z')
         cmds.connectAttr(midMd + '.outputZ', 'front_twist_01_jnt_%s.rotateZ' % side)
 
-        misc.cleanUp(ctrl_group[0], Ctrl=True)
-        misc.setChannels(ctrl_group[2], [False, True], [True, False], [True, False], [True, False, False], [True, True])
-        misc.setChannels(ctrl_group[3], [False, True], [True, False], [True, False], [True, True, False], [True, True])
+        place.cleanUp(ctrl_group[0], Ctrl=True)
+        place.setChannels(ctrl_group[2], [False, True], [True, False], [True, False], [True, False, False], [True, True])
+        place.setChannels(ctrl_group[3], [False, True], [True, False], [True, False], [True, True, False], [True, True])
 
 
 def createThighTwistRig(suffixList, w=-0.75):
@@ -1819,7 +1822,7 @@ def ikStretch(obj, rootJnt, rootCt, tipCt, percent=100):
     cmds.setAttr(locGrp + '.visibility', 0)
     cmds.parent(rootLoc, locGrp)
     cmds.parent(tipLoc, locGrp)
-    misc.cleanUp(locGrp, World=True)
+    place.cleanUp(locGrp, World=True)
     cmds.connectAttr(rootLoc + '.worldPosition[0]', dis + '.point1')
     cmds.connectAttr(tipLoc + '.worldPosition[0]', dis + '.point2')
     # clamp node
@@ -1830,7 +1833,7 @@ def ikStretch(obj, rootJnt, rootCt, tipCt, percent=100):
 
     # create/connect stretch attr
     limit = 100
-    misc.addAttribute(name, attr, 0, limit, True, 'float')
+    place.addAttribute(name, attr, 0, limit, True, 'float')
     cmds.setAttr(name + '.' + attr, limit)
     adl = cmds.createNode('addDoubleLinear', name='_adl')
     cmds.setAttr(adl + '.input2', value)
@@ -1872,14 +1875,14 @@ def createBoneScale(name='', joint='', control=None, lengthAttr='scaleZ', newAtt
         scaleCt = ctrl.createController()
         cmds.parentConstraint(joint, scaleCt[0])
         control = scaleCt[1]
-        misc.setChannels(control, translate=[False, False], rotate=[False, False], scale=[False, False], visibility=[True, False, True], other=[False, True])
-    misc.optEnum(control, attr='Scale')
+        place.setChannels(control, translate=[False, False], rotate=[False, False], scale=[False, False], visibility=[True, False, True], other=[False, True])
+    place.optEnum(control, attr='Scale')
     if unified:
-        misc.hijackAttrs(joint, control, 'scaleX', newAttr, set=False, default=None)
-        misc.hijackAttrs(joint, control, 'scaleY', newAttr, set=False, default=None)
-        misc.hijackAttrs(joint, control, 'scaleZ', newAttr, set=False, default=None)
+        place.hijackAttrs(joint, control, 'scaleX', newAttr, set=False, default=None)
+        place.hijackAttrs(joint, control, 'scaleY', newAttr, set=False, default=None)
+        place.hijackAttrs(joint, control, 'scaleZ', newAttr, set=False, default=None)
     else:
-        misc.hijackHybridScale(joint, control, lengthAttr)
+        place.hijackHybridScale(joint, control, lengthAttr)
 
 
 def printMeta(mes=''):

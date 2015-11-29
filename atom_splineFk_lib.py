@@ -1,10 +1,11 @@
 from pymel.core import *
 import maya.cmds as cmds
-import atom_placement_lib as place
-import atom_miscellaneous_lib as misc
-import atom_joint_lib as jnt
-import atom_spline_lib as spln
-import atom_ui_lib as ui
+import webrImport as web
+# web
+place = web.mod('atom_place_lib')
+jnt = web.mod('atom_joint_lib')
+spln = web.mod('atom_spline_lib')
+ui = web.mod('atom_ui_lib')
 
 
 class SplineFK(object):
@@ -75,21 +76,21 @@ class SplineFK(object):
                                        shape=self.iconList[0], size=self.controlerSize * 1.35, color=17, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
                 cntCt = cnt.createController()
                 self.rootCt = cntCt
-                misc.setRotOrderWithXform(cntCt[0], 'zxy', True)
+                place.setRotOrderWithXform(cntCt[0], 'zxy', True)
                 self.baseCtrl = cntCt[2]
             else:
                 cnt = place.Controller(self.nameBuilder(name), orientObj, orient=orient,
                                        shape=self.iconList[1], size=self.controlerSize * .25, color=color, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
                 cntCt = cnt.createController()
-                misc.setRotOrder(cntCt[4], 2, False)
-                misc.setRotOrder(cntCt[2], 3, False)
+                place.setRotOrder(cntCt[4], 2, False)
+                place.setRotOrder(cntCt[2], 3, False)
         else:
             cnt = place.Controller(self.nameBuilder(name), orientObj, orient=orient,
                                    shape=self.iconList[2], size=self.controlerSize, color=color, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
             cntCt = cnt.createController()
-            misc.setRotOrder(cntCt[4], 2, False)
-            misc.setRotOrder(cntCt[2], 3, False)
-        misc.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+            place.setRotOrder(cntCt[4], 2, False)
+            place.setRotOrder(cntCt[2], 3, False)
+        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
         return cntCt
 
     def setParents(self):
@@ -112,7 +113,7 @@ class SplineFK(object):
             # create the spln chain, creating a new joint for each selected join
             self.ikJoints = place.joint(0, self.nameBuilder(self.name + '_Spln_jnt'))
             # try to clean up groups
-            misc.cleanUp(self.ikJoints[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+            place.cleanUp(self.ikJoints[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
 
             # hardcoding 'oj' value. Shouldn't be any different. Otherwise spline up vector breaks.
             joint(self.ikJoints[0], e=True, oj='xyz', sao='yup', ch=True)
@@ -145,8 +146,8 @@ class SplineFK(object):
             ikhandle = spln.splineIK(self.nameBuilder(self.name), ls(self.ikJoints[0])[0].name(), ls(self.ikJoints[len(self.ikJoints) - 1])[0].name(), 2, curve=True)
             ls(ikhandle[0])[0].visibility.set(0)
             # try and clean up
-            misc.cleanUp(ikhandle[0], World=True)
-            misc.cleanUp(ikhandle[2], World=True)
+            place.cleanUp(ikhandle[0], World=True)
+            place.cleanUp(ikhandle[2], World=True)
             self.ikCurve = ikhandle[2]
 
             # CLUSTERS
@@ -157,7 +158,7 @@ class SplineFK(object):
                 parent(item, self.clusterGrp)
 
             # try to cleanup cluster group, turn visibility off
-            misc.cleanUp(self.clusterGrp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
+            place.cleanUp(self.clusterGrp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
             ls(self.clusterGrp)[0].visibility.set(0)
 
     def Stretch(self, attr='OffOn'):
@@ -171,8 +172,8 @@ class SplineFK(object):
         max squash attr
         '''
         # create the driving attribute
-        misc.optEnum(self.baseCtrl, attr='Stretch')
-        misc.addAttribute(self.baseCtrl, attr, minimum=0, maximum=1, keyable=True, attrType='double')
+        place.optEnum(self.baseCtrl, attr='Stretch')
+        place.addAttribute(self.baseCtrl, attr, minimum=0, maximum=1, keyable=True, attrType='double')
         cmds.setAttr(self.baseCtrl + '.' + attr, self.stretch)
 
         #
@@ -218,10 +219,10 @@ class SplineFK(object):
         # all guides are parented under the guide group
         guideGp = place.null2(self.nameBuilder(self.name + '_UpVctrGdGrp'), self.baseCtrl, orient=False)[0]
         # the vis attr of guide group is connectged to an attr on the base controller
-        misc.addAttribute(self.baseCtrl, visAttr, 0, 1, False, 'long')
-        misc.hijackVis(guideGp, self.baseCtrl, name=visAttr, suffix=False, default=0)
+        place.addAttribute(self.baseCtrl, visAttr, 0, 1, False, 'long')
+        place.hijackVis(guideGp, self.baseCtrl, name=visAttr, suffix=False, default=0)
         # try to cleanup
-        misc.cleanUp(guideGp, World=True)
+        place.cleanUp(guideGp, World=True)
 
         #
         #
@@ -231,14 +232,14 @@ class SplineFK(object):
             orntObj = str(ls(item)[0].getParent())
             cntCt = self.createController(self.name + '_upVctr_' + str(('%0' + str(2) + 'd') % (i)), orntObj, item, color, ctrlType=['special', ''])
             # try and cleanup
-            misc.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+            place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
             # vis of controller is connected to base vis controller, teh attr was created above, outside the for loop.
-            misc.hijackVis(cntCt[2], self.baseCtrl, name=visAttr, suffix=False, default=0)
+            place.hijackVis(cntCt[2], self.baseCtrl, name=visAttr, suffix=False, default=0)
             # rotations and scales are locked for the controller and controller offset nodes
-            misc.setChannels(cntCt[2], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-            misc.setChannels(cntCt[3], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+            place.setChannels(cntCt[2], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+            place.setChannels(cntCt[3], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
             # create guide
-            guide = misc.guideLine(cntCt[4], self.ikJoints[i], 'connect')
+            guide = place.guideLine(cntCt[4], self.ikJoints[i], 'connect')
             # parent guide
             cmds.parent(guide[0], guideGp)
             cmds.parent(guide[1][0], guideGp)
@@ -292,7 +293,7 @@ class SplineFK(object):
             # add pole vector constraint and try to cleanup
             for i in range(len(upVctr) - 2, 0, -1):
                 cmds.poleVectorConstraint(upVctr[i], self.clusterList[i + 1])
-            misc.cleanUp(self.clusterList, World=True)
+            place.cleanUp(self.clusterList, World=True)
             # constrain skin joints to ik joints.
             for i in range(1, len(self.ikJoints) - 1, 1):
                 cmds.parentConstraint(self.ikJoints[i], self.skinJoints[i], mo=True)
@@ -386,15 +387,15 @@ class SplineFK(object):
                     cmds.parent(CtGrp1, TopGrp1)
                     cmds.parent(cntCt[0], CtGrp1)
 
-                    misc.setRotOrderWithXform(TopGrp1, 'zxy', False)
-                    misc.setRotOrderWithXform(CtGrp1, 'zxy', False)
+                    place.setRotOrderWithXform(TopGrp1, 'zxy', False)
+                    place.setRotOrderWithXform(CtGrp1, 'zxy', False)
 
                     # account for ps1 being a joint type
                     self.ps1_Jnt = ps1
                     if cmds.objectType(ps1) == 'joint':
                         JntIntmdt = place.null2(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_Prnt1OnAssistGp'), TopGrp1)[0]
                         cmds.parent(JntIntmdt, TopGrp1)
-                        misc.setRotOrderWithXform(JntIntmdt, 'zxy', False)
+                        place.setRotOrderWithXform(JntIntmdt, 'zxy', False)
                         cmds.parentConstraint(ps1, JntIntmdt, mo=True)
                         self.ps1_Jnt = JntIntmdt
 
@@ -405,8 +406,8 @@ class SplineFK(object):
                     if ps2 == None:
                         #cmds.parentConstraint(self.firstCntCt, cntCt[0], mo=True)
                         # Dont need as of Nov 30th 2010
-                        misc.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp1, TopGrp1, self.ps1_Jnt, self.ctParent, False, False, True, True, 'FK_', w=self.FK)
-                        misc.cleanUp(TopGrp1, Ctrl=True)
+                        place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp1, TopGrp1, self.ps1_Jnt, self.ctParent, False, False, True, True, 'FK_', w=self.FK)
+                        place.cleanUp(TopGrp1, Ctrl=True)
                 #
                 #
                 # self.parent2 check
@@ -431,19 +432,19 @@ class SplineFK(object):
                     cmds.parent(TopGrp1, CtGrp2)
                     cmds.parent(CtGrp2, TopGrp2)
 
-                    misc.setRotOrderWithXform(CtGrp2, 'zxy', False)
-                    misc.setRotOrderWithXform(TopGrp2, 'zxy', False)
+                    place.setRotOrderWithXform(CtGrp2, 'zxy', False)
+                    place.setRotOrderWithXform(TopGrp2, 'zxy', False)
 
-                    misc.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp1, TopGrp1, CtGrp2, self.ctParent, False, False, True, True, 'FK_', w=self.FK)
+                    place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp1, TopGrp1, CtGrp2, self.ctParent, False, False, True, True, 'FK_', w=self.FK)
 
                     if cmds.objectType(ps2) == 'joint':
                         JntIntmdt = place.null2(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_Prnt2OnAssistGp'), TopGrp1)[0]
                         cmds.parent(JntIntmdt, TopGrp2)
-                        misc.setRotOrderWithXform(JntIntmdt, 'zxy', False)
+                        place.setRotOrderWithXform(JntIntmdt, 'zxy', False)
                         cmds.parentConstraint(ps2, JntIntmdt, mo=True)
-                        misc.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, JntIntmdt, False, False, True, False, 'Driver_', w=self.driven)
+                        place.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, JntIntmdt, False, False, True, False, 'Driver_', w=self.driven)
                     else:
-                        misc.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, ps2, False, False, True, False, 'Driver_', w=self.driven)
+                        place.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, ps2, False, False, True, False, 'Driver_', w=self.driven)
                 # forward group to be used as parent for next controller iteration
                 self.ctParent = cntCt[4]
                 # append same controller to list for vector parent
@@ -459,14 +460,14 @@ class SplineFK(object):
                     chainZero = cntCt[3]
                     # make offset shape visible and bigger
                     cmds.setAttr(cntCt[2] + '.Offset_Vis', 1)
-                    misc.shapeSize(cntCt[3], 1.5)
+                    place.shapeSize(cntCt[3], 1.5)
                     # path = os.path.join(os.getenv('KEY_TOOLS_PYTHONPATH'), 'atom/control_shape_templates')
                     path = os.path.expanduser('~') + '/GitHub/controlShapes/'
                     cmds.select(cntCt[3])
                     ui.importCurveShape(self.iconList[2], path, self.controlerSize * .5, color)
                     # all iterations of segment get scale additive to the joints
-                    misc.attrBlend(cntCt[3], self.skinJoints[i - 1], cntCt[2], scale=True, skip=2)
-                    misc.scaleUnlock(cntCt[3], sz=False)
+                    place.attrBlend(cntCt[3], self.skinJoints[i - 1], cntCt[2], scale=True, skip=2)
+                    place.scaleUnlock(cntCt[3], sz=False)
                 # all other iterations of segment
                 else:
                     # build additive
@@ -477,11 +478,11 @@ class SplineFK(object):
                     cmds.xform(blendNull, ws=True, ro=rot)
                     cmds.parent(blendNull, cntCt[1])
                     cmds.parent(cntCt[2], blendNull)
-                    misc.setRotOrderWithXform(blendNull, 'zxy', False)
+                    place.setRotOrderWithXform(blendNull, 'zxy', False)
                     # add additive to rot and pos
-                    misc.attrBlend(chainZero, blendNull, cntCt[2], rot=True, pos=True, skip=3, default=1)
+                    place.attrBlend(chainZero, blendNull, cntCt[2], rot=True, pos=True, skip=3, default=1)
                     # all iterations of segment get scale additive to the joints
-                    misc.attrBlend(chainZero, self.skinJoints[i - 1], cntCt[2], scale=True, skip=2)
+                    place.attrBlend(chainZero, self.skinJoints[i - 1], cntCt[2], scale=True, skip=2)
 
                 #
                 #
@@ -500,7 +501,7 @@ class SplineFK(object):
                 if cmds.objectType(self.rootParent) == 'joint':
                     JntIntmdt = place.null2((cntCt[2] + '_PrntOnAssistGp'), cntCt[2])[0]
                     cmds.parent(JntIntmdt, cntCt[0])
-                    misc.setRotOrderWithXform(JntIntmdt, 'zxy', False)
+                    place.setRotOrderWithXform(JntIntmdt, 'zxy', False)
                     cmds.parentConstraint(self.rootParent, JntIntmdt, mo=True)
                     rp = JntIntmdt
                 print self.ps1_Jnt, 'here\n'
@@ -509,11 +510,11 @@ class SplineFK(object):
                 if cmds.objectType(ps1) == 'joint':
                     JntIntmdt = place.null2(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_Prnt1OnAssistGp'), cntCt[0])[0]
                     cmds.parent(JntIntmdt, cntCt[0])
-                    misc.setRotOrderWithXform(JntIntmdt, 'zxy', False)
+                    place.setRotOrderWithXform(JntIntmdt, 'zxy', False)
                     cmds.parentConstraint(ps1, JntIntmdt, mo=True)
                     self.ps1_Jnt = JntIntmdt
-                misc.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2],
-                                  cntCt[1], cntCt[0], self.ps1_Jnt, rp, False, True, False, True, 'FK_', w=self.FK)
+                place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2],
+                                   cntCt[1], cntCt[0], self.ps1_Jnt, rp, False, True, False, True, 'FK_', w=self.FK)
                 cmds.parentConstraint(self.rootParent, cntCt[0], mo=True)
             #
             #
@@ -539,11 +540,11 @@ class SplineFK(object):
         # otherwise, the joints are constrained directly to the controllers, nothing further needs to be built
         if self.ik == 'splineIK':
             self.Stretch()
-            misc.optEnum(self.baseCtrl, 'ControllerVis')
+            place.optEnum(self.baseCtrl, 'ControllerVis')
             self.vectors()
         elif self.ik == 'ik':
             self.Stretch()
-            misc.optEnum(self.baseCtrl, 'ControllerVis')
+            place.optEnum(self.baseCtrl, 'ControllerVis')
             self.vectors()
 
         #
@@ -551,7 +552,7 @@ class SplineFK(object):
         # Add visibility attribute for segements to (root/self.baseCtrl) control
         # segment iterator
         s = 1
-        misc.optEnum(self.baseCtrl, 'ControllerVis')
+        place.optEnum(self.baseCtrl, 'ControllerVis')
         for i in range(0, len(self.ctrlList), 1):
             # do nothing on first/root control group
             if i == 0:
@@ -561,18 +562,18 @@ class SplineFK(object):
                 # if first iteration of (s), step iterator
                 # base segment attribute connection is made
                 if s == 1:
-                    misc.hijackVis(self.ctrlList[i][1], self.baseCtrl, name='Base' + self.segmentAttr, suffix=False, default=0)
+                    place.hijackVis(self.ctrlList[i][1], self.baseCtrl, name='Base' + self.segmentAttr, suffix=False, default=0)
                     s = s + 1
                 # if segment iterator limit is reached, reset segment (s=1)
                 # sub segment attribute connection is made
                 elif s == self.segmentIteration:
-                    misc.hijackVis(self.ctrlList[i][1], self.baseCtrl, name='Sub' + self.segmentAttr, suffix=False, default=0)
+                    place.hijackVis(self.ctrlList[i][1], self.baseCtrl, name='Sub' + self.segmentAttr, suffix=False, default=0)
                     # reset segment
                     s = 1
                 # step iterator
                 # sub segment attribute connection is made
                 else:
-                    misc.hijackVis(self.ctrlList[i][1], self.baseCtrl, name='Sub' + self.segmentAttr, suffix=False, default=0)
+                    place.hijackVis(self.ctrlList[i][1], self.baseCtrl, name='Sub' + self.segmentAttr, suffix=False, default=0)
                     s = s + 1
         return self.rootCt
 
@@ -588,7 +589,7 @@ def splnFK(Name, sJnt, eJnt, direction=0, X=1):
     # PLACE IK JOINTS
     cmds.select(skinJnts)
     IKjnt = place.joint(0, (Name + '_Spln_jnt'))
-    misc.cleanUp(IKjnt[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+    place.cleanUp(IKjnt[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
     # orient joints
     # hardcoding 'oj' value. Shouldn't be any different. Otherwise spline up vector breaks.
     cmds.joint(IKjnt[0], e=True, oj='xyz', sao='yup', ch=True)
@@ -610,8 +611,8 @@ def splnFK(Name, sJnt, eJnt, direction=0, X=1):
     end = IKjnt[len(IKjnt) - 1]
     ikhandle = spln.splineIK(Name, start, end, 2)
     cmds.setAttr(ikhandle[0] + '.visibility', 0)
-    misc.cleanUp(ikhandle[0], Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
-    misc.cleanUp(ikhandle[2], Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
+    place.cleanUp(ikhandle[0], Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
+    place.cleanUp(ikhandle[2], Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
     path = ikhandle[2]
 
     # CLUSTERS
@@ -619,7 +620,7 @@ def splnFK(Name, sJnt, eJnt, direction=0, X=1):
     clGp = place.null2(Name + 'Spline_ClstrGrp', cl[0], orient=True)[0]
     for item in cl:
         cmds.parent(item, clGp)
-    misc.cleanUp(clGp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
+    place.cleanUp(clGp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
     cmds.setAttr(clGp + '.visibility', 0)
 
     # CONTROLS
@@ -644,9 +645,9 @@ def splnFK(Name, sJnt, eJnt, direction=0, X=1):
             cnt = place.Controller(Name + '_' + str(('%0' + str(2) + 'd') % (i)), handle, orient=False,
                                    shape='facetZup_ctrl', size=X * 20, color=color, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
         cntCt = cnt.createController()
-        misc.setRotOrder(cntCt[4], 2, False)
-        misc.setRotOrder(cntCt[2], 3, False)
-        misc.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+        place.setRotOrder(cntCt[4], 2, False)
+        place.setRotOrder(cntCt[2], 3, False)
+        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
         cmds.parentConstraint(cntCt[4], handle, mo=True)
         cluster.append(cntCt[4])
         # resolve special case, make sure this isn't first/secondLast/last iteration
@@ -654,29 +655,29 @@ def splnFK(Name, sJnt, eJnt, direction=0, X=1):
         if CtParent != None:
             # parent options
             cmds.select(cntCt[0])
-            TopGrp1 = misc.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_TopGrp1')[0][0]
-            CtGrp1 = misc.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_CtGrp1')[0][0]
+            TopGrp1 = place.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_TopGrp1')[0][0]
+            CtGrp1 = place.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_CtGrp1')[0][0]
             cmds.parentConstraint('master_Grp', TopGrp1, mo=True)
-            misc.setRotOrder(TopGrp1, 2, True)
+            place.setRotOrder(TopGrp1, 2, True)
             # second last
             if i == len(cl) - 1:
                 child = cntCt[0]
             # last
             elif i == len(cl):
-                misc.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
-                misc.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
+                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
+                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
                 cmds.parentConstraint(cntCt[4], child, mo=True)
                 #cmds.parentConstraint(CtParent,cntCt[0], mo=True)
                 VcParent.append(cntCt[4])
             elif i == 2:
                 # forward parent for next controller
-                misc.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
-                misc.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
+                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
+                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
                 CtParent = cntCt[4]
             # all other iterations
             else:
-                misc.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
-                misc.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
+                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
+                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
                 #cmds.parentConstraint(CtParent,cntCt[0], mo=True)
                 # forward parent for next controller
                 CtParent = cntCt[4]
@@ -685,8 +686,8 @@ def splnFK(Name, sJnt, eJnt, direction=0, X=1):
                     chainZero = cntCt[3]
                 else:
                     cmds.select(cntCt[2])
-                    blendNull = misc.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_RotBlendGrp')[0][0]
-                    misc.attrBlend(chainZero, blendNull, cntCt[2], rot=True, pos=True, skip=3, default=1)
+                    blendNull = place.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_RotBlendGrp')[0][0]
+                    place.attrBlend(chainZero, blendNull, cntCt[2], rot=True, pos=True, skip=3, default=1)
                 j = j + 1
         elif i == 1:
             CtParent = cntCt[4]
@@ -717,10 +718,10 @@ def vectors(Name, CtParent, VcParent, IKjnt, skinJnts, master='master', segItera
     color = seg[0]
     guideGp = place.null2(Name + '_UpVctrGdGrp', master, orient=False)[0]
     visAttr = 'Vectors'
-    misc.optEnum(master, 'ControllerVis')
-    misc.addAttribute(master, visAttr, 0, 1, False, 'long')
-    misc.hijackVis(guideGp, master, name=visAttr, suffix=False, default=0)
-    #misc.cleanUp(guideGp, World=True)
+    place.optEnum(master, 'ControllerVis')
+    place.addAttribute(master, visAttr, 0, 1, False, 'long')
+    place.hijackVis(guideGp, master, name=visAttr, suffix=False, default=0)
+    #place.cleanUp(guideGp, World=True)
     # changed to skinJnts from ikJnt
     for item in skinJnts:
         print item
@@ -729,14 +730,14 @@ def vectors(Name, CtParent, VcParent, IKjnt, skinJnts, master='master', segItera
                                shape='diamond_ctrl', size=X * 1, color=color, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
         cntCt = cnt.createController()
 
-        misc.hijackVis(cntCt[2], master, name=visAttr, suffix=False, default=0)
-        misc.setChannels(cntCt[2], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        misc.setChannels(cntCt[3], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        guide = misc.guideLine(cntCt[4], skinJnts[i - 1], 'connect')
+        place.hijackVis(cntCt[2], master, name=visAttr, suffix=False, default=0)
+        place.setChannels(cntCt[2], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        place.setChannels(cntCt[3], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
+        guide = place.guideLine(cntCt[4], skinJnts[i - 1], 'connect')
         cmds.parent(guide[0], guideGp)
         cmds.parent(guide[1][0], guideGp)
         cmds.parent(guide[1][1], guideGp)
-        misc.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
         cmds.setAttr(cntCt[1] + '.ty', X * 5)
         if i == 1:
             upVctr.append(cntCt[4])

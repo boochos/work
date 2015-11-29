@@ -2,7 +2,9 @@ import maya.cmds as cmds
 import maya.mel as mm
 import os
 import sys
-import key_sys_lib
+import webrImport as web
+# web
+key_sys_lib = web.mod('key_sys_lib')
 
 
 class intSliderGrp(object):
