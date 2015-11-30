@@ -690,8 +690,13 @@ def getClips(path=''):
 
 def openSelected(path=''):
     # audio
-    print path, '_audio'
-    snd = getAudio(path)
+    # print path, '_audio'
+    if path:
+        snd = getAudio(path)
+        #print '______'
+    else:
+        pass
+        #print '  no path'
     # os
     if os.name is 'nt':
         rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(playLo) + " -out " + str(playHi) + " ]"
