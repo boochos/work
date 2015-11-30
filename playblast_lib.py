@@ -524,6 +524,7 @@ def removeRow(row='', deleteDir=True):
     if deleteDir:
         # remove scene dir
         shutil.rmtree(path)
+        '''
         # check if shot dir is empty, delete if it is
         print path
         if os.name == 'posix':
@@ -531,9 +532,11 @@ def removeRow(row='', deleteDir=True):
         else:
             shot = path.split('\\' + path.split('\\')[len(path.split('\\')) - 1])[0]
         print shot
-        contents = os.listdir(shot)
-        if not contents:
-            shutil.rmtree(shot)
+        if shot != '':
+            contents = os.listdir(shot)
+            if not contents:
+                shutil.rmtree(shot)
+        '''
 
 
 def cmdOpen(path=''):

@@ -102,7 +102,10 @@ def getMeta(filename):
     if err:
         print "========= error ========"
         print err
-    p.kill()
+    try:
+        p.kill()
+    except:
+        pass
     return js
 
 
