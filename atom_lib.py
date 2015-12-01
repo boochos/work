@@ -27,13 +27,6 @@ class BuildSnakeFacerigCallback(object):
         af.buildSnakeFace()
 
 
-#-------------
-# Name        :createTagGroups
-# Arguements  :N/A
-# Description :set up groups and group names depending on tags
-#-------------
-
-
 def convertPymelToSortedStrList(pList):
     rList = []
     for pNode in pList:
@@ -47,6 +40,11 @@ def convertPymelToSortedStrList(pList):
 
 
 def createTagGroups(self):
+    '''
+    # Name        :createTagGroups
+    # Arguements  :N/A
+    # Description :set up groups and group names depending on tags
+    '''
     objects = atl.Atom_Tag_Core()
     masters = objects.getMasters()
 
@@ -138,7 +136,7 @@ def bipedFrameLayout(*args):
     refresh = RefreshCallBack('atom_win')
     main = cmds.frameLayout('atom_biped_frameLayout', label='Biped Setup',
                             cc=refresh.RefreshCall, ec=refresh.RefreshCall,
-                            mh=5, mw=5, cll=True, cl=False)
+                            mh=5, mw=5, cll=True, cl=True)
 
     atom_rrig_columnLayout = cmds.columnLayout('atom_rat_main_columnLayout', adj=True, rs=5)
     atom_rrig_faceBuild_checkBox = cmds.checkBox('atom_rat_faceCheck', l='Build Face Dependencies Only', al='left')
@@ -177,6 +175,23 @@ def reindeerFrameLayout(*args):
     atom_rnrig_buildDeformBut = cmds.button(l='Build Rig Deformation', c='import atom\natom.atom_reindeer_lib.deform()')
     atom_rnrig_faceRig = cmds.button(l='Build Face Rig', c='import atom\natom.atom_face_lib.buildFace()')
     atom_rnrig_faceRig = cmds.button(l='Finalize Rig', c=createTagGroups)
+
+    cmds.setParent('..')
+    cmds.setParent('..')
+    return main
+
+
+def raptorFrameLayout(*args):
+    refresh = RefreshCallBack('atom_win')
+    main = cmds.frameLayout('atom_raptor_frameLayout', label='Raptor Setup',
+                            cc=refresh.RefreshCall, ec=refresh.RefreshCall,
+                            mh=5, mw=5, cll=True, cl=False)
+
+    atom_rrig_columnLayout = cmds.columnLayout('atom_Raptor_main_columnLayout', adj=True, rs=5)
+    cmds.separator()
+
+    atom_rrig_prerigBut = cmds.button(l='Build Raptor Pre-Rig', c='import webrImport as web\natm = web.mod("atom_raptor_lib")\natm.preBuild()')
+    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Splines', c='import webrImport as web\natm = web.mod("atom_raptor_lib")\natm.buildSplines()')
 
     cmds.setParent('..')
     cmds.setParent('..')
@@ -473,6 +488,7 @@ def win(*args):
     cmds.setParent('..')
     cmds.setParent('..')
 
+    '''
     # Snake Rig
     atom_srig_frameLayout = cmds.frameLayout('atom_srig_frameLayout', label='Snake Setup',
                                              cc=refresh.RefreshCall, ec=refresh.RefreshCall,
@@ -488,15 +504,17 @@ def win(*args):
     bldSnkFace = BuildSnakeFacerigCallback()
     atom_qrig_faceRig = cmds.button(l='Build Face Rig', c=bldSnkFace.CMD)
     atom_qrig_faceRig = cmds.button(l='Finalize Rig', c=createTagGroups)
-
     cmds.setParent('..')
     cmds.setParent('..')
+    '''
 
-    atom_rat_frameLayout = ratFrameLayout()
+    # atom_rat_frameLayout = ratFrameLayout()
 
-    atom_reindeer_frameLayout = reindeerFrameLayout()
+    # atom_reindeer_frameLayout = reindeerFrameLayout()
 
     atom_biped_frameLayout = bipedFrameLayout()
+
+    atom_raptor_frameLayout = raptorFrameLayout()
 
     #---------------------------
     # Control Curve Shape Toolbox
@@ -562,10 +580,8 @@ def win(*args):
                                 (atom_bls_frameLayout, 'left', 5), (atom_bls_frameLayout, 'right', 5),
                                 (atom_qls_frameLayout, 'left', 5), (atom_qls_frameLayout, 'right', 5),
                                 (atom_qrig_frameLayout, 'left', 5), (atom_qrig_frameLayout, 'right', 5),
-                                (atom_srig_frameLayout, 'left', 5), (atom_srig_frameLayout, 'right', 5),
-                                (atom_rat_frameLayout, 'left', 5), (atom_rat_frameLayout, 'right', 5),
-                                (atom_reindeer_frameLayout, 'left', 5), (atom_reindeer_frameLayout, 'right', 5),
                                 (atom_biped_frameLayout, 'left', 5), (atom_biped_frameLayout, 'right', 5),
+                                (atom_raptor_frameLayout, 'left', 5), (atom_raptor_frameLayout, 'right', 5),
                                 (atom_ccst_frameLayout, 'left', 5), (atom_ccst_frameLayout, 'right', 5)],
 
                     attachControl=[(atom_prefix_textField, 'left', 5, atom_prefix_text),
@@ -581,11 +597,9 @@ def win(*args):
                                    (atom_bls_frameLayout, 'top', 5, atom_spln_frameLayout),
                                    (atom_qls_frameLayout, 'top', 5, atom_bls_frameLayout),
                                    (atom_qrig_frameLayout, 'top', 5, atom_qls_frameLayout),
-                                   (atom_srig_frameLayout, 'top', 5, atom_qrig_frameLayout),
-                                   (atom_rat_frameLayout, 'top', 5, atom_srig_frameLayout),
-                                   (atom_reindeer_frameLayout, 'top', 5, atom_rat_frameLayout),
-                                   (atom_biped_frameLayout, 'top', 5, atom_reindeer_frameLayout),
-                                   (atom_ccst_frameLayout, 'top', 5, atom_biped_frameLayout)]
+                                   (atom_biped_frameLayout, 'top', 5, atom_qrig_frameLayout),
+                                   (atom_raptor_frameLayout, 'top', 5, atom_biped_frameLayout),
+                                   (atom_ccst_frameLayout, 'top', 5, atom_raptor_frameLayout)]
                     )
     cmds.showWindow(atom_win)
     cmds.window('atom_win', edit=True, width=254)
