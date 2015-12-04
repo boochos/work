@@ -18,13 +18,14 @@ class Clip():
         self.start = 0
         self.end = 0
         self.ext = ''
-        self.thumbnail = ''
+        self.thumbnail = '' #sometimes wrong icon is used
         self.length = 0
         self.date = ''
         self.width = 0
         self.height = 0
         self.path = ''
         self.movPath = ''
+        self.files = []
 
 
 def getTempPath():
@@ -40,7 +41,7 @@ def getClips(path='', leaf=''):
     leaf = sub directories, use * for path wildcards
     '''
     contents = glob.glob(os.path.join(path, leaf))
-    # print contents, '__con'
+    #print contents, '__con'
     bucket = []
     for con in contents:
         # print con
@@ -236,7 +237,7 @@ def buildMov(content, path='', createThumb=True):
 
 
 def buildImg(content=[], path=''):
-    # print content
+    content = sorted(content)
     meta = getMeta(os.path.join(path, content[0]))
     clip = Clip()
     clip.movPath = os.path.join(path, content[0])
@@ -252,6 +253,7 @@ def buildImg(content=[], path=''):
     clip.length = len(content)
     clip.date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(path)))
     clip.thumbnail = clip.movPath
+    clip.files = content
     # print clip.thumbnail
     clip.height = str(meta['streams'][0]['height'])
     clip.width = str(meta['streams'][0]['width'])

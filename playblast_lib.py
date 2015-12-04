@@ -346,10 +346,10 @@ def blastWin():
                     if clips:
                         for clip in clips:
                             cmds.setParent(f2)
-                            print blastDir
-                            print clip.name
-                            print clip.path
-                            print clip.dir
+                            #print blastDir
+                            #print clip.name
+                            #print clip.path
+                            #print clip.dir
                             buildRow_new(clip, height=height, parent=f2, col=[col0, col1, col2, col3])
                     cmds.refresh(f=1)
                 else:
@@ -374,7 +374,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     path = blastDir.path
 
     # iconSize
-    icon = getIcon(path)
+    icon = blastDir.thumbnail
     # print 'icon'
 
     # row form
@@ -390,7 +390,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     w = float(blastDir.width)
     h = float(blastDir.height)
     padBtns = 4
-    cmdI = 'partial( openSelected, path = path )'
+    cmdI = 'partial( openSelected, path=blastDir.path, name=blastDir.name, ext=blastDir.ext, start=blastDir.start, end=blastDir.end)'
     iconH = col[1] * (h / w)
     iconW = col[1]
     if iconH > height:
@@ -401,7 +401,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
         padW = int((col[1] - iconW) / 2)
     if iconH < height:
         padH = int((height - iconH) / 2)
-    # print blastDir
+    # print blastDir.files
     iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
 
     # meta
@@ -419,7 +419,10 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     # delete
     st = getString(strings=[f])
     # print st
-    delBtn = cmds.button(blastDir.name + '_Delete', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
+    #print f, '_____f'
+    cmdD = 'partial( removeRow, f, blastDir.path, blastDir.files)'
+    delBtn = cmds.button(blastDir.name + '_Delete', c=eval(cmdD), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
+    # delBtn = cmds.button(blastDir.name + '_Delete', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
 
     return f
 
@@ -518,13 +521,30 @@ def getString(strings=[]):
     return s
 
 
-def removeRow(row='', deleteDir=True):
-    path = cmds.rowLayout(row, q=1, ann=1)
-    cmds.deleteUI(row)
+def removeRow(row, path, files, *arg):
+    print row, 'row_______'
+    '''
+    arg = partial fuckery, leave empty
+    row =  ''
+    path = ''
+    files = []
+    '''
+    # path = cmds.rowLayout(row, q=1, ann=1) ## OLD
+    # delete UI row
+    #print row
+    cmds.deleteUI(str(row))
+    # delete image seq
+    for f in files:
+        p = os.path.join(path,f)
+        if os.path.isfile(p):
+            os.remove(os.path.join(path,f))
+    # delete if path empty
+    if not os.listdir(path):
+        shutil.rmtree(path)
+    ''' ## OLD
     if deleteDir:
         # remove scene dir
         shutil.rmtree(path)
-        '''
         # check if shot dir is empty, delete if it is
         print path
         if os.name == 'posix':
@@ -536,7 +556,7 @@ def removeRow(row='', deleteDir=True):
             contents = os.listdir(shot)
             if not contents:
                 shutil.rmtree(shot)
-        '''
+    '''
 
 
 def cmdOpen(path=''):
@@ -648,7 +668,7 @@ def getImageRange(path='', exclude=['wav', 'aiff']):
 
 
 def getAudio(path='', format=['wav', 'aiff']):
-    print path, '_inside audio'
+    #print path, '_inside audio'
     images = os.listdir(str(path))
     audio = []
     for image in images:
@@ -690,9 +710,9 @@ def getClips(path=''):
     return cl.getClips(path=path)
 
 
-def openSelected(path=''):
+def openSelected(path='', name='', ext='', start='', end=''):
     # audio
-    print path, '_before audio'
+    #print path, '_before audio'
     if path:
         snd = getAudio(path)
         #print '______'
@@ -711,7 +731,8 @@ def openSelected(path=''):
                 rvString = 'rv ' + '[ ' + path + ' ' + snd + ' ]' ' &'
             else:
                 rvString = 'rv ' + '[ ' + path + ' ]' ' &'
-            # print rvString, '  here'
+                rvString = 'rv ' + '[ ' + path + name + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ]' ' &'  # escaped
+            #print rvString, '  here'
             message('Play:  ' + rvString, maya=True)
             os.system(rvString)
         except:
@@ -773,7 +794,8 @@ def getBlastDirs(path=''):
                             else:
                                 nonDir.append(i)
                 else:
-                    shutil.rmtree(shot)
+                    shutil.rmtree(os.path.join(getTempPath(),shot))
+                    # errors on next line if something is deleted here
             mtime = lambda f: os.path.getmtime(f)
             '''
             dirs = sorted(dirs, key=mtime)
