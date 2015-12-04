@@ -546,3 +546,19 @@ def parent(parent=True):
     else:
         # remove membership from second selection
         cmds.character(cmds.ls(sl=True)[0], rm=cmds.ls(sl=True)[1])
+        
+        
+def matchCharSet(source=None, objs=[]):
+    '''
+    source = get character set if connected
+    objs = make members of list in same set as source
+    '''
+    char = cmds.listConnections(source, t='character', s=False, d=True)
+    if char:
+        char = list(set(char))
+        if len(char) == 1:
+            for obj in objs:
+                cmds.character(obj, include=char[0])
+        else:
+            message('Object not added to Charecter set. More than one option found.')
+

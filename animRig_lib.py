@@ -92,21 +92,6 @@ def guideLine(obj1, obj2, name=''):
     return null
 
 
-def matchCharSet(source=None, objs=[]):
-    '''
-    source = get character set if connected
-    objs = make members of list in same set as source
-    '''
-    char = cmds.listConnections(source, t='character', s=False, d=True)
-    if char:
-        char = list(set(char))
-        if len(char) == 1:
-            for obj in objs:
-                cmds.character(obj, include=char[0])
-        else:
-            message('Object not added to Charecter set. More than one option found.')
-
-
 def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False, parentTarget=False):
     '''
     obj[0] = tip control
@@ -373,7 +358,7 @@ def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
             print bake
         # cleanup
         cmds.group(locA, n='__AIMRIG__#')
-        matchCharSet(obj, locs)
+        cs.matchCharSet(obj, locs)
         cmds.select(locAim)
 
         message('Aim rig built', maya=True)
@@ -502,7 +487,7 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         ac.deleteAnim(coreL, attrs=['translateX', 'translateY', 'translateZ'], lock=True)
         cn.matchKeyedFrames(A=sel, B=coreL, subtractive=True)
         # match char Set
-        matchCharSet(sel, locs)
+        cs.matchCharSet(sel, locs)
         # cleanup
         cleanupGrp = cmds.group(name='__PIVOTAIM_GRP__#', em=True)
         cmds.parent(masterGrp, cleanupGrp)
@@ -546,7 +531,7 @@ def parentRig(bake=True, *args):
         # group
         cmds.group(root, n='__PARENTRIG__#')
         # match char set
-        matchCharSet(sel[0], [offset])
+        cs.matchCharSet(sel[0], [offset])
         # select new control
         cmds.select(offset)
         message('Parent rig built. -- New control Selected ', maya=True)

@@ -635,6 +635,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
                         cmds.setAttr(lc + '.' + axis, l=True)
             cnT = None
             cnR = None
+            cs.matchCharSet(source=item, objs=[lc])
             locs.append(lc)
         return locs
     else:
@@ -678,6 +679,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         newName = lc.replace('temp', suffix)
         lc = cmds.rename(lc, newName)
         locs.append(lc)
+        cs.matchCharSet(source=obj, objs=locs)
     else:
         loc = cmds.spaceLocator()[0]
         cmds.xform(loc, roo=ro)

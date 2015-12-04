@@ -40,6 +40,7 @@ def getClips(path='', leaf=''):
     leaf = sub directories, use * for path wildcards
     '''
     contents = glob.glob(os.path.join(path, leaf))
+    # print contents, '__con'
     bucket = []
     for con in contents:
         # print con
@@ -47,27 +48,37 @@ def getClips(path='', leaf=''):
         # print c
         seqFrames = []
         seqNames = []
+        # needs to be sorted to group correctly
         data = sorted(c, key=lambda x: x.split('.')[0])
-        for nm, frm in itertools.groupby(data, lambda x: x.split('.')[len(x.split('.')) - 1]):
+        # print data, '___data'
+        for nm, frm in itertools.groupby(data, lambda x: x.split('.')[0]):
             seqFrames.append(list(frm))    # Store group iterator as a list
             seqNames.append(nm)
-        # print seqNames
-        # print seqFrames
+        # print seqNames, '____name'
+        # print seqFrames, '____frames'
         for frames in seqFrames:
-            # print frames
+            #print frames
             confirmSeq = []
             # anything with same name but different extension returns as part of same sequence, sort for it
             for item in frames:
                 # print item, ' one'
                 if '.' in item:
                     confirmSeq.append(item.split('.')[len(item.split('.')) - 1])
+                else:
+                    pass
+                    # print '___no confirm'
             confirmSeq = list(set(confirmSeq))
-            # print confirmSeq
+            #print confirmSeq, '___seq'
             if len(confirmSeq) == 1:
                 b = buildClip(frames, con)
                 if b:
+                    # print '___have b'
                     bucket.append(b)
+                else:
+                    pass
+                    # print '___no bucket'
             else:
+                # print '___here'
                 for item in frames:
                     b = buildClip([item], con)
                     if b:

@@ -342,7 +342,7 @@ def blastWin():
                 if contents:
                     # print 'here'
                     clips = getClips(path=os.path.join(getTempPath(), blastDir))
-                    print clips, '___clips'
+                    #print clips, '___clips'
                     if clips:
                         for clip in clips:
                             cmds.setParent(f2)
@@ -648,6 +648,7 @@ def getImageRange(path='', exclude=['wav', 'aiff']):
 
 
 def getAudio(path='', format=['wav', 'aiff']):
+    print path, '_inside audio'
     images = os.listdir(str(path))
     audio = []
     for image in images:
@@ -685,12 +686,13 @@ def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
 
 
 def getClips(path=''):
+    '___getting'
     return cl.getClips(path=path)
 
 
 def openSelected(path=''):
     # audio
-    # print path, '_audio'
+    print path, '_before audio'
     if path:
         snd = getAudio(path)
         #print '______'
