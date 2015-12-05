@@ -258,9 +258,10 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
                     rvString = 'rv ' + '[ ' + createBlastPath('', forceTemp=forceTemp) + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # escaped
                 else:
                     rvString = 'rv ' + '[ ' + createBlastPath('', forceTemp=forceTemp) + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'  # escaped
-            # play blast
-            print rvString
-            os.system(rvString)
+            # play blast, use openSelected() function
+            if os.name == 'posix':
+                print rvString
+                os.system(rvString)
             cmds.currentTime(current)
 
 
@@ -342,14 +343,14 @@ def blastWin():
                 if contents:
                     # print 'here'
                     clips = getClips(path=os.path.join(getTempPath(), blastDir))
-                    #print clips, '___clips'
+                    # print clips, '___clips'
                     if clips:
                         for clip in clips:
                             cmds.setParent(f2)
-                            #print blastDir
-                            #print clip.name
-                            #print clip.path
-                            #print clip.dir
+                            # print blastDir
+                            # print clip.name
+                            # print clip.path
+                            # print clip.dir
                             buildRow_new(clip, height=height, parent=f2, col=[col0, col1, col2, col3])
                     cmds.refresh(f=1)
                 else:
@@ -371,6 +372,9 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     # FIXME: breaks if 2 periods are in file name
     # FIXME: breaks if file name starts with a number
     # stuff
+    alignI = 'center'
+    alignM = 'left'
+    alignD = 'right'
     path = blastDir.path
 
     # iconSize
@@ -378,7 +382,10 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     # print 'icon'
 
     # row form
-    f = cmds.rowLayout('row__' + blastDir.name, numberOfColumns=4, columnWidth4=(col[0], col[1], col[2], col[3]), adjustableColumn=3, columnAttach=[(1, 'both', 0), (2, 'both', 0), (3, 'left', 0), (4, 'both', 0)], h=height, bgc=[0.2, 0.2, 0.2], ann=blastDir.path)
+    f = cmds.rowLayout('row__' + blastDir.name + '__' + blastDir.ext, numberOfColumns=4, columnWidth4=(col[0], col[1], col[2], col[3]), adjustableColumn=3,
+                       columnAttach=[(1, 'both', 0), (2, 'left', 0), (3, 'left', 0), (4, 'both', 0)],
+                       columnAlign=[(1, 'center'), (2, alignI), (3, alignM), (4, alignD)],
+                       h=height, bgc=[0.2, 0.2, 0.2], ann=blastDir.path)
     # checkbox
     chkBx = cmds.checkBox('check__' + blastDir.name, l='', w=col[0],
                           onc="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.addChecked(%s)" % (getString(strings=[path])),
@@ -402,26 +409,26 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     if iconH < height:
         padH = int((height - iconH) / 2)
     # print blastDir.files
-    iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
+    iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, al=alignI, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
 
     # meta
-    pt = path.split(getTempPath())[1].split('/')[0] + '\n'
+    pt = '...' + path.split(getTempPath())[1].split('/')[0] + '\n'
     # sc    = 'Scene Name:  ' + blastDir + '\n'
-    im = blastDir.name + '\n'
+    im = blastDir.name + '   --- ' + blastDir.ext + '\n'
     di = str(int(w)) + ' x ' + str(int(h)) + '\n'
-    fr = str(int(blastDir.start)) + 'f  -  ' + str(int(blastDir.end)) + 'f\n'
-    le = str(int(blastDir.length)) + ' frames\n'
-    dt = blastDir.path
+    fr = str(int(blastDir.start)) + '  -  ' + str(int(blastDir.end)) + '\n'
+    le = str(int(blastDir.length)) + '  frames\n'
+    dt = blastDir.date
     label = pt + im + di + fr + le + dt
     #
-    metaBtn = cmds.iconTextButton(blastDir.name + '_Meta', st='textOnly', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % (path.replace('\\', '\\\\')), l=label, h=height - padBtns, align='left', bgc=[0.23, 0.23, 0.23])
+    metaBtn = cmds.iconTextButton(blastDir.name + '_Meta', st='textOnly', al=alignM, c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % (path.replace('\\', '\\\\')), l=label, h=height - padBtns, align='left', bgc=[0.23, 0.23, 0.23])
 
     # delete
     st = getString(strings=[f])
     # print st
-    #print f, '_____f'
+    # print f, '_____f'
     cmdD = 'partial( removeRow, f, blastDir.path, blastDir.files)'
-    delBtn = cmds.button(blastDir.name + '_Delete', c=eval(cmdD), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
+    delBtn = cmds.button(blastDir.name + '_Delete', c=eval(cmdD), al=alignD, l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
     # delBtn = cmds.button(blastDir.name + '_Delete', c="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeRow(%s)" % (st), l='DELETE', w=col[3], h=height - padBtns, bgc=[0.500, 0.361, 0.361])
 
     return f
@@ -522,49 +529,49 @@ def getString(strings=[]):
 
 
 def removeRow(row, path, files, *arg):
-    print row, 'row_______'
     '''
     arg = partial fuckery, leave empty
     row =  ''
     path = ''
     files = []
     '''
-    # path = cmds.rowLayout(row, q=1, ann=1) ## OLD
+    # command looses scope when executed from button, need to re import
+    import maya.cmds as cmds
+    import webrImport as web
+    # web
+    cl = web.mod('clips_lib')
+
+    # check for thumbnail, delete
+    mov = cl.movExt()
+    dat = cl.getDataPath()
+    name = files[0].split('.')[0]
+    ext = files[0].split('.')[len(files[0].split('.')) - 1]
+    if ext in mov:
+        thumb = os.path.join(dat, name + cl.getThumbSuffix() + '.png')
+        if os.path.isfile(thumb):
+            # print thumb, 'yes'
+            os.remove(thumb)
+        else:
+            pass
+            # print thumb
     # delete UI row
-    #print row
     cmds.deleteUI(str(row))
     # delete image seq
     for f in files:
-        p = os.path.join(path,f)
+        p = os.path.join(path, f)
         if os.path.isfile(p):
-            os.remove(os.path.join(path,f))
+            os.remove(os.path.join(path, f))
     # delete if path empty
     if not os.listdir(path):
         shutil.rmtree(path)
-    ''' ## OLD
-    if deleteDir:
-        # remove scene dir
-        shutil.rmtree(path)
-        # check if shot dir is empty, delete if it is
-        print path
-        if os.name == 'posix':
-            shot = path.split('/' + path.split('/')[len(path.split('/')) - 1])[0]
-        else:
-            shot = path.split('\\' + path.split('\\')[len(path.split('\\')) - 1])[0]
-        print shot
-        if shot != '':
-            contents = os.listdir(shot)
-            if not contents:
-                shutil.rmtree(shot)
-    '''
 
 
 def cmdOpen(path=''):
     #path = getTempPath()
     if os.name == 'nt':
         # print path
-        #path = path.replace('\'', '\\')
-        print path
+        # path = path.replace('\'', '\\')
+        # print path
         if os.path.isdir(path):
             subprocess.Popen(r'explorer /open, ' + path)
     else:
@@ -630,45 +637,8 @@ def getContentsType(path='', directory=False, destructive=False):
         return fullPaths
 
 
-def getIcon(path=''):
-    images = qualifyImageSeq(path=path)
-    if images:
-        icon = os.path.join(path, images[0])
-        # print icon
-        return icon
-    else:
-        return None
-
-
-def getIconSize(path=''):
-    if path:
-        # print 'size'
-        if os.name == 'posix':
-            dim = subprocess.Popen(["identify", "-format", "\"%w,%h\"", path], stdout=subprocess.PIPE).communicate()[0]
-            # print 'dim'
-            s = dim.split(',')
-            w = float(s[0].split('"')[1])
-            h = float(s[1].split('"')[0])
-            return w, h
-        else:
-            return 50, 50
-    else:
-        return 0, 0
-
-
-def getImageRange(path='', exclude=['wav', 'aiff']):
-    images = qualifyImageSeq(path=path)
-    if images:
-        images = sorted(images)
-        start = float(images[0].split('.')[1])
-        end = float(images[len(images) - 1].split('.')[1])
-        return start, end
-    else:
-        return None
-
-
 def getAudio(path='', format=['wav', 'aiff']):
-    #print path, '_inside audio'
+    # print path, '_inside audio'
     images = os.listdir(str(path))
     audio = []
     for image in images:
@@ -679,32 +649,6 @@ def getAudio(path='', format=['wav', 'aiff']):
     return None
 
 
-def getImageName(path=''):
-    images = qualifyImageSeq(path=path)
-    if images:
-        im = images[0].split('.')
-        name = im[0] + '.*.' + im[2]
-        return name
-    else:
-        return None
-
-
-def qualifyImageSeq(path='', exclude=['wav', 'aiff']):
-    # print '___qualify image seq', path
-    images = os.listdir(str(path))
-    if images:
-        i = 0
-        for image in images:
-            if os.path.isdir(os.path.join(path, image)):
-                images.pop(i)
-            for ex in exclude:
-                if ex in image:
-                    # print f, '     ======== hetre  ', image
-                    images.pop(i)
-            i = i + 1
-    return images
-
-
 def getClips(path=''):
     '___getting'
     return cl.getClips(path=path)
@@ -712,38 +656,38 @@ def getClips(path=''):
 
 def openSelected(path='', name='', ext='', start='', end=''):
     # audio
-    #print path, '_before audio'
-    if path:
-        snd = getAudio(path)
-        #print '______'
+    # print path, '_before audio'
+    mov = ['mov', 'avi', 'mp4']
+    if ext in mov:
+        os.startfile(os.path.join(path, name + '.' + ext))
     else:
-        pass
-        #print '  no path'
-    # os
-    if os.name is 'nt':
-        rvString = "\"C:/Program Files/Tweak/RV-3.12.12-64/bin/rv.exe\" " + "[ " + path + " -in " + str(playLo) + " -out " + str(playHi) + " ]"
-        # print rvString
-        pass
-        subprocess.Popen(rvString)
-    elif os.name is 'posix':
-        try:
-            if snd:
-                rvString = 'rv ' + '[ ' + path + ' ' + snd + ' ]' ' &'
-            else:
-                rvString = 'rv ' + '[ ' + path + ' ]' ' &'
-                rvString = 'rv ' + '[ ' + path + name + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ]' ' &'  # escaped
-            #print rvString, '  here'
-            message('Play:  ' + rvString, maya=True)
-            os.system(rvString)
-        except:
+        path = str(path)
+        if path:
+            snd = getAudio(path)
+            # print '______'
+        else:
+            pass
+            # print '  no path'
+        # os
+        if os.name is 'nt':
+            rvString = ['C:\\Program Files\\djv-1.1.0-Windows-64\\bin\\djv_view.exe', os.path.join(path.replace('\\', '\\'), name + '.' + str(start) + '.' + ext)]
             # print rvString
-            message('Failed:  ' + rvString, maya=True)
-    else:
-        path = path + sceneName() + '.####.png'
-        # print path
-        pass
-        rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'
-        os.system.Popen(rvString)
+            # subprocess.call(rvString)
+            subprocess.Popen(rvString)
+        elif os.name is 'posix':
+            try:
+                if snd:
+                    # with audio
+                    rvString = 'rv ' + '[ ' + path + name + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ' + snd + ' ]' ' &'
+                else:
+                    rvString = 'rv ' + '[ ' + path + name + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ]' ' &'  # escaped
+                message('Play:  ' + rvString, maya=True)
+                os.system(rvString)
+            except:
+                # print rvString
+                message('Failed:  ' + rvString, maya=True)
+        else:
+            message('OS: ' + os.name + '  not configured to play image seq.', maya=True)
 
 
 def getDirectoryDate(path=''):
@@ -794,7 +738,7 @@ def getBlastDirs(path=''):
                             else:
                                 nonDir.append(i)
                 else:
-                    shutil.rmtree(os.path.join(getTempPath(),shot))
+                    shutil.rmtree(os.path.join(getTempPath(), shot))
                     # errors on next line if something is deleted here
             mtime = lambda f: os.path.getmtime(f)
             '''

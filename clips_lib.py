@@ -18,7 +18,7 @@ class Clip():
         self.start = 0
         self.end = 0
         self.ext = ''
-        self.thumbnail = '' #sometimes wrong icon is used
+        self.thumbnail = ''  # sometimes wrong icon is used
         self.length = 0
         self.date = ''
         self.width = 0
@@ -28,10 +28,30 @@ class Clip():
         self.files = []
 
 
-def getTempPath():
-    blastD = '___A___THUMBNAILS___A___'
+def getDataPath():
+    blastD = '___A___DATA___A___'
     tempD = tempfile.gettempdir()
+    createPath(path=os.path.join(tempD, blastD))
     return os.path.join(tempD, blastD)
+
+
+def movExt():
+    return ['mov', 'avi', 'mp4']
+
+
+def imgExt():
+    return ['jpg', 'png', 'tif', 'exr', 'dpx']
+
+
+def createPath(path=''):
+    # print path
+    if not os.path.isdir(path):
+        # print path
+        os.mkdir(path)
+    else:
+        pass
+        # print "-- path:   '" + path + "'   already exists --"
+    return path
 
 
 def getClips(path='', leaf=''):
@@ -41,7 +61,7 @@ def getClips(path='', leaf=''):
     leaf = sub directories, use * for path wildcards
     '''
     contents = glob.glob(os.path.join(path, leaf))
-    #print contents, '__con'
+    # print contents, '__con'
     bucket = []
     for con in contents:
         # print con
@@ -58,19 +78,19 @@ def getClips(path='', leaf=''):
         # print seqNames, '____name'
         # print seqFrames, '____frames'
         for frames in seqFrames:
-            #print frames
-            confirmSeq = []
+            # print frames
+            exts = []
             # anything with same name but different extension returns as part of same sequence, sort for it
             for item in frames:
                 # print item, ' one'
                 if '.' in item:
-                    confirmSeq.append(item.split('.')[len(item.split('.')) - 1])
+                    exts.append(item.split('.')[len(item.split('.')) - 1])
                 else:
                     pass
                     # print '___no confirm'
-            confirmSeq = list(set(confirmSeq))
-            #print confirmSeq, '___seq'
-            if len(confirmSeq) == 1:
+            exts = list(set(exts))
+            # print confirmSeq, '___seq'
+            if len(exts) == 1:
                 b = buildClip(frames, con)
                 if b:
                     # print '___have b'
@@ -79,9 +99,18 @@ def getClips(path='', leaf=''):
                     pass
                     # print '___no bucket'
             else:
+                # more than one extension with same filename present, decipher
+                extGroups = []
+                for ext in exts:
+                    grp = []
+                    for frame in frames:
+                        if ext in frame:
+                            grp.append(frame)
+                    extGroups.append(grp)
+                    grp = []
                 # print '___here'
-                for item in frames:
-                    b = buildClip([item], con)
+                for grp in extGroups:
+                    b = buildClip(grp, con)
                     if b:
                         bucket.append(b)
     return bucket
@@ -132,7 +161,7 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
     if delete:
         if os.path.isfile(fileout):
             os.remove(fileout)
-            print 'deleted', fileout
+            # print 'deleted', fileout
         return None
     else:
         if os.path.isfile(fileout):
@@ -146,7 +175,6 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
         else:
             create = True
         # add new directory in tmp for thumbs, deleting clip in pb man will need to delete thumbnail as well
-        '''
         if create:
             # cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-vframes', '1', fileout]
             cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-y', '-frames:v', '1', fileout]
@@ -155,12 +183,12 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
             out, err = p.communicate()
             print "==========output=========="
             # print out
-            # js = json.loads( out )
+            if out:
+                js = json.loads(out)
             # print js
             if err:
                 print "========= error ========"
                 print err
-        '''
     return fileout
 
 
@@ -188,8 +216,8 @@ def getImageSize(path=''):
 
 
 def qualify(content):
-    mov = ['mov', 'avi', 'mp4']
-    img = ['jpg', 'png', 'tif', 'exr', 'dpx']
+    mov = movExt()
+    img = imgExt()
     ext = content[0].split('.')
     ext = ext[len(ext) - 1]
     if getThumbSuffix() not in content[0]:
@@ -228,10 +256,13 @@ def buildMov(content, path='', createThumb=True):
         clip.date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(clip.movPath)))
         clip.height = str(meta['streams'][0]['height'])
         clip.width = str(meta['streams'][0]['width'])
+        clip.files = content
         if createThumb:
             path = clip.movPath
             # print path, path.replace( '.' + clip.ext, '.png' ), clip.ext
-            f = getThumb(path, path.replace('.' + clip.ext, getThumbSuffix() + '.png'), delete=False)
+            # print path
+            # print os.path.join(getDataPath(), clip.name + getThumbSuffix() + '.png')
+            f = getThumb(path, os.path.join(getDataPath(), clip.name + getThumbSuffix() + '.png'), delete=False)
             clip.thumbnail = f
     return clip
 
