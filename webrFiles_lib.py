@@ -8,7 +8,7 @@ libs = ['download_lib.py', 'downloadFiles_lib.py', 'fileMan_lib', 'characterSet_
         'graphFilter.py', 'curveSoftSelect.py', 'pairSelectList.txt', 'animRig_lib.py', 'clipPickle_lib.py',
         'clipPickleUI_micro_lib.py', 'clipPickleUI_macro_lib.py']
 
-# icons
+# icons Anim Shelf
 icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
          'csIm.png', 'csMbrTgl.png', 'csMinus.png', 'flush.png', 'flushUn.png', 'geBttns.png',
          'matchKeys.png', 'CT-.xpm', 'CT+.xpm', 'PrntSel.xpm', 'selStore.xpm', 'sel.xpm', 'TagSel.xpm',
@@ -16,3 +16,8 @@ icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
          'AnimImport.xpm', 'AnimExport.xpm', 'animCopyPaste.xpm', 'AnimCopy.xpm', 'rvBlast.png', 'sel.png',
          'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.xpm', 'kmh.xpm', 'camPlateToggle.xpm',
          'playBlastMan.xpm', 'PrjtSet.xpm']
+
+
+# icons Rigging Shelf
+iconsRig = ['save++_icon.xpm', 'PrjtSet.xpm', 'saveFileUI.xpm', 'Atom.xpm', 'AtmWghtUtl.xpm', 'AtomUtl.xpm',
+            'AtmTrnsfrInflnc.xpm', 'AtmSrfcRg.xpm', 'AtomLck.xpm', 'AtmMshUpdt.xpm', 'TagUI.xpm', 'Zero.xpm']
