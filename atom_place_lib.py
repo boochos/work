@@ -1378,7 +1378,8 @@ def optEnum(obj, attr='Deformer', enum='OPTNS'):
         cmds.addAttr(obj, ln=attr, attributeType='enum', en=enum)
         cmds.setAttr(obj + '.' + attr, cb=True)
     else:
-        print '___already exists', obj, attr
+        pass
+        # print '___already exists', obj, attr
 
 
 def stripSufx(obj, string=False):

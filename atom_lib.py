@@ -346,7 +346,7 @@ def win(*args):
     atom_bls_setChannel_checkBox = cmds.checkBox('atom_bls_setChannel_checkBox', label='', v=1)
 
     atom_bls_createLimb_button = cmds.button('atom_bls_createLimb_button', c='import atom_appendage_lib\natom_appendage_lib.create3jointIK("' + atom_bls_setChannel_checkBox + '")', label='Create Limb', h=25)
-    atom_bls_createDigit_button = cmds.button('atom_bls_createDigit_button', c='import atom_appendage_lib\natom_appendage_lib.createDigitCMD("' + atom_bls_setChannel_checkBox + '")', label='Create Digit', h=25)
+    atom_bls_createDigit_button = cmds.button('atom_bls_createDigit_button', c='import atom_appendage_lib as aal\nreload(aal)\naal.createDigitCMD("' + atom_bls_setChannel_checkBox + '")', label='Create Digit', h=25)
     atom_bls_spacerText = cmds.text('atom_bls_spacerText', label=' ', h=5)
 
     cmds.formLayout(atom_bls_formLayout, edit=True,

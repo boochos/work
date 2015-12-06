@@ -580,7 +580,7 @@ def rotateManip():
 
 def translateManip():
     mode = cmds.manipMoveContext('Move', q=True, mode=True)
-    print mode
+    # print mode
     if mode == 0:
         cmds.manipMoveContext('Move', e=True, mode=1)
         message('Local')

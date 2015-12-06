@@ -77,14 +77,14 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='', annotation='set project from file name', w=wh, h=wh, image='PrjtSet.xpm',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.setProjectFromFilename("scenes")')
 
-    cmds.shelfButton(label='print selection', annotation='print selection',
-                     w=wh, h=wh, image='PrntSel.xpm', command='sl.prnt()')
-
     cmds.shelfButton(label='temporarily save selection', annotation='temporarily save selection',
                      w=wh, h=wh, image='selStore.xpm', command='import webrImport as web\nsel = web.mod("selection")\nsl = sel.Sel()')
 
     cmds.shelfButton(label='select saved selection', annotation='select saved selection',
                      w=wh, h=wh, image='sel.xpm', command='sl.select()')
+
+    cmds.shelfButton(label='print selection', annotation='print selection',
+                     w=wh, h=wh, image='PrntSel.xpm', command='sl.prnt()')
 
     cmds.shelfButton(label='ATOM', annotation='ATOM UI', w=wh, h=wh,
                      image='Atom.xpm', command='import webrImport as web\natom = web.mod("atom_lib")\natom.win()')
@@ -95,7 +95,7 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='Joint Orient Util', annotation='Joint Orient Util',
                      w=wh, h=wh, image='AtomUtl.xpm', command='import webrImport as web\nweb.mod("cometJointOrient.mel")\nimport maya.mel as mel\nmel.eval("cometJointOrient()")')
 
-    cmds.shelfButton(label='Atom Influence Match', annotation='controller size +', w=wh, h=wh,
+    cmds.shelfButton(label='Atom Influence Match', annotation='Atom Influence Match', w=wh, h=wh,
                      image='AtmTrnsfrInflnc.xpm', command='import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.transferInfWin()')
 
     cmds.shelfButton(label='Atom Surface Rig', annotation='Atom Surface Rig', w=wh, h=wh,
@@ -106,6 +106,9 @@ def shelfAddButtons(*args):
 
     cmds.shelfButton(label='Atom Update Mesh', annotation='Atom Update Mesh', w=wh, h=wh,
                      image='AtmMshUpdt.xpm', command='import webrImport as web\naum = web.mod("atom_updateMesh_lib")\naum.win()')
+
+    cmds.shelfButton(label='Atom Tag UI', annotation='Atom Tag UI', w=wh, h=wh,
+                     image='TagUI.xpm', command='import webrImport as web\ntg = web.mod("atom_tag_lib")\ntg.Atom_Tag_Win().win()')
 
     cmds.shelfButton(label='Atom Zero Joint Orient', annotation='Atom Zero Joint Orient', w=wh, h=wh,
                      image='Zero.xpm', command='import webrImport as web\njnt = web.mod("atom_joint_lib")\njnt.zeroJntSelection()')

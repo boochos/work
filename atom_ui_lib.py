@@ -149,7 +149,8 @@ def importCurveShape(name, path, codeScale=False, overRide=False):
     Notes       :Function expects a .txt file
     '''
     selection = cmds.ls(selection=True, tr=True)
-    path = path + '/' + name + '.txt'
+    # print path, name
+    #path = os.path.join(path, name + '.txt')
     # change the shape of multiple selected curves
     if selection:
         for sel in selection:
