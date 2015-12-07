@@ -10,7 +10,7 @@ import os
 #
 import webrImport as web
 # web
-kwo = web.mod('atom_place_lib')
+kwo = web.mod('key_weighting_objects')
 key_ui_lib = web.mod('key_ui_lib')
 
 
