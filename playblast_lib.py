@@ -655,6 +655,8 @@ def getClips(path=''):
 
 
 def openSelected(path='', name='', ext='', start='', end=''):
+    # sample code for wipe compare
+    # rv P_139_sk_0490_anim_swe_0077____camera.####.png -wipe P_139_sk_0490_anim_swe_0077____lookCam.####.png
     # audio
     # print path, '_before audio'
     mov = ['mov', 'avi', 'mp4']

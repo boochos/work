@@ -619,14 +619,14 @@ def setSkinInfo(obj, storedSkinInfo, update=False, updatePercent=.2):
             cmds.progressBar(gMainProgressBar, edit=True, endProgress=True)
         cmds.setAttr(skinNode + '.normalizeWeights', 1)
 
-#-------------
-# Name        :rotateLocalJointAxis
-# Arguements  :None
-# Description :Rotate the local rotational axis of the selected joint
-#-------------
-
 
 def rotateLocalJointAxis(*args):
+    '''
+    #-------------
+    # Name        :rotateLocalJointAxis
+    # Arguements  :None
+    # Description :Rotate the local rotational axis of the selected joint
+    '''
     tmpSel = cmds.ls(sl=True)
     if len(tmpSel) == 1:
         # declare the rotation variables and set them to 0
@@ -655,14 +655,15 @@ def rotateLocalJointAxis(*args):
     else:
         print 'Selection count wrong, please have only one joint selected.'
 
-#-------------
-# Name        :rotateLocalJointAxis
-# Arguements  :None
-# Description :Toggle the local rotational axis visibility
-#-------------
-
 
 def toggleLocalAxisVis(*args):
+    '''
+    #-------------
+    # Name        :rotateLocalJointAxis
+    # Arguements  :None
+    # Description :Toggle the local rotational axis visibility
+    #-------------
+    '''
     # get the current selection
     sel = cmds.ls(sl=True)
     if len(sel) > 0:
@@ -681,15 +682,16 @@ def toggleLocalAxisVis(*args):
     else:
         print 'Nothing is selected...'
 
-#-------------
-# Name        :rotLocalAxisWin
-# Arguements  :None
-# Description :GUI for editing location rotational axis
-# Dependancies: toggleLocalAxisVis(),rotateLocalJointAxis()
-#-------------
-
 
 def rotLocalAxisWin(*args):
+    '''
+    #-------------
+    # Name        :rotLocalAxisWin
+    # Arguements  :None
+    # Description :GUI for editing location rotational axis
+    # Dependancies: toggleLocalAxisVis(),rotateLocalJointAxis()
+    #-------------
+    '''
     # delete the window if it exists
     if cmds.window('rotateLocalAxisWin', exists=True):
         cmds.deleteUI('rotateLocalAxisWin', window=True)
@@ -720,16 +722,17 @@ def rotLocalAxisWin(*args):
     # show the window
     cmds.showWindow('rotateLocalAxisWin')
 
-#-------------
-# Name        :exportWeights
-# Arguments   :<path> : string
-#             <obj>  : string
-# Description :Export weighting information based on the nodeType of the obj.
-# Object types are, mesh, nurbsSurface and nurbsCurve
-#-------------
-
 
 def exportWeights(path, obj):
+    '''
+    #-------------
+    # Name        :exportWeights
+    # Arguments   :<path> : string
+    #             <obj>  : string
+    # Description :Export weighting information based on the nodeType of the obj.
+    # Object types are, mesh, nurbsSurface and nurbsCurve
+    #-------------
+    '''
     # get the type of node
     nodeType = cmds.nodeType(cmds.listRelatives(obj, shapes=True)[0])
     if nodeType == 'mesh':
@@ -738,17 +741,17 @@ def exportWeights(path, obj):
         exportNurbsSurfaceWeights(path, obj)
     elif nodeType == 'nurbsCurve':
         exportNurbsCurveWeights(path, obj)
-#---End Def exportWeights
-
-#-------------
-# Name        :exportNurbsCurveWeights
-# Arguments   :<path> : string
-#             <obj>  : string
-# Description :Export weighting of the nurbsCurv
-#-------------
 
 
 def exportNurbsCurveWeights(path, obj):
+    '''
+    #-------------
+    # Name        :exportNurbsCurveWeights
+    # Arguments   :<path> : string
+    #             <obj>  : string
+    # Description :Export weighting of the nurbsCurv
+    #-------------
+    '''
     # get the degree and span count
     cvs = cmds.getAttr(obj + '.degree') + cmds.getAttr(obj + '.spans')
     # extract the skinCluster
@@ -796,17 +799,17 @@ def exportNurbsCurveWeights(path, obj):
 
             fileOut.writelines(exportStr)
         fileOut.close()
-#---End Def exportNurbsCurveWeights
-
-#-------------
-# Name        :exportMeshWeights
-# Arguments   :<path>: string
-#             <obj> : string
-# Description :Export the weight information from a polygon object
-#-------------
 
 
 def exportMeshWeights(path, obj, updatebar=False):
+    '''
+    #-------------
+    # Name        :exportMeshWeights
+    # Arguments   :<path>: string
+    #             <obj> : string
+    # Description :Export the weight information from a polygon object
+    #-------------
+    '''
     # get the vertex count
     vtxCnt = cmds.polyEvaluate(obj, v=True)
     # extract the skinCluster
@@ -867,17 +870,17 @@ def exportMeshWeights(path, obj, updatebar=False):
             cmds.progressBar(gMainProgressBar, edit=True, endProgress=True)
     else:
         print 'skinCluster not found, no weights exported.'
-#---End Def exportWeightInfo
-
-#-------------
-# Name        :exportNurbsSurfaceWeights
-# Arguments   :<node>          : string
-#             <attribute name>: string
-# Description :Export the weighting from a nurbs surface
-#-------------
 
 
 def exportNurbsSurfaceWeights(path, obj):
+    '''
+    #-------------
+    # Name        :exportNurbsSurfaceWeights
+    # Arguments   :<node>          : string
+    #             <attribute name>: string
+    # Description :Export the weighting from a nurbs surface
+    #-------------
+    '''
     # check for a skinCluster
     import maya.mel as mm
     skin = mm.eval('findRelatedSkinCluster("' + obj + '")')
@@ -940,17 +943,17 @@ def exportNurbsSurfaceWeights(path, obj):
                 exportStr += ')\n'
                 fileOut.write(exportStr)
         fileOut.close()
-#---End Def exportNurbsSurfaceWeights
-
-#-------------
-# Name        :importWeights
-# Arguments   :<node>          : string
-#             <attribute name>: string
-# Description :Import weighting information
-#-------------
 
 
 def importWeights(path, obj):
+    '''
+    #-------------
+    # Name        :importWeights
+    # Arguments   :<node>          : string
+    #             <attribute name>: string
+    # Description :Import weighting information
+    #-------------
+    '''
     if cmds.objExists(obj) == 1:
         # get the type of node
         try:
@@ -965,17 +968,17 @@ def importWeights(path, obj):
             print 'something isn\'t working!'
     else:
         print('%s does not exist in scene, skipping...') % (obj)
-#---End Def importWeights
-
-#-------------
-# Name        :importNurbSurfaceWights
-# Arguments   :<node>          : string
-#             <attribute name>: string
-# Description :Import weighting information for Nurbs Surfaces
-#-------------
 
 
 def importNurbSurfaceWeights(path, obj):
+    '''
+    #-------------
+    # Name        :importNurbSurfaceWights
+    # Arguments   :<node>          : string
+    #             <attribute name>: string
+    # Description :Import weighting information for Nurbs Surfaces
+    #-------------
+    '''
     # get the range of U CVs
     numSpansU = cmds.getAttr(obj + '.spansU')
     degreeU = cmds.getAttr(obj + '.degreeU')
@@ -1038,7 +1041,6 @@ def importNurbSurfaceWeights(path, obj):
                     wgtStr += '])'
                     eval(wgtStr)
         cnt += 1
-#---End Def importNurbSurfaceWights
 
 
 def importNurbSurfaceWeights2(path, obj):
@@ -1100,15 +1102,17 @@ def importWeightsFromFile(*args):
     #  def __init__(self, intWinName, visWinName, fileFilter, startPath, fieldState):
     fileDialog = WeightBroswer('key_importWeightsWin', 'Import Weights Window', '.txt', os.environ['HOME'], 1, 'Import Weights', 2)
     fileDialog.fileWin()
-#-------------
-# Name        :importWeights
-# Arguments   :<node>          : string
-#             <attribute name>: string
-# Description :Import weighting information
-#-------------
 
 
 def importMeshWeights(path, obj, updatebar=False):
+    '''
+    #-------------
+    # Name        :importWeights
+    # Arguments   :<node>          : string
+    #             <attribute name>: string
+    # Description :Import weighting information
+    #-------------
+    '''
     # open the file path
     fileIn = open(path, 'r')
     fileString = fileIn.readlines()
@@ -1174,8 +1178,6 @@ def importMeshWeights(path, obj, updatebar=False):
     cmds.setAttr(skinCluster + ".useComponents", 1)
     if updatebar == True:
         cmds.progressBar(gMainProgressBar, edit=True, endProgress=True)
-
-#---End Def importWeights
 
 
 def copyWeightFromSelVtx(verbose=False):
