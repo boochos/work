@@ -7,6 +7,7 @@ from maya.OpenMaya import *
 from maya.OpenMayaMPx import *
 import cPickle
 import os
+import json
 #
 import webrImport as web
 # web
@@ -368,16 +369,26 @@ def importWeights02(obj, path):
     Load the pickled skinfile and setSkinInfo
     '''
     start = cmds.timerX()
-    _import = open(path, 'rb')
+    # _import = open(path, 'rb')
+    _import = open(path, 'r')
     importInfo = []
     print '---- Loading file ----\n---- Path: %s ----' % path
-    data = cPickle.load(_import)
+    # data = cPickle.load(_import)
+    data = json.load(_import, object_hook=from_json)
     print '---- File loaded in: %s seconds ----' % cmds.timerX(st=start)
     start = cmds.timerX()
     print '==== Setting weighting data on %s points ====' % str(len(data) - 1)
     setSkinInfo(obj, data, update=True)
     print '==== Skin point data loaded in: %s seconds ====' % cmds.timerX(st=start)
     _import.close()
+
+    #
+    '''
+    fileObjectJSON = open(path, 'r')
+    clpJSON = json.load(fileObjectJSON, object_hook=from_json)
+    fileObjectJSON.close()
+    return clpJSON
+    '''
 
 
 def exportWeights02(path):
@@ -392,14 +403,60 @@ def exportWeights02(path):
             storedSkinInfo = storeSkinInfo(skinNode, getSkinNodeInformation(skinNode), True)
 
             if len(storedSkinInfo) > 0:
-                export = open(path, 'wb')
+                # export = open(path, 'wb')
                 timer = cmds.timerX()
                 print '++++ Dumping weighting information ++++\n++++ path: %s ++++' % path
+                '''
                 cPickle.dump(storedSkinInfo, export)
+                export.close()
+                '''
+                #
+                export = open(path, 'wb')
+                json.dump(storedSkinInfo, export, default=to_json, indent=1)
                 export.close()
                 print '++++ Dump Complete in: %s seconds ++++' % cmds.timerX(st=timer)
             else:
                 OpenMaya.MGlobal.displayWarning('')
+
+
+def to_json(python_object):
+    if isinstance(python_object, kwo.SkinNodeInformation):
+        return {'__class__': 'SkinNodeInformation',
+                '__value__': python_object.__dict__}
+    if isinstance(python_object, kwo.SkinPoint):
+        return {'__class__': 'SkinPoint',
+                '__value__': python_object.__dict__}
+    raise TypeError(repr(python_object) + ' is not JSON serializable')
+
+
+def from_json(json_object):
+    if '__class__' in json_object:
+        if json_object['__class__'] == 'SkinNodeInformation':
+            # !!! decoding breaks here !!!
+            # print 'Clip'
+            sni = kwo.SkinNodeInformation()
+            sni = populate_from_json(sni, json_object['__value__'])
+            return sni
+            # return Clip(**json_object['__value__'])
+        if json_object['__class__'] == 'SkinPoint':
+            # print 'Layer'
+            sp = kwo.SkinPoint()
+            sp = populate_from_json(sp, json_object['__value__'])
+            return sp
+            # return Layer(**json_object['__value__'])
+    return json_object
+
+
+def populate_from_json(cls, dct={}):
+    for key in dct:
+        try:
+            getattr(cls, key)
+        except AttributeError:
+            pass
+            # print "Doesn't exist"
+        else:
+            setattr(cls, key, dct[key])
+    return cls
 
 
 def batchNurbsWeightControl(func, *args):
@@ -1614,12 +1671,16 @@ def weightingUtilWinv02():
         mainLayout = pm.columnLayout(adj=True, rs=5, cat=('both', 5))
         with mainLayout:
             # Export from selected object
-            efso_button = pm.button('Export Weights From Selected Mesh', c=pm.Callback(weightTransferControl, 'export'))
+            # efso_button = pm.button('Export Weights From Selected Mesh', c=pm.Callback(weightTransferControl, 'export'))
+            pm.button('Export Weights From Selected Mesh', c='import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.weightTransferControl("export")')
             # Import to selected object
-            itso_button = pm.button('Import Weights To Selected Mesh', c=pm.Callback(weightTransferControl, 'import'))
+            # itso_button = pm.button('Import Weights To Selected Mesh', c=pm.Callback(weightTransferControl, 'import'))
+            pm.button('Import Weights To Selected Mesh', c='import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.weightTransferControl("import")')
             cmds.separator()
-            cmds.button(l='Batch Export Nurbs Weights From Selected Mesh', c=pm.Callback(batchNurbsWeightControl, 'export'))
-            cmds.button(l='Batch Import Nurbs Weights To Selected Mesh', c=pm.Callback(batchNurbsWeightControl, 'import'))
+            # cmds.button(l='Batch Export Nurbs Weights From Selected Mesh', c=pm.Callback(batchNurbsWeightControl, 'export'))
+            cmds.button(l='Batch Export Nurbs Weights From Selected Mesh', c='import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.batchNurbsWeightControl("export")')
+            # cmds.button(l='Batch Import Nurbs Weights To Selected Mesh', c=pm.Callback(batchNurbsWeightControl, 'import'))
+            cmds.button(l='Batch Import Nurbs Weights To Selected Mesh', c='import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.batchNurbsWeightControl("import")')
 
 
 def matchSkinInfs(source='skinCluster15', dest='skinCluster16', bind=False):
