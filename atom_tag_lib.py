@@ -2107,7 +2107,7 @@ def deleteCameraExportGeoTag(*args):
 def tagDir():
     varPath = cmds.internalVar(userAppDir=True)
     path = os.path.join(varPath, 'tags')
-    if not os.path.isdir():
+    if not os.path.isdir(path):
         os.mkdir(path)
     return path
 
