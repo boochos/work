@@ -171,8 +171,8 @@ class Atom_Tag_Core(object):
     getMasters       -- Get all the masters in the scene.
     '''
 
-    def __init__(self, path='C:\\Element\\VFX\\projects\\projects_rigTags\\Spooky_Buddies\\tags', mShapeType='mesh'):
-        path = 'C:\\VFX\\projects\\projects_rigTags\\Spooky_Buddies\\tags'
+    def __init__(self, path='', mShapeType='mesh'):
+        path = tagDir()
         self.tlp = path
         self.mShapeType = mShapeType
         # Nested dictionary that reflects the folder convention
@@ -189,33 +189,34 @@ class Atom_Tag_Core(object):
 
     def createTagDict(self):
         #{base_catagory:{base_type:{base_name:{master:[attr_list]}}}}
-        for i in os.listdir(self.tlp):
-            if self.validate_dirPath(self.tlp, i):
-                self.tagDict[i] = {}
-                # base type path
-                btp = os.path.join(self.tlp, i)
-                # follow the path of the specified type
-                for j in os.listdir(btp):
-                    if self.validate_dirPath(btp, j):
-                        # base name path
-                        self.tagDict[i][j] = {}
-                        bnp = os.path.join(btp, j)
-                        for k in os.listdir(bnp):
-                            if self.validate_dirPath(bnp, k):
-                                # base master path
-                                self.tagDict[i][j][k] = {}
-                                bap = os.path.join(bnp, k)
-                                for l in os.listdir(bap):
-                                    if self.validate_dirPath(bap, l):
-                                        filePath = os.path.join(bap, l)
-                                        if os.path.isfile(filePath) and l[0] != '.':
-                                            fObj = open(filePath, 'r')
-                                            fLines = fObj.readlines()
-                                            fObj.close()
-                                            inObjList = []
-                                            for m in fLines:
-                                                inObjList.append(m.strip('\n'))
-                                            self.tagDict[i][j][k][l] = inObjList
+        if self.tlp:
+            for i in os.listdir(self.tlp):
+                if self.validate_dirPath(self.tlp, i):
+                    self.tagDict[i] = {}
+                    # base type path
+                    btp = os.path.join(self.tlp, i)
+                    # follow the path of the specified type
+                    for j in os.listdir(btp):
+                        if self.validate_dirPath(btp, j):
+                            # base name path
+                            self.tagDict[i][j] = {}
+                            bnp = os.path.join(btp, j)
+                            for k in os.listdir(bnp):
+                                if self.validate_dirPath(bnp, k):
+                                    # base master path
+                                    self.tagDict[i][j][k] = {}
+                                    bap = os.path.join(bnp, k)
+                                    for l in os.listdir(bap):
+                                        if self.validate_dirPath(bap, l):
+                                            filePath = os.path.join(bap, l)
+                                            if os.path.isfile(filePath) and l[0] != '.':
+                                                fObj = open(filePath, 'r')
+                                                fLines = fObj.readlines()
+                                                fObj.close()
+                                                inObjList = []
+                                                for m in fLines:
+                                                    inObjList.append(m.strip('\n'))
+                                                self.tagDict[i][j][k][l] = inObjList
 
     def deleteAllTags(self, *args):
         # get all the scene transform nodes
@@ -2101,6 +2102,15 @@ def deleteCameraExportGeoTag(*args):
             obj.deleteAttr(attr)
             msgStr = '%s attribute "%s" deleted successfully!' % (obj, attr)
             OpenMaya.MGlobal.displayInfo(msgStr)
+
+
+def tagDir():
+    varPath = cmds.internalVar(userAppDir=True)
+    path = os.path.join(varPath, 'tags')
+    if not os.path.isdir():
+        os.mkdir(path)
+    return path
+
 objects = Atom_Tag_Core()
 masters = objects.getMasters()
 # Atom_Geo_Cache_Core('test','test','test').win()

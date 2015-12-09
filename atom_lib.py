@@ -524,9 +524,10 @@ def win(*args):
                                              mh=5, mw=5, cll=True, cl=True)
 
     atom_ccst_columnLayout = cmds.columnLayout('atom_ccst_main_columnLayout', adj=True, rs=5)
-    import atom_controlShapes_lib as ac
-    reload(ac)
-    atom_ccst_path = ac.path
+    import webrImport as web
+    # web
+    ac = web.mod('atom_controlShapes_lib')
+    atom_ccst_path = ac.shapeDir()
     atom_ccst_formLayout = cmds.formLayout('atom_csst_formLayout', numberOfDivisions=100)
     atom_csst_exportPath_text = cmds.text('atom_csst_exportPath_text', label='Export Path:', align='left', width=70, height=14)
     atom_csst_exportPath_textField = cmds.textField('atom_csst_exportPath_textField', text=atom_ccst_path)

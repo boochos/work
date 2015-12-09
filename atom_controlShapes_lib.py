@@ -1,2 +1,10 @@
+import maya.cmds as cmds
+import os
 
-path = 'C:\Users\Sebastian\Documents\GitHub\controlShapes'
+
+def shapeDir():
+    varPath = cmds.internalVar(userAppDir=True)
+    path = os.path.join(varPath, 'controlShapes')
+    if not os.path.isdir():
+        os.mkdir(path)
+    return path
