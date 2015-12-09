@@ -161,9 +161,9 @@ def shotDir2(idx=7):
 
 
 def createPath(path):
-    print path
+    #print path
     if not os.path.isdir(path):
-        print path
+        #print path
         os.mkdir(path)
     else:
         pass
@@ -179,9 +179,7 @@ def createBlastPath(suffix=None, forceTemp=False):
     path = os.path.join(blastDir(forceTemp=forceTemp), sceneName())
     path = createPath(path)
     if suffix:
-        path = path + sceneName() + suffix + '/' + sceneName() + suffix
-    else:
-        path = os.path.join(path, sceneName())
+        path = path + sceneName() + suffix
     return path
 
 
@@ -236,32 +234,22 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
     w = int(float(w) * float(x))
     h = int(float(h) * float(x))
     print w, h
-    blastName = createBlastPath('', forceTemp=forceTemp) + '____' + camName()
+    blastName = sceneName(full=False, suffix=None, bracket=False) + '____' + camName()
+    blastPath = createBlastPath('', forceTemp=forceTemp)
+    blastFullPAth = os.path.join(blastPath, blastName)
     if not blastDir(forceTemp=forceTemp):
         message('Set project', maya=True)
     else:
         if 'image' not in format:
-            path = cmds.playblast(format=format, filename=blastName, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            path = cmds.playblast(format=format, filename=blastFullPAth, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
         else:
             playLo, playHi, current = getRange()
             # sound
             snd = copySound(toPath=createBlastPath('', forceTemp=forceTemp))
             # blast
-            path = cmds.playblast(format='image', filename=blastName, showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
-            if path:
-                if snd:
-                    rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # not escaped
-                else:
-                    rvString = 'rv ' + '[ ' + path + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'  # not escaped
-            else:
-                if snd:
-                    rvString = 'rv ' + '[ ' + createBlastPath('', forceTemp=forceTemp) + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ' + snd + ' ]' ' &'  # escaped
-                else:
-                    rvString = 'rv ' + '[ ' + createBlastPath('', forceTemp=forceTemp) + '.#.png' + ' -in ' + str(playLo) + ' -out ' + str(playHi) + ' ]' ' &'  # escaped
-            # play blast, use openSelected() function
-            if os.name == 'posix':
-                print rvString
-                os.system(rvString)
+            path = cmds.playblast(format='image', filename=blastFullPAth, showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+            # play
+            openSelected(path=blastPath, name=blastName, ext='png', start=str(playLo), end=str(playHi))
             cmds.currentTime(current)
 
 
@@ -414,10 +402,10 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     # meta
     pt = '...' + path.split(getTempPath())[1].split('/')[0] + '\n'
     # sc    = 'Scene Name:  ' + blastDir + '\n'
-    im = blastDir.name + '   --- ' + blastDir.ext + '\n'
+    im = blastDir.name + '\n'
     di = str(int(w)) + ' x ' + str(int(h)) + '\n'
     fr = str(int(blastDir.start)) + '  -  ' + str(int(blastDir.end)) + '\n'
-    le = str(int(blastDir.length)) + '  frames\n'
+    le = str(int(blastDir.length)) + '  frames' + '   ---   ' + blastDir.ext.upper() + '\n'
     dt = blastDir.date
     label = pt + im + di + fr + le + dt
     #
@@ -658,7 +646,13 @@ def openSelected(path='', name='', ext='', start='', end=''):
     # sample code for wipe compare
     # rv P_139_sk_0490_anim_swe_0077____camera.####.png -wipe P_139_sk_0490_anim_swe_0077____lookCam.####.png
     # audio
-    # print path, '_before audio'
+    print '_open'
+    print path
+    print name
+    print ext
+    print start
+    print end
+    print os.path.join(path,name), '__print'
     mov = ['mov', 'avi', 'mp4']
     if ext in mov:
         os.startfile(os.path.join(path, name + '.' + ext))
@@ -679,15 +673,19 @@ def openSelected(path='', name='', ext='', start='', end=''):
         elif os.name is 'posix':
             try:
                 if snd:
+                    print 'here'
                     # with audio
-                    rvString = 'rv ' + '[ ' + path + name + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ' + snd + ' ]' ' &'
+                    rvString = 'rv ' + os.path.join(path,name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ' + snd + ' &'
                 else:
-                    rvString = 'rv ' + '[ ' + path + name + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ]' ' &'  # escaped
+                    print 'there'
+                    rvString = 'rv ' + os.path.join(path,name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' &'  # escaped
                 message('Play:  ' + rvString, maya=True)
+                # print rvString
                 os.system(rvString)
             except:
                 # print rvString
-                message('Failed:  ' + rvString, maya=True)
+                message('Failed to play  ', maya=True)
+                print os.path.join(path,name)
         else:
             message('OS: ' + os.name + '  not configured to play image seq.', maya=True)
 

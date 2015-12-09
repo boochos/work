@@ -460,33 +460,37 @@ def smarterActivateSet(*args):
         activateSet(set.options[0])
 
 
-def toggleMembershipToCurrentSet():
+def toggleMembershipToCurrentSet(sel=[], attrs=[], shapeAttrs=[]):
     current = GetSetOptions()
     # current.currentSet()  # add if current == None, return message and bail
-    sel = cmds.ls(sl=True)
+    if not sel:
+        sel = cmds.ls(sl=True)
+        # collect object attrs
+    if not attrs:
+        attrs = cmds.channelBox('mainChannelBox', q=True, sma=True)
+    # obj = cmds.channelBox('mainChannelBox', q=True, mol=True)[0]
+    # collect shape attrs
+    if not shapeAttrs:
+        shapeAttrs = cmds.channelBox('mainChannelBox', q=True, ssa=True)
     # print sel
     output = None
     # change this to ask for selected channelBox attrs fist, if None, work with entire object
     if len(sel) == 1:
-        # collect object attrs
-        attrs = cmds.channelBox('mainChannelBox', q=True, sma=True)
-        obj = cmds.channelBox('mainChannelBox', q=True, mol=True)[0]
-        # collect shape attrs
-        shapeAttrs = cmds.channelBox('mainChannelBox', q=True, ssa=True)
+        sel = sel[0]
         try:
             shape = cmds.channelBox('mainChannelBox', q=True, sol=True)[0]
         except:
             pass
         # object attr toggle
-        if attrs is not None:
+        if attrs:
             # print '__1'
             for attr in attrs:
-                if cmds.character(obj + '.' + attr, im=currentSet()) is False:
-                    print attr, obj
-                    cmds.character(obj + '.' + attr, fe=currentSet())  # BUG: sometimes throws error, only one set was in scene, no sub chars
+                if cmds.character(sel + '.' + attr, im=currentSet()) is False:
+                    print attr, sel
+                    cmds.character(sel + '.' + attr, fe=currentSet())  # BUG: sometimes throws error, only one set was in scene, no sub chars
                     print attr, '  added'
                 else:
-                    output = cmds.character(obj + '.' + attr, rm=currentSet())
+                    output = cmds.character(sel + '.' + attr, rm=currentSet())
                     print attr, '  removed'
         # shape attr toggle
         elif shapeAttrs:
@@ -506,20 +510,22 @@ def toggleMembershipToCurrentSet():
                 for member in members:
                     membersObj.append(member.split('.')[0])
             membersObj = list(set(membersObj))
-            if sel[0] not in membersObj:
-                print sel[0]
+            if sel not in membersObj:
+                print sel
                 print currentSet()
                 cmds.character(sel[0], fe=currentSet())
             else:
                 for member in members:
-                    if sel[0] in member:
+                    if sel in member:
                         cmds.character(member, rm=currentSet())
                     else:
                         pass
     else:
-        print 'wrong'
-        # add toggle if / else
-        cmds.character(sel, include=currentSet())
+        for item in sel:
+            toggleMembershipToCurrentSet(sel=[item], attrs=attrs, shapeAttrs=shapeAttrs)
+            # print 'wrong'
+            # add toggle if / else
+            # cmds.character(sel, include=currentSet())
 
 
 def insertKey():
