@@ -643,7 +643,10 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
             'Select an object. Selection will be constrained to a locator with the same anim.')
 
 
-def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07):
+def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07, matchSet=True):
+    '''
+    matchSet only if locators hierarchy wont be edited. The connection forces the attributes to stay at their pre-edited value 
+    '''
     locs = []
     roo = None
     if obj is not None:
@@ -679,7 +682,8 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         newName = lc.replace('temp', suffix)
         lc = cmds.rename(lc, newName)
         locs.append(lc)
-        cs.matchCharSet(source=obj, objs=locs)
+        if matchSet:
+            cs.matchCharSet(source=obj, objs=locs)
     else:
         loc = cmds.spaceLocator()[0]
         cmds.xform(loc, roo=ro)

@@ -513,7 +513,7 @@ def toggleMembershipToCurrentSet(sel=[], attrs=[], shapeAttrs=[]):
             if sel not in membersObj:
                 print sel
                 print currentSet()
-                cmds.character(sel[0], fe=currentSet())
+                cmds.character(sel, fe=currentSet())
             else:
                 for member in members:
                     if sel in member:

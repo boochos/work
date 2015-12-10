@@ -508,12 +508,18 @@ def parentRig(bake=True, *args):
     sel = cmds.ls(sl=True)
     if len(sel) == 2:
         # place 3 locators on selection
-        offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__')[0]
-        root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__')[0]
-        spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__')[0]
+        offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__', matchSet=False)[0]
+        root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__' , matchSet=False)[0]
+        spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
+        # return None
         # heirarchy
         cmds.parent(offset, spin)
+        # return None
         cmds.parent(spin, root)
+        # add full path name to object
+        spin = root + '|' + spin
+        offset = spin + '|' + offset
+        # return None
         cmds.parentConstraint(sel[1], root, mo=True)
         # bake anim to offset loc
         cmds.parentConstraint(sel[0], offset, mo=True)
@@ -529,9 +535,12 @@ def parentRig(bake=True, *args):
         # cn.locSize(root, X=0.1)
         cmds.select(offset)
         # group
-        cmds.group(root, n='__PARENTRIG__#')
+        g = cmds.group(root, n='__PARENTRIG__#')
+        # fix full path name
+        spin = g + '|' + spin
+        offset = g + '|' + offset
         # match char set
-        cs.matchCharSet(sel[0], [offset])
+        cs.matchCharSet(sel[0], [offset, spin])
         # select new control
         cmds.select(offset)
         message('Parent rig built. -- New control Selected ', maya=True)
