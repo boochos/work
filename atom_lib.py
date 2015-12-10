@@ -521,7 +521,7 @@ def win(*args):
     #---------------------------
     atom_ccst_frameLayout = cmds.frameLayout('atom_ccst_frameLayout', label='Control Curve Shape Toolbox',
                                              cc=refresh.RefreshCall, ec=refresh.RefreshCall,
-                                             mh=5, mw=5, cll=True, cl=True)
+                                             mh=5, mw=5, cll=False, cl=True)
 
     atom_ccst_columnLayout = cmds.columnLayout('atom_ccst_main_columnLayout', adj=True, rs=5)
     import webrImport as web
@@ -529,11 +529,11 @@ def win(*args):
     ac = web.mod('atom_controlShapes_lib')
     atom_ccst_path = ac.shapeDir()
     atom_ccst_formLayout = cmds.formLayout('atom_csst_formLayout', numberOfDivisions=100)
-    atom_csst_exportPath_text = cmds.text('atom_csst_exportPath_text', label='Export Path:', align='left', width=70, height=14)
-    atom_csst_exportPath_textField = cmds.textField('atom_csst_exportPath_textField', text=atom_ccst_path)
+    # atom_csst_exportPath_text = cmds.text('atom_csst_exportPath_text', label='Export Path:', align='left', width=70, height=14)
+    # atom_csst_exportPath_textField = cmds.textField('atom_csst_exportPath_textField', text=atom_ccst_path)
     atom_csst_exportName_text = cmds.text('atom_csst_exportName_text', label='Export Name:', align='left', width=71, height=14)
     atom_csst_exportName_textField = cmds.textField('atom_csst_exportName_textField', text='None', cc='import atom_ui_lib\natom_ui_lib.validateFieldTextInput("atom_csst_exportName_textField")')
-    atom_csst_exportName_button = cmds.button('atom_csst_exportName_button', label='Export Curve Shape', c='import atom_ui_lib\natom_ui_lib.exportCurveShape()')
+    atom_csst_exportName_button = cmds.button('atom_csst_exportName_button', label='Export Curve Shape', c='import webrImport as web\naul = web.mod("atom_ui_lib")\naul.exportCurveShape()')
     atom_csst_separatorTop = cmds.separator('atom_csst_separatorTop', h=5)
     atom_csst_importName_text = cmds.text('atom_csst_importName_text', label='Import Curve Shape')
     atom_csst_separatorBottom = cmds.separator('atom_csst_separatorBottom')
@@ -544,25 +544,23 @@ def win(*args):
     uil.addControlCurveButton(atom_ccst_path)
 
     cmds.formLayout(atom_ccst_formLayout, edit=True,
-                    attachForm=[(atom_csst_exportPath_text, 'left', 0), (atom_csst_exportPath_text, 'top', 0),
-                                (atom_csst_exportPath_textField, 'top', 5), (atom_csst_exportPath_textField, 'left', 0),
-                                (atom_csst_exportName_text, 'left', 0), (atom_csst_exportName_button, 'left', 0),
+                    attachForm=[(atom_csst_exportName_text, 'left', 0), (atom_csst_exportName_button, 'left', 0),
                                 (atom_csst_separatorTop, 'left', 0),
                                 (atom_csst_importName_text, 'left', 0),
-                                (atom_csst_separatorBottom, 'left', 0)],
-                    attachOppositeForm=[(atom_csst_exportPath_textField, 'right', -209),
-                                        (atom_csst_exportName_textField, 'right', -209),
-                                        (atom_csst_exportName_button, 'right', -209),
-                                        (atom_csst_separatorTop, 'right', -209),
-                                        (atom_csst_importName_text, 'right', -209),
-                                        (atom_csst_separatorBottom, 'right', -209)],
-                    attachControl=[(atom_csst_exportPath_textField, 'top', 5, atom_csst_exportPath_text),
-                                   (atom_csst_exportName_text, 'top', 8, atom_csst_exportPath_textField),
-                                   (atom_csst_exportName_textField, 'top', 5, atom_csst_exportPath_textField), (atom_csst_exportName_textField, 'left', 5, atom_csst_exportName_text),
+                                (atom_csst_separatorBottom, 'left', 0),
+                                (atom_csst_exportName_button, 'right', 0),
+                                (atom_csst_separatorTop, 'right', 0),
+                                (atom_csst_importName_text, 'right', 0),
+                                (atom_csst_separatorBottom, 'right', 0),
+                                (atom_csst_exportName_textField, 'right', 0),
+                                (atom_csst_curveScale_floatField, 'right', 0)],
+                    attachControl=[(atom_csst_exportName_textField, 'left', 5, atom_csst_exportName_text),
                                    (atom_csst_exportName_button, 'top', 5, atom_csst_exportName_textField),
-                                   (atom_csst_separatorTop, 'top', 5, atom_csst_exportName_button), (atom_csst_importName_text, 'top', 5, atom_csst_separatorTop),
+                                   (atom_csst_separatorTop, 'top', 5, atom_csst_exportName_button),
+                                   (atom_csst_importName_text, 'top', 5, atom_csst_separatorTop),
                                    (atom_csst_separatorBottom, 'top', 0, atom_csst_importName_text),
-                                   (atom_csst_curveScale_floatField, 'top', 5, atom_csst_separatorBottom), (atom_csst_curveScale_floatField, 'left', 5, atom_csst_curveScale_text),
+                                   (atom_csst_curveScale_floatField, 'top', 5, atom_csst_separatorBottom),
+                                   (atom_csst_curveScale_floatField, 'left', 5, atom_csst_curveScale_text),
                                    (atom_csst_curveScale_text, 'top', 10, atom_csst_separatorBottom)]
                     )
     cmds.setParent('..')
@@ -572,7 +570,7 @@ def win(*args):
     # Main Form Layout Edit
     #---------------------
     cmds.formLayout(atom_main_formLayout, edit=True,
-                    attachForm=[(atom_prefix_text, 'top', 9), (atom_prefix_text, 'left', 5), (atom_prefix_textField, 'top', 5),
+                    attachForm=[(atom_prefix_text, 'top', 9), (atom_prefix_text, 'left', 5),
                                 (atom_gScale_text, 'left', 5), (atom_suffix_text, 'left', 5),
                                 (atom_setChannel_label, 'left', 5),
                                 (atom_gBfd_checkBox, 'left', 5),
@@ -586,11 +584,14 @@ def win(*args):
                                 (atom_ccst_frameLayout, 'left', 5), (atom_ccst_frameLayout, 'right', 5)],
 
                     attachControl=[(atom_prefix_textField, 'left', 5, atom_prefix_text),
-                                   (atom_gScale_text, 'top', 9, atom_prefix_text), (atom_gScale_floatField, 'left', 5, atom_gScale_text),
+                                   (atom_gScale_text, 'top', 9, atom_prefix_text),
+                                   (atom_gScale_floatField, 'left', 5, atom_gScale_text),
                                    (atom_gScale_floatField, 'top', 5, atom_prefix_text),
                                    (atom_suffix_text, 'top', 9, atom_gScale_text),
-                                   (atom_suffix_optionMenu, 'top', 5, atom_gScale_text), (atom_suffix_optionMenu, 'left', 74, atom_gScale_text),
-                                   (atom_setChannel_label, 'top', 8, atom_suffix_text), (atom_setChannel_checkBox, 'top', 5, atom_suffix_text),
+                                   (atom_suffix_optionMenu, 'top', 5, atom_gScale_text),
+                                   (atom_suffix_optionMenu, 'left', 74, atom_gScale_text),
+                                   (atom_setChannel_label, 'top', 8, atom_suffix_text),
+                                   (atom_setChannel_checkBox, 'top', 5, atom_suffix_text),
                                    (atom_setChannel_checkBox, 'left', 128, atom_setChannel_label),
                                    (atom_gBfd_checkBox, 'top', 8, atom_setChannel_label),
                                    (atom_gEar_checkBox, 'top', 8, atom_gBfd_checkBox),

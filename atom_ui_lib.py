@@ -5,6 +5,7 @@ import maya.OpenMaya as OpenMaya
 #
 import webrImport as web
 # web
+ac = web.mod('atom_controlShapes_lib')
 # misc = web.mod('atom_miscellaneous_lib')
 
 
@@ -102,7 +103,8 @@ def addControlCurveButton(path):
                 if os.path.isfile(os.path.join(path, file)):
                     txtSplit = file.split('.')
                     if txtSplit[1] == 'txt':
-                        cmds.button(label=txtSplit[0], c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + txtSplit[0] + '","' + path + '")')
+                        # cmds.button(label=txtSplit[0], c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + txtSplit[0] + '","' + path + '")')
+                        cmds.button(label=txtSplit[0], c='import webrImport as web\naui = web.mod("atom_ui_lib")\naui.importCurveShape("' + txtSplit[0] + '","' + path + '")', p='atom_ccst_main_columnLayout')
         else:
             print 'no shapes found in path:  ' + path
 
@@ -114,14 +116,14 @@ def exportCurveShape(*args):
     Description :Exports the local transforms of the cvs on the selected curve.
     Notes       :This is designed to only work with the Atom win
     '''
-    # get the selection
+    # get sel
     sel = cmds.ls(selection=True)
     if len(sel) == 1:
         # assemble the variables to build the path name later on
-        uiPath = cmds.textField('atom_csst_exportPath_textField', query=True, tx=True)
+        uiPath = ''
         uiName = cmds.textField('atom_csst_exportName_textField', query=True, tx=True)
         if uiName != 'None':
-            path = os.path.join(uiPath, uiName) + '.txt'
+            path = os.path.join(ac.shapeDir(), uiName) + '.txt'
             # if the file exists, stop here
             # if os.path.isfile(path) == False:
             # extract the curves shape node
@@ -134,13 +136,14 @@ def exportCurveShape(*args):
                     outFile.write('%s %s %s\n' % (info[0], info[1], info[2]))
                 outFile.close()
                 # add the butto
-                cmds.button(label=uiName, c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + uiName + '","' + uiPath + '")', p='atom_ccst_main_columnLayout')
+                # cmds.button(label=uiName, c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + uiName + '","' + uiPath + '")', p='atom_ccst_main_columnLayout')
+                cmds.button(label=uiName, c='import webrImport as web\naui = web.mod("atom_ui_lib")\naui.importCurveShape("' + uiName + '","' + uiPath + '")', p='atom_ccst_main_columnLayout')
                 refreshWindow('atom_win')
     else:
         print 'Select one curve to export'
 
 
-def importCurveShape(name, path, codeScale=False, overRide=False):
+def importCurveShape(name='', path='', codeScale=False, overRide=False):
     '''
     Name        :importCurveShape
     Arguements  :<name>: str
@@ -197,7 +200,7 @@ def importCurveShapeSource(shape=''):
 
 def shapeLocal(shape=''):
     ac = web.mod('atom_controlShapes_lib')
-    path = ac.path
+    path = ac.shapeDir()
     # print path
     if os.path.isdir(path):
         shapePath = os.path.join(path, shape + '.txt')

@@ -152,7 +152,8 @@ def circle(name, obj, shape, size, color, sections=8, degree=1, normal=(0, 0, 1)
     degree   = Linear(1) or Cubic(3) ,has to be int
     normal   = plane on which to build circle
     '''
-    path = os.path.expanduser('~') + '/GitHub/controlShapes/'
+    # path = os.path.expanduser('~') + '/GitHub/controlShapes/'
+    path = None
     Circle = []
     if type(obj) != list:
         pos = cmds.xform(obj, q=True, rp=True, ws=True)
