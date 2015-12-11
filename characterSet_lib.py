@@ -36,7 +36,7 @@ def sceneName():
 
 def shotPath():
     shotDir = sceneName()
-    print shotDir, '___________________________'
+    #print shotDir, '___________________________'
     if sceneName() != '':
         shotDir = shotDir[0:shotDir.rfind('_')] + '/'
         print shotDir
@@ -434,7 +434,7 @@ def smartActivateSet(*args):
 
 def smarterActivateSet(*args):
     set = GetSetOptions()
-    print set.options, '_________'
+    # print set.options, '_________'
     opt = str(len(set.options) - 1)
     if len(set.sel) != 0:
         if len(set.sel) > 1:  # multi object selection
