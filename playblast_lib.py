@@ -233,7 +233,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
         h = h / pa
     w = int(float(w) * float(x))
     h = int(float(h) * float(x))
-    print w, h
+    # print w, h
     blastName = sceneName(full=False, suffix=None, bracket=False) + '____' + camName()
     blastPath = createBlastPath('', forceTemp=forceTemp)
     blastFullPAth = os.path.join(blastPath, blastName)
@@ -251,6 +251,8 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
             # play
             openSelected(path=blastPath, name=blastName, ext='png', start=str(playLo), end=str(playHi))
             cmds.currentTime(current)
+    if cmds.window('PB_Man', q=True, ex=True):
+        blastWin()
 
 
 def blastWin():
