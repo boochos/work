@@ -485,23 +485,27 @@ def toggleMembershipToCurrentSet(sel=[], attrs=[], shapeAttrs=[]):
         if attrs:
             # print '__1'
             for attr in attrs:
-                if cmds.character(sel + '.' + attr, im=currentSet()) is False:
-                    print attr, sel
-                    cmds.character(sel + '.' + attr, fe=currentSet())  # BUG: sometimes throws error, only one set was in scene, no sub chars
-                    print attr, '  added'
+                if cmds.attributeQuery(attr, node=sel, ex=True):
+                    if cmds.character(sel + '.' + attr, im=currentSet()) is False:
+                        # print attr, sel
+                        cmds.character(sel + '.' + attr, fe=currentSet())  # BUG: sometimes throws error, only one set was in scene, no sub chars
+                        # print attr, '  added'
+                    else:
+                        output = cmds.character(sel + '.' + attr, rm=currentSet())
+                        # print attr, '  removed'
                 else:
-                    output = cmds.character(sel + '.' + attr, rm=currentSet())
-                    print attr, '  removed'
+                    pass
+                     # print 'doesnt exist  ', sel + '.' + attr
         # shape attr toggle
         elif shapeAttrs:
             # print '__2'
             for attr in shapeAttrs:
                 if cmds.character(shape + '.' + attr, im=currentSet()) is False:
                     cmds.character(shape + '.' + attr, fe=current.currentSet())
-                    print attr, '  added'
+                    # print attr, '  added'
                 else:
                     output = cmds.character(shape + '.' + attr, rm=currentSet())
-                    print attr, '  removed'
+                    # print attr, '  removed'
         else:
             # print 'there'
             members = cmds.character(currentSet(), q=True)
@@ -511,9 +515,12 @@ def toggleMembershipToCurrentSet(sel=[], attrs=[], shapeAttrs=[]):
                     membersObj.append(member.split('.')[0])
             membersObj = list(set(membersObj))
             if sel not in membersObj:
-                print sel
-                print currentSet()
-                cmds.character(sel, fe=currentSet())
+                # print sel
+                # print currentSet()
+                try:
+                    cmds.character(sel, fe=currentSet())
+                except:
+                    cmds.warning('--  ' + sel + '  -- Likely something wrong with the connected anim curve, Try deleting it. --')
             else:
                 for member in members:
                     if sel in member:
