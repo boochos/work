@@ -281,8 +281,7 @@ def inverseDir(arry=[]):
     return arry
 
 
-def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True, inverseA=False, inverseU=False):
-    # BUG: does not support negative numbers for aim vectors, use for offset direction
+def aimRig(target=None, obj=None, size=1.5, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True, inverseA=False, inverseU=False):
     locs = []
     if not target:
         sel = cmds.ls(sl=1)  # order = target,base
@@ -312,17 +311,17 @@ def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
         else:
             offsetU = offset
         # place locator at locale A and constrain
-        locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__')[0]
+        locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__', matchSet=False)[0]
         locs.append(locA)
         # match keys
         cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
         # bake locator A
         cn.bakeConstrained(locA, removeConstraint=True, timeLine=False, sim=False)
         # bake locator on location B
-        locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__')[0]
+        locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__', matchSet=False)[0]
         locs.append(locB)
         # place up locator on location B
-        locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 0.5, color=29, suffix='__UP__')[0]
+        locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 0.5, color=29, suffix='__UP__', matchSet=False)[0]
         locs.append(locUp)
         # print locUp
         # parent up locator, move up in ty, unparent
@@ -335,7 +334,7 @@ def aimRig(target=None, obj=None, size=0.3, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
         cn.matchKeyedFrames(A=target, B=locUp, subtractive=True)
         cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
         # aim offset
-        locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__')[0]
+        locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__', matchSet=False)[0]
         locs.append(locAim)
         cmds.parent(locAim, locB)
         cmds.setAttr(locAim + aAxs, offsetA)
