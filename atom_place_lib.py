@@ -1574,3 +1574,10 @@ def flatten(obj):
     x = cmds.xform(obj, q=True, ws=True, ro=True)
     cmds.xform(obj, ws=True, ro=(0, x[1], 0))
     cmds.setAttr(obj + '.ro', ro)
+
+
+def getUniqueName(name=''):
+    i = 1
+    while cmds.objExists(name + str(i)):
+        i = i + 1
+    return name + str(i)

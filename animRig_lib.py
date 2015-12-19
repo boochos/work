@@ -98,14 +98,13 @@ def assetParent(obj='', query=False):
         asset = obj.split(':')[0]
     else:
         asset = obj
-    asset = '__ASST__' + asset
+    asset = '__ASSET___' + asset
     if not query:
         if not cmds.objExists(asset):
-            assetGrp = cmds.group(name=asset, em=True)[0]
+            assetGrp = cmds.group(name=asset, em=True)
         return assetGrp
     else:
         return asset
-        
 
 
 def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False, parentTarget=False):
@@ -524,20 +523,21 @@ def parentRig(bake=True, worldOrient=True, *args):
     if len(sel) == 2 or 3:
         # place 3 locators on selection
         offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__', matchSet=False)[0]
-        root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__' , matchSet=False)[0]
         spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
+        root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__', matchSet=False)[0]
         parent = root
         # group
-        g = cmds.group(n='__PARENTRIG__', em=True)
+        g = cmds.group(n=plc.getUniqueName('__PARENTRIG__'), em=True)
         # place orient object
-        if worldOrient ==True:
+        if worldOrient:
             if len(sel) == 3:
-                ornt = plc.null2(nllSuffix=sel[2] + '__ORIENT__', obj=root, orient=False)[0]
+                ornt = plc.null2(nllSuffix=plc.getUniqueName(sel[2] + '__ORIENT__'), obj=root, orient=False)[0]
                 cmds.orientConstraint(sel[2], ornt)
             else:
-                ornt = cmds.group(name='__WORLD_ORIENT__', em=True)
+                ornt = plc.null2(nllSuffix=plc.getUniqueName('__WORLD_ORIENT__'), obj=offset, orient=False)[0]
                 cmds.orientConstraint(g, ornt)
             cmds.parent(ornt, root)
+            parent = ornt
         # return None
         # heirarchy
         cmds.parent(offset, spin)
@@ -555,14 +555,16 @@ def parentRig(bake=True, worldOrient=True, *args):
             con = cn.getConstraint(offset)
             if con:
                 cmds.delete(con)
+        # return None
         # create final rig constraints
         cn.constrainEnabled(offset, sel[0], mo=True)
         # parent, rig to group
-        cmds.parent(root,g)
+        cmds.parent(root, g)
         # match char set
         cs.matchCharSet(sel[0], [offset, spin])
         # clean up
-        assetParent(g)
+        p = assetParent(sel[0])
+        cmds.parent(g, p)
         # select new control
         cmds.select(offset)
         message('Parent rig built. -- New control Selected ', maya=True)

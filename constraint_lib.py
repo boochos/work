@@ -6,6 +6,7 @@ import webrImport as web
 cs = web.mod('characterSet_lib')
 hj = web.mod('hijack_lib')
 fr = web.mod('frameRange_lib')
+plc = web.mod('atom_place_lib')
 
 
 def message(what='', maya=False):
@@ -651,13 +652,6 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
             'Select an object. Selection will be constrained to a locator with the same anim.')
 
 
-def getUniqueName(name=''):
-    i = 1
-    while cmds.objExists(name + str(i)):
-        i = i+1
-    return name + str(i)
-
-
 def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07, matchSet=True):
     '''
     matchSet only if locators hierarchy wont be edited. The connection forces the attributes to stay at their pre-edited value 
@@ -665,7 +659,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
     locs = []
     roo = None
     if obj is not None:
-        lc = cmds.spaceLocator(name=getUniqueName(obj + suffix))[0]
+        lc = cmds.spaceLocator(name=plc.getUniqueName(obj + suffix))[0]
         objColor(lc, color)
         # print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
@@ -700,7 +694,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
     else:
         loc = cmds.spaceLocator()[0]
         cmds.xform(loc, roo=ro)
-        loc = cmds.rename(loc, getUniqueName('locator' + suffix))
+        loc = cmds.rename(loc, plc.getUniqueName('locator' + suffix))
         locs.append(loc)
     hj.hijackAttrs(locs[0], locs[0], 'overrideColor', 'color', set=True, default=None)
     return locs
