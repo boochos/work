@@ -30,6 +30,7 @@ class Depend():
 def shelfRefresh():
     getIcons(download=True)
     shelfBuild()
+    message('Shelf Refreshed!')
 
 
 def shelfRefreshWin():
@@ -201,6 +202,7 @@ def getIcons(download=False):
             message('downloading -- ' + local)
             cmds.refresh()
             urllib.urlretrieve(url, local)
+    message('Icons downloaded.')
 
 
 def createMyShelf():

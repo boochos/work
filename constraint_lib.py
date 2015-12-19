@@ -429,6 +429,9 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
             for attr in created:
                 cmds.setKeyframe(obj + '.' + attr, v=1)
     if not attrs:
+        message('No PAIRBLEND or CONSTRAINT found: -- ' + obj)
+        return None
+        '''
         message(
             'No PAIRBLEND or CONSTRAINT found. Creating a new locator to bake.')
         loc = locatorOnSelection(
@@ -436,6 +439,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         bakeStep(loc, time=(time[0], time[1]), sim=True, uiOff=uiOff)
         cmds.autoKeyframe(state=autoK)
         return None
+        '''
     #
     cmds.currentTime(i)
     #
@@ -532,7 +536,10 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
 def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, uiOff=True):
     sel = cmds.ls(sl=True)
     if len(sel) != 0:
+        i = 1
+        num = len(sel)
         for obj in sel:
+            message(str(i) + ' of ' + str(num) + ' --  ' + obj, maya=True)
             bakeConstrained(
                 obj, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim, uiOff=uiOff)
     else:
@@ -644,6 +651,13 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
             'Select an object. Selection will be constrained to a locator with the same anim.')
 
 
+def getUniqueName(name=''):
+    i = 1
+    while cmds.objExists(name + str(i)):
+        i = i+1
+    return name + str(i)
+
+
 def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07, matchSet=True):
     '''
     matchSet only if locators hierarchy wont be edited. The connection forces the attributes to stay at their pre-edited value 
@@ -651,7 +665,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
     locs = []
     roo = None
     if obj is not None:
-        lc = cmds.spaceLocator(name=obj + 'temp')[0]
+        lc = cmds.spaceLocator(name=getUniqueName(obj + suffix))[0]
         objColor(lc, color)
         # print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
@@ -680,15 +694,13 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
             else:
                 constrainEnabled(lc, obj, mo=True)
                 # cmds.parentConstraint(lc, obj, mo=True)
-        newName = lc.replace('temp', suffix)
-        lc = cmds.rename(lc, newName)
         locs.append(lc)
         if matchSet:
             cs.matchCharSet(source=obj, objs=locs)
     else:
         loc = cmds.spaceLocator()[0]
         cmds.xform(loc, roo=ro)
-        loc = cmds.rename(loc, 'locator' + suffix)
+        loc = cmds.rename(loc, getUniqueName('locator' + suffix))
         locs.append(loc)
     hj.hijackAttrs(locs[0], locs[0], 'overrideColor', 'color', set=True, default=None)
     return locs

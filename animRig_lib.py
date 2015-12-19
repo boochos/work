@@ -7,6 +7,7 @@ cs = web.mod('characterSet_lib')
 cn = web.mod('constraint_lib')
 ds = web.mod('display_lib')
 ac = web.mod('animCurve_lib')
+plc = web.mod('atom_place_lib')
 
 '''
 import webrImport as web
@@ -90,6 +91,21 @@ def guideLine(obj1, obj2, name=''):
     cmds.parent(result[0], null)
     cmds.parent(result[1], null)
     return null
+
+
+def assetParent(obj='', query=False):
+    if ':' in obj:
+        asset = obj.split(':')[0]
+    else:
+        asset = obj
+    asset = '__ASST__' + asset
+    if not query:
+        if not cmds.objExists(asset):
+            assetGrp = cmds.group(name=asset, em=True)[0]
+        return assetGrp
+    else:
+        return asset
+        
 
 
 def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False, parentTarget=False):
@@ -499,25 +515,35 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         message('select an object')
 
 
-def parentRig(bake=True, *args):
+def parentRig(bake=True, worldOrient=True, *args):
     '''
     sometimes adds 2 pairblends, needs to be fixed as it breaks active char set key ticks.
     '''
     # store selection
     sel = cmds.ls(sl=True)
-    if len(sel) == 2:
+    if len(sel) == 2 or 3:
         # place 3 locators on selection
         offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__', matchSet=False)[0]
         root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__' , matchSet=False)[0]
         spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
+        parent = root
+        # group
+        g = cmds.group(n='__PARENTRIG__', em=True)
+        # place orient object
+        if worldOrient ==True:
+            if len(sel) == 3:
+                ornt = plc.null2(nllSuffix=sel[2] + '__ORIENT__', obj=root, orient=False)[0]
+                cmds.orientConstraint(sel[2], ornt)
+            else:
+                ornt = cmds.group(name='__WORLD_ORIENT__', em=True)
+                cmds.orientConstraint(g, ornt)
+            cmds.parent(ornt, root)
         # return None
         # heirarchy
         cmds.parent(offset, spin)
         # return None
-        cmds.parent(spin, root)
+        cmds.parent(spin, parent)
         # add full path name to object
-        spin = root + '|' + spin
-        offset = spin + '|' + offset
         # return None
         cmds.parentConstraint(sel[1], root, mo=True)
         # bake anim to offset loc
@@ -531,17 +557,14 @@ def parentRig(bake=True, *args):
                 cmds.delete(con)
         # create final rig constraints
         cn.constrainEnabled(offset, sel[0], mo=True)
-        # cn.locSize(root, X=0.1)
-        cmds.select(offset)
-        # group
-        g = cmds.group(root, n='__PARENTRIG__#')
-        # fix full path name
-        spin = g + '|' + spin
-        offset = g + '|' + offset
+        # parent, rig to group
+        cmds.parent(root,g)
         # match char set
         cs.matchCharSet(sel[0], [offset, spin])
+        # clean up
+        assetParent(g)
         # select new control
         cmds.select(offset)
         message('Parent rig built. -- New control Selected ', maya=True)
     else:
-        cmds.warning('-- Select 2 objects --')
+        cmds.warning('-- Select 2 or 3 objects. Third object can be used as a orient input. --')
