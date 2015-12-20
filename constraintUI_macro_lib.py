@@ -195,7 +195,8 @@ class CSUI(object):
 
     def cmdParentRig(self, *args):
         ar = web.mod('animRig_lib')
-        ar.parentRig()
+        wo = cmds.checkBox(self.actionColumn.c17, q=True, v=True)
+        ar.parentRig(worldOrient=wo)
 
     def cmdAimRig(self, *args):
         ar = web.mod('animRig_lib')

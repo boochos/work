@@ -460,7 +460,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
                     for attr in attrs:
                         cmds.setKeyframe(attr)
         else:
-            message('no keys__________________________')
+            # message('no keys__________________________')
             bakeStep(obj, time=(time[0], time[1]), sim=True, uiOff=uiOff)
             cmds.autoKeyframe(state=autoK)
             return None
@@ -497,8 +497,10 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
         # print 'done baking\n'
     else:
         if keyedOrig is not None:
+            '''
             message(
                 '0  Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
+                '''
             if gRange.keyStart == gRange.keyEnd:
                 bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
                 message(
@@ -537,10 +539,11 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
 def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, uiOff=True):
     sel = cmds.ls(sl=True)
     if len(sel) != 0:
-        i = 1
-        num = len(sel)
+        # i = 1
+        # num = len(sel)
         for obj in sel:
-            message(str(i) + ' of ' + str(num) + ' --  ' + obj, maya=True)
+            # message(str(i) + ' of ' + str(num) + ' --  ' + obj, maya=True)
+            # i = i+1
             bakeConstrained(
                 obj, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim, uiOff=uiOff)
     else:
@@ -646,6 +649,8 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
             if matchSet:
                 cs.matchCharSet(source=item, objs=[lc])
             locs.append(lc)
+            p = plc.assetParent(item)
+            cmds.parent(lc, p)
         return locs
     else:
         cmds.warning(

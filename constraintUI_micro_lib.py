@@ -140,12 +140,13 @@ class Action(object):
         # anim Rigs
         self.actionButton12 = cmds.button(self.actionButton12, label='Parent Rig', c=self.cmdAction, bgc=greyD,
                                           ann='A parent rig is created between 2 objects.\n Animation is preserved and transfered to a locator.\nSelect child first.\nROOT/SPIN/OFFSET')
+        self.c17 = cmds.checkBox(label='Position Only', v=False, ann='Rotations in world space or in the space of third selection')
         self.actionButton13 = cmds.button(self.actionButton13, label='Aim Rig', c=self.cmdAction, bgc=greyD,
                                           ann='An aim rig is created between 2 objects.\n Animation is preserved and transfered to locator.\nSelect target first.\nROOT/BASE\nROOT/AIM/OFFSET\nROOT/AIM/UP')
         self.c15 = cmds.checkBox(label='Negative Aim', v=False, ann='Specifies the AIM should be in the negative direction')
-        self.aimGrp = cmds.radioButtonGrp(label='Aim:', labelArray3=['x', 'y', 'z'], select=1, numberOfRadioButtons=3, w=self.w, ad4=1, cw4=[40, 25, 25, 25], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
+        self.aimGrp = cmds.radioButtonGrp(label='Aim:', labelArray3=['x', 'y', 'z'], select=1, numberOfRadioButtons=3, w=self.w, ad4=1, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
         self.c16 = cmds.checkBox(label='Negative Up', v=False, ann='Specifies the UP should be in the negative direction')
-        self.upGrp = cmds.radioButtonGrp(label='Up:', labelArray3=['x', 'y', 'z'], select=2, numberOfRadioButtons=3, w=self.w, ad4=1, cw4=[40, 25, 25, 25], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
+        self.upGrp = cmds.radioButtonGrp(label='Up:', labelArray3=['x', 'y', 'z'], select=2, numberOfRadioButtons=3, w=self.w, ad4=1, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
         self.s5 = cmds.separator(height=self.sepH, style=self.sepStl)
         # update constraint offset
         self.actionButton15 = cmds.button(self.actionButton15, label='Constraint Offset Update', c=self.cmdAction, bgc=blue)

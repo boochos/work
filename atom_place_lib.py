@@ -408,18 +408,18 @@ def setChannels(item, translate=[True, True], rotate=[True, True], scale=[True, 
     rotateList = ['.rx', '.ry', '.rz']
     scaleList = ['.sx', '.sy', '.sz']
 
-    if visibility[0] == True:
+    if visibility[0]:
         try:
             cmds.setAttr(item + '.visibility', 1)
         except:
             pass
-            ##mel.eval('warning \"' + '////... visibility already connected ...////' + '\";')
+            # mel.eval('warning \"' + '////... visibility already connected ...////' + '\";')
     else:
         try:
             cmds.setAttr(item + '.visibility', 0)
         except:
             pass
-            ##mel.eval('warning \"' + '////... visibility already connected ...////' + '\";')
+            # mel.eval('warning \"' + '////... visibility already connected ...////' + '\";')
 
     if visibility[1] == True:
         cmds.setAttr(item + '.visibility', lock=True)
@@ -1584,3 +1584,21 @@ def getUniqueName(name=''):
         while cmds.objExists(name + str(i)):
             i = i + 1
         return name + str(i)
+
+
+def assetParent(obj='', query=False):
+    prefix = '__HELP__'
+    suffix = 'local'
+    if ':' in obj:
+        asset = obj.split(':')[0]
+    else:
+        asset = suffix
+    asset = prefix + asset
+    if not query:
+        if not cmds.objExists(asset):
+            asset = cmds.group(name=asset, em=True)
+            setChannels(asset, [True, False], [True, False], [True, False], [True, False, False])
+            # asset = assetGrp
+        return asset
+    else:
+        return asset

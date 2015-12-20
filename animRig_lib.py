@@ -93,22 +93,6 @@ def guideLine(obj1, obj2, name=''):
     return null
 
 
-def assetParent(obj='', query=False):
-    prefix = '__ASSET___'
-    suffix = 'local'
-    if ':' in obj:
-        asset = obj.split(':')[0]
-    else:
-        asset = suffix
-    asset = prefix + asset
-    if not query:
-        if not cmds.objExists(asset):
-            assetGrp = cmds.group(name=asset, em=True)
-        return assetGrp
-    else:
-        return asset
-
-
 def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False, parentTarget=False):
     '''
     obj[0] = tip control
@@ -373,7 +357,11 @@ def aimRig(target=None, obj=None, size=1.5, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
         else:
             print bake
         # cleanup
-        cmds.group(locA, n='__AIMRIG__#')
+        g = cmds.group(locA, n=plc.getUniqueName('__AIMRIG__'))
+        p = plc.assetParent(sel[1])
+        cmds.parent(g, p)
+        lockIt(g)
+        #
         cs.matchCharSet(obj, locs)
         cmds.select(locAim)
 
@@ -417,7 +405,7 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         locs.append(aimL)
         upL = cn.locator(obj=sel, constrain=False, X=4 * size, color=29, suffix='__UP__')[0]
         locs.append(upL)
-        upG = cn.null(obj=sel, suffix='__UP_GRP')
+        upG = cn.null(obj=sel, suffix=plc.getUniqueName('__UP_GRP'))
         # heirarchy, prep for offsets
         cmds.parent(rootL, coreL)
         cmds.parent(aimL, coreL)
@@ -439,14 +427,14 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         # check if 2nd object was selected
         if selectedMaster:
 
-            masterGrp = cn.null(obj=selectedMaster, suffix='temp')
-            masterGrp = cmds.rename(masterGrp, '__PIVOTAIM_RIG__#')
+            masterGrp = cn.null(obj=selectedMaster, suffix=plc.getUniqueName('__PIVOTAIM_RIG__'))
             cmds.parentConstraint(selectedMaster, masterGrp, mo=False)
             cmds.parent(coreL, masterGrp)
             ac.deleteAnim(masterGrp, attrs=['scaleX', 'scaleY', 'scaleZ'], lock=True, keyable=False)
             ac.deleteAnim(masterGrp, attrs=['visibility'], lock=False, keyable=False)
         else:
-            masterGrp = cmds.group(coreL, n='__PIVOTAIM_RIG__#')
+            masterGrp = cmds.group(coreL, n=plc.getUniqueName('__PIVOTAIM_RIG__'))
+        lockIt(masterGrp)
         # add master control if necessary
         if masterControl:
             if masterPosition == 0:
@@ -505,15 +493,25 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         # match char Set
         cs.matchCharSet(sel, locs)
         # cleanup
-        cleanupGrp = cmds.group(name='__PIVOTAIM_GRP__#', em=True)
+        cleanupGrp = cmds.group(name=plc.getUniqueName('__PIVOTAIM_GRP__'), em=True)
         cmds.parent(masterGrp, cleanupGrp)
+        p = plc.assetParent(sel[0])
+        cmds.parent(cleanupGrp, p)
         # guideLines
-        cmds.parent(guideLine(coreL, rootL, name=masterGrp + '_guides__'), cleanupGrp)
-        cmds.parent(guideLine(rootL, upL, name=masterGrp + '_guides__'), cleanupGrp)
-        cmds.parent(guideLine(upL, aimL, name=masterGrp + '_guides__'), cleanupGrp)
-        cmds.parent(guideLine(aimL, coreL, name=masterGrp + '_guides__'), cleanupGrp)
+        cmds.parent(guideLine(coreL, rootL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        cmds.parent(guideLine(rootL, upL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        cmds.parent(guideLine(upL, aimL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        cmds.parent(guideLine(aimL, coreL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
     else:
         message('select an object')
+
+
+def lockIt(objs=[]):
+    if type(objs) == 'list':
+        for item in objs:
+            plc.setChannels(objs, [True, False], [True, False], [True, False], [True, False, False])
+    else:
+        plc.setChannels(objs, [True, False], [True, False], [True, False], [True, False, False])
 
 
 def parentRig(bake=True, worldOrient=True, *args):
@@ -523,13 +521,13 @@ def parentRig(bake=True, worldOrient=True, *args):
     # store selection
     sel = cmds.ls(sl=True)
     if len(sel) == 2 or 3:
-        # place 3 locators on selection
+        # place rig nodes
         offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__', matchSet=False)[0]
-        spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
-        root = cn.locator(obj=sel[1], constrain=False, X=0.1, color=28, suffix='__ROOT__', matchSet=False)[0]
+        root = plc.null2(nllSuffix=plc.getUniqueName('__ROOT__'), obj=sel[1], orient=True)
         parent = root
         # group
         g = cmds.group(n=plc.getUniqueName('__PARENTRIG__'), em=True)
+        lockIt(g)
         # place orient object
         if worldOrient:
             if len(sel) == 3:
@@ -539,7 +537,11 @@ def parentRig(bake=True, worldOrient=True, *args):
                 ornt = plc.null2(nllSuffix=plc.getUniqueName('__WORLD_ORIENT__'), obj=offset, orient=False)[0]
                 cmds.orientConstraint(g, ornt)
             cmds.parent(ornt, root)
+            plc.setChannels(ornt, [True, False], [False, True], [True, False], [True, False, False])
             parent = ornt
+            spin = cn.locator(obj=sel[0], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
+        else:
+            spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
         # return None
         # heirarchy
         cmds.parent(offset, spin)
@@ -560,12 +562,14 @@ def parentRig(bake=True, worldOrient=True, *args):
         # return None
         # create final rig constraints
         cn.constrainEnabled(offset, sel[0], mo=True)
+        # return None
         # parent, rig to group
         cmds.parent(root, g)
         # match char set
         cs.matchCharSet(sel[0], [offset, spin])
+        # return None
         # clean up
-        p = assetParent(sel[0])
+        p = plc.assetParent(sel[0])
         cmds.parent(g, p)
         # select new control
         cmds.select(offset)
