@@ -1577,7 +1577,10 @@ def flatten(obj):
 
 
 def getUniqueName(name=''):
-    i = 1
-    while cmds.objExists(name + str(i)):
-        i = i + 1
-    return name + str(i)
+    if not cmds.objExists(name):
+        return name
+    else:
+        i = 1
+        while cmds.objExists(name + str(i)):
+            i = i + 1
+        return name + str(i)

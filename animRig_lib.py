@@ -94,11 +94,13 @@ def guideLine(obj1, obj2, name=''):
 
 
 def assetParent(obj='', query=False):
+    prefix = '__ASSET___'
+    suffix = 'local'
     if ':' in obj:
         asset = obj.split(':')[0]
     else:
-        asset = obj
-    asset = '__ASSET___' + asset
+        asset = suffix
+    asset = prefix + asset
     if not query:
         if not cmds.objExists(asset):
             assetGrp = cmds.group(name=asset, em=True)
