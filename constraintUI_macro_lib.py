@@ -25,7 +25,7 @@ class CSUI(object):
         # external
         self.columnWidth = columnWidth
         # internal
-        self.windowName = 'ConstraintTools'
+        self.windowName = 'HELPERS'
         # store/restore
         self.objects = []
         self.animBucket = []
@@ -34,7 +34,7 @@ class CSUI(object):
         # execute
         self.cleanUI()
         self.gui()
-    
+
     '''
     def cleanUI(self, *args):
         try:
@@ -42,6 +42,7 @@ class CSUI(object):
         except:
             pass
     '''
+
     def cleanUI(self, *args):
         # TODO: script job keeps running if window is closed with X button
         try:
@@ -58,10 +59,10 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton1, e=True, c=self.cmdBake)
         cmds.button(self.actionColumn.actionButton2, e=True, c=self.cmdPlace)
         cmds.checkBox(self.actionColumn.c5, e=True, cc=self.cmdPlaceDisableToggle)
-        
+
         cmds.button(self.actionColumn.actionButton17, e=True, c=self.cmdAimPivotRig)
         cmds.checkBox(self.actionColumn.c21, e=True, cc=self.cmdPivotMasterDisableToggle)
-        
+
         cmds.button(self.actionColumn.actionButton3, e=True, c=self.cmdBakeToLoc)
         #cmds.button(self.actionColumn.actionButton4, e=True, c=self.cmdMatchKeys)
         cmds.button(self.actionColumn.actionButton5, e=True, c=self.cmdConstrain)
@@ -87,6 +88,7 @@ class CSUI(object):
         # FUTURE: user pref files
         # FUTURE: use annotate tool for viewport display info, distance, speed
 
+        self.actionColumn.prefLoad()
         cmds.showWindow(self.win)
 
     def cmdPlaceDisableToggle(self, *args):
@@ -94,12 +96,14 @@ class CSUI(object):
             cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, ed=True)
         else:
             cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, ed=False)
+        self.actionColumn.prefGet()
 
     def cmdPivotMasterDisableToggle(self, *args):
         if cmds.checkBox(self.actionColumn.c21, q=True, v=True):
             cmds.radioButtonGrp(self.actionColumn.masterGrp, e=True, en=True)
         else:
             cmds.radioButtonGrp(self.actionColumn.masterGrp, e=True, en=False)
+        self.actionColumn.prefGet()
 
     def cmdBake(self, *args):
         # TODO: creates an exta locator when object with no keys is selected
@@ -233,7 +237,7 @@ class CSUI(object):
         inverseU = cmds.checkBox(self.actionColumn.c19, q=True, v=True)
         upGp = cmds.radioButtonGrp(self.actionColumn.upPivotGrp, q=True, select=True)
         master = cmds.checkBox(self.actionColumn.c21, q=True, v=True)
-        masterPos = cmds.radioButtonGrp(self.actionColumn.masterGrp, q=True, select=True)-1
+        masterPos = cmds.radioButtonGrp(self.actionColumn.masterGrp, q=True, select=True) - 1
         distance = cmds.floatSliderGrp(self.actionColumn.sl1, q=True, v=True)
         # ar.aimPivotRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
         ar.aimPivotRig(size=0.3, aim=axs[aimGp], u=axs[upGp], offset=distance, masterControl=master, masterPosition=masterPos)

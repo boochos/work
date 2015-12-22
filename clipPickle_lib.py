@@ -768,18 +768,15 @@ def clipPath(name='', temp=False):
 
 def clipDefaultPath():
     # print os.name
-    user = os.path.expanduser('~')
-    if platform.system() == 'Darwin':
-        # mac maya dir location
-        user = os.path.join(user, 'Documents')
-    path = os.path.join(user, 'maya/clipLibrary')
+    varPath = cmds.internalVar(userAppDir=True)
+    path = os.path.join(varPath, 'clipLibrary')
     # print path
     return path
 
 
 def clipDefaultTempPath():
-    user = os.path.expanduser('~')
-    path = user + '/maya/clipTemp/'
+    varPath = cmds.internalVar(userAppDir=True)
+    path = os.path.join(varPath, 'clipTemp')
     return path
 
 
@@ -975,6 +972,7 @@ def updateObjName(clp, names=[]):
                 message('new names list does not match object number in clip', maya=True)
     else:
         message('multi animlayers not supported', maya=True)
+
 
 def selectObjectsInClip(clp):
     select = []
