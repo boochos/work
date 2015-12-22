@@ -21,7 +21,7 @@ class CSUI(object):
     Build CharacterSet UI
     '''
 
-    def __init__(self, columnWidth=80):
+    def __init__(self, columnWidth=190):
         # external
         self.columnWidth = columnWidth
         # internal
@@ -34,13 +34,14 @@ class CSUI(object):
         # execute
         self.cleanUI()
         self.gui()
-
+    
+    '''
     def cleanUI(self, *args):
         try:
             cmds.deleteUI(self.windowName)
         except:
             pass
-
+    '''
     def cleanUI(self, *args):
         # TODO: script job keeps running if window is closed with X button
         try:
@@ -56,6 +57,11 @@ class CSUI(object):
         self.actionColumn = ui.Action('action', cmdAction='', label='', w=self.columnWidth)
         cmds.button(self.actionColumn.actionButton1, e=True, c=self.cmdBake)
         cmds.button(self.actionColumn.actionButton2, e=True, c=self.cmdPlace)
+        cmds.checkBox(self.actionColumn.c5, e=True, cc=self.cmdPlaceDisableToggle)
+        
+        cmds.button(self.actionColumn.actionButton17, e=True, c=self.cmdAimPivotRig)
+        cmds.checkBox(self.actionColumn.c21, e=True, cc=self.cmdPivotMasterDisableToggle)
+        
         cmds.button(self.actionColumn.actionButton3, e=True, c=self.cmdBakeToLoc)
         #cmds.button(self.actionColumn.actionButton4, e=True, c=self.cmdMatchKeys)
         cmds.button(self.actionColumn.actionButton5, e=True, c=self.cmdConstrain)
@@ -83,6 +89,18 @@ class CSUI(object):
 
         cmds.showWindow(self.win)
 
+    def cmdPlaceDisableToggle(self, *args):
+        if cmds.checkBox(self.actionColumn.c5, q=True, v=True):
+            cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, ed=True)
+        else:
+            cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, ed=False)
+
+    def cmdPivotMasterDisableToggle(self, *args):
+        if cmds.checkBox(self.actionColumn.c21, q=True, v=True):
+            cmds.radioButtonGrp(self.actionColumn.masterGrp, e=True, en=True)
+        else:
+            cmds.radioButtonGrp(self.actionColumn.masterGrp, e=True, en=False)
+
     def cmdBake(self, *args):
         # TODO: creates an exta locator when object with no keys is selected
         cn = web.mod('constraint_lib')
@@ -99,9 +117,8 @@ class CSUI(object):
         v5 = cmds.checkBox(self.actionColumn.c5, q=True, v=True)
         v13 = cmds.checkBox(self.actionColumn.c13, q=True, v=True)
         if v5:
-            btn = cmds.radioCollection(self.actionColumn.col1, q=True, sl=True)
-            lab = cmds.radioButton(btn, q=True, l=True)
-            if 'selection' in lab:  # string dependant on query working, dont change UI
+            conGp = cmds.radioButtonGrp(self.actionColumn.conGrp, q=True, select=True)
+            if 1 == conGp:  # 1 == first radio button
                 sl = True
         # print sl, '========='
         locs = cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
@@ -206,6 +223,20 @@ class CSUI(object):
         inverseU = cmds.checkBox(self.actionColumn.c16, q=True, v=True)
         upGp = cmds.radioButtonGrp(self.actionColumn.upGrp, q=True, select=True)
         ar.aimRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
+        #ar.aimRig(mo=False, bake=False)
+
+    def cmdAimPivotRig(self, *args):
+        ar = web.mod('animRig_lib')
+        axs = [None, [1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        inverseA = cmds.checkBox(self.actionColumn.c18, q=True, v=True)
+        aimGp = cmds.radioButtonGrp(self.actionColumn.aimPivotGrp, q=True, select=True)
+        inverseU = cmds.checkBox(self.actionColumn.c19, q=True, v=True)
+        upGp = cmds.radioButtonGrp(self.actionColumn.upPivotGrp, q=True, select=True)
+        master = cmds.checkBox(self.actionColumn.c21, q=True, v=True)
+        masterPos = cmds.radioButtonGrp(self.actionColumn.masterGrp, q=True, select=True)-1
+        distance = cmds.floatSliderGrp(self.actionColumn.sl1, q=True, v=True)
+        # ar.aimPivotRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
+        ar.aimPivotRig(size=0.3, aim=axs[aimGp], u=axs[upGp], offset=distance, masterControl=master, masterPosition=masterPos)
         #ar.aimRig(mo=False, bake=False)
 
     def cmdDistributeKeys(self, *args):

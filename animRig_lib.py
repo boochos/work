@@ -372,7 +372,7 @@ def aimRig(target=None, obj=None, size=1.5, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
         return None
 
 
-def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, masterControl=False, masterPosition=0):
+def aimPivotRig(size=0.3, aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, masterPosition=0):
     '''
     master control: moves entire constraint rig
     master position options:
@@ -498,10 +498,10 @@ def aimPivotRig(size=0.3, aim=(0.0, 0.0, 1.0), u=(0.0, 1.0, 0.0), offset=20.0, m
         p = plc.assetParent(sel[0])
         cmds.parent(cleanupGrp, p)
         # guideLines
-        cmds.parent(guideLine(coreL, rootL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
-        cmds.parent(guideLine(rootL, upL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
-        cmds.parent(guideLine(upL, aimL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
-        cmds.parent(guideLine(aimL, coreL, name=getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        cmds.parent(guideLine(coreL, rootL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        cmds.parent(guideLine(rootL, upL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        cmds.parent(guideLine(upL, aimL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        cmds.parent(guideLine(aimL, coreL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
     else:
         message('select an object')
 

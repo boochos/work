@@ -33,6 +33,7 @@ class Action(object):
         self.actionButton14 = name + '_actionButton14'
         self.actionButton15 = name + '_actionButton15'
         self.actionButton16 = name + '_actionButton16'
+        self.actionButton17 = name + '_actionButton17'
         self.c1 = ''
         self.c2 = ''
         self.c3 = ''
@@ -49,6 +50,11 @@ class Action(object):
         self.c14 = ''
         self.c15 = ''
         self.c16 = ''
+        self.c17 = ''
+        self.c18 = ''
+        self.c19 = ''
+        self.c20 = ''
+        self.c21 = ''
         self.s0 = ''
         self.s1 = ''
         self.s2 = ''
@@ -58,9 +64,11 @@ class Action(object):
         self.s6 = ''
         self.s7 = ''
         self.opt1 = ''
-        self.col1 = ''
-        self.r1 = ''
-        self.r2 = ''
+        self.sl1 = ''
+        #self.col1 = ''
+        #self.r1 = ''
+        #self.r2 = ''
+        self.conGrp = ''
         self.aimGrp = ''
         self.upGrp = ''
         self.label = label
@@ -103,7 +111,7 @@ class Action(object):
         self.c4 = cmds.checkBox(label='On All Frames', v=False, ann=simu)
         # rotate order
         self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=red, ann='Change rotate order of selected Object.')
-        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', w=self.w, cw=[1, self.w], ann='Select rotate order to bake to.')
+        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', cat=(1,'left', 0), ann='Select rotate order to bake to.')
         ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
         for o in ro:
             cmds.menuItem(o)
@@ -124,6 +132,7 @@ class Action(object):
         self.actionButton14 = cmds.button(self.actionButton14, label='ReStore to Selected', c=self.cmdAction, bgc=purple2,
                                           ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Override - Restore animation to selected object.')
         self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
+        #
         # match things
         # self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=green,
         #                                ann='Select 2 objects.\nSecond object will be keyed on same frames as the first.\nNo animation is added, the object is just keyed.')
@@ -137,26 +146,40 @@ class Action(object):
         # ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
         # self.c1 = cmds.checkBox(label='On All Frames', v=False, ann=existing)
         # self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
-        # anim Rigs
+        #
+        # parent rig
         self.actionButton12 = cmds.button(self.actionButton12, label='Parent Rig', c=self.cmdAction, bgc=greyD,
                                           ann='A parent rig is created between 2 objects.\n Animation is preserved and transfered to a locator.\nSelect child first.\nROOT/SPIN/OFFSET')
         self.c17 = cmds.checkBox(label='Position Only', v=False, ann='Rotations in world space or in the space of third selection')
+        # aim rig
         self.actionButton13 = cmds.button(self.actionButton13, label='Aim Rig', c=self.cmdAction, bgc=greyD,
                                           ann='An aim rig is created between 2 objects.\n Animation is preserved and transfered to locator.\nSelect target first.\nROOT/BASE\nROOT/AIM/OFFSET\nROOT/AIM/UP')
         self.c15 = cmds.checkBox(label='Negative Aim', v=False, ann='Specifies the AIM should be in the negative direction')
-        self.aimGrp = cmds.radioButtonGrp(label='Aim:', labelArray3=['x', 'y', 'z'], select=1, numberOfRadioButtons=3, w=self.w, ad4=1, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
+        self.aimGrp = cmds.radioButtonGrp(label='Aim:', labelArray3=['x', 'y', 'z'], select=1, numberOfRadioButtons=3, w=self.w, ad4=5, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
         self.c16 = cmds.checkBox(label='Negative Up', v=False, ann='Specifies the UP should be in the negative direction')
-        self.upGrp = cmds.radioButtonGrp(label='Up:', labelArray3=['x', 'y', 'z'], select=2, numberOfRadioButtons=3, w=self.w, ad4=1, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
+        self.upGrp = cmds.radioButtonGrp(label='Up:', labelArray3=['x', 'y', 'z'], select=2, numberOfRadioButtons=3, w=self.w, ad4=5, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
+        # pivot rig
+        # aimPivotRig(size=0.3, aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, masterPosition=0)
+        self.actionButton17 = cmds.button(self.actionButton17, label='Pivot Rig', c=self.cmdAction, bgc=greyD)
+        # aim
+        self.c18 = cmds.checkBox(label='Negative Aim', v=False, ann='Specifies the AIM should be in the negative direction')
+        self.aimPivotGrp = cmds.radioButtonGrp(label='Aim:', labelArray3=['x', 'y', 'z'], select=1, numberOfRadioButtons=3, w=self.w, ad4=5, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
+        # up
+        self.c19 = cmds.checkBox(label='Negative Up', v=False, ann='Specifies the UP should be in the negative direction')
+        self.upPivotGrp = cmds.radioButtonGrp(label='Up:', labelArray3=['x', 'y', 'z'], select=2, numberOfRadioButtons=3, w=self.w, ad4=5, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
+        # master
+        self.c21 = cmds.checkBox(label='Master Control Location', v=False, ann='Create master control at one of the 4 pivot points.')
+        self.masterGrp = cmds.radioButtonGrp(label='', en=False, labelArray4=['core', 'root', 'aim', 'up'], select=1, numberOfRadioButtons=4, w=self.w, ad5=5, cw5=[0, 50, 50, 40, 35], cl5=['left', 'left', 'left','left', 'left'], ct5=['left', 'left', 'left', 'left', 'left'])
+        # offset
+        self.sl1 = cmds.floatSliderGrp( label='Distance:', cw3=[50,40,30], cl3=['left', 'left','left'], w=self.w, field=True, minValue=0.5, maxValue=100.0, fieldMinValue=-0.0, fieldMaxValue=100.0, value=20 )
         self.s5 = cmds.separator(height=self.sepH, style=self.sepStl)
         # update constraint offset
         self.actionButton15 = cmds.button(self.actionButton15, label='Constraint Offset Update', c=self.cmdAction, bgc=blue)
         self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
         # place loc, constain
         self.actionButton2 = cmds.button(self.actionButton2, label='Place LOC', c=self.cmdAction, bgc=blue)
-        self.c5 = cmds.checkBox(label='Constrain to', v=True, ann='Use constraint option.')
-        self.col1 = cmds.radioCollection()
-        self.r1 = cmds.radioButton(label='  selection', sl=1, ann='Constrain new locator to selection.')
-        self.r2 = cmds.radioButton(label='  reverse', ann='Constrain selection to new locator.')
+        self.c5 = cmds.checkBox(label='Constrain to:', v=True, ann='Use constraint option.')
+        self.conGrp = cmds.radioButtonGrp(label='', labelArray2=['selection', 'reverse'], select=1, numberOfRadioButtons=2, w=self.w, ad3=3, cw3=[0, 70, 35], cl3=['both', 'left', 'left'], ct3=['left', 'left', 'left'])
         self.c13 = cmds.checkBox(label='Match Keys', v=True, ann='Will add keys on the same frames as source object.')
         # constrain
         self.actionButton5 = cmds.button(self.actionButton5, label='Parent Constraint', c=self.cmdAction, bgc=blue)

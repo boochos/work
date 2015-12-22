@@ -194,13 +194,14 @@ def deleteAnim(obj, attrs=['rotateX', 'rotateY', 'rotateZ'], lock=False, keyable
 def unifyKeys():
     sel = cmds.keyframe(q=True, name=True, sl=True)
     if sel:
-        # new method, less loops
         frames = sorted(list(set(cmds.keyframe(sel, q=True))))
         i = len(frames)
         for frame in frames:
-            message('adding keys on frame -- ' + str(frame))
-            cmds.refresh(f=1)
-            cmds.setKeyframe(sel, i=True, t=frame)
+            for c in sel:
+                if not cmds.keyframe(c, q=True, time=(frame,frame)):
+                    message('adding keys on frame -- ' + str(frame))
+                    cmds.refresh(f=1)
+                    cmds.setKeyframe(sel, i=True, t=frame)
             i = i - 1
         message('Done')
     else:
