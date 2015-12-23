@@ -142,7 +142,7 @@ def null(nllSuffix, order=None):
         return None
 
 
-def circle(name, obj, shape, size, color, sections=8, degree=1, normal=(0, 0, 1), orient=True):
+def circle(name='', obj='', shape='', size=1.0, color=17, sections=8, degree=1, normal=(0, 0, 1), orient=True):
     '''
     place circle
     name     = name of circle
@@ -214,8 +214,6 @@ def null2(nllSuffix, obj, orient=True):
     else:
         mel.eval('warning \"' + '////... \"obj\" variable must be a single object or list type ...////' + '\";')
         return None
-
-# places controller object(controller, controllerOffset, group)
 
 
 class Controller():

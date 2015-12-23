@@ -68,6 +68,7 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton5, e=True, c=self.cmdConstrain)
         #cmds.button(self.actionColumn.actionButton6, e=True, c=self.cmdA2B)
         cmds.button(self.actionColumn.actionButton7, e=True, c=self.cmdRO)
+        cmds.button(self.actionColumn.actionButton18, e=True, c=self.cmdQryRO)
         cmds.button(self.actionColumn.actionButton8, e=True, c=self.cmdStore)
         cmds.button(self.actionColumn.actionButton9, e=True, c=self.cmdRestore)
         cmds.button(self.actionColumn.actionButton14, e=True, c=self.cmdRestoreToSelected)
@@ -77,15 +78,11 @@ class CSUI(object):
         cmds.button(self.actionColumn.actionButton13, e=True, c=self.cmdAimRig)
         cmds.button(self.actionColumn.actionButton15, e=True, c=self.cmdUpdateConstraintOffset)
         cmds.button(self.actionColumn.actionButton16, e=True, c=self.cmdDistributeKeys)
-        # TODO: Add aimPivotRig, remove other buttons that overlap the shelf
-        # TODO: Add aim and up vector options
         # TODO: add point/orient constraint buttons or drop down for constraint type
         # TODO: dockable window, tools used like in Nuke, with scroll bar ?maybe?
         # TODO: delete constraint button
         # FUTURE: add help section of some sort
         # TODO: witness camera tool, point and parent constraint options, could try heads up sliders fir fail safe
-        # TODO: locator scale default multiplier
-        # FUTURE: user pref files
         # FUTURE: use annotate tool for viewport display info, distance, speed
 
         self.actionColumn.prefLoad()
@@ -93,9 +90,9 @@ class CSUI(object):
 
     def cmdPlaceDisableToggle(self, *args):
         if cmds.checkBox(self.actionColumn.c5, q=True, v=True):
-            cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, ed=True)
+            cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, en=True)
         else:
-            cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, ed=False)
+            cmds.radioButtonGrp(self.actionColumn.conGrp, e=True, en=False)
         self.actionColumn.prefGet()
 
     def cmdPivotMasterDisableToggle(self, *args):
@@ -106,9 +103,7 @@ class CSUI(object):
         self.actionColumn.prefGet()
 
     def cmdBake(self, *args):
-        # TODO: creates an exta locator when object with no keys is selected
         cn = web.mod('constraint_lib')
-        # v1 = cmds.checkBox(self.actionColumn.c1, q=True, v=True)
         v2 = cmds.checkBox(self.actionColumn.c2, q=True, v=True)
         v3 = cmds.checkBox(self.actionColumn.c3, q=True, v=True)
         v4 = cmds.checkBox(self.actionColumn.c4, q=True, v=True)
@@ -139,7 +134,7 @@ class CSUI(object):
         v7 = cmds.checkBox(self.actionColumn.c7, q=True, v=True)
         v8 = cmds.checkBox(self.actionColumn.c8, q=True, v=True)
         v12 = cmds.checkBox(self.actionColumn.c12, q=True, v=True)
-        cn.controllerToLocator(p=v7, r=v8, timeLine=False, sim=v12)
+        cn.controllerToLocator(p=v7, r=v8, timeLine=False, sim=v12, size=1.75)
 
     def cmdMatchKeys(self, *args):
         cn = web.mod('constraint_lib')
@@ -171,6 +166,15 @@ class CSUI(object):
         al = web.mod('anim_lib')
         t1 = cmds.optionMenuGrp(self.actionColumn.opt1, q=True, v=True)
         al.changeRoMulti(ro=t1)
+
+    def cmdQryRO(self, *args):
+        sel = cmds.ls(sl=True)
+        if len(sel) == 1:
+            ro = cmds.getAttr(sel[0] + '.rotateOrder') + 1
+            cmds.optionMenuGrp(self.actionColumn.opt1, e=True, sl=ro)
+            message('UI updated -- ' + str(cmds.optionMenuGrp(self.actionColumn.opt1, q=True, v=ro)), maya=True)
+        else:
+            cmds.warning('-- Select 1 object --')
 
     def cmdStore(self, *args):
         self.animBucket = []
@@ -226,7 +230,7 @@ class CSUI(object):
         aimGp = cmds.radioButtonGrp(self.actionColumn.aimGrp, q=True, select=True)
         inverseU = cmds.checkBox(self.actionColumn.c16, q=True, v=True)
         upGp = cmds.radioButtonGrp(self.actionColumn.upGrp, q=True, select=True)
-        ar.aimRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
+        ar.aimRig(target=None, obj=None, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
         #ar.aimRig(mo=False, bake=False)
 
     def cmdAimPivotRig(self, *args):
@@ -240,12 +244,12 @@ class CSUI(object):
         masterPos = cmds.radioButtonGrp(self.actionColumn.masterGrp, q=True, select=True) - 1
         distance = cmds.floatSliderGrp(self.actionColumn.sl1, q=True, v=True)
         # ar.aimPivotRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
-        ar.aimPivotRig(size=0.3, aim=axs[aimGp], u=axs[upGp], offset=distance, masterControl=master, masterPosition=masterPos)
+        ar.aimPivotRig(aim=axs[aimGp], u=axs[upGp], offset=distance, masterControl=master, masterPosition=masterPos, inverseA=inverseA, inverseU=inverseU)
         #ar.aimRig(mo=False, bake=False)
 
     def cmdDistributeKeys(self, *args):
         al = web.mod('anim_lib')
-        fld1 = cmds.textField(self.actionColumn.actionField1, q=1, tx=1)
+        fld1 = cmds.intField(self.actionColumn.actionField1, q=1, v=1)
         v14 = cmds.checkBox(self.actionColumn.c14, q=True, v=True)
         al.distributeKeys(count=float(fld1), destructive=v14)
 

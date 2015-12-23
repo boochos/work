@@ -550,7 +550,7 @@ def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, u
         cmds.warning('Select constrained object(s)')
 
 
-def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=4.5, uiOff=True, color=07, suffix='__BAKE__', matchSet=True):
+def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1, uiOff=True, color=15, suffix='__BAKE__', matchSet=True, shape='loc_ctrl'):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -577,101 +577,101 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
     if len(sel) != 0:
         for item in sel:
             # setup locator
-            lc = cmds.spaceLocator(name=item + suffix)[0]
-            locSize(lc, X=size)
-            objColor(lc, color=color)
-            cmds.setAttr(lc + '.sx', k=False, cb=True)
-            cmds.setAttr(lc + '.sy', k=False, cb=True)
-            cmds.setAttr(lc + '.sz', k=False, cb=True)
-            cmds.setAttr(lc + '.v', k=False, cb=True)
-            cmds.setAttr(lc + '.rotateOrder', 2)
-            # check keyable transforms
-            tState = cmds.getAttr(item + '.tx', k=True)
-            rState = cmds.getAttr(item + '.rx', k=True)
-            # if translates are keyable constrain locator and store constraint
-            # in cnT
-            if tState:
-                cnT = cmds.pointConstraint(item, lc, mo=False)
-            # if rotations are keyable constrain locator and store constraint
-            # in cnR
-            if rState:
-                cnR = cmds.orientConstraint(item, lc, mo=False)
-            # bake locator in frame range
-            matchKeyedFrames(item, lc)
-            bakeConstrained(
-                lc, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
-            if sim is not True:
+            if not getConstraint(item):
+                lc = locator(obj=item, ro='zxy', X=size, constrain=False, toSelection=False, suffix=suffix, color=color, matchSet=True, shape=shape)[0]
+                # check keyable transforms
+                tState = cmds.getAttr(item + '.tx', k=True)
+                rState = cmds.getAttr(item + '.rx', k=True)
+                # if translates are keyable constrain locator and store constraint
+                # in cnT
+                if tState:
+                    cnT = cmds.pointConstraint(item, lc, mo=False)
+                # if rotations are keyable constrain locator and store constraint
+                # in cnR
+                if rState:
+                    cnR = cmds.orientConstraint(item, lc, mo=False)
+                # bake locator in frame range
                 matchKeyedFrames(item, lc)
-            if p is False:
-                if cnT is not None:
-                    cmds.delete(cnT)
+                bakeConstrained(
+                    lc, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
+                if sim is not True:
+                    matchKeyedFrames(item, lc)
+                if p is False:
+                    if cnT is not None:
+                        cmds.delete(cnT)
+                    cnT = None
+                if r is False:
+                    if cnR is not None:
+                        cmds.delete(cnR)
+                    cnR = None
+                # if both cnT and cnR are not None a parent constraint can be
+                # used...
+                if cnT and cnR is not None:
+                    try:
+                        cmds.delete(cnT)
+                    except:
+                        pass
+                    try:
+                        cmds.delete(cnR)
+                    except:
+                        pass
+                    cmds.parentConstraint(lc, item, mo=False)
+                # ...else use point or orient constraint. Must assume pos or rot wont be constrained or edited with new locator
+                else:
+                    if cnT is not None:
+                        # in this state it is assumed a translates are keyable, a
+                        # contraint was made
+                        cmds.delete(cnT)
+                        cnStick = cmds.orientConstraint(item, lc, mo=False)
+                        cmds.pointConstraint(lc, item, mo=False)
+                        for axis in rot:
+                            cmds.cutKey(lc, at=axis, cl=True, t=())
+                            cmds.setAttr(lc + '.' + axis, k=False, cb=True)
+                            cmds.setAttr(lc + '.' + axis, l=True)
+                    if cnR is not None:
+                        # in this state it is assumed a rotations are keyable, a
+                        # constraint was made
+                        cmds.delete(cnR)
+                        cnStick = cmds.pointConstraint(item, lc, mo=False)
+                        cmds.orientConstraint(lc, item, mo=False)
+                        for axis in pos:
+                            cmds.cutKey(lc, at=axis, cl=True, t=())
+                            cmds.setAttr(lc + '.' + axis, k=False, cb=True)
+                            cmds.setAttr(lc + '.' + axis, l=True)
                 cnT = None
-            if r is False:
-                if cnR is not None:
-                    cmds.delete(cnR)
                 cnR = None
-            # if both cnT and cnR are not None a parent constraint can be
-            # used...
-            if cnT and cnR is not None:
-                try:
-                    cmds.delete(cnT)
-                except:
-                    pass
-                try:
-                    cmds.delete(cnR)
-                except:
-                    pass
-                cmds.parentConstraint(lc, item, mo=False)
-            # ...else use point or orient constraint. Must assume pos or rot wont be constrained or edited with new locator
+                if matchSet:
+                    cs.matchCharSet(source=item, objs=[lc])
+                locs.append(lc)
+                p = plc.assetParent(item)
+                cmds.parent(lc, p)
             else:
-                if cnT is not None:
-                    # in this state it is assumed a translates are keyable, a
-                    # contraint was made
-                    cmds.delete(cnT)
-                    cnStick = cmds.orientConstraint(item, lc, mo=False)
-                    cmds.pointConstraint(lc, item, mo=False)
-                    for axis in rot:
-                        cmds.cutKey(lc, at=axis, cl=True, t=())
-                        cmds.setAttr(lc + '.' + axis, k=False, cb=True)
-                        cmds.setAttr(lc + '.' + axis, l=True)
-                if cnR is not None:
-                    # in this state it is assumed a rotations are keyable, a
-                    # constraint was made
-                    cmds.delete(cnR)
-                    cnStick = cmds.pointConstraint(item, lc, mo=False)
-                    cmds.orientConstraint(lc, item, mo=False)
-                    for axis in pos:
-                        cmds.cutKey(lc, at=axis, cl=True, t=())
-                        cmds.setAttr(lc + '.' + axis, k=False, cb=True)
-                        cmds.setAttr(lc + '.' + axis, l=True)
-            cnT = None
-            cnR = None
-            if matchSet:
-                cs.matchCharSet(source=item, objs=[lc])
-            locs.append(lc)
-            p = plc.assetParent(item)
-            cmds.parent(lc, p)
+                message('Object is already constrained')
         return locs
     else:
         cmds.warning(
             'Select an object. Selection will be constrained to a locator with the same anim.')
 
 
-def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07, matchSet=True):
+def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07, matchSet=True, shape='loc_ctrl'):
     '''
     matchSet only if locators hierarchy wont be edited. The connection forces the attributes to stay at their pre-edited value 
     '''
     locs = []
     roo = None
     if obj is not None:
-        lc = cmds.spaceLocator(name=plc.getUniqueName(obj + suffix))[0]
-        objColor(lc, color)
+        if not shape:
+            lc = cmds.spaceLocator(name=plc.getUniqueName(obj + suffix))[0]
+            locSize(lc, X=X)
+            objColor(lc, color)
+        else:
+            lc = plc.circle(name=plc.getUniqueName(obj + suffix),obj=obj, size=X, color=color, shape=shape)[0]
+            putControlSize(lc, getControlSize(obj)*X)
         # print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
         cmds.setAttr(lc + '.sy', k=False, cb=True)
         cmds.setAttr(lc + '.sz', k=False, cb=True)
         cmds.setAttr(lc + '.v', k=False, cb=True)
-        locSize(lc, X=X)
         if '.' in obj:
             roo = 0
         else:
@@ -710,7 +710,7 @@ def objColorHijack(obj=''):
     cmds.setAttr(obj + '.overrideColor', 1)
 
 
-def locatorOnSelection(ro='zxy', X=0.01, constrain=True, toSelection=False, color=07):
+def locatorOnSelection(ro='zxy', X=1, constrain=True, toSelection=False, color=07):
     sel = cmds.ls(sl=True)
     locs = []
     if len(sel) != 0:
@@ -721,6 +721,39 @@ def locatorOnSelection(ro='zxy', X=0.01, constrain=True, toSelection=False, colo
         locs.append(
             locator(ro=ro, X=X, constrain=False, toSelection=toSelection, color=color))
     return locs
+
+
+def getControlSize(obj=''):
+    '''sel[0]
+    gets average bounding box size, use to establish default size of a new control based on selection
+    '''
+    shapeNode = cmds.listRelatives(obj, shapes=True)
+    if shapeNode:
+        shapeNode = shapeNode[0]
+        minBB = cmds.getAttr(shapeNode + '.boundingBoxMin')
+        maxBB = cmds.getAttr(shapeNode + '.boundingBoxMax')
+        x = maxBB[0][0] - minBB[0][0]
+        y = maxBB[0][1] - minBB[0][1]
+        z = maxBB[0][2] - minBB[0][2]
+        return sum([x,y,z]) / 3.0
+    else:
+        return None
+
+
+def putControlSize(obj='', sizeBB=1.0):
+    currentBB = getControlSize(obj)
+    if currentBB:
+        #print currentBB
+        #print sizeBB
+        mltp = (sizeBB/currentBB) * 1.3
+        shapeNode = cmds.listRelatives(obj, shapes=True)[0]
+        if cmds.nodeType(shapeNode) == 'nurbsCurve':
+            cvInfo = cmds.getAttr(shapeNode + '.cv[*]')
+            for i in range(0, len(cvInfo), 1):
+                crnt = cmds.xform(shapeNode + '.cv[' + str(i) + ']', query=True, os=True, t=True)
+                cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=[crnt[0]*mltp, crnt[1]*mltp, crnt[2]*mltp])
+        else:
+            return None
 
 
 def locSize(lc, X=0.5):

@@ -37,6 +37,7 @@ class Action(object):
         self.actionButton15 = name + '_actionButton15'
         self.actionButton16 = name + '_actionButton16'
         self.actionButton17 = name + '_actionButton17'
+        self.actionButton18 = name + '_actionButton18'
         self.c1 = ''
         self.c2 = ''
         self.c3 = ''
@@ -123,11 +124,13 @@ class Action(object):
         self.prefs['PvtRgNegUp'] = cmds.checkBox(self.c19, q=True, v=True)
         self.prefs['PvtRgUp'] = cmds.radioButtonGrp(self.upPivotGrp, q=True, select=True)
         self.prefs['PvtRgMstr'] = cmds.checkBox(self.c21, q=True, v=True)
-        self.prefs['PvtRgMstr'] = cmds.radioButtonGrp(self.masterGrp, q=True, select=True)
+        self.prefs['PvtRgMstrSl'] = cmds.radioButtonGrp(self.masterGrp, q=True, select=True)
+        self.prefs['PvtRgMstrEnbl'] = cmds.radioButtonGrp(self.masterGrp, q=True, en=True)
         self.prefs['PvtRgDstnc'] = cmds.floatSliderGrp(self.sl1, q=True, v=True)
         self.prefs['LcAllFrms'] = cmds.checkBox(self.c21, q=True, v=True)
         self.prefs['PlcCon'] = cmds.checkBox(self.c5, q=True, v=True)
         self.prefs['PlcConTo'] = cmds.radioButtonGrp(self.conGrp, q=True, select=True)
+        self.prefs['PlcConToEnbl'] = cmds.radioButtonGrp(self.conGrp, q=True, en=True)
         self.prefs['PlcMtchKys'] = cmds.checkBox(self.c13, q=True, v=True)
         self.prefs['ConOffst'] = cmds.checkBox(self.c9, q=True, v=True)
         self.prefs['ConTrns'] = cmds.checkBox(self.c10, q=True, v=True)
@@ -153,11 +156,13 @@ class Action(object):
         cmds.checkBox(self.c19, e=True, v=self.prefs['PvtRgNegUp'])
         cmds.radioButtonGrp(self.upPivotGrp, e=True, select=self.prefs['PvtRgUp'])
         cmds.checkBox(self.c21, e=True, v=self.prefs['PvtRgMstr'])
-        cmds.radioButtonGrp(self.masterGrp, e=True, select=self.prefs['PvtRgMstr'])
+        cmds.radioButtonGrp(self.masterGrp, e=True, select=self.prefs['PvtRgMstrSl'])
+        cmds.radioButtonGrp(self.masterGrp, e=True, en=self.prefs['PvtRgMstrEnbl'])
         cmds.floatSliderGrp(self.sl1, e=True, v=self.prefs['PvtRgDstnc'])
         cmds.checkBox(self.c21, e=True, v=self.prefs['LcAllFrms'])
         cmds.checkBox(self.c5, e=True, v=self.prefs['PlcCon'])
         cmds.radioButtonGrp(self.conGrp, e=True, select=self.prefs['PlcConTo'])
+        cmds.radioButtonGrp(self.conGrp, e=True, en=self.prefs['PlcConToEnbl'])
         cmds.checkBox(self.c13, e=True, v=self.prefs['PlcMtchKys'])
         cmds.checkBox(self.c9, e=True, v=self.prefs['ConOffst'])
         cmds.checkBox(self.c10, e=True, v=self.prefs['ConTrns'])
@@ -187,32 +192,43 @@ class Action(object):
         # bake
         self.actionButton1 = cmds.button(self.actionButton1, label='Bake', c=self.cmdAction, bgc=red,
                                          ann='Bake selected objects if they are connected to a pairBlend node or constraint.')
-        # self.c1 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
         self.c2 = cmds.checkBox(label='Remove Constraint', v=True, cc=self.prefGet,
                                 ann='Remove constraint after baking.\nIf off, anim curves are updated and the constraint remains connected.')
         self.c3 = cmds.checkBox(label='Timeline Range', cc=self.prefGet, ann=time)
         self.c4 = cmds.checkBox(label='On All Frames', v=False, cc=self.prefGet, ann=simu)
-        # rotate order
-        self.actionButton7 = cmds.button(self.actionButton7, label='Bake Rotate Order', c=self.cmdAction, bgc=red, ann='Change rotate order of selected Object.')
-        self.opt1 = cmds.optionMenuGrp(label='Rotate Order: ', cat=(1, 'left', 0), ann='Select rotate order to bake to.')
-        ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
-        for o in ro:
-            cmds.menuItem(o)
-        self.s1 = cmds.separator(height=self.sepH, style=self.sepStl)
+        self.s7 = cmds.separator(height=self.sepH, style=self.sepStl)
         # bake to locator
-        self.actionButton3 = cmds.button(self.actionButton3, label='Bake To LOC', c=self.cmdAction, bgc=redD,
+        self.actionButton3 = cmds.button(self.actionButton3, label='Bake To HELPER', c=self.cmdAction, bgc=red,
                                          ann='Bake all selected objects to a locator in world space.')
         # self.c6 = cmds.checkBox( label='On Existing Frames', v=True, ann=existing )
         self.c7 = cmds.checkBox(label='Translation', v=True, cc=self.prefGet, ann='Only bake translation attributes.\nRotation will be constrained to follow object.')
         self.c8 = cmds.checkBox(label='Rotation', v=True, cc=self.prefGet, ann='Only bake rotation attributes.\nTranslation will be constrained to follow object.')
         self.c12 = cmds.checkBox(label='On All Frames', v=False, cc=self.prefGet, ann=simu)
         self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
+        # distribute keys
+        cmds.rowLayout( numberOfColumns=2, ad2=1)
+        self.actionButton16 = cmds.button(self.actionButton16, label='Distribute keys every nth frame:', c=self.cmdAction, bgc=redD)
+        self.actionField1 = cmds.intField(self.actionField1, cc=self.prefGet, v=5, w=50)
+        cmds.setParent('..')
+        ann = 'Destructive Mode. Removes keys that dont fall on the same frame.'
+        self.c14 = cmds.checkBox(label='Destructive', v=True, cc=self.prefGet, ann=ann)
+        self.s1 = cmds.separator(height=self.sepH, style=self.sepStl)
+        # rotate order
+        cmds.rowLayout( numberOfColumns=3, ad3=1)
+        self.actionButton7 = cmds.button(self.actionButton7, label='Transform Rotate Order', c=self.cmdAction, bgc=redD, ann='Transform animation to different rotation order.')
+        self.actionButton18 = cmds.button(self.actionButton18, label='Query', c=self.cmdAction, ann='Selects objects current Rotate Order')
+        self.opt1 = cmds.optionMenuGrp(label='', cw2=[0, 40], cat=(1, 'left', 0), ann='Select rotate order to bake to.')
+        ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
+        for o in ro:
+            cmds.menuItem(o)
+        cmds.setParent('..')
+        self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)
         # space switcher
-        self.actionButton8 = cmds.button(self.actionButton8, label='Store Xform Anim', c=self.cmdAction, bgc=purple,
+        self.actionButton8 = cmds.button(self.actionButton8, label='Store World Space Anim', c=self.cmdAction, bgc=purple,
                                          ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
-        self.actionButton9 = cmds.button(self.actionButton9, label='ReStore Xform Anim', c=self.cmdAction, bgc=purple,
+        self.actionButton9 = cmds.button(self.actionButton9, label='Restore', c=self.cmdAction, bgc=purple,
                                          ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
-        self.actionButton14 = cmds.button(self.actionButton14, label='ReStore to Selected', c=self.cmdAction, bgc=purple2,
+        self.actionButton14 = cmds.button(self.actionButton14, label='Restore to Selected', c=self.cmdAction, bgc=purple2,
                                           ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Override - Restore animation to selected object.')
         self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
         #
@@ -229,6 +245,7 @@ class Action(object):
         # ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
         # self.c1 = cmds.checkBox(label='On All Frames', v=False, ann=existing)
         # self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
+        #
         #
         # parent rig
         self.actionButton12 = cmds.button(self.actionButton12, label='Parent Rig', c=self.cmdAction, bgc=greyD,
@@ -252,7 +269,7 @@ class Action(object):
         self.upPivotGrp = cmds.radioButtonGrp(label='Up:', cc=self.prefGet, labelArray3=['x', 'y', 'z'], select=2, numberOfRadioButtons=3, w=self.w, ad4=5, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
         # master
         self.c21 = cmds.checkBox(label='Master Control Location', v=False, cc=self.prefGet, ann='Create master control at one of the 4 pivot points.')
-        self.masterGrp = cmds.radioButtonGrp(label='', cc=self.prefGet, en=False, labelArray4=['core', 'root', 'aim', 'up'], select=1, numberOfRadioButtons=4, w=self.w, ad5=5, cw5=[0, 50, 50, 40, 35], cl5=['left', 'left', 'left', 'left', 'left'], ct5=['left', 'left', 'left', 'left', 'left'])
+        self.masterGrp = cmds.radioButtonGrp(label='', cc=self.prefGet, en=False, labelArray4=['Core', 'Root', 'Aim', 'Up'], select=1, numberOfRadioButtons=4, w=self.w, ad5=5, cw5=[0, 50, 50, 40, 35], cl5=['left', 'left', 'left', 'left', 'left'], ct5=['left', 'left', 'left', 'left', 'left'])
         # offset
         self.sl1 = cmds.floatSliderGrp(label='Distance:', cc=self.prefGet, cw3=[50, 40, 30], cl3=['left', 'left', 'left'], w=self.w, field=True, minValue=0.5, maxValue=100.0, fieldMinValue=-0.0, fieldMaxValue=100.0, value=20)
         self.s5 = cmds.separator(height=self.sepH, style=self.sepStl)
@@ -260,7 +277,7 @@ class Action(object):
         self.actionButton15 = cmds.button(self.actionButton15, label='Constraint Offset Update', c=self.cmdAction, bgc=blue)
         self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
         # place loc, constain
-        self.actionButton2 = cmds.button(self.actionButton2, label='Place LOC', c=self.cmdAction, bgc=blue)
+        self.actionButton2 = cmds.button(self.actionButton2, label='Place HELPER', c=self.cmdAction, bgc=blue)
         self.c5 = cmds.checkBox(label='Constrain to:', v=True, cc=self.prefGet, ann='Use constraint option.')
         self.conGrp = cmds.radioButtonGrp(label='', cc=self.prefGet, labelArray2=['selection', 'reverse'], select=1, numberOfRadioButtons=2, w=self.w, ad3=3, cw3=[0, 70, 35], cl3=['both', 'left', 'left'], ct3=['left', 'left', 'left'])
         self.c13 = cmds.checkBox(label='Match Keys', v=True, cc=self.prefGet, ann='Will add keys on the same frames as source object.')
@@ -269,9 +286,3 @@ class Action(object):
         self.c9 = cmds.checkBox(label='Offset', cc=self.prefGet, v=True)
         self.c10 = cmds.checkBox(label='Translation', cc=self.prefGet, v=True)
         self.c11 = cmds.checkBox(label='Rotation', cc=self.prefGet, v=True)
-        self.s7 = cmds.separator(height=self.sepH, style=self.sepStl)
-        # distribute keys
-        self.actionButton16 = cmds.button(self.actionButton16, label='Distribute Keys', c=self.cmdAction, bgc=grey)
-        self.actionField1 = cmds.intField(self.actionField1, cc=self.prefGet, v=5)
-        ann = 'Destructive Mode. Removes keys that dont fall on the same frame.'
-        self.c14 = cmds.checkBox(label='Destructive', v=True, cc=self.prefGet, ann=ann)

@@ -282,7 +282,7 @@ def inverseDir(arry=[]):
     return arry
 
 
-def aimRig(target=None, obj=None, size=1.5, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True, inverseA=False, inverseU=False):
+def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True, inverseA=False, inverseU=False):
     locs = []
     if not target:
         sel = cmds.ls(sl=1)  # order = target,base
@@ -293,86 +293,88 @@ def aimRig(target=None, obj=None, size=1.5, aim=[1, 0, 0], u=[0, 1, 0], tipOffse
             cmds.warning('-- function requires 2 objects to be selected or fed as variables --')
             return None
     if target is not None and obj is not None:
-        # sort axis
-        aAxs = ['.tx', '.ty', '.tz']
-        aAxs = aAxs[aim.index(1.0)]
-        uAxs = ['.tx', '.ty', '.tz']
-        uAxs = uAxs[u.index(1.0)]
-        # distance
-        offset = ds.measureDis(obj1=target, obj2=obj)
-        # sort inverse
-        if inverseA:
-            aim = inverseDir(aim)
-            offsetA = offset * -1
-        else:
-            offsetA = offset
-        if inverseU:
-            u = inverseDir(u)
-            offsetU = offset * -1
-        else:
-            offsetU = offset
-        # place locator at locale A and constrain
-        locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=size * 0.1, color=28, suffix='__AIM__', matchSet=False)[0]
-        locs.append(locA)
-        # match keys
-        cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
-        # bake locator A
-        cn.bakeConstrained(locA, removeConstraint=True, timeLine=False, sim=False)
-        # bake locator on location B
-        locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=0.1, suffix='__BASE__', matchSet=False)[0]
-        locs.append(locB)
-        # place up locator on location B
-        locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 0.5, color=29, suffix='__UP__', matchSet=False)[0]
-        locs.append(locUp)
-        # print locUp
-        # parent up locator, move up in ty, unparent
-        cmds.parent(locUp, locB)
-        cmds.setAttr(locUp + uAxs, offsetU)
-        # constraint up locator to locator B
-        cmds.parentConstraint(obj, locUp, mo=1)
-        # parent locUp to locator A, bake up locator
-        cmds.parent(locUp, locA)
-        cn.matchKeyedFrames(A=target, B=locUp, subtractive=True)
-        cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
-        # aim offset
-        locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=size * 1, color=15, suffix='__OFFSET__', matchSet=False)[0]
-        locs.append(locAim)
-        cmds.parent(locAim, locB)
-        cmds.setAttr(locAim + aAxs, offsetA)
-        cmds.parent(locAim, locA)
-        cmds.parentConstraint(obj, locAim, mo=1)
-        cn.matchKeyedFrames(A=target, B=locAim, subtractive=True)
-        cn.bakeConstrained(locAim, removeConstraint=True, timeLine=False, sim=False)
-        # delete helper
-        con = cn.getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
-        cmds.delete(con, locB)
-        locs.remove(locB)
-        # aim constrain Locator A to B, using up locator as up vector
-        cmds.aimConstraint(locAim, obj, wut='object', wuo=locUp, aim=aim, u=u, mo=mo)
-        # bake
-        if not bake:
-            for loc in locs:
-                attrs = ['rotateX', 'rotateY', 'rotateZ', 'translateX', 'translateY', 'translateZ']
-                ac.deleteAnim(loc, attrs=attrs)
-        else:
-            print bake
-        # cleanup
-        g = cmds.group(locA, n=plc.getUniqueName('__AIMRIG__'))
-        p = plc.assetParent(sel[1])
-        cmds.parent(g, p)
-        lockIt(g)
-        #
-        cs.matchCharSet(obj, locs)
-        cmds.select(locAim)
-
-        message('Aim rig built', maya=True)
-        return locs
+        if not cn.getConstraint(obj):
+            # sort axis
+            aAxs = ['.tx', '.ty', '.tz']
+            aAxs = aAxs[aim.index(1.0)]
+            uAxs = ['.tx', '.ty', '.tz']
+            uAxs = uAxs[u.index(1.0)]
+            # distance
+            offset = ds.measureDis(obj1=target, obj2=obj)
+            # sort inverse
+            if inverseA:
+                aim = inverseDir(aim)
+                offsetA = offset * -1
+            else:
+                offsetA = offset
+            if inverseU:
+                u = inverseDir(u)
+                offsetU = offset * -1
+            else:
+                offsetU = offset
+            # place locator at locale A and constrain
+            locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=1.2, color=28, suffix='__AIM__', matchSet=False, shape='diamond_ctrl')[0]
+            locs.append(locA)
+            # match keys
+            cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
+            # bake locator A
+            cn.bakeConstrained(locA, removeConstraint=True, timeLine=False, sim=False)
+            # bake locator on location B
+            locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=1, suffix='__BASE__', matchSet=False, shape='loc_ctrl')[0]
+            locs.append(locB)
+            # place up locator on location B
+            locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=1, color=29, suffix='__UP__', matchSet=False, shape='diamond_ctrl')[0]
+            locs.append(locUp)
+            # print locUp
+            # parent up locator, move up in ty, unparent
+            cmds.parent(locUp, locB)
+            cmds.setAttr(locUp + uAxs, offsetU)
+            # constraint up locator to locator B
+            cmds.parentConstraint(obj, locUp, mo=1)
+            # parent locUp to locator A, bake up locator
+            cmds.parent(locUp, locA)
+            cn.matchKeyedFrames(A=target, B=locUp, subtractive=True)
+            cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
+            # aim offset
+            locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=0.5, color=15, suffix='__OFFSET__', matchSet=False, shape='loc_ctrl')[0]
+            locs.append(locAim)
+            cmds.parent(locAim, locB)
+            cmds.setAttr(locAim + aAxs, offsetA)
+            cmds.parent(locAim, locA)
+            cmds.parentConstraint(obj, locAim, mo=1)
+            cn.matchKeyedFrames(A=target, B=locAim, subtractive=True)
+            cn.bakeConstrained(locAim, removeConstraint=True, timeLine=False, sim=False)
+            # delete helper
+            con = cn.getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True)
+            cmds.delete(con, locB)
+            locs.remove(locB)
+            # aim constrain Locator A to B, using up locator as up vector
+            cmds.aimConstraint(locAim, obj, wut='object', wuo=locUp, aim=aim, u=u, mo=mo)
+            # bake
+            if not bake:
+                for loc in locs:
+                    attrs = ['rotateX', 'rotateY', 'rotateZ', 'translateX', 'translateY', 'translateZ']
+                    ac.deleteAnim(loc, attrs=attrs)
+            else:
+                print bake
+            # cleanup
+            g = cmds.group(locA, n=plc.getUniqueName('__AIMRIG__'))
+            p = plc.assetParent(sel[1])
+            cmds.parent(g, p)
+            lockIt(g)
+            #
+            cs.matchCharSet(obj, locs)
+            cmds.select(locAim)
+    
+            message('Aim rig built', maya=True)
+            return locs
+        cmds.warning('-- Object already has a constraint connected. --')
     else:
         cmds.warning('-- function requires 2 objects to be selected or fed as variables --')
         return None
 
 
-def aimPivotRig(size=0.3, aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, masterPosition=0):
+def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, masterPosition=0, inverseA=False, inverseU=False):
     '''
     master control: moves entire constraint rig
     master position options:
@@ -397,13 +399,13 @@ def aimPivotRig(size=0.3, aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl
         uAxs = uAxs[u.index(1.0)]
         # place locators on selection
         locs = []
-        coreL = cn.locator(obj=sel, constrain=False, X=3 * size, color=15, suffix='__CORE__')[0]
+        coreL = cn.locator(obj=sel, constrain=False, X=1, color=15, suffix='__CORE__', shape='diamond_ctrl')[0]
         locs.append(coreL)
-        rootL = cn.locator(obj=sel, constrain=False, X=5 * size, color=15, suffix='__ROOT__')[0]
+        rootL = cn.locator(obj=sel, constrain=False, X=1.5, color=15, suffix='__ROOT__', shape='diamond_ctrl')[0]
         locs.append(rootL)
-        aimL = cn.locator(obj=sel, constrain=False, X=5 * size, color=28, suffix='__AIM__')[0]
+        aimL = cn.locator(obj=sel, constrain=False, X=1.5, color=28, suffix='__AIM__', shape='diamond_ctrl')[0]
         locs.append(aimL)
-        upL = cn.locator(obj=sel, constrain=False, X=4 * size, color=29, suffix='__UP__')[0]
+        upL = cn.locator(obj=sel, constrain=False, X=1.2, color=29, suffix='__UP__', shape='diamond_ctrl')[0]
         locs.append(upL)
         upG = cn.null(obj=sel, suffix=plc.getUniqueName('__UP_GRP'))
         # heirarchy, prep for offsets
@@ -411,10 +413,21 @@ def aimPivotRig(size=0.3, aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl
         cmds.parent(aimL, coreL)
         cmds.parent(upG, coreL)
         cmds.parent(upL, upG)
+        # sort inverse
+        if inverseA:
+            aim = inverseDir(aim)
+            offsetA = offset * -1
+        else:
+            offsetA = offset
+        if inverseU:
+            u = inverseDir(u)
+            offsetU = offset * -1
+        else:
+            offsetU = offset
         # offsets
-        cmds.setAttr(aimL + aAxs, offset)
-        cmds.setAttr(rootL + aAxs, offset * -1)
-        cmds.setAttr(upG + uAxs, abs(offset))
+        cmds.setAttr(aimL + aAxs, offsetA)
+        cmds.setAttr(rootL + aAxs, offsetA * -1)
+        cmds.setAttr(upG + uAxs, offsetU)
         # constraints, prep for basking
         cmds.parentConstraint(sel, aimL, mo=True, sr=('x', 'y', 'z'))
         cmds.parentConstraint(sel, upL, mo=True, sr=('x', 'y', 'z'))
@@ -438,16 +451,16 @@ def aimPivotRig(size=0.3, aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl
         # add master control if necessary
         if masterControl:
             if masterPosition == 0:
-                masterL = cn.locator(obj=coreL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=coreL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
                 cmds.parentConstraint(coreL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 1:
-                masterL = cn.locator(obj=rootL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=rootL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
                 cmds.parentConstraint(rootL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 2:
-                masterL = cn.locator(obj=aimL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=aimL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
                 cmds.parentConstraint(aimL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 3:
-                masterL = cn.locator(obj=upL, constrain=False, X=5 * size, color=15, suffix='__MASTER__')[0]
+                masterL = cn.locator(obj=upL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
                 cmds.parentConstraint(upL, masterL, mo=True, sr=('x', 'y', 'z'))
             # bake master
             cmds.parent(masterL, masterGrp)
@@ -494,14 +507,20 @@ def aimPivotRig(size=0.3, aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl
         cs.matchCharSet(sel, locs)
         # cleanup
         cleanupGrp = cmds.group(name=plc.getUniqueName('__PIVOTAIM_GRP__'), em=True)
+        lockIt(cleanupGrp)
         cmds.parent(masterGrp, cleanupGrp)
-        p = plc.assetParent(sel[0])
+        p = plc.assetParent(sel)
         cmds.parent(cleanupGrp, p)
         # guideLines
-        cmds.parent(guideLine(coreL, rootL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
-        cmds.parent(guideLine(rootL, upL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
-        cmds.parent(guideLine(upL, aimL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
-        cmds.parent(guideLine(aimL, coreL, name=plc.getUniqueName(masterGrp + '_guides__')), cleanupGrp)
+        guides = cmds.group(name=plc.getUniqueName('__guides__'), em=True)
+        lockIt(guides)
+        cmds.parent(guides,cleanupGrp)
+        cmds.parent(guideLine(coreL, rootL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
+        cmds.parent(guideLine(rootL, upL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
+        cmds.parent(guideLine(upL, aimL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
+        cmds.parent(guideLine(aimL, coreL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
+        #select
+        cmds.select(aimL)
     else:
         message('select an object')
 
@@ -520,9 +539,9 @@ def parentRig(bake=True, worldOrient=True, *args):
     '''
     # store selection
     sel = cmds.ls(sl=True)
-    if len(sel) == 2 or 3:
+    if len(sel) == 2 or len(sel) == 3:
         # place rig nodes
-        offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__', matchSet=False)[0]
+        offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__', matchSet=False, shape='diamond_ctrl')[0]
         root = plc.null2(nllSuffix=plc.getUniqueName('__ROOT__'), obj=sel[1], orient=True)
         parent = root
         # group
@@ -534,14 +553,15 @@ def parentRig(bake=True, worldOrient=True, *args):
                 ornt = plc.null2(nllSuffix=plc.getUniqueName(sel[2] + '__ORIENT__'), obj=root, orient=False)[0]
                 cmds.orientConstraint(sel[2], ornt)
             else:
-                ornt = plc.null2(nllSuffix=plc.getUniqueName('__WORLD_ORIENT__'), obj=offset, orient=False)[0]
+                ornt = plc.null2(nllSuffix=plc.getUniqueName('__WORLD_ORIENT__'), obj=root, orient=False)[0]
                 cmds.orientConstraint(g, ornt)
             cmds.parent(ornt, root)
             plc.setChannels(ornt, [True, False], [False, True], [True, False], [True, False, False])
             parent = ornt
-            spin = cn.locator(obj=sel[0], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
+            spin = cn.locator(obj=ornt, constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
+            cn.putControlSize(spin, cngetControlSize(sel[1])*0.75)
         else:
-            spin = cn.locator(obj=sel[1], constrain=False, X=0.5, color=29, suffix='__SPIN__', matchSet=False)[0]
+            spin = cn.locator(obj=sel[1], constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
         # return None
         # heirarchy
         cmds.parent(offset, spin)
