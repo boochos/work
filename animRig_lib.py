@@ -365,7 +365,7 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             #
             cs.matchCharSet(obj, locs)
             cmds.select(locAim)
-    
+
             message('Aim rig built', maya=True)
             return locs
         cmds.warning('-- Object already has a constraint connected. --')
@@ -374,7 +374,7 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
         return None
 
 
-def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, masterPosition=0, inverseA=False, inverseU=False):
+def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, masterPosition=0, inverseA=False, inverseU=False, autoDistance=True):
     '''
     master control: moves entire constraint rig
     master position options:
@@ -401,11 +401,11 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
         locs = []
         coreL = cn.locator(obj=sel, constrain=False, X=1, color=15, suffix='__CORE__', shape='diamond_ctrl')[0]
         locs.append(coreL)
-        rootL = cn.locator(obj=sel, constrain=False, X=1.5, color=15, suffix='__ROOT__', shape='diamond_ctrl')[0]
+        rootL = cn.locator(obj=sel, constrain=False, X=0.5, color=15, suffix='__ROOT__', shape='diamond_ctrl')[0]
         locs.append(rootL)
-        aimL = cn.locator(obj=sel, constrain=False, X=1.5, color=28, suffix='__AIM__', shape='diamond_ctrl')[0]
+        aimL = cn.locator(obj=sel, constrain=False, X=0.5, color=28, suffix='__AIM__', shape='diamond_ctrl')[0]
         locs.append(aimL)
-        upL = cn.locator(obj=sel, constrain=False, X=1.2, color=29, suffix='__UP__', shape='diamond_ctrl')[0]
+        upL = cn.locator(obj=sel, constrain=False, X=0.25, color=29, suffix='__UP__', shape='diamond_ctrl')[0]
         locs.append(upL)
         upG = cn.null(obj=sel, suffix=plc.getUniqueName('__UP_GRP'))
         # heirarchy, prep for offsets
@@ -413,6 +413,9 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
         cmds.parent(aimL, coreL)
         cmds.parent(upG, coreL)
         cmds.parent(upL, upG)
+        # auto distance
+        if autoDistance:
+            offset = cn.getControlSize(sel)
         # sort inverse
         if inverseA:
             aim = inverseDir(aim)
@@ -424,6 +427,7 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
             offsetU = offset * -1
         else:
             offsetU = offset
+
         # offsets
         cmds.setAttr(aimL + aAxs, offsetA)
         cmds.setAttr(rootL + aAxs, offsetA * -1)
@@ -514,12 +518,12 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
         # guideLines
         guides = cmds.group(name=plc.getUniqueName('__guides__'), em=True)
         lockIt(guides)
-        cmds.parent(guides,cleanupGrp)
+        cmds.parent(guides, cleanupGrp)
         cmds.parent(guideLine(coreL, rootL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
         cmds.parent(guideLine(rootL, upL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
         cmds.parent(guideLine(upL, aimL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
         cmds.parent(guideLine(aimL, coreL, name=plc.getUniqueName(masterGrp + '_guides__')), guides)
-        #select
+        # select
         cmds.select(aimL)
     else:
         message('select an object')
@@ -559,7 +563,7 @@ def parentRig(bake=True, worldOrient=True, *args):
             plc.setChannels(ornt, [True, False], [False, True], [True, False], [True, False, False])
             parent = ornt
             spin = cn.locator(obj=ornt, constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
-            cn.putControlSize(spin, cngetControlSize(sel[1])*0.75)
+            cn.putControlSize(spin, cngetControlSize(sel[1]) * 0.75)
         else:
             spin = cn.locator(obj=sel[1], constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
         # return None

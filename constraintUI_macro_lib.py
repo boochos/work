@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import maya.mel as mel
+import time
 #
 import webrImport as web
 # web
@@ -62,6 +63,7 @@ class CSUI(object):
 
         cmds.button(self.actionColumn.actionButton17, e=True, c=self.cmdAimPivotRig)
         cmds.checkBox(self.actionColumn.c21, e=True, cc=self.cmdPivotMasterDisableToggle)
+        cmds.checkBox(self.actionColumn.c22, e=True, cc=self.cmdPivotDistanceToggle)
 
         cmds.button(self.actionColumn.actionButton3, e=True, c=self.cmdBakeToLoc)
         #cmds.button(self.actionColumn.actionButton4, e=True, c=self.cmdMatchKeys)
@@ -102,12 +104,19 @@ class CSUI(object):
             cmds.radioButtonGrp(self.actionColumn.masterGrp, e=True, en=False)
         self.actionColumn.prefGet()
 
+    def cmdPivotDistanceToggle(self, *args):
+        if cmds.checkBox(self.actionColumn.c22, q=True, v=True):
+            cmds.floatSliderGrp(self.actionColumn.sl1, e=True, en=False)
+        else:
+            cmds.floatSliderGrp(self.actionColumn.sl1, e=True, en=True)
+        self.actionColumn.prefGet()
+
     def cmdBake(self, *args):
         cn = web.mod('constraint_lib')
         v2 = cmds.checkBox(self.actionColumn.c2, q=True, v=True)
         v3 = cmds.checkBox(self.actionColumn.c3, q=True, v=True)
         v4 = cmds.checkBox(self.actionColumn.c4, q=True, v=True)
-        cn.bakeConstrainedSelection(removeConstraint=v2, timeLine=v3, sim=v4)
+        cn.bakeConstrainedSelection(removeConstraint=not v2, timeLine=v3, sim=v4)
 
     def cmdPlace(self, *args):
         cn = web.mod('constraint_lib')
@@ -120,7 +129,7 @@ class CSUI(object):
             if 1 == conGp:  # 1 == first radio button
                 sl = True
         # print sl, '========='
-        locs = cn.locatorOnSelection(ro='zxy', X=1.0, constrain=v5, toSelection=sl)
+        locs = cn.locatorOnSelection(ro='zxy', X=1.3, constrain=v5, toSelection=sl)
         i = 0
         if v13:
             if sel:
@@ -134,7 +143,7 @@ class CSUI(object):
         v7 = cmds.checkBox(self.actionColumn.c7, q=True, v=True)
         v8 = cmds.checkBox(self.actionColumn.c8, q=True, v=True)
         v12 = cmds.checkBox(self.actionColumn.c12, q=True, v=True)
-        cn.controllerToLocator(p=v7, r=v8, timeLine=False, sim=v12, size=1.75)
+        cn.controllerToLocator(p=v7, r=v8, timeLine=False, sim=v12, size=1.25)
 
     def cmdMatchKeys(self, *args):
         cn = web.mod('constraint_lib')
@@ -171,8 +180,11 @@ class CSUI(object):
         sel = cmds.ls(sl=True)
         if len(sel) == 1:
             ro = cmds.getAttr(sel[0] + '.rotateOrder') + 1
-            cmds.optionMenuGrp(self.actionColumn.opt1, e=True, sl=ro)
-            message('UI updated -- ' + str(cmds.optionMenuGrp(self.actionColumn.opt1, q=True, v=ro)), maya=True)
+            cmds.optionMenuGrp(self.actionColumn.opt1, e=True, sl=ro, bgc=self.actionColumn.green)
+            cmds.optionMenuGrp(self.actionColumn.opt1, e=True, nbg=True)
+            cmds.refresh()
+            time.sleep(0.05)
+            cmds.optionMenuGrp(self.actionColumn.opt1, e=True, ebg=False, nbg=True, bgc=self.actionColumn.neutral)
         else:
             cmds.warning('-- Select 1 object --')
 
@@ -243,8 +255,9 @@ class CSUI(object):
         master = cmds.checkBox(self.actionColumn.c21, q=True, v=True)
         masterPos = cmds.radioButtonGrp(self.actionColumn.masterGrp, q=True, select=True) - 1
         distance = cmds.floatSliderGrp(self.actionColumn.sl1, q=True, v=True)
+        autoDs = cmds.checkBox(self.actionColumn.c22, q=True, v=True)
         # ar.aimPivotRig(target=None, obj=None, size=0.3, aim=axs[aimGp], u=axs[upGp], tipOffset=1.0, mo=False, bake=True, inverseA=inverseA, inverseU=inverseU)
-        ar.aimPivotRig(aim=axs[aimGp], u=axs[upGp], offset=distance, masterControl=master, masterPosition=masterPos, inverseA=inverseA, inverseU=inverseU)
+        ar.aimPivotRig(aim=axs[aimGp], u=axs[upGp], offset=distance, masterControl=master, masterPosition=masterPos, inverseA=inverseA, inverseU=inverseU, autoDistance=autoDs)
         #ar.aimRig(mo=False, bake=False)
 
     def cmdDistributeKeys(self, *args):

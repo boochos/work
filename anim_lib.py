@@ -146,27 +146,36 @@ def nonKey(obj):
 def changeRO(obj, ro):
     '''
     '''
+    roLst = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
     if cmds.getAttr(obj + '.rotateOrder', settable=1):
-        cn.uiEnable(controls='modelPanel')
-        r = getRange()
-        autoK = cmds.autoKeyframe(q=True, state=True)
-        cmds.autoKeyframe(state=False)
-        i = r[0]
-        current = r[2]
-        origRO = cmds.getAttr(obj + '.rotateOrder')
-        cmds.currentTime(i)
-        cmds.currentTime(cmds.findKeyframe(which='previous'))
-        cmds.xform(obj, roo=ro)
         keyframes = getKeyedFrames(obj)
-        for key in keyframes:
-            cmds.currentTime(key)
-            cmds.setAttr(obj + '.rotateOrder', origRO)
-            cmds.xform(obj, roo=ro)
-            cmds.setKeyframe(obj + '.rotate')
-        cmds.currentTime(current)
-        cmds.autoKeyframe(state=autoK)
-        cn.eulerFilter(obj, tangentFix=True)
-        cn.uiEnable(controls='modelPanel')
+        origRO = cmds.getAttr(obj + '.rotateOrder')
+        if ro != roLst[origRO]:
+            if keyframes:
+                cn.uiEnable(controls='modelPanel')
+                r = getRange()
+                autoK = cmds.autoKeyframe(q=True, state=True)
+                cmds.autoKeyframe(state=False)
+                i = r[0]
+                current = r[2]
+                cmds.currentTime(i)
+                cmds.currentTime(cmds.findKeyframe(which='previous'))
+                cmds.xform(obj, roo=ro)
+                for key in keyframes:
+                    cmds.currentTime(key)
+                    cmds.setAttr(obj + '.rotateOrder', origRO)
+                    cmds.xform(obj, roo=ro)
+                    cmds.setKeyframe(obj + '.rotate')
+                cmds.currentTime(current)
+                cmds.autoKeyframe(state=autoK)
+                cn.eulerFilter(obj, tangentFix=True)
+                cn.uiEnable(controls='modelPanel')
+            else:
+                cmds.xform(obj, roo=ro)
+            # done
+            message('Rotate order changed: -- ' + roLst[origRO] + '   to   ' + ro, maya=True)
+        else:
+            message('Rotate order already set -- ' + ro)
     else:
         message('FAIL. Rotate order is LOCKED or CONNECTED to a custom attribute.', maya=True)
 

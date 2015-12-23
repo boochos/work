@@ -653,7 +653,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
             'Select an object. Selection will be constrained to a locator with the same anim.')
 
 
-def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=07, matchSet=True, shape='loc_ctrl'):
+def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=15, matchSet=True, shape='loc_ctrl'):
     '''
     matchSet only if locators hierarchy wont be edited. The connection forces the attributes to stay at their pre-edited value 
     '''
@@ -665,8 +665,9 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
             locSize(lc, X=X)
             objColor(lc, color)
         else:
-            lc = plc.circle(name=plc.getUniqueName(obj + suffix),obj=obj, size=X, color=color, shape=shape)[0]
-            putControlSize(lc, getControlSize(obj)*X)
+            lc = plc.circle(name=plc.getUniqueName(obj + suffix), obj=obj, color=color, shape=shape)[0]
+            putControlSize(lc, getControlSize(obj) * X)
+            # print getControlSize(lc), 'edited'
         # print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
         cmds.setAttr(lc + '.sy', k=False, cb=True)
@@ -710,7 +711,7 @@ def objColorHijack(obj=''):
     cmds.setAttr(obj + '.overrideColor', 1)
 
 
-def locatorOnSelection(ro='zxy', X=1, constrain=True, toSelection=False, color=07):
+def locatorOnSelection(ro='zxy', X=1.0, constrain=True, toSelection=False, color=15):
     sel = cmds.ls(sl=True)
     locs = []
     if len(sel) != 0:
@@ -725,7 +726,7 @@ def locatorOnSelection(ro='zxy', X=1, constrain=True, toSelection=False, color=0
 
 def getControlSize(obj=''):
     '''sel[0]
-    gets average bounding box size, use to establish default size of a new control based on selection
+    gets high average bbox size, use to establish default size of a new control based on selection
     '''
     shapeNode = cmds.listRelatives(obj, shapes=True)
     if shapeNode:
@@ -735,7 +736,10 @@ def getControlSize(obj=''):
         x = maxBB[0][0] - minBB[0][0]
         y = maxBB[0][1] - minBB[0][1]
         z = maxBB[0][2] - minBB[0][2]
-        return sum([x,y,z]) / 3.0
+        mn = sorted([x, y, z])[0]
+        mx = sorted([x, y, z])[-1]
+        high = ((mx - mn) / 4.0) * 3
+        return mn + high
     else:
         return None
 
@@ -743,15 +747,13 @@ def getControlSize(obj=''):
 def putControlSize(obj='', sizeBB=1.0):
     currentBB = getControlSize(obj)
     if currentBB:
-        #print currentBB
-        #print sizeBB
-        mltp = (sizeBB/currentBB) * 1.3
+        mltp = (sizeBB / currentBB)
         shapeNode = cmds.listRelatives(obj, shapes=True)[0]
         if cmds.nodeType(shapeNode) == 'nurbsCurve':
             cvInfo = cmds.getAttr(shapeNode + '.cv[*]')
             for i in range(0, len(cvInfo), 1):
                 crnt = cmds.xform(shapeNode + '.cv[' + str(i) + ']', query=True, os=True, t=True)
-                cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=[crnt[0]*mltp, crnt[1]*mltp, crnt[2]*mltp])
+                cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=[crnt[0] * mltp, crnt[1] * mltp, crnt[2] * mltp])
         else:
             return None
 
