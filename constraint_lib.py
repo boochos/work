@@ -666,7 +666,9 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
             objColor(lc, color)
         else:
             lc = plc.circle(name=plc.getUniqueName(obj + suffix), obj=obj, color=color, shape=shape)[0]
-            putControlSize(lc, getControlSize(obj) * X)
+            s = getControlSize(obj)
+            if s:
+                putControlSize(lc, s * X)
             # print getControlSize(lc), 'edited'
         # print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)
