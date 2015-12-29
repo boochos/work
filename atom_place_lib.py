@@ -934,14 +934,6 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
 
     # make sure rotation orders are the same
     RO = 'False'
-    # old
-    '''
-    if (cmds.getAttr(CtGp + '.rotateOrder')) == (cmds.getAttr(TopGp + '.rotateOrder')):
-        if cmds.getAttr(CtGp + '.rotateOrder') == cmds.getAttr(ObjOff + '.rotateOrder'):
-            if cmds.getAttr(CtGp + '.rotateOrder') == cmds.getAttr(ObjOn + '.rotateOrder'):
-                RO = cmds.getAttr(CtGp + '.rotateOrder')
-    '''
-    # new
     if (cmds.getAttr(CtGp + '.rotateOrder')) == (cmds.getAttr(ObjOff + '.rotateOrder')):
         # print CtGp, ObjOff, 'Good'
         if cmds.getAttr(CtGp + '.rotateOrder') == cmds.getAttr(ObjOn + '.rotateOrder'):
