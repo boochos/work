@@ -11,11 +11,11 @@ libs = ['download_lib.py', 'downloadFiles_lib.py', 'fileMan_lib', 'characterSet_
 # icons Anim Shelf
 icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
          'csIm.png', 'csMbrTgl.png', 'csMinus.png', 'flush.png', 'flushUn.png', 'geBttns.png',
-         'matchKeys.png', 'CT-.xpm', 'CT+.xpm', 'PrntSel.xpm', 'selStore.xpm', 'sel.xpm', 'TagSel.xpm',
-         'TagUI.xpm', 'upArrow.xpm', 'MatchX.xpm', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimStore.xpm',
+         'matchKeys.png', 'CT-.xpm', 'CT+.xpm', 'PrntSel.xpm', 'selStore.xpm', 'sel.xpm', 'TagSel.png',
+         'TagUI.png', 'upArrow.xpm', 'MatchX.xpm', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimStore.xpm',
          'AnimImport.xpm', 'AnimExport.xpm', 'animCopyPaste.xpm', 'AnimCopy.xpm', 'rvBlast.png', 'sel.png',
          'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.xpm', 'kmh.xpm', 'camPlateToggle.xpm',
-         'playBlastMan.xpm', 'PrjtSet.xpm']
+         'playBlastMan.xpm', 'PrjtSet.xpm', 'refresh.png']
 
 
 # icons Rigging Shelf
