@@ -66,7 +66,7 @@ def shelfAddButtons(*args):
     cmds.setParent(Depend().shelf)
     # build buttons
     cmds.shelfButton(label='FRSH', annotation='refresh rig shelf', w=wh, h=wh,
-                     image='dwnArrow.xpm', command='import webrImport as web\nwrs = web.mod("webrRigShelf")\nwrs.shelfRefreshWin()')
+                     image='refreshWeb.png', command='import webrImport as web\nwrs = web.mod("webrRigShelf")\nwrs.shelfRefreshWin()')
 
     cmds.shelfButton(label='save scene ui', annotation='save scene ui', w=wh,
                      h=wh, image='saveFileUI.xpm', command='import webrImport as web\nkui = web.mod("key_ui")\nkui.saveSceneWin()')

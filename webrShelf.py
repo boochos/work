@@ -80,7 +80,7 @@ def shelfAddButtons(*args):
     cmds.setParent(Depend().shelf)
     # build buttons
     cmds.shelfButton(label='FRSH', annotation='refresh web shelf', w=wh, h=wh,
-                     image='refresh.png', command='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefreshWin()')
+                     image='refreshWeb.png', command='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefreshWin()')
 
     cmds.shelfButton(label='save ++', annotation='save ++', w=wh, h=wh, image='save++_icon.xpm',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()')
