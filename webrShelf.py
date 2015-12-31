@@ -143,7 +143,7 @@ def shelfAddButtons(*args):
                      w=wh, h=wh, image='matchKeys.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.matchKeyedFramesLoop()')
 
     cmds.shelfButton(label='move first object to the location of second', annotation='move first object to the location of second',
-                     w=wh, h=wh, image='MatchX.xpm', command='import webrImport as web\nanm = web.mod("anim_lib")\nanm.matchObj()')
+                     w=wh, h=wh, image='MatchX.png', command='import webrImport as web\nanm = web.mod("anim_lib")\nanm.matchObj()')
 
     cmds.shelfButton(label='constraint tools', annotation='constraint tools', w=wh, h=wh,
                      image='constraintUI.png', command='import webrImport as web\ncnUI = web.mod("constraintUI_macro_lib")\ncnUI.CSUI()')
