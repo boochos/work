@@ -80,7 +80,7 @@ def shelfAddButtons(*args):
     cmds.setParent(Depend().shelf)
     # build buttons
     cmds.shelfButton(label='FRSH', annotation='refresh web shelf', w=wh, h=wh,
-                     image='dwnArrow.xpm', command='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefreshWin()')
+                     image='refresh.png', command='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefreshWin()')
 
     cmds.shelfButton(label='save ++', annotation='save ++', w=wh, h=wh, image='save++_icon.xpm',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()')
@@ -143,10 +143,10 @@ def shelfAddButtons(*args):
                      image='constraintUI.png', command='import webrImport as web\ncnUI = web.mod("constraintUI_macro_lib")\ncnUI.CSUI()')
 
     cmds.shelfButton(label='select selection', annotation='select selection set\nread from text file\nobjects cannot be in multiple sets',
-                     w=wh, h=wh, image='TagSel.xpm', command='import webrImport as web\nss = web.mod("selectionSet_lib")\nss.selectSet()')
+                     w=wh, h=wh, image='TagSel.png', command='import webrImport as web\nss = web.mod("selectionSet_lib")\nss.selectSet()')
 
     cmds.shelfButton(label='create selection set files', annotation='create selection set files', w=wh,
-                     h=wh, image='TagUI.xpm', command='import webrImport as web\nsUI = web.mod("selectionUI_macro_lib")\nsUI.CSUI()')
+                     h=wh, image='TagUI.png', command='import webrImport as web\nsUI = web.mod("selectionUI_macro_lib")\nsUI.CSUI()')
 
     cmds.shelfButton(label='2 selected objects', annotation='2 selected objects\nanim from object 1 is pasted to object 2\ncurrent frame is used as the paste point', w=wh, h=wh, image='animCopyPaste.png',
                      command='import webrImport as web\nalm = web.mod("animation_library_manager")\nancop = alm.AnimationToolbox()\nsel = cmds.ls(sl=True)\ncmds.select(sel[0])\nancop.animCopy()\ncmds.select(sel[1])\nancop.animPaste()')
