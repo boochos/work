@@ -82,6 +82,12 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='FRSH', annotation='refresh web shelf', w=wh, h=wh,
                      image='refreshWeb.png', command='import webrImport as web\nws = web.mod("webrShelf")\nws.shelfRefreshWin()')
 
+    cmds.shelfButton(label='quick undo', annotation='viewport toggle', w=wh,
+                     h=wh, image='tgglUI.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.uiEnable()')
+
+    cmds.shelfButton(label='quick undo', annotation='quick undo, viewport hide while executing undo', w=wh,
+                     h=wh, image='undoFast.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.quickUndo()')
+
     cmds.shelfButton(label='save ++', annotation='save ++', w=wh, h=wh, image='save++_icon.xpm',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()')
 
@@ -172,10 +178,6 @@ def shelfAddButtons(*args):
     # 'import display_lib as dis\nreload(dis)\ndis.distance()'
     # 'import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()'
 
-    cmds.shelfButton(label='quick undo', annotation='viewport toggle', w=wh,
-                     h=wh, imageOverlayLabel='_UI_', image='pythonFamily.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.uiEnable()')
-    cmds.shelfButton(label='quick undo', annotation='quick undo, viewport hide while executing undo', w=wh,
-                     h=wh, imageOverlayLabel='UNDO', image='pythonFamily.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.quickUndo()')
     cmds.shelfButton(label='clip library', annotation='Clip Library', w=wh,
                      h=wh, imageOverlayLabel='', image='AnimStore.xpm', command='import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()')
     # TODO: timewarp tool
