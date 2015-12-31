@@ -94,14 +94,14 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='', annotation='set project from file name', w=wh, h=wh, image='PrjtSet.xpm',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.setProjectFromFilename("scenes")')
 
-    cmds.shelfButton(label='print selection', annotation='print selection',
-                     w=wh, h=wh, image='PrntSel.png', command='sl.prnt()')
-
     cmds.shelfButton(label='temporarily save selection', annotation='temporarily save selection',
                      w=wh, h=wh, image='selStore.xpm', command='import webrImport as web\nsel = web.mod("selection")\nsl = sel.Sel()')
 
     cmds.shelfButton(label='select saved selection', annotation='select saved selection',
                      w=wh, h=wh, image='sel.xpm', command='sl.select()')
+
+    cmds.shelfButton(label='print selection', annotation='print selection',
+                     w=wh, h=wh, image='PrntSel.png', command='sl.prnt()')
 
     cmds.shelfButton(label='select pair script job', annotation='select pair script job', w=wh,
                      h=wh, image='srv_mirSel_off_icon.xpm', command='import webrImport as web\nps = web.mod("pairSelect")\nps.toggleJob()')
