@@ -95,7 +95,7 @@ def shelfAddButtons(*args):
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.setProjectFromFilename("scenes")')
 
     cmds.shelfButton(label='print selection', annotation='print selection',
-                     w=wh, h=wh, image='PrntSel.xpm', command='sl.prnt()')
+                     w=wh, h=wh, image='PrntSel.png', command='sl.prnt()')
 
     cmds.shelfButton(label='temporarily save selection', annotation='temporarily save selection',
                      w=wh, h=wh, image='selStore.xpm', command='import webrImport as web\nsel = web.mod("selection")\nsl = sel.Sel()')
