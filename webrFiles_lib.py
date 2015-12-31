@@ -15,7 +15,7 @@ icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
          'TagUI.png', 'upArrow.xpm', 'MatchX.xpm', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimStore.xpm',
          'AnimImport.xpm', 'AnimExport.xpm', 'animCopyPaste.xpm', 'AnimCopy.xpm', 'rvBlast.png', 'sel.png',
          'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.xpm', 'kmh.xpm', 'camPlateToggle.xpm',
-         'playBlastMan.xpm', 'PrjtSet.xpm', 'refreshWeb.png', 'undoFast.png', 'tgglUI.png']
+         'playBlastMan.png', 'PrjtSet.xpm', 'refreshWeb.png', 'undoFast.png', 'tgglUI.png']
 
 
 # icons Rigging Shelf
