@@ -14,7 +14,7 @@ icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
          'matchKeys.png', 'CT-.xpm', 'CT+.xpm', 'PrntSel.png', 'selStore.xpm', 'sel.xpm', 'TagSel.png',
          'TagUI.png', 'upArrow.xpm', 'MatchX.png', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimStore.xpm',
          'AnimImport.xpm', 'AnimExport.xpm', 'animCopyPaste.xpm', 'AnimCopy.xpm', 'rvBlast.png', 'sel.png',
-         'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.xpm', 'kmh.xpm', 'camPlateToggle.xpm',
+         'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.png', 'kmh.xpm', 'camPlateToggle.xpm',
          'playBlastMan.png', 'PrjtSet.xpm', 'refreshWeb.png', 'undoFast.png', 'tgglUI.png']
 
 

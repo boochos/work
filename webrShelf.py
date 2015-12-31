@@ -88,7 +88,7 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='quick undo', annotation='quick undo, viewport hide while executing undo', w=wh,
                      h=wh, image='undoFast.png', command='import webrImport as web\ncn = web.mod("constraint_lib")\ncn.quickUndo()')
 
-    cmds.shelfButton(label='save ++', annotation='save ++', w=wh, h=wh, image='save++_icon.xpm',
+    cmds.shelfButton(label='save ++', annotation='save ++', w=wh, h=wh, image='save++_icon.png',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()')
 
     cmds.shelfButton(label='', annotation='set project from file name', w=wh, h=wh, image='PrjtSet.xpm',
