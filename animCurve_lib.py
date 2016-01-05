@@ -304,24 +304,26 @@ def subframe():
     frames = None
     animCurves = cmds.keyframe(q=True, name=True, sl=True)
     # print animCurves
-    for crv in animCurves:
-        frames = cmds.keyframe(crv, q=True)
-        # print frames
-        if frames:
-            for frame in frames:
-                rnd = round(frame, 0)
-                # print rnd, frame
-                if rnd != frame:
-                    message('removing: ' + 'key' + ' -- ' + str(frame))
-                    cmds.refresh(f=1)
-                    if cmds.setKeyframe(animCurves, time=(rnd, rnd), i=1) == 0:
-                        cmds.cutKey(animCurves, time=(frame, frame))
-                    else:
-                        cmds.setKeyframe(animCurves, time=(rnd, rnd), i=1)
-                        cmds.cutKey(animCurves, time=(frame, frame))
+    if animCurves:
+        for crv in animCurves:
+            frames = cmds.keyframe(crv, q=True)
+            # print frames
+            if frames:
+                for frame in frames:
+                    rnd = round(frame, 0)
+                    # print rnd, frame
+                    if rnd != frame:
+                        message('removing: ' + 'key' + ' -- ' + str(frame))
+                        cmds.refresh(f=1)
+                        if cmds.setKeyframe(animCurves, time=(rnd, rnd), i=1) == 0:
+                            cmds.cutKey(animCurves, time=(frame, frame))
+                        else:
+                            cmds.setKeyframe(animCurves, time=(rnd, rnd), i=1)
+                            cmds.cutKey(animCurves, time=(frame, frame))
+            else:
+                message('no keys')
     else:
-        message('no keys')
-
+        message('no curves selected')
 
 def distributeKeys(step=3.0, destructive=True, forceWholeFrames=True):
     '''

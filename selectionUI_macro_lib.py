@@ -495,6 +495,7 @@ class CSUI(object):
             return sets
 
     def cmdSelectSet(self, sets, *args):
+        # TODO: slow, should simply try to select objects in file, not auto detect
         '''
         select highlighted sets in browse column
         '''

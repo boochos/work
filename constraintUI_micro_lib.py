@@ -277,7 +277,7 @@ class Action(object):
         self.c19 = cmds.checkBox(label='Negative Up', v=False, cc=self.prefGet, ann='Specifies the UP should be in the negative direction')
         self.upPivotGrp = cmds.radioButtonGrp(label='Up:', cc=self.prefGet, labelArray3=['x', 'y', 'z'], select=2, numberOfRadioButtons=3, w=self.w, ad4=5, cw4=[40, 35, 35, 35], cl4=['left', 'left', 'left', 'left'], ct4=['left', 'left', 'left', 'left'])
         # master
-        self.c21 = cmds.checkBox(label='Master Control Location', v=False, cc=self.prefGet, ann='Create master control at one of the 4 pivot points.')
+        self.c21 = cmds.checkBox(label='Master Control / Location', v=False, cc=self.prefGet, ann='Create master control at one of the 4 pivot points.')
         self.masterGrp = cmds.radioButtonGrp(label='', cc=self.prefGet, en=False, labelArray4=['Core', 'Root', 'Aim', 'Up'], select=1, numberOfRadioButtons=4, w=self.w, ad5=5, cw5=[0, 50, 50, 40, 35], cl5=['left', 'left', 'left', 'left', 'left'], ct5=['left', 'left', 'left', 'left', 'left'])
         # offset
         cmds.rowLayout(numberOfColumns=2, ad2=2)
