@@ -12,7 +12,7 @@ libs = ['download_lib.py', 'downloadFiles_lib.py', 'fileMan_lib', 'characterSet_
 icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
          'csIm.png', 'csMbrTgl.png', 'csMinus.png', 'flush.png', 'flushUn.png', 'geBttns.png',
          'matchKeys.png', 'CT-.xpm', 'CT+.xpm', 'PrntSel.png', 'selStore.xpm', 'sel.xpm', 'TagSel.png',
-         'TagUI.png', 'upArrow.xpm', 'MatchX.png', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimStore.xpm',
+         'TagUI.png', 'upArrow.xpm', 'MatchX.png', 'dwnArrow.xpm', 'AnimPaste.xpm', 'AnimClip.png',
          'AnimImport.xpm', 'AnimExport.xpm', 'animCopyPaste.xpm', 'AnimCopy.xpm', 'rvBlast.png', 'sel.png',
          'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.png', 'kmh.xpm', 'camPlateToggle.xpm',
          'playBlastMan.png', 'PrjtSet.xpm', 'refreshWeb.png', 'undoFast.png', 'tgglUI.png']
