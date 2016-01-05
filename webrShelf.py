@@ -179,7 +179,7 @@ def shelfAddButtons(*args):
     # 'import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()'
 
     cmds.shelfButton(label='clip library', annotation='Clip Library', w=wh,
-                     h=wh, imageOverlayLabel='', image='AnimStore.xpm', command='import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()')
+                     h=wh, imageOverlayLabel='', image='AnimClip.png', command='import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()')
     # TODO: timewarp tool
     # TODO: timewarp with path anim, uisng some combo to sync path anim to, anim layer as time warp to keep object anim on same spot on curve
     # TODO: rivet
