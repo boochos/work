@@ -68,9 +68,6 @@ def shelfAddButtons(*args):
     cmds.shelfButton(label='FRSH', annotation='refresh rig shelf', w=wh, h=wh,
                      image='refreshWeb.png', command='import webrImport as web\nwrs = web.mod("webrRigShelf")\nwrs.shelfRefreshWin()')
 
-    cmds.shelfButton(label='save scene ui', annotation='save scene ui', w=wh,
-                     h=wh, image='saveFileUI.xpm', command='import webrImport as web\nkui = web.mod("key_ui")\nkui.saveSceneWin()')
-
     cmds.shelfButton(label='save ++', annotation='save ++', w=wh, h=wh, image='save++_icon.xpm',
                      command='import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()')
 
@@ -112,6 +109,9 @@ def shelfAddButtons(*args):
 
     cmds.shelfButton(label='Atom Zero Joint Orient', annotation='Atom Zero Joint Orient', w=wh, h=wh,
                      image='Zero.xpm', command='import webrImport as web\njnt = web.mod("atom_joint_lib")\njnt.zeroJntSelection()')
+
+    cmds.shelfButton(label='save scene ui', annotation='save scene ui', w=wh,
+                     h=wh, image='saveFileUI.xpm', command='import webrImport as web\nkui = web.mod("key_ui")\nkui.saveSceneWin()')
 
 
 def getIcons(download=False):

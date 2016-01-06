@@ -19,5 +19,5 @@ icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
 
 
 # icons Rigging Shelf
-iconsRig = ['save++_icon.xpm', 'PrjtSet.xpm', 'saveFileUI.xpm', 'Atom.xpm', 'AtmWghtUtl.xpm', 'AtomUtl.xpm',
-            'AtmTrnsfrInflnc.xpm', 'AtmSrfcRg.xpm', 'AtomLck.xpm', 'AtmMshUpdt.xpm', 'TagUI.xpm', 'Zero.xpm']
+iconsRig = ['refreshWeb.png', 'save++_icon.png', 'PrjtSet.xpm', 'sel.xpm', 'selStore.xpm', 'saveFileUI.xpm', 'Atom.xpm', 'AtmWghtUtl.xpm', 'AtomUtl.xpm',
+            'AtmTrnsfrInflnc.xpm', 'AtmSrfcRg.xpm', 'AtomLck.xpm', 'AtmMshUpdt.xpm', 'TagUI.xpm', 'Zero.xpm', 'PrntSel.png']

@@ -105,7 +105,7 @@ def preBuild(
     NeckCt = neck.createController()
     place.setRotOrder(NeckCt[0], 2, True)
     # parent switches
-    place.parentSwitch(Neck, NeckCt[2], NeckCt[1], NeckCt[0], CogCt[4], ChestAttch_CnstGp, False, True, False, True, 'Chest')
+    place.parentSwitch(Neck, NeckCt[2], NeckCt[1], NeckCt[0], CogCt[4], ChestAttch_CnstGp, False, True, False, True, 'Chest', w=0)
     cmds.parentConstraint(ChestAttch_CnstGp, NeckCt[0], mo=True)
     place.setChannels(NeckCt[0], [False, False], [False, False], [True, False], [True, False, False])
     place.setChannels(NeckCt[1], [True, False], [False, False], [True, False], [True, False, False])
@@ -180,7 +180,7 @@ def preBuild(
         '''
         # SHOULDER L #
         shldrL = 'shldr_L'
-        shldrL = place.Controller(shldrL, SHLDR_L_jnt, False, 'shldrL_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
+        shldrL = place.Controller(shldrL, SHLDR_L_jnt, False, 'facetXup_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
         ShldrLCt = shldrL.createController()
         place.setRotOrder(ShldrLCt[0], 2, True)
         cmds.parentConstraint(ChestAttch_CnstGp, ShldrLCt[0], mo=True)
@@ -202,7 +202,7 @@ def preBuild(
 
         # SHOULDER R #
         shldrR = 'shldr_R'
-        shldrR = place.Controller(shldrR, SHLDR_R_jnt, False, 'shldrR_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
+        shldrR = place.Controller(shldrR, SHLDR_R_jnt, False, 'facetXup_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
         ShldrRCt = shldrR.createController()
         place.setRotOrder(ShldrRCt[0], 2, True)
         cmds.parentConstraint(ChestAttch_CnstGp, ShldrRCt[0], mo=True)
