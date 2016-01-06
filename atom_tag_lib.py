@@ -182,7 +182,7 @@ class Atom_Tag_Core(object):
         self.createTagDict()
 
     def validate_dirPath(self, path, dirObj):
-        if os.path.isdir(path) and dirObj[0] != '.':
+        if os.path.isdir(path) and os.path.isdir(dirObj) and '.' not in dirObj:
             return True
         else:
             return False

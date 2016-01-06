@@ -197,6 +197,23 @@ def raptorFrameLayout(*args):
     cmds.setParent('..')
     return main
 
+
+def pteranodonFrameLayout(*args):
+    refresh = RefreshCallBack('atom_win')
+    main = cmds.frameLayout('atom_pteranodon_frameLayout', label='Pteranodon Setup',
+                            cc=refresh.RefreshCall, ec=refresh.RefreshCall,
+                            mh=5, mw=5, cll=True, cl=False)
+
+    atom_rrig_columnLayout = cmds.columnLayout('atom_Pteranodon_main_columnLayout', adj=True, rs=5)
+    cmds.separator()
+
+    atom_rrig_prerigBut = cmds.button(l='Build Pteranodon Pre-Rig', c='import webrImport as web\natm = web.mod("atom_pteranodon_lib")\natm.preBuild()')
+    atom_rrig_buildSpineBut = cmds.button(l='Build Rig Splines', c='import webrImport as web\natm = web.mod("atom_pteranodon_lib")\natm.buildSplines()')
+
+    cmds.setParent('..')
+    cmds.setParent('..')
+    return main
+
 #-------------
 # Name        :win
 # Arguements  :N/A
@@ -516,6 +533,8 @@ def win(*args):
 
     atom_raptor_frameLayout = raptorFrameLayout()
 
+    atom_pteranodon_frameLayout = pteranodonFrameLayout()
+
     #---------------------------
     # Control Curve Shape Toolbox
     #---------------------------
@@ -581,6 +600,7 @@ def win(*args):
                                 (atom_qrig_frameLayout, 'left', 5), (atom_qrig_frameLayout, 'right', 5),
                                 (atom_biped_frameLayout, 'left', 5), (atom_biped_frameLayout, 'right', 5),
                                 (atom_raptor_frameLayout, 'left', 5), (atom_raptor_frameLayout, 'right', 5),
+                                (atom_pteranodon_frameLayout, 'left', 5), (atom_pteranodon_frameLayout, 'right', 5),
                                 (atom_ccst_frameLayout, 'left', 5), (atom_ccst_frameLayout, 'right', 5)],
 
                     attachControl=[(atom_prefix_textField, 'left', 5, atom_prefix_text),
@@ -601,7 +621,8 @@ def win(*args):
                                    (atom_qrig_frameLayout, 'top', 5, atom_qls_frameLayout),
                                    (atom_biped_frameLayout, 'top', 5, atom_qrig_frameLayout),
                                    (atom_raptor_frameLayout, 'top', 5, atom_biped_frameLayout),
-                                   (atom_ccst_frameLayout, 'top', 5, atom_raptor_frameLayout)]
+                                   (atom_pteranodon_frameLayout, 'top', 5, atom_raptor_frameLayout),
+                                   (atom_ccst_frameLayout, 'top', 5, atom_pteranodon_frameLayout)]
                     )
     cmds.showWindow(atom_win)
     cmds.window('atom_win', edit=True, width=254)
