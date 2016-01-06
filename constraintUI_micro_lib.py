@@ -233,7 +233,7 @@ class Action(object):
         cmds.setParent('..')
         self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)
         # space switcher
-        self.actionButton8 = cmds.button(self.actionButton8, label='Store World Space Anim', c=self.cmdAction, bgc=self.purple,
+        self.actionButton8 = cmds.button(self.actionButton8, label='-- Store -- World Space Anim', c=self.cmdAction, bgc=self.purple,
                                          ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
         self.actionButton9 = cmds.button(self.actionButton9, label='Restore', c=self.cmdAction, bgc=self.purple,
                                          ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')

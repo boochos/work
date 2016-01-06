@@ -578,7 +578,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
         for item in sel:
             # setup locator
             if not getConstraint(item):
-                lc = locator(obj=item, ro='zxy', X=size, constrain=False, toSelection=False, suffix=suffix, color=color, matchSet=True, shape=shape)[0]
+                lc = locator(obj=item, ro='zxy', X=size, constrain=False, toSelection=False, suffix=suffix, color=color, matchSet=False, shape=shape)[0]
                 # check keyable transforms
                 tState = cmds.getAttr(item + '.tx', k=True)
                 rState = cmds.getAttr(item + '.rx', k=True)
