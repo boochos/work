@@ -227,8 +227,8 @@ class Action(object):
         self.actionButton7 = cmds.button(self.actionButton7, label='Transform Rotate Order', c=self.cmdAction, bgc=self.redD, ann='Transform animation to different rotation order.')
         self.actionButton18 = cmds.button(self.actionButton18, label='Query', c=self.cmdAction, ann='Selects objects current Rotate Order')
         self.opt1 = cmds.optionMenuGrp(label='', cw2=[0, 40], cat=(1, 'left', 0), ann='Select rotate order to bake to.')
-        ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
-        for o in ro:
+        self.ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']
+        for o in self.ro:
             cmds.menuItem(o)
         cmds.setParent('..')
         self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)

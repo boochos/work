@@ -10,43 +10,47 @@ ac = web.mod('animCurve_lib')
 plc = web.mod('atom_place_lib')
 
 '''
+import maya.cmds as cmds
 import webrImport as web
 ar = web.mod("animRig_lib")
+
+ns = cmds.ls(sl=True)[0].split(':')[0]
+
 sel = [
-'Scarecrow_BodyRig_v35:rt_index_fk_4_hdl',
-'Scarecrow_BodyRig_v35:rt_index_fk_3_hdl',
-'Scarecrow_BodyRig_v35:rt_index_fk_2_hdl',
-'head'
+ns + ':R_leg_bigToe3Fk_ctrl',
+ns + ':R_leg_bigToe2Fk_ctrl',
+ns + ':R_leg_bigToe1Fk_ctrl',
+ns + ':R_leg_mainIk_ctrl'
 ]
-ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+ar.fingerRig(name='toe', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 0.0, -1.0], mlt=-2.0, baseWorld=False, parentTarget=True)
 sel = [
-'Scarecrow_BodyRig_v35:rt_mid_fk_4_hdl',
-'Scarecrow_BodyRig_v35:rt_mid_fk_3_hdl',
-'Scarecrow_BodyRig_v35:rt_mid_fk_2_hdl',
-'head'
+ns + ':R_leg_indexToe4Fk_ctrl',
+ns + ':R_leg_indexToe2Fk_ctrl',
+ns + ':R_leg_indexToe1Fk_ctrl',
+ns + ':R_leg_mainIk_ctrl'
 ]
-ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+ar.fingerRig(name='toe', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 0.0, -1.0], mlt=-2.0, baseWorld=False, parentTarget=True)
 sel = [
-'Scarecrow_BodyRig_v35:rt_ring_fk_4_hdl',
-'Scarecrow_BodyRig_v35:rt_ring_fk_3_hdl',
-'Scarecrow_BodyRig_v35:rt_ring_fk_2_hdl',
-'head'
+ns + ':R_leg_middleToe4Fk_ctrl',
+ns + ':R_leg_middleToe2Fk_ctrl',
+ns + ':R_leg_middleToe1Fk_ctrl',
+ns + ':R_leg_mainIk_ctrl'
 ]
-ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+ar.fingerRig(name='toe', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 0.0, -1.0], mlt=-2.0, baseWorld=False, parentTarget=True)
 sel = [
-'Scarecrow_BodyRig_v35:rt_pinky_fk_4_hdl',
-'Scarecrow_BodyRig_v35:rt_pinky_fk_3_hdl',
-'Scarecrow_BodyRig_v35:rt_pinky_fk_2_hdl',
-'head'
+ns + ':R_leg_ringToe4Fk_ctrl',
+ns + ':R_leg_ringToe2Fk_ctrl',
+ns + ':R_leg_ringToe1Fk_ctrl',
+ns + ':R_leg_mainIk_ctrl'
 ]
-ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+ar.fingerRig(name='toe', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 0.0, -1.0], mlt=-2.0, baseWorld=False, parentTarget=True)
 sel = [
-'Scarecrow_BodyRig_v35:rt_thumb_fk_4_hdl',
-'Scarecrow_BodyRig_v35:rt_thumb_fk_3_hdl',
-'Scarecrow_BodyRig_v35:rt_thumb_fk_2_hdl',
-'head'
+ns + ':R_leg_pinkyToe4Fk_ctrl',
+ns + ':R_leg_pinkyToe2Fk_ctrl',
+ns + ':R_leg_pinkyToe1Fk_ctrl',
+ns + ':R_leg_mainIk_ctrl'
 ]
-ar.fingerRig(name='fing#', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 1.0, 0.0], mlt=-2.0, baseWorld=False, parentTarget=True)
+ar.fingerRig(name='toe', obj=sel, size=3.0, aim=[-1.0, 0.0, 0.0], u=[0.0, 0.0, -1.0], mlt=-2.0, baseWorld=False, parentTarget=True)
 '''
 
 
@@ -99,6 +103,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, ba
     obj[1] = mid control
     obj[2] = base control
     obj[3] = hand
+    FIX HARDCODED DIRECTION OFFSETS
     '''
     offset = ds.measureDis(obj1=obj[0], obj2=obj[1])
     # print offset
@@ -119,7 +124,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, ba
     baseUp = cn.locator(obj=obj[2], ro='zxy', X=size, constrain=False, toSelection=True, suffix='__BASEUP__')[0]
     cmds.setAttr(baseUp + '.visibility', 0)
     cmds.parent(baseUp, base)
-    cmds.setAttr(baseUp + '.ty', offset * mlt)
+    cmds.setAttr(baseUp + '.tz', offset * mlt)
     cmds.parent(baseUp, master)
     cmds.parentConstraint(obj[2], baseUp, mo=1)
     cn.bakeConstrained(baseUp, removeConstraint=True, timeLine=False, sim=True)
@@ -136,7 +141,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, ba
     midUp = cn.locator(obj=obj[1], ro='zxy', X=size, constrain=False, toSelection=True, suffix='__MIDUP__')[0]
     cmds.setAttr(midUp + '.visibility', 0)
     cmds.parent(midUp, mid)
-    cmds.setAttr(midUp + '.ty', offset * mlt)
+    cmds.setAttr(midUp + '.tz', offset * mlt)
     # cmds.parent(midUp, mid)
     cmds.parentConstraint(obj[1], midUp, mo=1)
     cn.bakeConstrained(midUp, removeConstraint=True, timeLine=False, sim=True)
@@ -163,7 +168,7 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, ba
     tipUp = cn.locator(obj=obj[0], ro='zxy', X=size, constrain=False, toSelection=True, suffix='__TIPUP__')[0]
     cmds.setAttr(tipUp + '.visibility', 0)
     cmds.parent(tipUp, tipTarget)
-    cmds.setAttr(tipUp + '.ty', offset * mlt)
+    cmds.setAttr(tipUp + '.tz', offset * mlt)
     cmds.parentConstraint(tip, tipUp, mo=1)
     cn.bakeConstrained(tipUp, removeConstraint=True, timeLine=False, sim=True)
     cn.matchKeyedFrames(A=obj[0], B=tipUp, subtractive=True)
@@ -180,9 +185,12 @@ def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, ba
 
     # group
     if parentTarget:
-        gr = cmds.group(master, n='__' + name + '__')
+        gr = cmds.group(master, n=plc.getUniqueName('__' + name + '__'))
     else:
-        gr = cmds.group(tipTarget, master, n='__' + name + '__')
+        gr = cmds.group(tipTarget, master, n=plc.getUniqueName('__' + name + '__'))
+
+    p = plc.assetParent(obj[1])
+    cmds.parent(gr, p)
 
     return gr
 
@@ -286,9 +294,11 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
     locs = []
     if not target:
         sel = cmds.ls(sl=1)  # order = target,base
-        if len(sel) == 2:
+        if len(sel) == 2 or len(sel) == 3:
             target = sel[0]
             obj = sel[1]
+            if len(sel) == 3:
+                prnt = sel[2]
         else:
             cmds.warning('-- function requires 2 objects to be selected or fed as variables --')
             return None
@@ -313,7 +323,7 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             else:
                 offsetU = offset
             # place locator at locale A and constrain
-            locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=1.2, color=28, suffix='__AIM__', matchSet=False, shape='diamond_ctrl')[0]
+            locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=1.4, color=28, suffix='__AIM__', matchSet=False, shape='diamond_ctrl')[0]
             locs.append(locA)
             # match keys
             cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
@@ -323,7 +333,7 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=1, suffix='__BASE__', matchSet=False, shape='loc_ctrl')[0]
             locs.append(locB)
             # place up locator on location B
-            locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=1, color=29, suffix='__UP__', matchSet=False, shape='diamond_ctrl')[0]
+            locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=1.2, color=29, suffix='__UP__', matchSet=False, shape='loc_ctrl')[0]
             locs.append(locUp)
             # print locUp
             # parent up locator, move up in ty, unparent
@@ -361,7 +371,12 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             g = cmds.group(locA, n=plc.getUniqueName('__AIMRIG__'))
             p = plc.assetParent(sel[1])
             cmds.parent(g, p)
-            lockIt(g)
+            if prnt:
+                pass
+                # this breaks if object is animated, should be beofre baking constraints
+                # cmds.parentConstraint(prnt, g, mo=True)
+            else:
+                lockIt(g)
             #
             cs.matchCharSet(obj, locs)
             cmds.select(locAim)
@@ -399,13 +414,13 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
         uAxs = uAxs[u.index(1.0)]
         # place locators on selection
         locs = []
-        coreL = cn.locator(obj=sel, constrain=False, X=1, color=15, suffix='__CORE__', shape='diamond_ctrl')[0]
+        coreL = cn.locator(obj=sel, constrain=False, X=1, color=15, suffix='__CORE__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(coreL)
-        rootL = cn.locator(obj=sel, constrain=False, X=0.5, color=15, suffix='__ROOT__', shape='diamond_ctrl')[0]
+        rootL = cn.locator(obj=sel, constrain=False, X=0.5, color=15, suffix='__ROOT__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(rootL)
-        aimL = cn.locator(obj=sel, constrain=False, X=0.5, color=28, suffix='__AIM__', shape='diamond_ctrl')[0]
+        aimL = cn.locator(obj=sel, constrain=False, X=0.5, color=28, suffix='__AIM__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(aimL)
-        upL = cn.locator(obj=sel, constrain=False, X=0.25, color=29, suffix='__UP__', shape='diamond_ctrl')[0]
+        upL = cn.locator(obj=sel, constrain=False, X=0.25, color=29, suffix='__UP__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(upL)
         upG = cn.null(obj=sel, suffix=plc.getUniqueName('__UP_GRP'))
         # heirarchy, prep for offsets
@@ -455,16 +470,16 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
         # add master control if necessary
         if masterControl:
             if masterPosition == 0:
-                masterL = cn.locator(obj=coreL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
+                masterL = cn.locator(obj=coreL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(coreL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 1:
-                masterL = cn.locator(obj=rootL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
+                masterL = cn.locator(obj=rootL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(rootL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 2:
-                masterL = cn.locator(obj=aimL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
+                masterL = cn.locator(obj=aimL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(aimL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 3:
-                masterL = cn.locator(obj=upL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl')[0]
+                masterL = cn.locator(obj=upL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(upL, masterL, mo=True, sr=('x', 'y', 'z'))
             # bake master
             cmds.parent(masterL, masterGrp)
@@ -563,7 +578,7 @@ def parentRig(bake=True, worldOrient=True, *args):
             plc.setChannels(ornt, [True, False], [False, True], [True, False], [True, False, False])
             parent = ornt
             spin = cn.locator(obj=ornt, constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
-            cn.putControlSize(spin, cngetControlSize(sel[1]) * 0.75)
+            cn.putControlSize(spin, cn.getControlSize(sel[1]) * 0.75)
         else:
             spin = cn.locator(obj=sel[1], constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
         # return None
