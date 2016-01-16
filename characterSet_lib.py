@@ -439,7 +439,7 @@ def smarterActivateSet(*args):
     if len(set.sel) != 0:
         if len(set.sel) > 1:  # multi object selection
             activateSet(set.sel)
-            cmds.warning('-- multiple objects set as character sets --')
+            cmds.warning('-- multiple objects set as character set --')
             return set.sel
         if set.current:
             if set.current in set.options:
@@ -541,8 +541,11 @@ def insertKey():
     '''
     sel = cmds.ls(sl=True)
     if len(sel) == 0:
-        cmds.setKeyframe(currentSet(), i=True)
-        message('Key inserted to set:  ' + currentSet(), maya=True)
+        if currentSet() != 'Multiple':
+            cmds.setKeyframe(currentSet(), i=True)
+            message('Key inserted to set:  ' + currentSet(), maya=True)
+        else:
+            cmds.setKeyframe()
     else:
         frames = ac.getKeyedFrames(sel)
         if frames:
