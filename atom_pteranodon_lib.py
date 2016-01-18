@@ -14,12 +14,12 @@ abl = web.mod('atom_body_lib')
 
 
 def preBuild(
-        COG_jnt='pelvis_jnt', PELVIS_jnt='pelvis_jnt', CHEST_jnt='spine_05', NECK_jnt='neck_00', HEAD_jnt='neck_04',
+        COG_jnt='pelvis_jnt', PELVIS_jnt='pelvis_jnt', CHEST_jnt='spine_05_JNT', NECK_jnt='neck_00_JNT', HEAD_jnt='neck_04_JNT',
         HIP_L_jnt='back_hip_jnt_L', HIP_R_jnt='back_hip_jnt_R',
-        SHLDR_L_jnt='l_uperarm', SHLDR_R_jnt='r_uperarm',
-        BACK_L_jnt='l_foot', BACK_R_jnt='r_foot',
-        FRONT_L_jnt='l_hand_mainCarpal', FRONT_R_jnt='r_hand_mainCarpal',
-        TAIL_jnt='tail_00', TAILTIP_jnt='tail19', GEO_gp='buddy_GP', SKIN_jnt='pelvis_jnt'):
+        SHLDR_L_jnt='uperarm_L_JNT', SHLDR_R_jnt='uperarm_R_JNT',
+        BACK_L_jnt='foot_L_JNT', BACK_R_jnt='foot_R_JNT',
+        FRONT_L_jnt='hand_mainCarpal_L_JNT', FRONT_R_jnt='hand_mainCarpal_R_JNT',
+        TAIL_jnt='tail_00_JNT', TAILTIP_jnt='tail19', GEO_gp='buddy_GP', SKIN_jnt='pelvis_jnt'):
     '''\n
 
     '''
@@ -128,7 +128,7 @@ def preBuild(
     place.setRotOrder(Head_CnstGp, 2, True)
     cmds.parent(Head_CnstGp, HeadCt[2])
     # tip of head constrain to offset
-    cmds.orientConstraint(HeadCt[3], 'neck_00', mo=True)
+    cmds.orientConstraint(HeadCt[3], NECK_jnt, mo=True)
     # constrain head to neck
     cmds.parentConstraint(NeckCt[4], HeadCt[0], mo=True)
     # set channels
@@ -379,7 +379,7 @@ def buildSplines(*args):
         cmds.setAttr(obj + '.' + attr, cb=True)
 
     # Tail
-    tailRig = splnFk.SplineFK('tail', 'tail01', 'tail03', 'mid',
+    tailRig = splnFk.SplineFK('tail', 'tail_01_JNT', 'tail_03_JNT', 'mid',
                               controllerSize=3, rootParent='PelvisAttch_CnstGp', parent1='master_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
@@ -395,7 +395,7 @@ def buildSplines(*args):
     spineAttr = 'cog'
     spineRoot = 'pelvis_jnt'
     'spine_S_IK_Jnt'
-    spine = ['spine_00', 'chest_jnt']
+    spine = ['spine_00_JNT', 'chest_jnt_JNT']
     # build spline
     SplineOpts(spineName, spineSize, spineDistance, spineFalloff)
     cmds.select(spine)
@@ -432,7 +432,7 @@ def buildSplines(*args):
     neckStrt = 'neck_Grp'
     neckEnd = 'head_CnstGp'
     neckAttr = 'neck'
-    neck = ['neck_00', 'neck_04']
+    neck = ['neck_00_JNT', 'neck_04_JNT']
     # build spline
     SplineOpts(neckName, neckSize, neckDistance, neckFalloff)
     cmds.select(neck)
