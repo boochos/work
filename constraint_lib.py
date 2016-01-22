@@ -669,6 +669,8 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
             s = getControlSize(obj)
             if s:
                 putControlSize(lc, s * X)
+            else:
+                putControlSize(lc, X)
             # print getControlSize(lc), 'edited'
         # print lc
         cmds.setAttr(lc + '.sx', k=False, cb=True)

@@ -97,6 +97,115 @@ def guideLine(obj1, obj2, name=''):
     return null
 
 
+def tentacleRig():
+    sel = cmds.ls(sl=1)
+    if sel:
+        ns = sel[0].split(':')[0]
+        side = sel[0].split(':')[1][0]
+        g = cmds.group(n=plc.getUniqueName('__TENTACLERIG__'), em=True)
+        macros = tentacleMacro(ns, side)
+        micros = tentacleMicro(ns, side)
+        i = 0
+        j = 0
+        for macro in macros:
+            if i != 3:
+                macroN = tentacleMacroCt(macro)
+                microN = tentacleMicroCt(micros[j], macro)
+                cmds.parent(macroN, g)
+                cmds.parent(microN, g)
+            if i != 3:
+                macroFake = tentacleCt(parents = [macros[i], macros[i+1]], j=j, ns=ns, side=side)
+                cmds.parent(macroFake, g)
+            i = i+1
+            j = j+3
+        # clean up
+        if len(sel) == 2:
+            cmds.parentConstraint(sel[1], g)
+        p = plc.assetParent(sel[0])
+        cmds.parent(g, p)
+    else:
+        message('Select an object or 2')
+    
+
+def tentacleMacroCt(macro=''):
+    macroN = cn.null(obj=macro, suffix=plc.getUniqueName('__MACRO'))
+    cmds.pointConstraint(macro, macroN)
+    macroLoc = cn.locator(obj=macroN, ro='zxy', X=1, constrain=False, toSelection=True, suffix='__MACROLOC__')[0]
+    cmds.parent(macroLoc, macroN)
+    return macroN
+
+
+def tentacleMicroCt(micro='', macro=''):
+    print micro
+    macroN = cn.null(obj=micro, suffix=plc.getUniqueName('__MICRO'))
+    cmds.pointConstraint(macro, macroN)
+    macroLoc = cn.locator(obj=macroN, ro='zxy', X=1, constrain=False, toSelection=True, suffix='__MICROLOC__')[0]
+    cmds.parent(macroLoc, macroN)
+    cmds.pointConstraint(macro, macroN)
+    cmds.pointConstraint(macroLoc, micro)
+    return macroN
+
+def tentacleCt(parents = [], j=0, ns='', side=''):
+    # macro
+    macroN = cmds.group(n=plc.getUniqueName('__FAKEMACRO__'), em=True)
+    cmds.pointConstraint(parents[0], macroN, w=0.5, mo=False)
+    cmds.pointConstraint(parents[1], macroN, w=0.5, mo=False)
+    macroLoc = cn.locator(obj=macroN, ro='zxy', X=1.5, constrain=False, toSelection=True, suffix='__FAKEMACROLOC__', shape='diamond_ctrl')[0]
+    cmds.parent(macroLoc, macroN)
+    # micro 1
+    micro1 = cmds.group(n=plc.getUniqueName('__FAKEMICRO__'), em=True)
+    cmds.pointConstraint(parents[0], micro1, w=0.5, mo=False)
+    cmds.pointConstraint(macroLoc, micro1, w=0.5, mo=False)
+    microLoc1 = cn.locator(obj=micro1, ro='zxy', X=1, constrain=False, toSelection=True, suffix='__FAKEMICROLOC__')[0]
+    cmds.parent(microLoc1, micro1)
+    cmds.pointConstraint(microLoc1, tentacleMicro(ns=ns, side=side)[j+1])
+    # micro 2
+    if j+2 != 8:
+        micro2 = cmds.group(n=plc.getUniqueName('__FAKEMICRO__'), em=True)
+        cmds.pointConstraint(parents[1], micro2, w=0.5, mo=False)
+        cmds.pointConstraint(macroLoc, micro2, w=0.5, mo=False)
+        microLoc2 = cn.locator(obj=micro2, ro='zxy', X=1, constrain=False, toSelection=True, suffix='__FAKEMICRO__')[0]
+        cmds.parent(microLoc2, micro2)
+        cmds.pointConstraint(microLoc2, tentacleMicro(ns=ns, side=side)[j+2])
+        return macroN, micro1, micro2
+    return macroN, micro1
+    
+
+def tentacleMacro(ns='', side=''):
+    macros = [
+        '_tentacleBigSideDriver_mainIk4_ctrl',
+        '_tentacleBigSideDriver_mainIk3_ctrl',
+        '_tentacleBigSideDriver_mainIk2_ctrl',
+        '_tentacleBigSideDriver_mainIk1_ctrl'
+        ]
+    for item in macros:
+        i = macros.index(item)
+        macros.remove(item)
+        macros.insert(i, ns + ':' + side + item)
+    return macros
+
+
+
+def tentacleMicro(ns='', side=''):
+    micros = [
+        '_tentacleBigSide_mainIk10_ctrl',
+        '_tentacleBigSide_mainIk9_ctrl',
+        '_tentacleBigSide_mainIk8_ctrl',
+        '_tentacleBigSide_mainIk7_ctrl',
+        '_tentacleBigSide_mainIk6_ctrl',
+        '_tentacleBigSide_mainIk5_ctrl',
+        '_tentacleBigSide_mainIk4_ctrl',
+        '_tentacleBigSide_mainIk3_ctrl',
+        '_tentacleBigSide_mainIk2_ctrl',
+        '_tentacleBigSide_mainIk1_ctrl'
+        ]
+    for item in micros:
+        i = micros.index(item)
+        micros.remove(item)
+        micros.insert(i, ns + ':' + side + item)
+    return micros
+
+
 def fingerRig(name='', obj=[], size=1.0, aim=[1, 0, 0], u=[0, 1, 0], mlt=1.0, baseWorld=False, parentTarget=False):
     '''
     obj[0] = tip control
