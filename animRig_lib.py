@@ -408,6 +408,8 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             obj = sel[1]
             if len(sel) == 3:
                 prnt = sel[2]
+            else:
+                prnt = None
         else:
             cmds.warning('-- function requires 2 objects to be selected or fed as variables --')
             return None
