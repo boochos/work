@@ -96,6 +96,48 @@ def guideLine(obj1, obj2, name=''):
     cmds.parent(result[1], null)
     return null
 
+def tentacleMircoConstraints():
+    sel = cmds.ls(sl=1)
+    ns = sel[0].split(':')[0] + ':'
+    side = sel[0].split(':')[1][0]
+    head = ns + 'headSnap_main_ctrl'
+    tnt = [
+    ['_tentacleSmallDriver2_mainIk1_ctrl',
+    '_tentacleSmall2_mainIk2_ctrl',
+    '_tentacleSmall2_mainIk1_ctrl'],
+    ['_tentacleSmallDriver3_mainIk1_ctrl',
+    '_tentacleSmall3_mainIk2_ctrl',
+    '_tentacleSmall3_mainIk1_ctrl'],
+    ['_tentacleSmallDriver4_mainIk1_ctrl',
+    '_tentacleSmall4_mainIk2_ctrl',
+    '_tentacleSmall4_mainIk1_ctrl'],
+    ['_tentacleSmallDriver5_mainIk1_ctrl',
+    '_tentacleSmall5_mainIk2_ctrl',
+    '_tentacleSmall5_mainIk1_ctrl']
+    ]
+    for pair in tnt:
+        cmds.parentConstraint(ns + side + pair[0], ns + side + pair[1], mo=False)
+        cmds.parentConstraint(head, ns + side + pair[0], mo=True)
+        cmds.parentConstraint(head, ns + side + pair[2], mo=True)
+
+def tentacleMacroParents():
+    sel = cmds.ls(sl=1)
+    if len(sel) == 2:
+        ns = sel[0].split(':')[0]
+        macros = [
+        ':R_tentacleBigSideDriver_mainIk4_ctrl',
+        ':R_tentacleBigSideDriver_mainIk3_ctrl',
+        ':R_tentacleBigSideDriver_mainIk2_ctrl',
+        ':L_tentacleBigSideDriver_mainIk4_ctrl',
+        ':L_tentacleBigSideDriver_mainIk3_ctrl',
+        ':L_tentacleBigSideDriver_mainIk2_ctrl'
+        ]
+        for item in macros:
+            macro = ns + item
+            cmds.select([macro, sel[1]])
+            parentRig(bake=True, worldOrient=False)
+
+
 
 def tentacleRig():
     sel = cmds.ls(sl=1)
@@ -109,9 +151,9 @@ def tentacleRig():
         j = 0
         for macro in macros:
             if i != 3:
-                macroN = tentacleMacroCt(macro)
+                # macroN = tentacleMacroCt(macro)
+                # cmds.parent(macroN, g)
                 microN = tentacleMicroCt(micros[j], macro)
-                cmds.parent(macroN, g)
                 cmds.parent(microN, g)
             if i != 3:
                 macroFake = tentacleCt(parents = [macros[i], macros[i+1]], j=j, ns=ns, side=side)

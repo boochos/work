@@ -643,8 +643,8 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
                 if matchSet:
                     cs.matchCharSet(source=item, objs=[lc])
                 locs.append(lc)
-                p = plc.assetParent(item)
-                cmds.parent(lc, p)
+                prnt = plc.assetParent(item)
+                cmds.parent(lc, prnt)
             else:
                 message('Object is already constrained')
         return locs
