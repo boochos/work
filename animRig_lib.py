@@ -713,7 +713,7 @@ def parentRig(bake=True, worldOrient=True, *args):
     sel = cmds.ls(sl=True)
     if len(sel) == 2 or len(sel) == 3:
         # place rig nodes
-        offset = cn.locator(obj=sel[0], constrain=False, X=1, color=15, suffix='__OFFSET__', matchSet=False, shape='diamond_ctrl')[0]
+        offset = cn.locator(obj=sel[0], constrain=False, X=2, color=15, suffix='__OFFSET__', matchSet=False, shape='diamond_ctrl')[0]
         root = plc.null2(nllSuffix=plc.getUniqueName('__ROOT__'), obj=sel[1], orient=True)
         parent = root
         # group
