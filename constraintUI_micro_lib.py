@@ -216,7 +216,7 @@ class Action(object):
         self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
         # distribute keys
         cmds.rowLayout(numberOfColumns=2, ad2=1)
-        self.actionButton16 = cmds.button(self.actionButton16, label='Distribute keys every nth frame:', c=self.cmdAction, bgc=self.redD)
+        self.actionButton16 = cmds.button(self.actionButton16, label='Distribute keys every nth frame:', c=self.cmdAction, bgc=self.grey)
         self.actionField1 = cmds.intField(self.actionField1, cc=self.prefGet, v=5, w=50)
         cmds.setParent('..')
         ann = 'Destructive Mode. Removes keys that dont fall on the same frame.'
@@ -224,7 +224,7 @@ class Action(object):
         self.s1 = cmds.separator(height=self.sepH, style=self.sepStl)
         # rotate order
         cmds.rowLayout(numberOfColumns=3, ad3=1)
-        self.actionButton7 = cmds.button(self.actionButton7, label='Transform Rotate Order', c=self.cmdAction, bgc=self.redD, ann='Transform animation to different rotation order.')
+        self.actionButton7 = cmds.button(self.actionButton7, label='Transform Rotate Order', c=self.cmdAction, bgc=self.grey, ann='Transform animation to different rotation order.')
         self.actionButton18 = cmds.button(self.actionButton18, label='Query', c=self.cmdAction, ann='Selects objects current Rotate Order')
         self.opt1 = cmds.optionMenuGrp(label='', cw2=[0, 40], cat=(1, 'left', 0), ann='Select rotate order to bake to.')
         self.ro = ['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']

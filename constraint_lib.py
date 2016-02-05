@@ -706,7 +706,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         cmds.xform(loc, roo=ro)
         loc = cmds.rename(loc, plc.getUniqueName('locator' + suffix))
         locs.append(loc)
-    hj.hijackAttrs(locs[0], locs[0], 'overrideColor', 'color', set=True, default=None)
+    # hj.hijackAttrs(locs[0], locs[0], 'overrideColor', 'color', set=True, default=None)
     return locs
 
 
@@ -715,7 +715,7 @@ def objColorHijack(obj=''):
     cmds.setAttr(obj + '.overrideColor', 1)
 
 
-def locatorOnSelection(ro='zxy', X=1.0, constrain=True, toSelection=False, color=15):
+def locatorOnSelection(ro='zxy', X=1.0, constrain=True, toSelection=False, color=15, matchSet=False):
     sel = cmds.ls(sl=True)
     locs = []
     if len(sel) != 0:
@@ -724,7 +724,7 @@ def locatorOnSelection(ro='zxy', X=1.0, constrain=True, toSelection=False, color
                 obj=item, ro=ro, X=X, constrain=constrain, toSelection=toSelection, color=color)[0])
     else:
         locs.append(
-            locator(ro=ro, X=X, constrain=False, toSelection=toSelection, color=color))
+            locator(ro=ro, X=X, constrain=False, toSelection=toSelection, color=color, matchSet=matchSet))
     return locs
 
 
