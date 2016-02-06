@@ -174,8 +174,8 @@ def importCurveShape(name='', path='', codeScale=False, overRide=False):
                     cvInfo = shapeScale(shape=inFile, scale=curveScale)
                     # Shape the curve
                     if overRide:
-                        cmds.setAttr(shapeNode + '.overrideEnabled', 1)
-                        cmds.setAttr(shapeNode + '.overrideColor', overRide)
+                        cmds.setAttr(sel + '.overrideEnabled', 1)
+                        cmds.setAttr(sel + '.overrideColor', overRide)
                     if len(cvInfo) == len(cmds.getAttr(shapeNode + '.cv[*]')):
                         for i in range(0, len(cvInfo), 1):
                             cmds.xform(shapeNode + '.cv[' + str(i) + ']', os=True, t=cvInfo[i])
