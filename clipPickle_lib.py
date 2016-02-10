@@ -260,6 +260,17 @@ class Obj(Attribute):
                     a = Attribute(self.name, attr, poseOnly=self.poseOnly)
                     a.get()
                     self.attributes.append(a)
+        settable = cmds.listAttr(self.name, cb=True) # future fix, make part of one pass, current code copied from above
+        if settable:
+            for attr in settable:
+                if attr not in self.attributesDriven:
+                    # hacky -- if attr.attr format, remove first attr
+                    if '.' in attr:
+                        attr = attr.split('.')[1]
+                    a = Attribute(self.name, attr, poseOnly=self.poseOnly)
+                    a.get()
+                    self.attributes.append(a)
+        
 
     def getBakedAttribute(self):
         if self.attributesDriven:
