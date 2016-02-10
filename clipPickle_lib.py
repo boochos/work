@@ -130,7 +130,7 @@ class Key():
 
 class Attribute(Key):
 
-    def __init__(self, obj='', attr='', offset=0, auto=True, poseOnly=False):
+    def __init__(self, obj='', attr='', offset=0, auto=True, poseOnly=False, settable=False):
         '''
         add get/put keys from Key class to this one
         '''
@@ -146,6 +146,7 @@ class Attribute(Key):
         self.postInfinity = None
         self.weightedTangents = None
         self.baked = False
+        self.settable = settable
         self.auto = auto
         self.poseOnly = poseOnly
         '''
@@ -260,22 +261,21 @@ class Obj(Attribute):
                     a = Attribute(self.name, attr, poseOnly=self.poseOnly)
                     a.get()
                     self.attributes.append(a)
-        settable = cmds.listAttr(self.name, cb=True) # future fix, make part of one pass, current code copied from above
+        settable = cmds.listAttr(self.name, cb=True)  # future fix, make part of one pass, current code copied from above
         if settable:
             for attr in settable:
                 if attr not in self.attributesDriven:
                     # hacky -- if attr.attr format, remove first attr
                     if '.' in attr:
                         attr = attr.split('.')[1]
-                    a = Attribute(self.name, attr, poseOnly=self.poseOnly)
+                    a = Attribute(self.name, attr, poseOnly=self.poseOnly, settable=True)
                     a.get()
                     self.attributes.append(a)
-        
 
     def getBakedAttribute(self):
         if self.attributesDriven:
             # turn off UI
-            uiEnable()
+            # uiEnable()
             # create frame list from frame range
             min = cmds.playbackOptions(q=True, ast=True)
             max = cmds.playbackOptions(q=True, aet=True)
@@ -310,7 +310,7 @@ class Obj(Attribute):
             # restore current frame
             cmds.currentTime(current)
             # turn on UI
-            uiEnable()
+            # uiEnable()
         else:
             # message('nothing to bake', maya=True)
             pass
@@ -404,10 +404,17 @@ class Layer(Obj):
         self.getStartEndLength()
 
     def getObjects(self):
+        num = len(self.sel)
+        i = 1
+        uiEnable()
         for obj in self.sel:
+            message(str(i) + ' of ' + str(num) + ' --  ' + obj, maya=True)
+            cmds.refresh(f=1)
             a = Obj(obj, poseOnly=self.poseOnly)
             a.get()
             self.objects.append(a)
+            i = i + 1
+        uiEnable()
 
     def getStartEndLength(self):
         frames = []
