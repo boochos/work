@@ -354,6 +354,7 @@ def buildSplines(*args):
     '''\n
     Build splines for quadraped character\n
     '''
+
     face = None
     check = cmds.checkBox('atom_rat_faceCheck', query=True, v=True)
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
@@ -377,7 +378,7 @@ def buildSplines(*args):
         '''
         cmds.addAttr(obj, ln=attr, attributeType='enum', en='OPTNS')
         cmds.setAttr(obj + '.' + attr, cb=True)
-
+    """
     # Tail
     tailRig = splnFk.SplineFK('tail', 'tail_01_JNT', 'tail_03_JNT', 'mid',
                               controllerSize=3, rootParent='PelvisAttch_CnstGp', parent1='master_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
@@ -457,3 +458,92 @@ def buildSplines(*args):
     cmds.setAttr(neckAttr + '.VctrMidTwstCstrntSE_W', 0.5)
     cmds.setAttr(neckName + '_S_IK_Cntrl.LockOrientOffOn', 0)
     cmds.setAttr(neckName + '_E_IK_Cntrl.LockOrientOffOn', 1)
+    """
+    # WINGS
+    # In #
+    wingIn = 'wingIn'
+    cog = place.Controller(wingIn, 'wing_L_jnt', False, 'facetZup_ctrl', X * 4, 12, 8, 1, (0, 0, 1), True, True)
+    CogCt = cog.createController()
+    place.setRotOrder(CogCt[0], 2, True)
+    cmds.parent(CogCt[0], '___CONTROLS')
+    cmds.parentConstraint('front_paw_L_Grp', CogCt[0], mo=True)
+    cmds.parentConstraint(CogCt[4], 'wing_L_jnt', mo=True)
+
+    # wingIn L
+    wingInName = 'wingIn_L'
+    wingInSize = X
+    wingInDistance = X * 7
+    wingInFalloff = 0
+    wingInPrnt = 'wing_L_jnt'
+    wingInStrt = 'wing_L_jnt'
+    wingInEnd = 'spine_00_JNT'
+    wingInAttr = 'wingIn'
+    wingIn = ['wingIn_L_jnt_01', 'wingIn_L_jnt_09']
+    # build spline
+    SplineOpts(wingInName, wingInSize, wingInDistance, wingInFalloff)
+    cmds.select(wingIn)
+    stage.splineStage(4)
+    # assemble
+    OptAttr(wingInAttr, 'WingInSpline')
+    cmds.parentConstraint(wingInPrnt, wingInName + '_IK_CtrlGrp', mo=True)
+    cmds.parentConstraint(wingInStrt, wingInName + '_S_IK_PrntGrp', mo=True)
+    cmds.parentConstraint(wingInEnd, wingInName + '_E_IK_PrntGrp', mo=True)
+    place.hijackCustomAttrs(wingInName + '_IK_CtrlGrp', wingInAttr)
+    # set options
+    cmds.setAttr(wingInAttr + '.' + wingInName + 'Vis', 0)
+    cmds.setAttr(wingInAttr + '.' + wingInName + 'Root', 0)
+    cmds.setAttr(wingInAttr + '.' + wingInName + 'Stretch', 1)
+    cmds.setAttr(wingInAttr + '.ClstrVis', 1)
+    cmds.setAttr(wingInAttr + '.ClstrMidIkBlend', 1)
+    cmds.setAttr(wingInAttr + '.ClstrMidIkSE_W', 0.5)
+    cmds.setAttr(wingInAttr + '.VctrVis', 0)
+    cmds.setAttr(wingInAttr + '.VctrMidIkBlend', 1)
+    cmds.setAttr(wingInAttr + '.VctrMidIkSE_W', 0.5)
+    cmds.setAttr(wingInAttr + '.VctrMidTwstCstrnt', 0)
+    cmds.setAttr(wingInAttr + '.VctrMidTwstCstrntSE_W', 0.5)
+    cmds.setAttr(wingInName + '_S_IK_Cntrl.LockOrientOffOn', 0)
+    cmds.setAttr(wingInName + '_E_IK_Cntrl.LockOrientOffOn', 1)
+
+    # Out #
+    wingIn = 'wingOut'
+    cog = place.Controller(wingIn, 'wing_L_jnt', False, 'facetZup_ctrl', X * 4.5, 12, 8, 1, (0, 0, 1), True, True)
+    CogCt = cog.createController()
+    place.setRotOrder(CogCt[0], 2, True)
+    cmds.parent(CogCt[0], '___CONTROLS')
+    cmds.parentConstraint('front_paw_L_Grp', CogCt[0], mo=True)
+    cmds.parentConstraint(CogCt[4], 'wing_L_jnt', mo=True)
+
+    # wingOut L
+    wingOutName = 'wingOut_L'
+    wingOutSize = X
+    wingOutDistance = X * 7
+    wingOutFalloff = 0
+    wingOutPrnt = 'wing_L_jnt'
+    wingOutStrt = 'wing_L_jnt'
+    wingOutEnd = 'hand_finger4_03_L_JNT'
+    wingOutAttr = 'wingOut'
+    wingOut = ['wingOut_L_jnt_01', 'wingOut_L_jnt_09']
+    # build spline
+    SplineOpts(wingOutName, wingOutSize, wingOutDistance, wingOutFalloff)
+    cmds.select(wingOut)
+    stage.splineStage(4)
+    # assemble
+    OptAttr(wingOutAttr, 'WingInSpline')
+    cmds.parentConstraint(wingOutPrnt, wingOutName + '_IK_CtrlGrp', mo=True)
+    cmds.parentConstraint(wingOutStrt, wingOutName + '_S_IK_PrntGrp', mo=True)
+    cmds.parentConstraint(wingOutEnd, wingOutName + '_E_IK_PrntGrp', mo=True)
+    place.hijackCustomAttrs(wingOutName + '_IK_CtrlGrp', wingOutAttr)
+    # set options
+    cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Vis', 0)
+    cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Root', 0)
+    cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Stretch', 1)
+    cmds.setAttr(wingOutAttr + '.ClstrVis', 1)
+    cmds.setAttr(wingOutAttr + '.ClstrMidIkBlend', 1)
+    cmds.setAttr(wingOutAttr + '.ClstrMidIkSE_W', 0.5)
+    cmds.setAttr(wingOutAttr + '.VctrVis', 0)
+    cmds.setAttr(wingOutAttr + '.VctrMidIkBlend', 1)
+    cmds.setAttr(wingOutAttr + '.VctrMidIkSE_W', 0.5)
+    cmds.setAttr(wingOutAttr + '.VctrMidTwstCstrnt', 0)
+    cmds.setAttr(wingOutAttr + '.VctrMidTwstCstrntSE_W', 0.5)
+    cmds.setAttr(wingOutName + '_S_IK_Cntrl.LockOrientOffOn', 0)
+    cmds.setAttr(wingOutName + '_E_IK_Cntrl.LockOrientOffOn', 1)

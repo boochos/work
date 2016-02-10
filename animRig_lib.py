@@ -96,47 +96,48 @@ def guideLine(obj1, obj2, name=''):
     cmds.parent(result[1], null)
     return null
 
+
 def tentacleMircoConstraints():
     sel = cmds.ls(sl=1)
     ns = sel[0].split(':')[0] + ':'
     side = sel[0].split(':')[1][0]
     head = ns + 'headSnap_main_ctrl'
     tnt = [
-    ['_tentacleSmallDriver2_mainIk1_ctrl',
-    '_tentacleSmall2_mainIk2_ctrl',
-    '_tentacleSmall2_mainIk1_ctrl'],
-    ['_tentacleSmallDriver3_mainIk1_ctrl',
-    '_tentacleSmall3_mainIk2_ctrl',
-    '_tentacleSmall3_mainIk1_ctrl'],
-    ['_tentacleSmallDriver4_mainIk1_ctrl',
-    '_tentacleSmall4_mainIk2_ctrl',
-    '_tentacleSmall4_mainIk1_ctrl'],
-    ['_tentacleSmallDriver5_mainIk1_ctrl',
-    '_tentacleSmall5_mainIk2_ctrl',
-    '_tentacleSmall5_mainIk1_ctrl']
+        ['_tentacleSmallDriver2_mainIk1_ctrl',
+         '_tentacleSmall2_mainIk2_ctrl',
+         '_tentacleSmall2_mainIk1_ctrl'],
+        ['_tentacleSmallDriver3_mainIk1_ctrl',
+         '_tentacleSmall3_mainIk2_ctrl',
+         '_tentacleSmall3_mainIk1_ctrl'],
+        ['_tentacleSmallDriver4_mainIk1_ctrl',
+         '_tentacleSmall4_mainIk2_ctrl',
+         '_tentacleSmall4_mainIk1_ctrl'],
+        ['_tentacleSmallDriver5_mainIk1_ctrl',
+         '_tentacleSmall5_mainIk2_ctrl',
+         '_tentacleSmall5_mainIk1_ctrl']
     ]
     for pair in tnt:
         cmds.parentConstraint(ns + side + pair[0], ns + side + pair[1], mo=False)
         cmds.parentConstraint(head, ns + side + pair[0], mo=True)
         cmds.parentConstraint(head, ns + side + pair[2], mo=True)
 
+
 def tentacleMacroParents():
     sel = cmds.ls(sl=1)
     if len(sel) == 2:
         ns = sel[0].split(':')[0]
         macros = [
-        ':R_tentacleBigSideDriver_mainIk4_ctrl',
-        ':R_tentacleBigSideDriver_mainIk3_ctrl',
-        ':R_tentacleBigSideDriver_mainIk2_ctrl',
-        ':L_tentacleBigSideDriver_mainIk4_ctrl',
-        ':L_tentacleBigSideDriver_mainIk3_ctrl',
-        ':L_tentacleBigSideDriver_mainIk2_ctrl'
+            ':R_tentacleBigSideDriver_mainIk4_ctrl',
+            ':R_tentacleBigSideDriver_mainIk3_ctrl',
+            ':R_tentacleBigSideDriver_mainIk2_ctrl',
+            ':L_tentacleBigSideDriver_mainIk4_ctrl',
+            ':L_tentacleBigSideDriver_mainIk3_ctrl',
+            ':L_tentacleBigSideDriver_mainIk2_ctrl'
         ]
         for item in macros:
             macro = ns + item
             cmds.select([macro, sel[1]])
             parentRig(bake=True, worldOrient=False)
-
 
 
 def tentacleRig():
@@ -156,10 +157,10 @@ def tentacleRig():
                 microN = tentacleMicroCt(micros[j], macro)
                 cmds.parent(microN, g)
             if i != 3:
-                macroFake = tentacleCt(parents = [macros[i], macros[i+1]], j=j, ns=ns, side=side)
+                macroFake = tentacleCt(parents=[macros[i], macros[i + 1]], j=j, ns=ns, side=side)
                 cmds.parent(macroFake, g)
-            i = i+1
-            j = j+3
+            i = i + 1
+            j = j + 3
         # clean up
         if len(sel) == 2:
             cmds.parentConstraint(sel[1], g)
@@ -167,7 +168,7 @@ def tentacleRig():
         cmds.parent(g, p)
     else:
         message('Select an object or 2')
-    
+
 
 def tentacleMacroCt(macro=''):
     macroN = cn.null(obj=macro, suffix=plc.getUniqueName('__MACRO'))
@@ -187,7 +188,8 @@ def tentacleMicroCt(micro='', macro=''):
     cmds.pointConstraint(macroLoc, micro)
     return macroN
 
-def tentacleCt(parents = [], j=0, ns='', side=''):
+
+def tentacleCt(parents=[], j=0, ns='', side=''):
     # macro
     macroN = cmds.group(n=plc.getUniqueName('__FAKEMACRO__'), em=True)
     cmds.pointConstraint(parents[0], macroN, w=0.5, mo=False)
@@ -200,18 +202,18 @@ def tentacleCt(parents = [], j=0, ns='', side=''):
     cmds.pointConstraint(macroLoc, micro1, w=0.5, mo=False)
     microLoc1 = cn.locator(obj=micro1, ro='zxy', X=1, constrain=False, toSelection=True, suffix='__FAKEMICROLOC__')[0]
     cmds.parent(microLoc1, micro1)
-    cmds.pointConstraint(microLoc1, tentacleMicro(ns=ns, side=side)[j+1])
+    cmds.pointConstraint(microLoc1, tentacleMicro(ns=ns, side=side)[j + 1])
     # micro 2
-    if j+2 != 8:
+    if j + 2 != 8:
         micro2 = cmds.group(n=plc.getUniqueName('__FAKEMICRO__'), em=True)
         cmds.pointConstraint(parents[1], micro2, w=0.5, mo=False)
         cmds.pointConstraint(macroLoc, micro2, w=0.5, mo=False)
         microLoc2 = cn.locator(obj=micro2, ro='zxy', X=1, constrain=False, toSelection=True, suffix='__FAKEMICRO__')[0]
         cmds.parent(microLoc2, micro2)
-        cmds.pointConstraint(microLoc2, tentacleMicro(ns=ns, side=side)[j+2])
+        cmds.pointConstraint(microLoc2, tentacleMicro(ns=ns, side=side)[j + 2])
         return macroN, micro1, micro2
     return macroN, micro1
-    
+
 
 def tentacleMacro(ns='', side=''):
     macros = [
@@ -219,13 +221,12 @@ def tentacleMacro(ns='', side=''):
         '_tentacleBigSideDriver_mainIk3_ctrl',
         '_tentacleBigSideDriver_mainIk2_ctrl',
         '_tentacleBigSideDriver_mainIk1_ctrl'
-        ]
+    ]
     for item in macros:
         i = macros.index(item)
         macros.remove(item)
         macros.insert(i, ns + ':' + side + item)
     return macros
-
 
 
 def tentacleMicro(ns='', side=''):
@@ -240,7 +241,7 @@ def tentacleMicro(ns='', side=''):
         '_tentacleBigSide_mainIk3_ctrl',
         '_tentacleBigSide_mainIk2_ctrl',
         '_tentacleBigSide_mainIk1_ctrl'
-        ]
+    ]
     for item in micros:
         i = micros.index(item)
         micros.remove(item)
@@ -443,6 +444,7 @@ def inverseDir(arry=[]):
 
 def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True, inverseA=False, inverseU=False):
     locs = []
+    color = 24
     if not target:
         sel = cmds.ls(sl=1)  # order = target,base
         if len(sel) == 2 or len(sel) == 3:
@@ -476,7 +478,7 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             else:
                 offsetU = offset
             # place locator at locale A and constrain
-            locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=1.4, color=28, suffix='__AIM__', matchSet=False, shape='diamond_ctrl')[0]
+            locA = cn.locator(obj=target, ro='zxy', constrain=True, toSelection=True, X=1.4, color=color, suffix='__AIM__', matchSet=False, shape='diamond_ctrl')[0]
             locs.append(locA)
             # match keys
             cn.matchKeyedFrames(A=target, B=locA, subtractive=True)
@@ -486,7 +488,7 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             locB = cn.controllerToLocator(obj, p=False, r=True, timeLine=False, sim=False, size=1, suffix='__BASE__', matchSet=False, shape='loc_ctrl')[0]
             locs.append(locB)
             # place up locator on location B
-            locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=1.2, color=29, suffix='__UP__', matchSet=False, shape='loc_ctrl')[0]
+            locUp = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=1.0, color=color, suffix='__UP__', matchSet=False, shape='loc_ctrl')[0]
             locs.append(locUp)
             # print locUp
             # parent up locator, move up in ty, unparent
@@ -499,7 +501,7 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
             cn.matchKeyedFrames(A=target, B=locUp, subtractive=True)
             cn.bakeConstrained(locUp, removeConstraint=True, timeLine=False, sim=False)
             # aim offset
-            locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=0.5, color=15, suffix='__OFFSET__', matchSet=False, shape='loc_ctrl')[0]
+            locAim = cn.locator(obj=obj, ro='zxy', constrain=False, toSelection=False, X=0.5, color=color, suffix='__OFFSET__', matchSet=False, shape='loc_ctrl')[0]
             locs.append(locAim)
             cmds.parent(locAim, locB)
             cmds.setAttr(locAim + aAxs, offsetA)
@@ -530,6 +532,12 @@ def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=
                 # cmds.parentConstraint(prnt, g, mo=True)
             else:
                 lockIt(g)
+            # guideLines
+            guides = cmds.group(name=plc.getUniqueName('__guides__'), em=True)
+            lockIt(guides)
+            cmds.parent(guides, g)
+            cmds.parent(guideLine(locA, locUp, name=plc.getUniqueName(g + '_guides__')), guides)
+            cmds.parent(guideLine(locA, locAim, name=plc.getUniqueName(g + '_guides__')), guides)
             #
             cs.matchCharSet(obj, locs)
             cmds.select(locAim)
@@ -552,6 +560,7 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
     3 = up
     '''
     # store selection
+    color = 10
     sel = cmds.ls(sl=True)
     selectedMaster = None
     if sel:
@@ -567,13 +576,13 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
         uAxs = uAxs[u.index(1.0)]
         # place locators on selection
         locs = []
-        coreL = cn.locator(obj=sel, constrain=False, X=1, color=15, suffix='__CORE__', shape='diamond_ctrl', matchSet=False)[0]
+        coreL = cn.locator(obj=sel, constrain=False, X=1, color=color, suffix='__CORE__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(coreL)
-        rootL = cn.locator(obj=sel, constrain=False, X=0.5, color=15, suffix='__ROOT__', shape='diamond_ctrl', matchSet=False)[0]
+        rootL = cn.locator(obj=sel, constrain=False, X=0.5, color=color, suffix='__ROOT__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(rootL)
-        aimL = cn.locator(obj=sel, constrain=False, X=0.5, color=28, suffix='__AIM__', shape='diamond_ctrl', matchSet=False)[0]
+        aimL = cn.locator(obj=sel, constrain=False, X=0.5, color=color, suffix='__AIM__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(aimL)
-        upL = cn.locator(obj=sel, constrain=False, X=0.25, color=29, suffix='__UP__', shape='diamond_ctrl', matchSet=False)[0]
+        upL = cn.locator(obj=sel, constrain=False, X=0.25, color=color, suffix='__UP__', shape='diamond_ctrl', matchSet=False)[0]
         locs.append(upL)
         upG = cn.null(obj=sel, suffix=plc.getUniqueName('__UP_GRP'))
         # heirarchy, prep for offsets
@@ -623,16 +632,16 @@ def aimPivotRig(aim=(0, 0, 1), u=(0, 1, 0), offset=20.0, masterControl=False, ma
         # add master control if necessary
         if masterControl:
             if masterPosition == 0:
-                masterL = cn.locator(obj=coreL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
+                masterL = cn.locator(obj=coreL, constrain=False, X=1.5, color=color, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(coreL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 1:
-                masterL = cn.locator(obj=rootL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
+                masterL = cn.locator(obj=rootL, constrain=False, X=1.5, color=color, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(rootL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 2:
-                masterL = cn.locator(obj=aimL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
+                masterL = cn.locator(obj=aimL, constrain=False, X=1.5, color=color, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(aimL, masterL, mo=True, sr=('x', 'y', 'z'))
             if masterPosition == 3:
-                masterL = cn.locator(obj=upL, constrain=False, X=1.5, color=15, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
+                masterL = cn.locator(obj=upL, constrain=False, X=1.5, color=color, suffix='MASTER__', shape='loc_ctrl', matchSet=False)[0]
                 cmds.parentConstraint(upL, masterL, mo=True, sr=('x', 'y', 'z'))
             # bake master
             cmds.parent(masterL, masterGrp)
@@ -710,10 +719,11 @@ def parentRig(bake=True, worldOrient=True, *args):
     sometimes adds 2 pairblends, needs to be fixed as it breaks active char set key ticks.
     '''
     # store selection
+    color = 22
     sel = cmds.ls(sl=True)
     if len(sel) == 2 or len(sel) == 3:
         # place rig nodes
-        offset = cn.locator(obj=sel[0], constrain=False, X=2, color=15, suffix='__OFFSET__', matchSet=False, shape='diamond_ctrl')[0]
+        offset = cn.locator(obj=sel[0], constrain=False, X=2, color=color, suffix='__OFFSET__', matchSet=False, shape='diamond_ctrl')[0]
         root = plc.null2(nllSuffix=plc.getUniqueName('__ROOT__'), obj=sel[1], orient=True)
         parent = root
         # group
@@ -730,10 +740,10 @@ def parentRig(bake=True, worldOrient=True, *args):
             cmds.parent(ornt, root)
             plc.setChannels(ornt, [True, False], [False, True], [True, False], [True, False, False])
             parent = ornt
-            spin = cn.locator(obj=ornt, constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
-            cn.putControlSize(spin, cn.getControlSize(sel[1]) * 0.75)
+            spin = cn.locator(obj=ornt, constrain=False, X=0.75, color=color, suffix='__SPIN__', matchSet=False)[0]
+            cn.putControlSize(spin, cn.getControlSize(sel[1]))
         else:
-            spin = cn.locator(obj=sel[1], constrain=False, X=0.75, color=29, suffix='__SPIN__', matchSet=False)[0]
+            spin = cn.locator(obj=sel[1], constrain=False, X=1, color=color, suffix='__SPIN__', matchSet=False)[0]
         # return None
         # heirarchy
         cmds.parent(offset, spin)
@@ -753,7 +763,7 @@ def parentRig(bake=True, worldOrient=True, *args):
                 cmds.delete(con)
         # return None
         # create final rig constraints
-        cn.constrainEnabled(offset, sel[0], mo=True)
+        cn.constrainEnabled(offset, sel[0], mo=False)
         # return None
         # parent, rig to group
         cmds.parent(root, g)

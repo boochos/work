@@ -151,6 +151,9 @@ def importCurveShape(name='', path='', codeScale=False, overRide=False):
     Description :Imports a curve shape based on the path and name info
     Notes       :Function expects a .txt file
     '''
+    colors = {'darkRed': 4, 'blue': 6, 'brown': 10, 'red': 13,
+              'yellow': 17, 'lightBlue': 18, 'pink': 20, 'lightYellow': 22,
+              'green': 23, 'lightBrown': 24, 'purple': 30, 'burgundy': 31}
     selection = cmds.ls(selection=True, tr=True)
     # print path, name
     #path = os.path.join(path, name + '.txt')

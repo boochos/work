@@ -185,7 +185,7 @@ class CSUI(object):
             cmds.refresh()
             time.sleep(0.05)
             cmds.optionMenuGrp(self.actionColumn.opt1, e=True, ebg=False, nbg=True, bgc=self.actionColumn.neutral)
-            message('Current rotate order:  ' + self.actionColumn.ro[ro-1].upper(), maya=True)
+            message('Current rotate order:  ' + self.actionColumn.ro[ro - 1].upper(), maya=True)
         else:
             cmds.warning('-- Select 1 object --')
 

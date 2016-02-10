@@ -550,7 +550,7 @@ def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, u
         cmds.warning('Select constrained object(s)')
 
 
-def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1, uiOff=True, color=15, suffix='__BAKE__', matchSet=True, shape='loc_ctrl'):
+def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1, uiOff=True, color=30, suffix='__BAKE__', matchSet=True, shape='loc_ctrl'):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -653,7 +653,7 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
             'Select an object. Selection will be constrained to a locator with the same anim.')
 
 
-def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=15, matchSet=True, shape='loc_ctrl'):
+def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffix='__PLACE__', color=30, matchSet=True, shape='loc_ctrl'):
     '''
     matchSet only if locators hierarchy wont be edited. The connection forces the attributes to stay at their pre-edited value 
     '''
@@ -681,7 +681,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
             roo = 0
         else:
             roo = cmds.getAttr(obj + '.rotateOrder')
-        if '.' in obj: # component selection
+        if '.' in obj:  # component selection
             t = cmds.pointPosition(obj)
             r = 0.0, 0.0, 0.0
             print t
@@ -715,13 +715,13 @@ def objColorHijack(obj=''):
     cmds.setAttr(obj + '.overrideColor', 1)
 
 
-def locatorOnSelection(ro='zxy', X=1.0, constrain=True, toSelection=False, color=15, matchSet=False):
+def locatorOnSelection(ro='zxy', X=1.0, constrain=True, toSelection=False, color=30, matchSet=False):
     sel = cmds.ls(sl=True)
     locs = []
     if len(sel) != 0:
         for item in sel:
             locs.append(locator(
-                obj=item, ro=ro, X=X, constrain=constrain, toSelection=toSelection, color=color)[0])
+                obj=item, ro=ro, X=X, constrain=constrain, toSelection=toSelection, color=color, matchSet=matchSet)[0])
     else:
         locs.append(
             locator(ro=ro, X=X, constrain=False, toSelection=toSelection, color=color, matchSet=matchSet))
