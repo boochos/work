@@ -32,6 +32,10 @@ class Get():
             self.keyEnd = sel[1]
             self.selection = True
 
+    def selRangeRecover(self):
+        # after baking sel range gets lost, investigate
+        sel = cmds.timeControl('timeControl1', ra=[self.keyStart, self.keyEnd])
+
     def setStartEnd(self):
         if self.selStart != 0:
             self.start = self.selStart

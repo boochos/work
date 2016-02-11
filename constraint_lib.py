@@ -522,6 +522,10 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
     if removeConstraint:
         deleteList(cons)
         deleteAttrList(blndAttr)
+    
+    # recover range
+    if gRange.selection:
+        gRange.selRangeRecover()
     '''
     if sparseKeys:
         if keyedOrig:

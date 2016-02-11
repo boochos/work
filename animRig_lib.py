@@ -444,7 +444,7 @@ def inverseDir(arry=[]):
 
 def aimRig(target=None, obj=None, aim=[1, 0, 0], u=[0, 1, 0], tipOffset=1.0, mo=False, bake=True, inverseA=False, inverseU=False):
     locs = []
-    color = 24
+    color = 10
     if not target:
         sel = cmds.ls(sl=1)  # order = target,base
         if len(sel) == 2 or len(sel) == 3:
@@ -719,7 +719,7 @@ def parentRig(bake=True, worldOrient=True, *args):
     sometimes adds 2 pairblends, needs to be fixed as it breaks active char set key ticks.
     '''
     # store selection
-    color = 22
+    color = 24
     sel = cmds.ls(sl=True)
     if len(sel) == 2 or len(sel) == 3:
         # place rig nodes

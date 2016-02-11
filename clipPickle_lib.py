@@ -218,7 +218,10 @@ class Attribute(Key):
                     # TODO: on clicking clip, find potential problems, try and find a remedy
                     # TODO: replace parts of clip feature, manual value attr change
                     # TODO: auto refresh ui for new files
-                    cmds.setAttr(self.obj + '.' + self.name, self.value)
+                    try:
+                        cmds.setAttr(self.obj + '.' + self.name, self.value)
+                    except:
+                        message('setAttr failed on  ' + self.obj + '.' + self.name)
 
     def putCurveAttrs(self):
         # need to update curve name, isnt the same as stored, depends on how
@@ -647,12 +650,11 @@ def clipSave(name='clipTemp', comment='', poseOnly=False, temp=False):
     clp = Clip(name=name, comment=comment, poseOnly=poseOnly)
     clp.get()
     # print clp.name
-    # fileObject = open(path, 'wb')
-    # pickle.dump(clp, fileObject)
-    # fileObject.close()
-    #
     fileObjectJSON = open(path, 'wb')
-    json.dump(clp, fileObjectJSON, default=to_json, indent=1)
+    # pretty encoding
+    # json.dump(clp, fileObjectJSON, default=to_json, indent=1)
+    # compact encoding
+    json.dump(clp, fileObjectJSON, default=to_json, separators=(',', ':'))
     fileObjectJSON.close()
 
 
@@ -660,10 +662,6 @@ def clipOpen(path=''):
     '''
     open clip form file
     '''
-    # fileObject = open(path, 'r')
-    # clp = pickle.load(fileObject)
-    # fileObject.close()
-    #
     fileObjectJSON = open(path, 'r')
     clpJSON = json.load(fileObjectJSON, object_hook=from_json)
     # print clpJSON.__dict__, '   reconstructed'
