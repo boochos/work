@@ -1,11 +1,97 @@
 import maya.cmds as cmds
 import maya.mel as mel
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaAnim as OpenMayaAnim
 import time
 import getpass
 import os
 import platform
 import json
 # TODO: add new class to deal with multi ref selections
+
+def openMayaGetAnimCurve(obj='', attr=''):
+    selectionList = OpenMaya.MSelectionList()
+    selectionList.add( name )
+    node = OpenMaya.MObject()
+    selectionList.getDependNode( 0, node )
+    plug = node.findPlug(attr)
+
+'''
+# https://nccastaff.bournemouth.ac.uk/jmacey/RobTheBloke/www/research/maya/mfnanimcurve.htm
+# import the OpenMaya module
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaAnim as OpenMayaAnim
+# function that returns a node object given a name
+def nameToNode( name ):
+    selectionList = OpenMaya.MSelectionList()
+    selectionList.add( name )
+    node = OpenMaya.MObject()
+    selectionList.getDependNode( 0, node )
+    return node
+# function that finds a plug given a node object and plug name
+def nameToNodePlug( attrName, nodeObject ):
+    depNodeFn = OpenMaya.MFnDependencyNode( nodeObject )
+    attrObject = depNodeFn.attribute( attrName )
+    plug = OpenMaya.MPlug( nodeObject, attrObject )
+    return plug
+
+# Find loc node
+loc = nameToNode( "locator1" )
+# Print the translateX value
+plug = nameToNodePlug( "translateX", loc )
+print "Plug name: %s" % plug.name()
+print "Plug value %g" % plug.asDouble()
+con = OpenMaya.MPlugArray()
+plug.connectedTo(con, True, False)
+for c in con:
+    n = c.node()
+    if n:
+        if n.hasFn(OpenMaya.MFn.kAnimCurve):
+            print True
+
+
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaAnim as OpenMayaAnim
+
+animCurveName = 'locator1_translateX'
+
+selectionList = OpenMaya.MSelectionList()
+selectionList.add( animCurveName )
+dependNode = OpenMaya.MObject()
+selectionList.getDependNode( 0, dependNode )
+animCurveNode = OpenMayaAnim.MFnAnimCurve( dependNode )
+print animCurveNode.name
+
+tangentAngle = OpenMaya.MAngle()
+scriptUtil = OpenMaya.MScriptUtil()
+curveWeightPtr = scriptUtil.asDoublePtr()
+
+#animCurveNode.getTangent( 1, tangentAngle, curveWeightPtr, True) # inTangent
+animCurveNode.getTangent( 1, tangentAngle, curveWeightPtr, False) # no inTangemt, get outTangent
+print animCurveNode.numKeys() # num of keys
+print animCurveNode.time(1).value() # time
+print tangentAngle.asDegrees() # tangent angle
+print scriptUtil.getDouble( curveWeightPtr ) # tangent weight
+
+
+obj = obj
+attr = attr
+frame = frame
+value = None
+crv = crv
+weightedTangents = weightedTangents
+weightLock = False
+inTangentType = None
+inWeight = None
+inAngle = None
+outTangentType = None
+outWeight = None
+outAngle = None
+lock = None
+offset = offset
+
+'''
+
 
 
 def message(what='', maya=True):
