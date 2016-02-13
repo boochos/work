@@ -7,7 +7,36 @@ import getpass
 import os
 import platform
 import json
+import math
 # TODO: add new class to deal with multi ref selections
+
+def curveNodeFromName(crv=''):
+    selectionList = OpenMaya.MSelectionList()
+    selectionList.add( crv )
+    dependNode = OpenMaya.MObject()
+    selectionList.getDependNode( 0, dependNode )
+    crvNode = OpenMayaAnim.MFnAnimCurve( dependNode )
+    return crvNode
+
+
+def selectionToNodes():
+    objects = OpenMaya.MObjectArray()
+    # get a list of the currently selected items 
+    selected = OpenMaya.MSelectionList()
+    OpenMaya.MGlobal.getActiveSelectionList(selected)
+    # iterate through the list of items returned
+    for i in range(selected.length()):
+        obj = OpenMaya.MObject()
+        # returns the i'th selected dependency node
+        selected.getDependNode(i,obj)
+        if (obj.hasFn(OpenMaya.MFn.kTransform)):
+            trans = OpenMaya.MFnTransform(obj)
+            objects.append(obj)
+            # Attach a function set to the selected object
+            fn = OpenMaya.MFnDependencyNode(obj)
+            # write the object name to the script editor
+            # OpenMaya.MGlobal.displayInfo( fn.name() )
+    return objects
 
 
 def nameToNode(name):
@@ -31,76 +60,37 @@ def plugToAnimCurve(plug):
     plug.connectedTo(con, True, False)
     # print con.length()
     plugNum = con.length()
+    # print plugNum
     n = con[0].node()
     if n:
         if n.hasFn(OpenMaya.MFn.kAnimCurve):
             animCurveNode = OpenMayaAnim.MFnAnimCurve(n)
             return animCurveNode
 
+def transformTangentType(t=0):
+    if t == 11:
+        return 'auto'
+    if t == 8:
+        return 'clamped'
+    if t == 1:
+        return 'fixed'
+    if t == 3:
+        return 'flat'
+    if t == 2:
+        return 'linear'
+    if t == 9:
+        return 'plateau'
+    if t == 4:
+        return 'spline'
+    if t == 5:
+        return 'step'
+    if t == 10:
+        return 'stepNext'
+    else:
+        return 'auto'
+
 '''
 # https://nccastaff.bournemouth.ac.uk/jmacey/RobTheBloke/www/research/maya/mfnanimcurve.htm
-# import the OpenMaya module
-import maya.OpenMaya as OpenMaya
-import maya.OpenMayaAnim as OpenMayaAnim
-# function that returns a node object given a name
-def nameToNode( name ):
-    selectionList = OpenMaya.MSelectionList()
-    selectionList.add( name )
-    node = OpenMaya.MObject()
-    selectionList.getDependNode( 0, node )
-    return node
-# function that finds a plug given a node object and plug name
-def nameToNodePlug( attrName, nodeObject ):
-    depNodeFn = OpenMaya.MFnDependencyNode( nodeObject )
-    attrObject = depNodeFn.attribute( attrName )
-    plug = OpenMaya.MPlug( nodeObject, attrObject )
-    return plug
-
-# Find loc node
-loc = nameToNode( "blue:pelvis" )
-# Print the translateX value
-plug = nameToNodePlug( "rotateX", loc )
-print "Plug name: %s" % plug.name()
-print "Plug value %g" % plug.asDouble()
-con = OpenMaya.MPlugArray()
-print con.length()
-plug.connectedTo(con, True, False)
-print con.length()
-plugNum = con.length()
-n = con[0].node()
-if n:
-    if n.hasFn(OpenMaya.MFn.kAnimCurve):
-        animCurveNode = OpenMayaAnim.MFnAnimCurve( n )
-        tangentAngle = OpenMaya.MAngle()
-        scriptUtil = OpenMaya.MScriptUtil()
-        curveWeightPtr = scriptUtil.asDoublePtr()
-        #animCurveNode.getTangent( 1, tangentAngle, curveWeightPtr, True) # inTangent
-        animCurveNode.getTangent( 1, tangentAngle, curveWeightPtr, False) # no inTangemt, get outTangent
-        print animCurveNode.numKeys() # num of keys
-        print animCurveNode.time(1).value() # time
-        print tangentAngle.asDegrees() # tangent angle
-        print scriptUtil.getDouble( curveWeightPtr ) # tangent weight
-    else:
-        print 'no anim curve'
-else:
-    print 'no n'
-
-obj = obj
-attr = attr
-frame = frame
-value = None
-crv = crv
-weightedTangents = weightedTangents
-weightLock = False
-inTangentType = None
-inWeight = None
-inAngle = None
-outTangentType = None
-outWeight = None
-outAngle = None
-lock = None
-offset = offset
-
 '''
 
 
@@ -140,12 +130,15 @@ def uiEnable(controls='modelPanel'):
 
 class Key():
 
-    def __init__(self, obj='', attr='', crv='', frame=0.0, offset=0, weightedTangents=None, auto=True):
+    def __init__(self, obj='', attr='', crv='', frame=0.0, offset=0, weightedTangents=None, auto=True, i=0, c=[]):
         # BUG: tangent angles are being overridden by something
         # BUG: if clip doesnt have a key, just pose value, no key is set,, pose may be lost once current frame is changed
         self.obj = obj
         self.attr = attr
         self.frame = frame
+        self.i = i
+        if c:
+            self.crvApi = c[0]
         self.value = None
         self.crv = crv
         self.weightedTangents = weightedTangents
@@ -167,15 +160,10 @@ class Key():
     def get(self):
         if self.auto:
             self.getKey()
+            #self.getKeyApi()
 
     def getKey(self):
-        # print self.obj
-        # print self.crv
-        # print self.frame
-        # print self.attr
-        # print index
         self.value = cmds.keyframe(self.crv, q=True, time=(self.frame, self.frame), valueChange=True, a=True)[0]
-        # print self.value
         self.inAngle = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), inAngle=True)[0]
         self.outAngle = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), outAngle=True)[0]
         self.inTangentType = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), inTangentType=True)[0]
@@ -185,6 +173,48 @@ class Key():
             self.weightLock = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), weightLock=True)[0]
             self.inWeight = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), inWeight=True)[0]
             self.outWeight = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), outWeight=True)[0]
+
+    def getKeyApi(self):
+        # curve types
+        # pref dependant
+        # TA time to angular
+        # TL time to linear
+        # TT time to time
+        # not pref dependant
+        # TU time to unitless
+        # also
+        # UA unitless to angular
+        # UL unitless to linear
+        # UT unitless to time
+        # UU unitless to unitless
+        
+        if 'rotate' in self.attr: # cleaner check for curve type
+            self.value = self.crvApi.value(self.i) * 180 / math.pi
+        else:
+            self.value = self.crvApi.value(self.i)
+        # in angle, weight
+        tangentAngle = OpenMaya.MAngle()
+        scriptUtil = OpenMaya.MScriptUtil()
+        curveWeightPtr = scriptUtil.asDoublePtr()
+        self.crvApi.getTangent(self.i, tangentAngle, curveWeightPtr, True)
+        self.inAngle = tangentAngle.asDegrees()
+        inw =  scriptUtil.getDouble( curveWeightPtr )
+        # out angle, weight
+        tangentAngle = OpenMaya.MAngle()
+        scriptUtil = OpenMaya.MScriptUtil()
+        curveWeightPtr = scriptUtil.asDoublePtr()
+        self.crvApi.getTangent(self.i, tangentAngle, curveWeightPtr, False)
+        self.outAngle = tangentAngle.asDegrees()
+        outw =  scriptUtil.getDouble( curveWeightPtr )
+        # tangent types
+        self.inTangentType = transformTangentType(t=self.crvApi.inTangentType(self.i))
+        self.outTangentType = transformTangentType(t=self.crvApi.outTangentType(self.i))
+        
+        self.lock = self.crvApi.tangentsLocked(self.i)
+        if self.weightedTangents:
+            self.weightLock = self.crvApi.weightsLocked(self.i)
+            self.inWeight = inw
+            self.outWeight = outw
 
     def putKey(self):
         # set key, creates curve node
@@ -263,8 +293,9 @@ class Attribute(Key):
             if len(self.crv) == 1:
                 self.crv = self.crv[0]
                 self.getCurveAttrs()
-                self.getFrames()
-                self.getKeys()
+                self.getFrames() # can be removed, only used once to feed next function
+                self.getKeys() # convert to api
+                #self.getKeysApi()
 
     def getCurveAttrs(self):
         self.preInfinity = cmds.getAttr(self.crv + '.preInfinity')
@@ -286,6 +317,23 @@ class Attribute(Key):
                     weightedTangents=self.weightedTangents)
             a.get()
             self.keys.append(a)
+
+    def getKeysApi(self):
+        # node = nameToNode(self.obj)
+        # plug = nameToNodePlug(self.name, node)
+        # crv = plugToAnimCurve(plug)
+        if self.crv:
+            #print self.crv
+            #print self.name
+            c = []
+            crvApi = curveNodeFromName(self.crv)
+            c.append(crvApi)
+            for i in range(crvApi.numKeys()):
+                a = Key(self.obj, self.name, self.crv, crvApi.time(i).value(),
+                        weightedTangents=self.weightedTangents, i=i, c=c)
+                a.get()
+                del a.crvApi
+                self.keys.append(a)
 
     def putCurve(self):
         if not self.poseOnly:
@@ -621,6 +669,8 @@ class Clip(Layer):
         '''
 
     def get(self):
+        # timer start
+        start = cmds.timerX()
         #
         self.sel = cmds.ls(sl=True, fl=True)
         self.user = getpass.getuser()
@@ -628,6 +678,10 @@ class Clip(Layer):
         self.getLayers()
         self.getClipAttrs()
         self.getClipStartEndLength()
+        # timer end
+        # code that is being timed
+        totalTime = cmds.timerX(startTime=start)
+        print "------------  Total time: ", totalTime
 
     def getClipAttrs(self):
         # scene name
@@ -748,9 +802,9 @@ def clipSave(name='clipTemp', comment='', poseOnly=False, temp=False):
     # print clp.name
     fileObjectJSON = open(path, 'wb')
     # pretty encoding
-    # json.dump(clp, fileObjectJSON, default=to_json, indent=1)
+    json.dump(clp, fileObjectJSON, default=to_json, indent=1)
     # compact encoding
-    json.dump(clp, fileObjectJSON, default=to_json, separators=(',', ':'))
+    # json.dump(clp, fileObjectJSON, default=to_json, separators=(',', ':'))
     fileObjectJSON.close()
 
 
