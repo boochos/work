@@ -10,25 +10,26 @@ import json
 import math
 # TODO: add new class to deal with multi ref selections
 
+
 def curveNodeFromName(crv=''):
     selectionList = OpenMaya.MSelectionList()
-    selectionList.add( crv )
+    selectionList.add(crv)
     dependNode = OpenMaya.MObject()
-    selectionList.getDependNode( 0, dependNode )
-    crvNode = OpenMayaAnim.MFnAnimCurve( dependNode )
+    selectionList.getDependNode(0, dependNode)
+    crvNode = OpenMayaAnim.MFnAnimCurve(dependNode)
     return crvNode
 
 
 def selectionToNodes():
     objects = OpenMaya.MObjectArray()
-    # get a list of the currently selected items 
+    # get a list of the currently selected items
     selected = OpenMaya.MSelectionList()
     OpenMaya.MGlobal.getActiveSelectionList(selected)
     # iterate through the list of items returned
     for i in range(selected.length()):
         obj = OpenMaya.MObject()
         # returns the i'th selected dependency node
-        selected.getDependNode(i,obj)
+        selected.getDependNode(i, obj)
         if (obj.hasFn(OpenMaya.MFn.kTransform)):
             trans = OpenMaya.MFnTransform(obj)
             objects.append(obj)
@@ -67,7 +68,11 @@ def plugToAnimCurve(plug):
             animCurveNode = OpenMayaAnim.MFnAnimCurve(n)
             return animCurveNode
 
+
 def transformTangentType(t=0):
+    '''
+    api query type returns int, function translates to cmds compatible
+    '''
     if t == 11:
         return 'auto'
     if t == 8:
@@ -160,7 +165,7 @@ class Key():
     def get(self):
         if self.auto:
             self.getKey()
-            #self.getKeyApi()
+            # self.getKeyApi()
 
     def getKey(self):
         self.value = cmds.keyframe(self.crv, q=True, time=(self.frame, self.frame), valueChange=True, a=True)[0]
@@ -187,8 +192,8 @@ class Key():
         # UL unitless to linear
         # UT unitless to time
         # UU unitless to unitless
-        
-        if 'rotate' in self.attr: # cleaner check for curve type
+
+        if 'rotate' in self.attr:  # cleaner check for curve type
             self.value = self.crvApi.value(self.i) * 180 / math.pi
         else:
             self.value = self.crvApi.value(self.i)
@@ -198,18 +203,18 @@ class Key():
         curveWeightPtr = scriptUtil.asDoublePtr()
         self.crvApi.getTangent(self.i, tangentAngle, curveWeightPtr, True)
         self.inAngle = tangentAngle.asDegrees()
-        inw =  scriptUtil.getDouble( curveWeightPtr )
+        inw = scriptUtil.getDouble(curveWeightPtr)
         # out angle, weight
         tangentAngle = OpenMaya.MAngle()
         scriptUtil = OpenMaya.MScriptUtil()
         curveWeightPtr = scriptUtil.asDoublePtr()
         self.crvApi.getTangent(self.i, tangentAngle, curveWeightPtr, False)
         self.outAngle = tangentAngle.asDegrees()
-        outw =  scriptUtil.getDouble( curveWeightPtr )
+        outw = scriptUtil.getDouble(curveWeightPtr)
         # tangent types
         self.inTangentType = transformTangentType(t=self.crvApi.inTangentType(self.i))
         self.outTangentType = transformTangentType(t=self.crvApi.outTangentType(self.i))
-        
+
         self.lock = self.crvApi.tangentsLocked(self.i)
         if self.weightedTangents:
             self.weightLock = self.crvApi.weightsLocked(self.i)
@@ -293,9 +298,9 @@ class Attribute(Key):
             if len(self.crv) == 1:
                 self.crv = self.crv[0]
                 self.getCurveAttrs()
-                self.getFrames() # can be removed, only used once to feed next function
-                self.getKeys() # convert to api
-                #self.getKeysApi()
+                self.getFrames()  # can be removed, only used once to feed next function
+                self.getKeys()  # convert to api
+                # self.getKeysApi()
 
     def getCurveAttrs(self):
         self.preInfinity = cmds.getAttr(self.crv + '.preInfinity')
@@ -323,8 +328,8 @@ class Attribute(Key):
         # plug = nameToNodePlug(self.name, node)
         # crv = plugToAnimCurve(plug)
         if self.crv:
-            #print self.crv
-            #print self.name
+            # print self.crv
+            # print self.name
             c = []
             crvApi = curveNodeFromName(self.crv)
             c.append(crvApi)

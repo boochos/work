@@ -25,9 +25,12 @@ class Action(object):
         self.form = name + '_form'
         self.form1 = name + '_form1'
         self.column = name + '_column'
+        self.row = name + '_row'
         self.opt = name + '_opt'
         self.field1 = name + '_field1'
         self.field2 = name + '_field2'
+        self.float1 = name + '_float1'
+        self.float2 = name + '_float2'
         self.button1 = name + '_button1'
         self.button2 = name + '_button2'
         self.button3 = name + '_button3'
@@ -124,6 +127,14 @@ class Action(object):
         self.field1 = cmds.textField(self.field1, tx='')
         self.heading2 = cmds.text(self.heading2, label='Comment:', al='left', fn=self.fn)
         self.field2 = cmds.textField(self.field2, tx='')
+        # range
+        self.row = cmds.rowLayout(self.row, numberOfColumns=3, columnWidth3=(100, 50, 50), adjustableColumn=1, columnAlign=(1, 'left'), columnAttach=[(1, 'both', 0), (2, 'both', 0), (3, 'both', 0)])
+        cmds.text('Constraint range:')
+        self.float1 = cmds.floatField(self.float1, value=cmds.playbackOptions(q=True, min=True), pre=2)
+        self.float2 = cmds.floatField(self.float2, value=cmds.playbackOptions(q=True, max=True), pre=2)
+        cmds.setParent('..')
+
+        #
         self.typGrpEx = cmds.radioButtonGrp(label='Export:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
         self.button1 = cmds.button(self.button1, label='Export', c=self.cmdAction, bgc=greyD,
                                    ann='Export selected controls to a clip file')
