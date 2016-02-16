@@ -728,7 +728,7 @@ class Clip(Layer):
                         # build class
                         # print layer, '_________'
                         clp = Layer(
-                            name=layer, sel=currentLayerMembers, comment=self.comment, poseOnly=self.poseOnly)
+                            name=layer, sel=currentLayerMembers, comment=self.comment, poseOnly=self.poseOnly, bakeRange=self.bakeRange)
                         clp.get()
                         self.layers.append(clp)
                 else:
