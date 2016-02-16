@@ -164,8 +164,8 @@ class Key():
 
     def get(self):
         if self.auto:
-            self.getKey()
-            # self.getKeyApi()
+            # self.getKey()
+            self.getKeyApi()
 
     def getKey(self):
         self.value = cmds.keyframe(self.crv, q=True, time=(self.frame, self.frame), valueChange=True, a=True)[0]
@@ -180,23 +180,34 @@ class Key():
             self.outWeight = cmds.keyTangent(self.crv, q=True, time=(self.frame, self.frame), outWeight=True)[0]
 
     def getKeyApi(self):
+        '''
         # curve types
         # pref dependant
-        # TA time to angular
-        # TL time to linear
-        # TT time to time
-        # not pref dependant
-        # TU time to unitless
+        # returns are assumed to be in radians for angles and centimeteres for distance
+        0 = TA time to angle = angular
+        1 = TL time to linear = distance
+        2 = TT time to time = ?
+        4 = TU time to unitless
         # also
         # UA unitless to angular
         # UL unitless to linear
         # UT unitless to time
         # UU unitless to unitless
+        '''
+        # for value attr, make unit conversions for individual curve types
+        if self.crvApi.animCurveType() == 0:  # angular
+            ui = OpenMaya.MAngle.uiUnit()
+            unit = OpenMaya.MAngle(self.crvApi.value(self.i))
+            self.value = unit.asUnits(ui)
+            # self.value = self.crvApi.value(self.i) * 180 / math.pi # from radians to angles
+        elif self.crvApi.animCurveType() == 1:  # distance
+            ui = OpenMaya.MDistance.uiUnit()
+            unit = OpenMaya.MDistance(self.crvApi.value(self.i))
+            self.value = unit.asUnits(ui)
+            # self.value = self.crvApi.value(self.i) 
+        else: # all other cases until further notice
+            self.value = self.crvApi.value(self.i) 
 
-        if 'rotate' in self.attr:  # cleaner check for curve type
-            self.value = self.crvApi.value(self.i) * 180 / math.pi
-        else:
-            self.value = self.crvApi.value(self.i)
         # in angle, weight
         tangentAngle = OpenMaya.MAngle()
         scriptUtil = OpenMaya.MScriptUtil()
@@ -299,8 +310,8 @@ class Attribute(Key):
                 self.crv = self.crv[0]
                 self.getCurveAttrs()
                 self.getFrames()  # can be removed, only used once to feed next function
-                self.getKeys()  # convert to api
-                # self.getKeysApi()
+                # self.getKeys()  # convert to api
+                self.getKeysApi()
 
     def getCurveAttrs(self):
         self.preInfinity = cmds.getAttr(self.crv + '.preInfinity')
@@ -384,12 +395,13 @@ class Attribute(Key):
 
 class Obj(Attribute):
 
-    def __init__(self, obj='', offset=0, poseOnly=False):
+    def __init__(self, obj='', offset=0, poseOnly=False, bakeRange=[0,0]):
         self.name = obj
         self.offset = offset
         self.attributes = []
         self.attributesDriven = []
         self.poseOnly = poseOnly
+        self.bakeRange = bakeRange
         '''
         self.getAllDriven()
         self.getAttribute()
@@ -518,7 +530,7 @@ class Obj(Attribute):
 
 class Layer(Obj):
 
-    def __init__(self, sel=[], name=None, offset=0, ns=None, comment='', poseOnly=False):
+    def __init__(self, sel=[], name=None, offset=0, ns=None, comment='', poseOnly=False, bakeRange=[0,0]):
         '''
         can use to copy and paste animation
         '''
@@ -531,6 +543,7 @@ class Layer(Obj):
         self.offset = offset
         self.ns = ns
         self.poseOnly = poseOnly
+        self.bakeRange = bakeRange
         # layer attrs
         self.name = name
         self.mute = None
@@ -649,12 +662,13 @@ class Layer(Obj):
 
 class Clip(Layer):
 
-    def __init__(self, name='', comment='', poseOnly=False):
+    def __init__(self, name='', comment='', poseOnly=False, bakeRange=[0,0]):
         self.sel = None
         #
         self.name = name
         self.comment = comment
         self.poseOnly = poseOnly
+        self.bakeRange = bakeRange
         self.source = None
         self.user = None
         self.date = None
