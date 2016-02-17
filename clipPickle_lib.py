@@ -204,10 +204,10 @@ class Key():
             ui = OpenMaya.MDistance.uiUnit()
             unit = OpenMaya.MDistance(self.crvApi.value(self.i))
             self.value = unit.asUnits(ui)
-            # self.value = self.crvApi.value(self.i) 
-        else: # all other cases until further notice
-            self.value = self.crvApi.value(self.i) 
-        
+            # self.value = self.crvApi.value(self.i)
+        else:  # all other cases until further notice
+            self.value = self.crvApi.value(self.i)
+
         # in angle, weight
         tangentAngle = OpenMaya.MAngle()
         scriptUtil = OpenMaya.MScriptUtil()
@@ -395,7 +395,7 @@ class Attribute(Key):
 
 class Obj(Attribute):
 
-    def __init__(self, obj='', offset=0, poseOnly=False, bakeRange=[0,0]):
+    def __init__(self, obj='', offset=0, poseOnly=False, bakeRange=[0, 0]):
         self.name = obj
         self.offset = offset
         self.attributes = []
@@ -441,8 +441,10 @@ class Obj(Attribute):
             # turn off UI
             # uiEnable()
             # create frame list from frame range
-            min = cmds.playbackOptions(q=True, ast=True)
-            max = cmds.playbackOptions(q=True, aet=True)
+            min = self.bakeRange[0]  # cmds.playbackOptions(q=True, ast=True)
+            max = self.bakeRange[1]  # cmds.playbackOptions(q=True, aet=True)
+            print self.bakeRange
+            print min, max
             rng = range(int(min), int(max + 1))
             rng = [float(i) for i in rng]
             # instantiate class for every driven attr
@@ -530,7 +532,7 @@ class Obj(Attribute):
 
 class Layer(Obj):
 
-    def __init__(self, sel=[], name=None, offset=0, ns=None, comment='', poseOnly=False, bakeRange=[0,0]):
+    def __init__(self, sel=[], name=None, offset=0, ns=None, comment='', poseOnly=False, bakeRange=[0, 0]):
         '''
         can use to copy and paste animation
         '''
@@ -575,7 +577,7 @@ class Layer(Obj):
         for obj in self.sel:
             message(str(i) + ' of ' + str(num) + ' --  ' + obj, maya=True)
             cmds.refresh(f=1)
-            a = Obj(obj, poseOnly=self.poseOnly)
+            a = Obj(obj, poseOnly=self.poseOnly, bakeRange=self.bakeRange)
             a.get()
             self.objects.append(a)
             i = i + 1
@@ -662,7 +664,7 @@ class Layer(Obj):
 
 class Clip(Layer):
 
-    def __init__(self, name='', comment='', poseOnly=False, bakeRange=[0,0]):
+    def __init__(self, name='', comment='', poseOnly=False, bakeRange=[0, 0]):
         self.sel = None
         #
         self.name = name
@@ -735,12 +737,12 @@ class Clip(Layer):
                     print layer, '     no members'
             self.setActiveLayer(l=self.rootLayer)
             # build root layer class
-            clp = Layer(sel=self.sel, comment=self.comment)
+            clp = Layer(sel=self.sel, comment=self.comment, poseOnly=self.poseOnly, bakeRange=self.bakeRange)
             clp.get()
             self.layers.append(clp)
         else:
             # no anim layers, create single layer class
-            clp = Layer(name=None, sel=self.sel, comment=self.comment)
+            clp = Layer(name=None, sel=self.sel, comment=self.comment, poseOnly=self.poseOnly, bakeRange=self.bakeRange)
             clp.get()
             self.layers.append(clp)
         # print self.putLayerList
@@ -811,12 +813,12 @@ class Clip(Layer):
                 layer.putObjects()
 
 
-def clipSave(name='clipTemp', comment='', poseOnly=False, temp=False):
+def clipSave(name='clipTemp', comment='', poseOnly=False, temp=False, bakeRange=[0, 0]):
     '''
     save clip to file
     '''
     path = clipPath(name=name + '.clip', temp=temp)
-    clp = Clip(name=name, comment=comment, poseOnly=poseOnly)
+    clp = Clip(name=name, comment=comment, poseOnly=poseOnly, bakeRange=bakeRange)
     clp.get()
     # print clp.name
     fileObjectJSON = open(path, 'wb')

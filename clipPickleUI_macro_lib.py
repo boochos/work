@@ -10,6 +10,7 @@ import webrImport as web
 ui = web.mod('clipPickleUI_micro_lib')
 cp = web.mod('clipPickle_lib')
 al = web.mod('anim_lib')
+fr = web.mod('frameRange_lib')
 # TODO: add pose percentage import
 # TODO: add UI support for multi ref import/exports
 # each ref gets its on class, objects with no namespace get their own class
@@ -92,7 +93,13 @@ class CPUI(object):
         version = '.' + self.cmdCreateVersionNumber()
         #
         poseOnly = self.cmdTypeEx()
-        cp.clipSave(name=name + version, comment=comment, poseOnly=poseOnly)
+        #
+        start = cmds.floatField(self.control.float1, q=True, value=True)
+        end = cmds.floatField(self.control.float2, q=True, value=True)
+        # print start, end, '___ ui'
+        bakeRange = [start, end]
+        #
+        cp.clipSave(name=name + version, comment=comment, poseOnly=poseOnly, bakeRange=bakeRange)
         cmds.textScrollList(self.control.scroll1, edit=True, ra=True)
         self.populateClipList()
         path = os.path.join(self.path, name + '.clip')
