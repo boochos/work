@@ -207,7 +207,7 @@ class Key():
             # self.value = self.crvApi.value(self.i) 
         else: # all other cases until further notice
             self.value = self.crvApi.value(self.i) 
-
+        
         # in angle, weight
         tangentAngle = OpenMaya.MAngle()
         scriptUtil = OpenMaya.MScriptUtil()
@@ -247,7 +247,7 @@ class Key():
                 cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
                 cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
                                 inTangentType=self.inTangentType, outTangentType=self.outTangentType)
-                if self.lock:
+                if self.lock == True or self.lock == False:
                     cmds.keyTangent(self.crv, edit=True, time=(
                         self.frame + self.offset, self.frame + self.offset), lock=self.lock)
                 if self.inAngle:
