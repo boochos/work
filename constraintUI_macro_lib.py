@@ -150,6 +150,7 @@ class CSUI(object):
         cn.matchKeyedFrames()
 
     def cmdConstrain(self, *args):
+        cn = web.mod('constraint_lib')
         sel = cmds.ls(sl=True)
         if len(sel) == 2:
             v9 = cmds.checkBox(self.actionColumn.c9, q=True, v=True)
@@ -163,7 +164,14 @@ class CSUI(object):
                 v11 = 'none'
             else:
                 v11 = ['x', 'y', 'z']
-            cmds.parentConstraint(sel[0], sel[1], mo=v9, st=v10, sr=v11)
+            # constrain
+            con = cn.getConstraint(sel[1])
+            if con:
+                cmds.parentConstraint(sel[0], sel[1], mo=v9)
+                if v10 == 'none' or v11 == 'none':
+                    message('A constraint already exists, rotations/tranlations cannot be skipped, argument ignored.')
+            else:
+                cmds.parentConstraint(sel[0], sel[1], mo=v9, st=v10, sr=v11)
         else:
             cmds.warning('-- Select 2 objects --')
 
