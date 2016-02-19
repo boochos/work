@@ -474,7 +474,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         uiEnable(controls='modelPanel')
 
 
-def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff=True):
+def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff=True, timeOverride=[]):
     # add function to step through frames instead of using bake results
     if uiOff:
         uiEnable()
@@ -483,7 +483,11 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
     # needs to beselected to prioritze keyed range of given object over
     # selection
     cmds.select(obj)
+    # build bake range
     gRange = fr.Get()
+    if timeOverride:
+        gRange.start = timeOverride[0]
+        gRange.end = timeOverride[1]
     # reselect selection
     cmds.select(sel)
     # end workaround
@@ -522,7 +526,7 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
     if removeConstraint:
         deleteList(cons)
         deleteAttrList(blndAttr)
-    
+
     # recover range
     if gRange.selection:
         gRange.selRangeRecover()
@@ -540,7 +544,7 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
         uiEnable()
 
 
-def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, uiOff=True):
+def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, uiOff=True, timeOverride=[]):
     sel = cmds.ls(sl=True)
     if len(sel) != 0:
         # i = 1
@@ -549,7 +553,7 @@ def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, u
             # message(str(i) + ' of ' + str(num) + ' --  ' + obj, maya=True)
             # i = i+1
             bakeConstrained(
-                obj, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim, uiOff=uiOff)
+                obj, removeConstraint=removeConstraint, timeLine=timeLine, sim=sim, uiOff=uiOff, timeOverride=timeOverride)
     else:
         cmds.warning('Select constrained object(s)')
 
@@ -851,7 +855,7 @@ def stick(offset=True):
     gRange = fr.Get()
     if len(sel) == 1:
         sel = sel[0]
-        loc = locator(sel, X=1, constrain=False)[0]
+        loc = locator(sel, X=1.5, constrain=False, shape=False)[0]
         # print loc
         cmds.addAttr(loc, longName=stickAttr(), at='message')
         cmds.connectAttr(sel + '.message', loc + '.' + stickAttr())
@@ -872,14 +876,21 @@ def unStick(timeLine=False, sim=False):
     activeSet = cs.GetSetOptions()
     sel = cmds.ls(sl=True)
     gRange = fr.Get()
-    cons = getConstraint(sel)
+    if gRange.range == 1:
+        if gRange.current == gRange.selStart:
+            start = gRange.current
+            end = gRange.current
+    else:
+        start = gRange.selStart
+        end = gRange.selEnd
+    # cons = getConstraint(sel)
     if activeSet.current:
         bakeConstrainedSelection(
-            removeConstraint=True, timeLine=timeLine, sim=sim)
+            removeConstraint=True, timeLine=timeLine, sim=sim, timeOverride=[start, end])
 
     else:
         bakeConstrainedSelection(
-            removeConstraint=True, timeLine=timeLine, sim=sim)
+            removeConstraint=True, timeLine=timeLine, sim=sim, timeOverride=[start, end])
     # delete associated objects
     blndAttr = getBlendAttr(sel, delete=True)
     # cmds.delete(cons)

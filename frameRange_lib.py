@@ -7,14 +7,15 @@ class Get():
     def __init__(self, fromSelection=True):
         self.min = cmds.playbackOptions(q=True, minTime=True)
         self.max = cmds.playbackOptions(q=True, maxTime=True)
-        self.selStart = cmds.playbackOptions(q=True, minTime=True)
-        self.selEnd = cmds.playbackOptions(q=True, maxTime=True)
+        self.current = cmds.currentTime(q=True)
+        self.selStart = self.current
+        self.selEnd = self.current
         self.start = 0
         self.end = 0
-        self.current = cmds.currentTime(q=True)
         self.setStartEnd()
         self.keyStart = 0
         self.keyEnd = 0
+        self.range = 0
         self.selection = False
         if fromSelection:
             self.keyedFrames()
@@ -24,7 +25,8 @@ class Get():
     def selRange(self):
         # overide range if selected range is detected
         sel = cmds.timeControl('timeControl1', q=True, ra=True)
-        range = sel[1] - sel[0]
+        self.range = sel[1] - sel[0]
+        # print range, '  range'
         if range > 1:
             self.selStart = sel[0]
             self.selEnd = sel[1]
