@@ -607,7 +607,7 @@ def altFrame(*args):
         if sel:
             for item in sel:
                 if cmds.objectType(item, i='transform'):
-                    loc = cn.locator(obj=item, ro='zxy', X=0.35, constrain=False)[0]
+                    loc = cn.locator(obj=item, ro='zxy', X=0.35, constrain=False, shape=False)[0]
                     locs.append(loc)
                 else:
                     try:

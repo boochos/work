@@ -29,8 +29,8 @@ class Action(object):
         self.actionButton7 = name + '_actionButton7'
         self.actionButton8 = name + '_actionButton8'
         self.actionButton9 = name + '_actionButton9'
-        #self.actionButton10 = name + '_actionButton10'
-        #self.actionButton11 = name + '_actionButton11'
+        self.actionButton10 = name + '_actionButton10'
+        self.actionButton11 = name + '_actionButton11'
         self.actionButton12 = name + '_actionButton12'
         self.actionButton13 = name + '_actionButton13'
         self.actionButton14 = name + '_actionButton14'
@@ -248,12 +248,12 @@ class Action(object):
         #                                 ann='Match the position of first object to second object.')
         # self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)
         # stick
-        # self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=teal,
-        # ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
-        # self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=teal,
-        # ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
-        # self.c1 = cmds.checkBox(label='On All Frames', v=False, ann=existing)
-        # self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
+        self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=self.teal,
+        ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
+        self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=self.teal,
+        ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
+        self.c1 = cmds.checkBox(label='On All Frames', v=False, ann=existing)
+        self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
         #
         #
         # parent rig
