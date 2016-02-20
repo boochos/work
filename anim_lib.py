@@ -247,7 +247,9 @@ class SpaceSwitch():
                 if key >= self.rng.keyStart and key <= self.rng.keyEnd:
                     # message(str(key))
                     cmds.currentTime(key)
+                    # print key, '__key'
                     cmds.xform(self.obj, m=self.mtrx[i], ws=True)
+                    # print self.mtrx[i], '__matrx'
                     # cmds.xform(self.obj, t=self.pos[i], ws=True)
                     # cmds.xform(self.obj, ro=self.rot[i], ws=True)
                     # account for non-keyable rotate or translate attrs
@@ -256,6 +258,9 @@ class SpaceSwitch():
                     # getCurves for translate and rotate
                     # crv = getAnimCurves(self.obj)
                     cn.eulerFilter(self.obj, tangentFix=True)
+                else:
+                    pass
+                    # print 'nope'
                 i = i + 1
             # tangent fix
             # cn.eulerFilter(crv, tangentFix=True)

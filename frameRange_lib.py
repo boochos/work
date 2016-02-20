@@ -27,7 +27,7 @@ class Get():
         sel = cmds.timeControl('timeControl1', q=True, ra=True)
         self.range = sel[1] - sel[0]
         # print range, '  range'
-        if range > 1:
+        if self.range > 1:
             self.selStart = sel[0]
             self.selEnd = sel[1]
             self.keyStart = sel[0]

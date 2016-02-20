@@ -393,6 +393,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
     custom bake function
     sim = keys only, dont step through frame at a time
     '''
+    print time, '___inside bake'
     # TODO: account for timewarp curve
     if uiOff:
         uiEnable(controls='modelPanel')
@@ -474,8 +475,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
         uiEnable(controls='modelPanel')
 
 
-def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff=True, timeOverride=[]):
-    # add function to step through frames instead of using bake results
+def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff=True, timeOverride=()):
     if uiOff:
         uiEnable()
     # workaround
@@ -485,41 +485,45 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
     cmds.select(obj)
     # build bake range
     gRange = fr.Get()
-    if timeOverride:
-        gRange.start = timeOverride[0]
-        gRange.end = timeOverride[1]
     # reselect selection
     cmds.select(sel)
     # end workaround
     cons = getConstraint(obj)
     blndAttr = getBlendAttr(obj, delete=False)
     keyedOrig = keyedFrames(obj)
+    #
+    print gRange.start, gRange.end, '___baking feed'
     # print 'start baking\n'
     if timeLine:
         message('Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
         bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
         # print 'done baking\n'
     else:
-        if keyedOrig is not None:
-            '''
+        if timeOverride:
+            bakeStep(obj, time=(timeOverride[0], timeOverride[1]), sim=sim)
             message(
-                '0  Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
-                '''
-            if gRange.keyStart == gRange.keyEnd:
-                bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
-                message(
-                    'Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
-                # print '1  done baking\n'
-            else:
-                bakeStep(obj, time=(gRange.keyStart, gRange.keyEnd), sim=sim)
-                message(
-                    'Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
-                # print '2  done baking\n'
+                'Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
         else:
-            message("Target object has no keys. Can't bake to keyed timeline.  Bake range: " +
-                    str(gRange.start) + ' - ' + str(gRange.end))
-            bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
-            # print '3  done baking\n'
+            if keyedOrig is not None:
+                '''
+                message(
+                    '0  Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
+                    '''
+                if gRange.keyStart == gRange.keyEnd:
+                    bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
+                    message(
+                        'Bake range: ' + str(gRange.start) + ' - ' + str(gRange.end))
+                    # print '1  done baking\n'
+                else:
+                    bakeStep(obj, time=(gRange.keyStart, gRange.keyEnd), sim=sim)
+                    message(
+                        'Bake range: ' + str(gRange.keyStart) + ' - ' + str(gRange.keyEnd))
+                    # print '2  done baking\n'
+            else:
+                message("Target object has no keys. Can't bake to keyed timeline.  Bake range: " +
+                        str(gRange.start) + ' - ' + str(gRange.end))
+                bakeStep(obj, time=(gRange.start, gRange.end), sim=sim)
+                # print '3  done baking\n'
     # keyedBake = keyedFrames(obj)
     # print 'frames\n'
     eulerFilter(obj)
@@ -544,7 +548,7 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
         uiEnable()
 
 
-def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, uiOff=True, timeOverride=[]):
+def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, uiOff=True, timeOverride=()):
     sel = cmds.ls(sl=True)
     if len(sel) != 0:
         # i = 1
@@ -876,21 +880,28 @@ def unStick(timeLine=False, sim=False):
     activeSet = cs.GetSetOptions()
     sel = cmds.ls(sl=True)
     gRange = fr.Get()
+    start = None
+    end = None
     if gRange.range == 1:
         if gRange.current == gRange.selStart:
             start = gRange.current
             end = gRange.current
+        else:
+            print gRange.current
+            print gRange.range
+            print gRange.selStart, gRange.selEnd
     else:
         start = gRange.selStart
         end = gRange.selEnd
     # cons = getConstraint(sel)
+    print start, end, '___'
     if activeSet.current:
         bakeConstrainedSelection(
-            removeConstraint=True, timeLine=timeLine, sim=sim, timeOverride=[start, end])
+            removeConstraint=True, timeLine=timeLine, sim=sim, timeOverride=(start, end))
 
     else:
         bakeConstrainedSelection(
-            removeConstraint=True, timeLine=timeLine, sim=sim, timeOverride=[start, end])
+            removeConstraint=True, timeLine=timeLine, sim=sim, timeOverride=(start, end))
     # delete associated objects
     blndAttr = getBlendAttr(sel, delete=True)
     # cmds.delete(cons)
