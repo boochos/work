@@ -1,5 +1,7 @@
 import maya.cmds as cmds
 import maya.mel as mel
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaAnim as OpenMayaAnim
 #
 import webrImport as web
 # web
@@ -269,17 +271,28 @@ def updateConstrainedCurves(obj=None, sim=False):
             cmds.setAttr(obj + '.' + state.attr, state.value)
 
 
+def curveNodeFromName(crv=''):
+    selectionList = OpenMaya.MSelectionList()
+    selectionList.add(crv)
+    dependNode = OpenMaya.MObject()
+    selectionList.getDependNode(0, dependNode)
+    crvNode = OpenMayaAnim.MFnAnimCurve(dependNode)
+    return crvNode
+
+
 def eulerFilter(obj, tangentFix=False):
     curves = cmds.keyframe(obj, q=True, name=True)
     euler = []
     if curves:
         for crv in curves:
-            if 'rotate' in crv.lower():
+            c = curveNodeFromName(crv)
+            if c.animCurveType() == 0:  # angular
                 euler.append(crv)
         if euler:
             cmds.filterCurve(euler)
         if tangentFix:
             fixTangents(obj)
+        # print 'here'
 
 
 def fixTangents(obj, attrs=['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']):
@@ -287,7 +300,22 @@ def fixTangents(obj, attrs=['translateX', 'translateY', 'translateZ', 'rotateX',
     for crv in animCurves:
         for attr in attrs:
             if attr in crv:
-                cmds.keyTangent(crv, edit=True, itt='auto', ott='auto')
+                if 'step' in cmds.keyTangent(crv, q=True, ott=True):
+                    frames = cmds.keyframe(crv, q=True)
+                    ott = cmds.keyTangent(crv, q=True, ott=True)
+                    ot = []
+                    it = []
+                    for o in ott:
+                        if o == 'step':
+                            ot.append('step')
+                            it.append('auto')
+                        else:
+                            ot.append('auto')
+                            it.append('auto')
+                    for i in range(len(frames)):
+                        cmds.keyTangent(crv, edit=True, t=(frames[i], frames[i]), itt=it[i], ott=ot[i])
+                else:
+                    cmds.keyTangent(crv, edit=True, itt='auto', ott='auto')
 
 
 def getConstraint(obj, nonKeyedRoute=True, keyedRoute=True, plugRoute=True):
