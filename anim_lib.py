@@ -182,9 +182,10 @@ def changeRO(obj, ro):
 
 class SpaceSwitch():
 
-    def __init__(self, obj):
+    def __init__(self, obj, poseOnly=False):
         self.name = obj
         self.obj = obj
+        self.poseOnly = poseOnly
         self.mtrx = []
         self.pos = []
         self.rot = []
@@ -209,24 +210,27 @@ class SpaceSwitch():
         store animation
         '''
         # make sure o
-        if self.keys:
-            current = cmds.currentTime(q=True)
-            # ui off
-            cn.uiEnable(controls='modelPanel')
-            # autokey state
-            autoK = cmds.autoKeyframe(q=True, state=True)
-            cmds.autoKeyframe(state=False)
-            for key in self.keys:
-                cmds.currentTime(key)
-                self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
-                # self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
-                # self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
-            # restore everything
-            cmds.currentTime(current)
-            cmds.autoKeyframe(state=autoK)
-            cn.uiEnable(controls='modelPanel')
+        if self.poseOnly:
+            self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
         else:
-            message('No keys.', maya=True)
+            if self.keys:
+                current = cmds.currentTime(q=True)
+                # ui off
+                cn.uiEnable(controls='modelPanel')
+                # autokey state
+                autoK = cmds.autoKeyframe(q=True, state=True)
+                cmds.autoKeyframe(state=False)
+                for key in self.keys:
+                    cmds.currentTime(key)
+                    self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
+                    # self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
+                    # self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
+                # restore everything
+                cmds.currentTime(current)
+                cmds.autoKeyframe(state=autoK)
+                cn.uiEnable(controls='modelPanel')
+            else:
+                message('No keys.', maya=True)
 
     def restore(self, useSelected=False):
         '''
@@ -234,42 +238,46 @@ class SpaceSwitch():
         '''
         if useSelected:
             self.obj = cmds.ls(sl=1)[0]
-
-        if self.keys:
-            current = cmds.currentTime(q=True)
-            # ui off
-            cn.uiEnable(controls='modelPanel')
-            # autokey state
-            autoK = cmds.autoKeyframe(q=True, state=True)
-            cmds.autoKeyframe(state=False)
-            i = 0
-            for key in self.keys:
-                if key >= self.rng.keyStart and key <= self.rng.keyEnd:
-                    # message(str(key))
-                    cmds.currentTime(key)
-                    # print key, '__key'
-                    cmds.xform(self.obj, m=self.mtrx[i], ws=True)
-                    # print self.mtrx[i], '__matrx'
-                    # cmds.xform(self.obj, t=self.pos[i], ws=True)
-                    # cmds.xform(self.obj, ro=self.rot[i], ws=True)
-                    # account for non-keyable rotate or translate attrs
-                    cmds.setKeyframe(self.obj + '.rotate')
-                    cmds.setKeyframe(self.obj + '.translate')
-                    # getCurves for translate and rotate
-                    # crv = getAnimCurves(self.obj)
-                    cn.eulerFilter(self.obj, tangentFix=True)
-                else:
-                    pass
-                    # print 'nope'
-                i = i + 1
-            # tangent fix
-            # cn.eulerFilter(crv, tangentFix=True)
-            # restore everything
-            cmds.currentTime(current)
-            cmds.autoKeyframe(state=autoK)
-            cn.uiEnable(controls='modelPanel')
+        # type of restore
+        if self.poseOnly:
+            # find if obj is keyed, if keyed insert key otherwise setAttr
+            pass
         else:
-            message('No keys.', maya=True)
+            if self.keys:
+                current = cmds.currentTime(q=True)
+                # ui off
+                cn.uiEnable(controls='modelPanel')
+                # autokey state
+                autoK = cmds.autoKeyframe(q=True, state=True)
+                cmds.autoKeyframe(state=False)
+                i = 0
+                for key in self.keys:
+                    if key >= self.rng.keyStart and key <= self.rng.keyEnd:
+                        # message(str(key))
+                        cmds.currentTime(key)
+                        # print key, '__key'
+                        cmds.xform(self.obj, m=self.mtrx[i], ws=True)
+                        # print self.mtrx[i], '__matrx'
+                        # cmds.xform(self.obj, t=self.pos[i], ws=True)
+                        # cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                        # account for non-keyable rotate or translate attrs
+                        cmds.setKeyframe(self.obj + '.rotate')
+                        cmds.setKeyframe(self.obj + '.translate')
+                        # getCurves for translate and rotate
+                        # crv = getAnimCurves(self.obj)
+                        cn.eulerFilter(self.obj, tangentFix=True)
+                    else:
+                        pass
+                        # print 'nope'
+                    i = i + 1
+                # tangent fix
+                # cn.eulerFilter(crv, tangentFix=True)
+                # restore everything
+                cmds.currentTime(current)
+                cmds.autoKeyframe(state=autoK)
+                cn.uiEnable(controls='modelPanel')
+            else:
+                message('No keys.', maya=True)
 
 
 def getAnimCurves(obj='', attrs=['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']):
