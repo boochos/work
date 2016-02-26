@@ -190,6 +190,7 @@ class SpaceSwitch():
         self.pos = []
         self.rot = []
         self.keys = getKeyedFrames(self.obj)
+        self.rng = fr.Get()
         self.store()
 
         '''
@@ -203,7 +204,7 @@ class SpaceSwitch():
         keyStart
         keyEnd
         '''
-        self.rng = fr.Get()
+
 
     def store(self):
         '''
@@ -223,6 +224,7 @@ class SpaceSwitch():
                 for key in self.keys:
                     cmds.currentTime(key)
                     self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
+                    print cmds.xform(self.obj, q=True, rp=True, ws=True)
                     # self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
                     # self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
                 # restore everything
@@ -230,7 +232,11 @@ class SpaceSwitch():
                 cmds.autoKeyframe(state=autoK)
                 cn.uiEnable(controls='modelPanel')
             else:
-                message('No keys.', maya=True)
+                message('No keys, forcing timeline range.', maya=True)
+                self.keys = range(int(self.rng.start), int(self.rng.end))
+                self.rng.keyStart = self.rng.start
+                self.rng.keyEnd = self.rng.end
+                self.store()
 
     def restore(self, useSelected=False):
         '''
@@ -243,6 +249,7 @@ class SpaceSwitch():
             # find if obj is keyed, if keyed insert key otherwise setAttr
             pass
         else:
+            print self.keys
             if self.keys:
                 current = cmds.currentTime(q=True)
                 # ui off
