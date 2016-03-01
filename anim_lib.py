@@ -7,6 +7,7 @@ import webrImport as web
 # web
 cn = web.mod('constraint_lib')
 fr = web.mod('frameRange_lib')
+ss = web.mod("selectionSet_lib")
 
 
 def motionPathRandom():
@@ -20,6 +21,35 @@ def motionPathRandom():
     cmds.select(sel[1])
     shape = cmds.pickWalk(d='down')[0]
     cmds.connectAttr(shape + '.worldSpace[0]', moP + '.geometryPath', force=True)
+
+
+def secondaryChain():
+    '''
+    loads selectSet and performs bake and offset of objects
+    '''
+    addSel = []
+    sel = cmds.ls(sl=1)
+    if sel:
+        obj = sel[0].split(':')[1]
+        cmds.select(clear=True)
+        setDict = ss.loadDict(os.path.join(ss.defaultPath(), 'tailSecondary.sel'))
+        if obj in setDict.values():
+            # convert set to list of objects
+            remapped = ss.remapSet(sel[0], setDict)
+            # print remapped
+            for con in remapped:
+                addSel.append(con)
+            cmds.select(addSel)
+        # bake to world
+        locs = sorted(cn.controllerToLocator(matchSet=True))
+        print locs
+        print range(len(locs))
+        for i in range(len(locs)):
+            animCurves = cmds.findKeyframe(locs[i], c=True)
+            for crv in animCurves:
+                cmds.keyframe(crv, relative=1, timeChange=(0 + (i + 1)))
+    else:
+        message('no selection made')
 
 
 def mocapSkelAnim():
@@ -204,7 +234,6 @@ class SpaceSwitch():
         keyStart
         keyEnd
         '''
-
 
     def store(self):
         '''

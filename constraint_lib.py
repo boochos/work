@@ -421,7 +421,7 @@ def bakeStep(obj, time=(), sim=False, uiOff=False):
     custom bake function
     sim = keys only, dont step through frame at a time
     '''
-    print time, '___inside bake'
+    # print time, '___inside bake'
     # TODO: account for timewarp curve
     if uiOff:
         uiEnable(controls='modelPanel')
