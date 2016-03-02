@@ -23,7 +23,7 @@ def motionPathRandom():
     cmds.connectAttr(shape + '.worldSpace[0]', moP + '.geometryPath', force=True)
 
 
-def secondaryChain():
+def secondaryChain(offset=0.5):
     '''
     loads selectSet and performs bake and offset of objects
     '''
@@ -47,7 +47,7 @@ def secondaryChain():
         for i in range(len(locs)):
             animCurves = cmds.findKeyframe(locs[i], c=True)
             for crv in animCurves:
-                cmds.keyframe(crv, relative=1, timeChange=(0 + (i + 1)))
+                cmds.keyframe(crv, relative=1, timeChange=(0 + ((i + 1) * offset)))
     else:
         message('no selection made')
 
