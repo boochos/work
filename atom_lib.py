@@ -198,6 +198,23 @@ def raptorFrameLayout(*args):
     return main
 
 
+def mosFrameLayout(*args):
+    refresh = RefreshCallBack('atom_win')
+    main = cmds.frameLayout('atom_mos_frameLayout', label='Mosasaurus Setup',
+                            cc=refresh.RefreshCall, ec=refresh.RefreshCall,
+                            mh=5, mw=5, cll=True, cl=False)
+
+    atom_rrig_columnLayout = cmds.columnLayout('atom_mos_main_columnLayout', adj=True, rs=5)
+    cmds.separator()
+
+    atom_rrig_prerigBut = cmds.button(l='Build Mosasaurus Pre-Rig', c='import webrImport as web\natm = web.mod("atom_mosasaurus_lib")\natm.preBuild()')
+    atom_rrig_buildSpineBut = cmds.button(l='Build Mosasaurus Splines', c='import webrImport as web\natm = web.mod("atom_mosasaurus_lib")\natm.buildSplines()')
+
+    cmds.setParent('..')
+    cmds.setParent('..')
+    return main
+
+
 def pteranodonFrameLayout(*args):
     refresh = RefreshCallBack('atom_win')
     main = cmds.frameLayout('atom_pteranodon_frameLayout', label='Pteranodon Setup',
@@ -229,7 +246,7 @@ def win(*args):
 
     refresh = RefreshCallBack('atom_win')
     # Main Window
-    atom_win = cmds.window('atom_win', title='A T O M', width=250)
+    atom_win = cmds.window('atom_win', title='A T O M', width=250, height=500)
 
     # Main Scroll Layout
     atom_master_scrollLayout = cmds.scrollLayout('atom_master_scrollLayout', vst=8, cr=True, mcw=235, saw=16)
@@ -531,7 +548,9 @@ def win(*args):
 
     atom_biped_frameLayout = bipedFrameLayout()
 
-    atom_raptor_frameLayout = raptorFrameLayout()
+    # atom_raptor_frameLayout = raptorFrameLayout()
+
+    atom_mos_frameLayout = mosFrameLayout()
 
     atom_pteranodon_frameLayout = pteranodonFrameLayout()
 
@@ -599,7 +618,7 @@ def win(*args):
                                 (atom_qls_frameLayout, 'left', 5), (atom_qls_frameLayout, 'right', 5),
                                 (atom_qrig_frameLayout, 'left', 5), (atom_qrig_frameLayout, 'right', 5),
                                 (atom_biped_frameLayout, 'left', 5), (atom_biped_frameLayout, 'right', 5),
-                                (atom_raptor_frameLayout, 'left', 5), (atom_raptor_frameLayout, 'right', 5),
+                                (atom_mos_frameLayout, 'left', 5), (atom_mos_frameLayout, 'right', 5),
                                 (atom_pteranodon_frameLayout, 'left', 5), (atom_pteranodon_frameLayout, 'right', 5),
                                 (atom_ccst_frameLayout, 'left', 5), (atom_ccst_frameLayout, 'right', 5)],
 
@@ -620,8 +639,8 @@ def win(*args):
                                    (atom_qls_frameLayout, 'top', 5, atom_bls_frameLayout),
                                    (atom_qrig_frameLayout, 'top', 5, atom_qls_frameLayout),
                                    (atom_biped_frameLayout, 'top', 5, atom_qrig_frameLayout),
-                                   (atom_raptor_frameLayout, 'top', 5, atom_biped_frameLayout),
-                                   (atom_pteranodon_frameLayout, 'top', 5, atom_raptor_frameLayout),
+                                   (atom_mos_frameLayout, 'top', 5, atom_biped_frameLayout),
+                                   (atom_pteranodon_frameLayout, 'top', 5, atom_mos_frameLayout),
                                    (atom_ccst_frameLayout, 'top', 5, atom_pteranodon_frameLayout)]
                     )
     cmds.showWindow(atom_win)
