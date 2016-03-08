@@ -1,4 +1,4 @@
 import sys
 
 
-sys.path.append('C:\\Users')
+# sys.path.append('C:\\Users')
