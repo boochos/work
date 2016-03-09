@@ -598,6 +598,7 @@ def clearKey():
 
 def altFrame(*args):
     # cmds.nodeType(sel), object type
+    # optimize, real slow
     pnl = cmds.getPanel(withFocus=True)
     typ = cmds.getPanel(typeOf=pnl)
     if typ == 'modelPanel':
@@ -606,13 +607,13 @@ def altFrame(*args):
         locs = []
         if sel:
             for item in sel:
-                if cmds.objectType(item, i='transform'):
+                if cmds.objectType(item, i='transform') or cmds.objectType(item, i='joint'):
                     loc = cn.locator(obj=item, ro='zxy', X=0.35, constrain=False, shape=False)[0]
                     locs.append(loc)
                 else:
                     try:
                         print cmds.listRelatives(item, parent=True)[0], '_______________'
-                        loc = cn.locator(obj=cmds.listRelatives(item, parent=True)[0], ro='zxy', X=0.35, constrain=False)
+                        loc = cn.locator(obj=cmds.listRelatives(item, parent=True)[0], ro='zxy', X=0.35, constrain=False, shape=False)
                         print loc, '_____________________'
                         loc = loc[0]
                         locs.append(loc)
