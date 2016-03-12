@@ -271,6 +271,7 @@ class SpaceSwitch():
         '''
         restore animation
         '''
+        # FIXME: alters jointOrient attrs. bad bug!!!
         if useSelected:
             self.obj = cmds.ls(sl=1)[0]
         # type of restore
