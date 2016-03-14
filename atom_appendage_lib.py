@@ -276,7 +276,7 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     # Auto Switch
     AutoOffOn = 'AutoAnkle'
     Auto = 'TwistWeight'
-    cmds.addAttr(Ct, ln=AutoOffOn, attributeType='float', k=True, dv=1, min=0.0, max=1.0)
+    cmds.addAttr(Ct, ln=AutoOffOn, attributeType='float', k=True, dv=0, min=0.0, max=1.0)
     cmds.addAttr(Ct, ln=Auto, attributeType='enum', en='OPTNS')
     cmds.setAttr(Ct + '.' + Auto, cb=True)
     LockUp = cmds.parentConstraint(TwistTopGp, TwistSwitchGp, w=1.0, mo=False)[0]
@@ -851,7 +851,7 @@ def createStandardDigit(base_digit, end_digit, prefix, suffix, limbName, rotAxis
     base_ctrl = place.circle(place.buildName(prefix, suffix, limbName + '_ctrl'), digit_ornt_grp, 'facetXup_ctrl', X * 1.25, 17, 8, 1, [0, 0, 1])
     end_ctrl = cmds.circle(n=place.buildName(prefix, suffix, limbName + '_end_ctrl'), ch=False, nr=(0, 0, 0), c=(0, 0, 0), s=8, d=1)
     cmds.select(end_ctrl)
-    ui.importCurveShape('diamond_ctrl', curveShapePath, X * 1.25, 17)
+    ui.importCurveShape('diamond_ctrl', None, X * 1.25, 17)
 
     cmds.xform(digit_aim_loc, ws=True, t=end_digit_pos)
     cmds.xform(end_ctrl, ws=True, t=end_digit_pos)
@@ -919,6 +919,8 @@ def createReverseAnkle(prefix, suffix, name, ankleJnt, paw_fk, aimAxisList, upAx
     cmds.setAttr(ankle_up_grp + '.rz', 0)
     cmds.xform(ankle_up_grp, os=True, t=loc_pos)
     cmds.parent(ankle_up_grp, w=True)
+    print 922
+    # return None
 
     # Old moving the ankle_up_grp, didnt work, changed on Oct 13th 2010
     # cmds.xform(ankle_up_grp, ws=True, t= [ankle_pos[0] + loc_pos[0], ankle_pos[1]+loc_pos[1], ankle_pos[2]+loc_pos[2]], ro=ankle_rot)
@@ -953,7 +955,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
     toe roll and digit roll joints in the skeleton template should be in the same tz location\n
     '''
     # create a single quad limb with a pole vector
-    printMeta('start')
+    # printMeta('start')
     sel = cmds.ls(selection=True)
     setChannels = cmds.checkBox('atom_setChannel_checkBox', query=True, v=True)
     X = cmds.floatField('atom_qrig_conScale', query=True, value=True)
@@ -961,11 +963,12 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
     if len(sel) != 0:
         if cmds.window('atom_win', ex=True):
             hipJnt = sel[0]
+            print hipJnt, '   hip'
             hip_ctrl = extractSebastionsControlSubgroup(sel[1])
             limb_mainCtrl = sel[2]
             limb_ctrl = extractSebastionsControlSubgroup(sel[2])
             if cmds.nodeType(hipJnt) == 'joint':
-                curveShapePath = cmds.textField('atom_csst_exportPath_textField', query=True, text=True)
+                # curveShapePath = cmds.textField('atom_csst_exportPath_textField', query=True, text=True)
                 # print '+'
                 kneeJnt = joint.jointTravers(hipJnt, 1)
                 ankleJnt = joint.jointTravers(hipJnt, traversDepth)
@@ -975,10 +978,10 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 limbPlacementJnt = ''
                 toeRollPlacementJnt = ''
                 heelRollPlacementJnt = ''
-                printMeta('ankle 1')
+                # printMeta('ankle 1')
                 # find the placement joints
                 ankleChildren = cmds.listRelatives(ankleJnt, children=True)
-
+                print ankleJnt
                 for i in range(0, len(ankleChildren), 1):
                     # cull out the digit metacarpals, they have two children one joint down from the ankleJnt
                     if len(cmds.listRelatives(ankleChildren[i], ad=True)) == 4:
@@ -1002,6 +1005,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # get the position to place the limb, toe and heel
                 limbPlacementPos = cmds.xform(limbPlacementJnt, query=True, ws=True, rp=True)
                 toePlacementPos = cmds.xform(toeRollPlacementJnt, query=True, ws=True, rp=True)
+                toePlacementRo = cmds.xform(paw_fk, q=True, ro=True, ws=True)
                 heelPlacementPos = cmds.xform(heelRollPlacementJnt, query=True, ws=True, rp=True)
                 anklePos = cmds.xform(ankleJnt, query=True, ws=True, rp=True)
                 pawFkPos = cmds.xform(paw_fk, query=True, ws=True, rp=True)
@@ -1036,7 +1040,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 toeShape = cmds.listRelatives(toeRollCtrl[0], typ='shape')[0]
                 cmds.connectAttr(sel[2] + '.Pivot', toeShape + '.visibility')
                 cmds.select(toeRollCtrl)
-                ui.importCurveShape('pawToeRoll_ctrl', curveShapePath, X * 3, 17)
+                ui.importCurveShape('pawToeRoll_ctrl', None, X * 3, 17)
                 cmds.xform(toeRollCtrl, ws=True, t=toePlacementPos)
                 cmds.parent(toeRollCtrl, limbCtrl_grp)
                 # new
@@ -1057,7 +1061,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 heelShape = cmds.listRelatives(heelRollCtrl[0], typ='shape')[0]
                 cmds.connectAttr(sel[2] + '.Pivot', heelShape + '.visibility')
                 cmds.select(heelRollCtrl)
-                ui.importCurveShape('pawHeelRoll_ctrl', curveShapePath, X * 3, 17)
+                ui.importCurveShape('pawHeelRoll_ctrl', None, X * 3, 17)
                 cmds.xform(heelRollCtrl, ws=True, t=heelPlacementPos)
                 cmds.parent(heelRollCtrl, toeRollCtrl)
                 # new
@@ -1095,7 +1099,8 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # Ball Roll Control
                 ballRollCtrl = place.circle(place.buildName(prefix, suffix, 'ball_roll_ctrl'), paw_fk, 'ballRoll_ctrl', X * 4, 12, 8, 1, [0, 0, 1])
                 # To accomodate how atom_placement.circle is working
-                cmds.xform(ballRollCtrl[0], ws=True, ro=[0, 0, 0])
+                print 1100, 'removed freeze transforms on ball roll'
+                # cmds.xform(ballRollCtrl[0], ws=True, ro=[0, 0, 0])
 
                 # expose this to a varaible
 
@@ -1109,7 +1114,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # doesnt work for bipeds, turned off
                 # cmds.xform(ballRollCtrl, ws=True, t=[pawFkPos[0], pawFkPos[1] / divisionOffset, pawFkPos[2]])
                 cmds.parent(ballRollCtrl, heelRollCtrl)
-                cmds.makeIdentity(ballRollCtrl, apply=True, t=True, r=True, s=True, n=False)
+                # cmds.makeIdentity(ballRollCtrl, apply=True, t=True, r=True, s=True, n=False)
 
                 # create the base rotation group
                 limb_rot_grp = cmds.group(name=place.buildName(prefix, suffix, '_limb_rot_grp'), em=True)
@@ -1157,7 +1162,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
 
                 # Set up the Pole Vector Locator for the ankleIkh
                 ankle_pv_loc = create_3_joint_pv(hipJnt, ankleJnt, prefix, suffix, limbName, 'atom_qls_limbRot_radioButtonGrp', 'atom_qls_limbAim_radioButtonGrp',
-                                                 'atom_qls_limbUp_radioButtonGrp', ldf, locScale * 1, curveShapePath, True, flipVal)
+                                                 'atom_qls_limbUp_radioButtonGrp', ldf, locScale * 1, None, True, flipVal)
 
                 # Pole Vector Constrain the Ikh to the ankle_pv_loc
                 ankle_pvc = cmds.poleVectorConstraint(ankle_pv_loc, ankleIkh[0][0])
@@ -1221,9 +1226,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
 
                             # digit pv first
                             pv_loc = create_3_joint_pv(proximal_phalanx, distal_phalanx, prefix, suffix, limbName, 'atom_qls_limbRot_radioButtonGrp', 'atom_qls_limbAim_radioButtonGrp',
-                                                       'atom_qls_limbUp_radioButtonGrp', pawLdf, X * .8, curveShapePath, False, flipVal)
+                                                       'atom_qls_limbUp_radioButtonGrp', pawLdf, X * .8, None, False, flipVal)
                             # digit ik after
-                            ik = create_ik(proximal_phalanx, distal_phalanx, prefix, suffix, name, curveShapePath, True, setChannels, orient=False)
+                            ik = create_ik(proximal_phalanx, distal_phalanx, prefix, suffix, name, None, True, setChannels, orient=False)
 
                             printMeta('created digit ik and pv')
                             cmds.addAttr(ik[1], longName='Tip_Vis', attributeType='long', min=0, max=1)
@@ -1238,7 +1243,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
 
                             # =====Digit Creation=====#
                             digit_grp = createStandardDigit(distal_phalanx, end_jnt, prefix, suffix, 'tip_' + name, rotAxis, aimAxis, upAxis,
-                                                            digitLdf, digitScale, aimAxisList, upAxisList, flipVal, True, curveShapePath)
+                                                            digitLdf, digitScale, aimAxisList, upAxisList, flipVal, True, None)
 
                             printMeta('created standard digit rig')
                             cmds.connectAttr(ik[1][0] + '.Tip_Vis', digit_grp + '.visibility', force=True)
@@ -1354,6 +1359,8 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.connectAttr(sel[2] + '.AnkleUp', ankleShape + '.visibility')
                 # print 'line 1222'
                 # return None
+                # another attempt to fix controller placement for non flat bind poses
+                '''
                 ankleFromToeRollGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankle_fromToeRoll_grp'), em=True, world=True)
                 ankleFromToeRollGrpPos = cmds.xform(paw_fk, query=True, ws=True, rp=True)
                 # print 'line 1226'
@@ -1361,6 +1368,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.xform(ankleFromToeRollGrp, ws=True, t=pawFkPos)
                 cmds.parent(ankleFromToeRollGrp, limbCtrl_grp)
                 cmds.makeIdentity(ankleFromToeRollGrp, apply=True, t=True, r=True, s=True, n=False)
+                '''
+                ankleFromToeRollGrp = place.null2(place.buildName(prefix, suffix, '_ankle_fromToeRoll_grp'), paw_fk, orient=True)[0]
+                cmds.parent(ankleFromToeRollGrp, limbCtrl_grp)
                 # This is a reparent, the orignal parenting is done in
                 cmds.parent(ankle_aim_loc[2], ankleFromToeRollGrp)
                 # print 'line 1232'
@@ -1384,21 +1394,29 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 ankleFromToeRollGrpAim = cmds.aimConstraint(ankleFromToeRollGrp_aim_loc, ankleFromToeRollGrp,
                                                             wuo=autoAnkleUp_loc[0], mo=True, wut='object', aim=[0, 1, 0], u=[0, 0, 1])
 
+                # attempt to fix ankle position
+                '''
                 ankleCtrl = cmds.circle(n=place.buildName(prefix, suffix, limbName + '_ankle_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
                 cmds.select(ankleCtrl)
-                ui.importCurveShape('diamond_ctrl', curveShapePath, X * 4, 17)
+                ui.importCurveShape('diamond_ctrl', None, X * 4, 17)
                 cmds.xform(ankleCtrl, ws=True, t=anklePos)
+                '''
+                ankleCtrl = place.circle(name=place.buildName(prefix, suffix, limbName + '_ankle_ctrl'), obj=ankleJnt, shape='diamond_ctrl', size=X * 4, color=17, sections=8, degree=1, normal=(0, 0, 1), orient=True)
                 cmds.parent(ankleCtrl, ankleFromToeRollGrp)
-                cmds.makeIdentity(ankleCtrl, apply=True, t=True, r=True, s=True, n=False)
+                print 1395, 'freeze ankle turned off'
+                # cmds.makeIdentity(ankleCtrl, apply=True, t=True, r=True, s=True, n=False)
 
                 # create a group for pivot the ankle from halfway between the toe tip and foot placement
                 toeRollPivot_ornt_grp = cmds.group(n=place.buildName(prefix, suffix, '_toeRollPivot_ornt_grp'), em=True, world=True)
                 toeRollPivot_grp = cmds.group(n=place.buildName(prefix, suffix, '_toeRollPivot_grp'), em=True, parent=toeRollPivot_ornt_grp)
 
                 cmds.xform(toeRollPivot_ornt_grp, ws=True, t=toePlacementPos)
+                # correct orient of ornt group
+                cmds.xform(toeRollPivot_ornt_grp, ro=toePlacementRo, ws=True)
                 cmds.parent(toeRollPivot_ornt_grp, heelRollCtrl)
                 cmds.setAttr(toeRollPivot_ornt_grp + '.tz', cmds.getAttr(toeRollPivot_ornt_grp + '.tz') * ballRollOffset)
                 cmds.connectAttr(ballRollCtrl[0] + '.rotate' + rotAxis, toeRollPivot_grp + '.rotate' + rotAxis)
+                # return None
 
                 # create a group under the locator
                 ankleCtrlGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankle_ctrl_grp'), em=True, parent=ankleCtrl[0])
@@ -1886,5 +1904,6 @@ def createBoneScale(name='', joint='', control=None, lengthAttr='scaleZ', newAtt
 
 
 def printMeta(mes=''):
-    meta = 'front_mid_phal_jnt_03_L'
-    print cmds.xform(meta, q=True, ro=True), '____ ' + mes + ' ____'
+    pass
+    # meta = 'front_mid_phal_jnt_03_L'
+    # print cmds.xform(meta, q=True, ro=True), '____ ' + mes + ' ____'
