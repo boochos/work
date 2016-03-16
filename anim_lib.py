@@ -252,10 +252,11 @@ class SpaceSwitch():
                 cmds.autoKeyframe(state=False)
                 for key in self.keys:
                     cmds.currentTime(key)
-                    self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
-                    print cmds.xform(self.obj, q=True, rp=True, ws=True)
-                    # self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
-                    # self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
+                    if cmds.nodeType(self.obj) == 'joint':
+                        self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
+                        self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
+                    else:
+                        self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
                 # restore everything
                 cmds.currentTime(current)
                 cmds.autoKeyframe(state=autoK)
@@ -290,13 +291,12 @@ class SpaceSwitch():
                 i = 0
                 for key in self.keys:
                     if key >= self.rng.keyStart and key <= self.rng.keyEnd:
-                        # message(str(key))
                         cmds.currentTime(key)
-                        # print key, '__key'
-                        cmds.xform(self.obj, m=self.mtrx[i], ws=True)
-                        # print self.mtrx[i], '__matrx'
-                        # cmds.xform(self.obj, t=self.pos[i], ws=True)
-                        # cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                        if cmds.nodeType(self.obj) == 'joint':
+                            cmds.xform(self.obj, t=self.pos[i], ws=True)
+                            cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                        else:
+                            cmds.xform(self.obj, m=self.mtrx[i], ws=True)
                         # account for non-keyable rotate or translate attrs
                         cmds.setKeyframe(self.obj + '.rotate')
                         cmds.setKeyframe(self.obj + '.translate')
