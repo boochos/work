@@ -229,7 +229,7 @@ def preBuild(
 
         # BACK L  #
         PawBckL = 'back_paw_L'
-        pawBckL = place.Controller(PawBckL, BACK_L_jnt, False, 'diamond_ctrl', X * 20.5, 12, 8, 1, (0, 0, 1), True, True)
+        pawBckL = place.Controller(PawBckL, BACK_L_jnt, False, 'diamond_ctrl', X * 20.5, 12, 8, 1, (0, 0, 1), True, True, True)
         PawBckLCt = pawBckL.createController()
         cmds.parent(PawBckLCt[0], CONTROLS)
         # More parent group Options
@@ -258,7 +258,7 @@ def preBuild(
 
         # BACK R  #
         PawBckR = 'back_paw_R'
-        pawBckR = place.Controller(PawBckR, BACK_R_jnt, False, 'diamond_ctrl', X * 20.5, 12, 8, 1, (0, 0, 1), True, True)
+        pawBckR = place.Controller(PawBckR, BACK_R_jnt, False, 'diamond_ctrl', X * 20.5, 12, 8, 1, (0, 0, 1), True, True, True)
         PawBckRCt = pawBckR.createController()
         cmds.parent(PawBckRCt[0], CONTROLS)
         # More parent group Options
@@ -287,7 +287,7 @@ def preBuild(
 
         # FRONT L  #
         PawFrntL = 'wing_L'
-        pawFrntL = place.Controller(PawFrntL, FRONT_L_jnt, True, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True)
+        pawFrntL = place.Controller(PawFrntL, FRONT_L_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True)
         PawFrntLCt = pawFrntL.createController()
         cmds.parent(PawFrntLCt[0], CONTROLS)
         # More parent group Options
@@ -316,7 +316,7 @@ def preBuild(
 
         # FRONT R  #
         PawFrntR = 'wing_R'
-        pawFrntR = place.Controller(PawFrntR, FRONT_R_jnt, True, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True)
+        pawFrntR = place.Controller(PawFrntR, FRONT_R_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True)
         PawFrntRCt = pawFrntR.createController()
         cmds.parent(PawFrntRCt[0], CONTROLS)
         # More parent group Options
@@ -439,7 +439,13 @@ def buildAppendages(*args):
     cmds.parent(null, 'wing_L_Grp')
     cmds.parent(ankleIkh[0][0], null)
 
-    aal.createQuadScapulaRig('shoulder_L_JNT', 'shldr_L_Grp', 'scapula_jnt_01_L', 'shldr_L', 'spine_05_JNT', '_L')
+    aal.createVerticalScapRig('shoulder_L_JNT', 'shoulder_dbl_jnt_L', 'shldr_L_Grp', 'scapula_jnt_01_L', 'shldr_L', 'spine_05_JNT', '_L')
+
+    jnts = ['shoulder_L_JNT', 'forearm_L_JNT', 'hand_L_JNT', 'front_foot_ctrl_placement_jnt_L']
+    aa = aal.autoAnkleIk(name='wingFront', suffix='_L', joints=jnts, ikParent='wing_L_Grp', pv=ankle_pv_loc)
+    # add parent for autoAnkle
+    place.parentSwitch('wingFront_autoAnkle_L', Ct=aa[4], CtGp=aa[4], TopGp=aa[4], ObjOff=aa_Ct[4], ObjOn=aa_Ct[4],
+                       Pos=True, Ornt=True, Prnt=True, OPT=True, attr=False, w=1.0)
 
     place.cleanUp('Front_knee_pv_grp_L', Ctrl=True)
     place.cleanUp('Front_auto_ankle_parent_grp_L', Ctrl=True)
@@ -480,7 +486,7 @@ def buildAppendages(*args):
     cmds.parent(null, 'wing_R_Grp')
     cmds.parent(ankleIkh[0][0], null)
 
-    aal.createQuadScapulaRig('shoulder_R_JNT', 'shldr_R_Grp', 'scapula_jnt_01_R', 'shldr_R', 'spine_05_JNT', '_R')
+    aal.createVerticalScapRig('shoulder_R_JNT', 'shoulder_dbl_jnt_R', 'shldr_R_Grp', 'scapula_jnt_01_R', 'shldr_R', 'spine_05_JNT', '_R')
 
     place.cleanUp('Front_knee_pv_grp_R', Ctrl=True)
     place.cleanUp('Front_auto_ankle_parent_grp_R', Ctrl=True)
@@ -695,11 +701,15 @@ def buildSplines(*args):
     SplineOpts(wingInName, wingInSize, wingInDistance, wingInFalloff)
     cmds.select(wingIn)
     stage.splineStage(4)
+    # return None
     # assemble
     OptAttr(wingInAttr, 'WingInSpline')
     cmds.parentConstraint(wingInPrnt, wingInName + '_IK_CtrlGrp', mo=True)
+    # return None
     cmds.parentConstraint(wingInStrt, wingInName + '_S_IK_PrntGrp', mo=True)
+    # return None
     cmds.parentConstraint(wingInEnd, wingInName + '_E_IK_PrntGrp', mo=True)
+    # return None
     place.hijackCustomAttrs(wingInName + '_IK_CtrlGrp', wingInAttr)
     # set options
     cmds.setAttr(wingInAttr + '.' + wingInName + 'Vis', 0)
@@ -715,6 +725,7 @@ def buildSplines(*args):
     cmds.setAttr(wingInAttr + '.VctrMidTwstCstrntSE_W', 0.5)
     cmds.setAttr(wingInName + '_S_IK_Cntrl.LockOrientOffOn', 0)
     cmds.setAttr(wingInName + '_E_IK_Cntrl.LockOrientOffOn', 1)
+    # return None
 
     # Out #
     wingIn = 'wingOutFlap_L'
@@ -744,6 +755,7 @@ def buildSplines(*args):
     cmds.parentConstraint(wingOutPrnt, wingOutName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(wingOutStrt, wingOutName + '_S_IK_PrntGrp', mo=True)
     cmds.parentConstraint(wingOutEnd, wingOutName + '_E_IK_PrntGrp', mo=True)
+    # return None
     place.hijackCustomAttrs(wingOutName + '_IK_CtrlGrp', wingOutAttr)
     # set options
     cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Vis', 0)
@@ -759,6 +771,7 @@ def buildSplines(*args):
     cmds.setAttr(wingOutAttr + '.VctrMidTwstCstrntSE_W', 0.5)
     cmds.setAttr(wingOutName + '_S_IK_Cntrl.LockOrientOffOn', 0)
     cmds.setAttr(wingOutName + '_E_IK_Cntrl.LockOrientOffOn', 1)
+    # return None
 
     #
 

@@ -219,7 +219,9 @@ def null2(nllSuffix, obj, orient=True):
 class Controller():
     # initialize
 
-    def __init__(self, name, obj, orient=True, shape='diamond_ctrl', size=1, color=8, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=False):
+    def __init__(self, name, obj, orient=True, shape='diamond_ctrl',
+                 size=1, color=8, sections=8, degree=1, normal=(0, 0, 1), setChannels=True,
+                 groups=False, orientCt=False):
         self.name = name
         self.obj = obj
         self.orient = orient
@@ -231,6 +233,7 @@ class Controller():
         self.normal = normal
         self.setChannels = setChannels
         self.groups = groups
+        self.orientCt = orientCt
 
     # conditions
     def condition(self):
@@ -273,6 +276,10 @@ class Controller():
                 cmds.setAttr(topgp + '.rotate', rot[0], rot[1], rot[2])
             else:
                 cmds.setAttr(ct + '.rotate', rot[0], rot[1], rot[2])
+        # align control separately if requested
+        if self.orientCt:
+            rot = cmds.xform(self.obj, query=True, ws=True, ro=True)
+            cmds.xform(ct, ws=True, ro=rot)
         # attrs
         # ct
         attr = 'Offset_Vis'
