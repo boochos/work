@@ -53,9 +53,19 @@ class SplineFK(object):
         self.ps1_Jnt = None
         self.rootCt = []
 
-        #
-        #
         # Build
+
+        # master groups
+        self.masterGp = cmds.group(em=True, n='splineFk_' + name)
+        self.ctGp = cmds.group(em=True, n='splineFK_Ct__' + name)
+        self.utilGp = cmds.group(em=True, n='splineFK_Util__' + name)
+        self.hideGp = cmds.group(em=True, n='splineFK_Hide__' + name)
+        cmds.parent(self.ctGp, self.masterGp)
+        cmds.parent(self.utilGp, self.masterGp)
+        cmds.parent(self.hideGp, self.masterGp)
+        cmds.setAttr(self.hideGp + '.visibility', 0)
+        place.cleanUp(self.masterGp, Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+
         # places ik joints if ik does not equal None
         self.placeIkJnts()
         # constrains objects in self.clusterList, created in self.placeIkJnts() and checks if 'ik' was flagged.
@@ -90,7 +100,8 @@ class SplineFK(object):
             cntCt = cnt.createController()
             place.setRotOrder(cntCt[4], 2, False)
             place.setRotOrder(cntCt[2], 3, False)
-        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+        # place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+        cmds.parent(cntCt[0], self.masterGp)
         return cntCt
 
     def setParents(self):
@@ -113,7 +124,8 @@ class SplineFK(object):
             # create the spln chain, creating a new joint for each selected join
             self.ikJoints = place.joint(0, self.nameBuilder(self.name + '_Spln_jnt'))
             # try to clean up groups
-            place.cleanUp(self.ikJoints[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+            # place.cleanUp(self.ikJoints[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+            cmds.parent(self.ikJoints[0], self.hideGp)
 
             # hardcoding 'oj' value. Shouldn't be any different. Otherwise spline up vector breaks.
             joint(self.ikJoints[0], e=True, oj='xyz', sao='yup', ch=True)
@@ -123,6 +135,7 @@ class SplineFK(object):
             # ls(self.ikJoints[len(self.ikJoints)-1])[0].jointOrientX.set(0)
             # ls(self.ikJoints[len(self.ikJoints)-1])[0].jointOrientY.set(0)
             # ls(self.ikJoints[len(self.ikJoints)-1])[0].jointOrientZ.set(0)
+            cmds.parent
         #
         #
         # Type of IK
@@ -139,15 +152,17 @@ class SplineFK(object):
         elif self.ik == 'splineIK':
             # point constrain skin joints to ik joints
             for i in range(0, len(self.skinJoints), 1):
-                pointConstraint(self.ikJoints[i], self.skinJoints[i], mo=True)
+                if i != 0:
+                    if i != 1:
+                        pointConstraint(self.ikJoints[i], self.skinJoints[i], mo=True)
 
             # spline ik
             # build spline
             ikhandle = spln.splineIK(self.nameBuilder(self.name), ls(self.ikJoints[0])[0].name(), ls(self.ikJoints[len(self.ikJoints) - 1])[0].name(), 2, curve=True)
             ls(ikhandle[0])[0].visibility.set(0)
             # try and clean up
-            place.cleanUp(ikhandle[0], World=True)
-            place.cleanUp(ikhandle[2], World=True)
+            cmds.parent(ikhandle[0], self.hideGp)
+            cmds.parent(ikhandle[2], self.hideGp)
             self.ikCurve = ikhandle[2]
 
             # CLUSTERS
@@ -158,7 +173,8 @@ class SplineFK(object):
                 parent(item, self.clusterGrp)
 
             # try to cleanup cluster group, turn visibility off
-            place.cleanUp(self.clusterGrp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
+            # place.cleanUp(self.clusterGrp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
+            cmds.parent(self.clusterGrp, self.hideGp)
             ls(self.clusterGrp)[0].visibility.set(0)
 
     def Stretch(self, attr='OffOn'):
@@ -222,7 +238,8 @@ class SplineFK(object):
         place.addAttribute(self.baseCtrl, visAttr, 0, 1, False, 'long')
         place.hijackVis(guideGp, self.baseCtrl, name=visAttr, suffix=False, default=0)
         # try to cleanup
-        place.cleanUp(guideGp, World=True)
+        cmds.parent(guideGp, self.utilGp)
+        # place.cleanUp(guideGp, World=True)
 
         #
         #
@@ -232,7 +249,8 @@ class SplineFK(object):
             orntObj = str(ls(item)[0].getParent())
             cntCt = self.createController(self.name + '_upVctr_' + str(('%0' + str(2) + 'd') % (i)), orntObj, item, color, ctrlType=['special', ''])
             # try and cleanup
-            place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+            # place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+            cmds.parent(cntCt[0], self.ctGp)
             # vis of controller is connected to base vis controller, teh attr was created above, outside the for loop.
             place.hijackVis(cntCt[2], self.baseCtrl, name=visAttr, suffix=False, default=0)
             # rotations and scales are locked for the controller and controller offset nodes
@@ -293,7 +311,8 @@ class SplineFK(object):
             # add pole vector constraint and try to cleanup
             for i in range(len(upVctr) - 2, 0, -1):
                 cmds.poleVectorConstraint(upVctr[i], self.clusterList[i + 1])
-            place.cleanUp(self.clusterList, World=True)
+            # place.cleanUp(self.clusterList, World=True)
+            cmds.parent(self.clusterList, self.hideGp)
             # constrain skin joints to ik joints.
             for i in range(1, len(self.ikJoints) - 1, 1):
                 cmds.parentConstraint(self.ikJoints[i], self.skinJoints[i], mo=True)
@@ -331,7 +350,10 @@ class SplineFK(object):
             # append controller to list
             self.ctrlList.append(cntCt)
             # constrain handle or joint. If joint is ocnstrained, means spline was opted to not be built, joints were forwarded as handles
-            cmds.parentConstraint(cntCt[4], handle, mo=True)
+            if handle == self.clusterList[0]:
+                cmds.parentConstraint(self.skinJoints[0], handle, mo=True)
+            else:
+                cmds.parentConstraint(cntCt[4], handle, mo=True)
 
             #
             #
@@ -407,7 +429,8 @@ class SplineFK(object):
                         #cmds.parentConstraint(self.firstCntCt, cntCt[0], mo=True)
                         # Dont need as of Nov 30th 2010
                         place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp1, TopGrp1, self.ps1_Jnt, self.ctParent, False, False, True, True, 'FK_', w=self.FK)
-                        place.cleanUp(TopGrp1, Ctrl=True)
+                        # place.cleanUp(TopGrp1, Ctrl=True)
+                        cmds.parent(TopGrp1, self.ctGp)
                 #
                 #
                 # self.parent2 check

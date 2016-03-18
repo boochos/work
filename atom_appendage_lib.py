@@ -1903,23 +1903,28 @@ def createBoneScale(name='', joint='', control=None, lengthAttr='scaleZ', newAtt
         place.hijackHybridScale(joint, control, lengthAttr)
 
 
-def autoAnkleIk(name='', suffix='', joints=[], ikParent='', pv='', ankleAttachCt=''):
+def reverseAutoCarpal(name='', suffix='', joints=[], ikParent='', rootParent='', pv='', ctPlacement=''):
     cmds.select(joints)
-    prefix = 'autoAnkleIk'
-    jnts = place.joint(order=0, jntSuffix='autoAnkleIK', pad=2, rpQuery=True)
+    prefix = 'autoCarpalIK'
+    jnts = place.joint(order=0, jntSuffix=prefix + '_' + name, pad=2, rpQuery=True)
+    # constrain root joint
+    cmds.parentConstraint(rootParent, jnts[0], mo=True)
     # needs to be planar
     for j in jnts:
         v = cmds.getAttr(j + '.jointOrientX')
-        cmds.setAttr(j + '.preferredAngleX', v)
+        cmds.setAttr(j + '.preferredAngleX', v / 10)
     ikName = place.buildName(prefix, suffix, name + '_ikh')
     ikHandle = cmds.ikHandle(name=ikName, sj=jnts[0], ee=jnts[len(jnts) - 1], sol='ikRPsolver', w=1, pw=1, fs=1, shf=1, s=0)
     cmds.poleVectorConstraint(pv, ikHandle[0])
     cmds.parent(ikHandle[0], ikParent)
     # attach ct
-    aa = place.Controller(ikName + 'Attach', ankleAttachCt, True, 'diamond_ctrl', 1, 17, 8, 1, (0, 0, 1), True, True)
+    aa = place.Controller(ikName + 'Attach', ctPlacement, True, 'diamond_ctrl', 1, 17, 8, 1, (0, 0, 1), True, True)
     aa_Ct = aa.createController()
-    cmds.parent(aa_Ct[4], jnts[2])
-    return aa
+    cmds.parent(aa_Ct[0], jnts[3])
+    # clean up
+    place.cleanUp(jnts[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+
+    return aa_Ct
 
 
 def printMeta(mes=''):

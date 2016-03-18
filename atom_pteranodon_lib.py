@@ -19,7 +19,7 @@ def preBuild(
         SHLDR_L_jnt='shoulder_L_JNT', SHLDR_R_jnt='shoulder_R_JNT',
         BACK_L_jnt='back_foot_ctrl_placement_jnt_L', BACK_R_jnt='back_foot_ctrl_placement_jnt_R',
         FRONT_L_jnt='front_foot_ctrl_placement_jnt_L', FRONT_R_jnt='front_foot_ctrl_placement_jnt_R',
-        TAIL_jnt='tail_00_JNT', TAILTIP_jnt='tail19', GEO_gp='mesh', SKIN_jnt='pelvis_jnt'):
+        TAIL_jnt='tail_00_JNT', TAILTIP_jnt='tail19', GEO_gp='Mesh', SKIN_jnt='pelvis_jnt'):
     '''\n
 
     '''
@@ -43,8 +43,8 @@ def preBuild(
     WORLD_SPACE = PreBuild[4]
     MasterCt = PreBuild[5]
 
-    # cmds.parent(SKIN_jnt, SKIN_JOINTS)
-    # cmds.parent(GEO_gp, GEO)
+    cmds.parent(SKIN_jnt, SKIN_JOINTS)
+    cmds.parent(GEO_gp, GEO[3])
 
     # COG #
     Cog = 'cog'
@@ -432,24 +432,25 @@ def buildAppendages(*args):
     # wrist
     wrist_L = place.Controller('wrist_L', 'hand_L_JNT', True, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True)
     wrist_L_Ct = wrist_L.createController()
-    cmds.parentConstraint('wing_L_Grp', wrist_L_Ct[0], mo=True)
+    # cmds.parentConstraint('wing_L_Grp', wrist_L_Ct[0], mo=True)
     # reverse aim
     null = place.null2('reverseWrist_L', 'front_foot_ctrl_placement_jnt_L')[0]
-    cmds.aimConstraint(wrist_L_Ct[4], null, wut='object', wuo='wing_L_jnt', aim=[0, 0, -1], u=[1, 0, 0], mo=True)
+    up = place.null2('reverseWrist_up_L', 'wing_L_jnt')[0]
+    cmds.parent(up, 'wing_L_Grp')
+    cmds.aimConstraint(wrist_L_Ct[4], null, wut='object', wuo=up, aim=[0, 0, -1], u=[1, 0, 0], mo=True)
     cmds.parent(null, 'wing_L_Grp')
     cmds.parent(ankleIkh[0][0], null)
 
     aal.createVerticalScapRig('shoulder_L_JNT', 'shoulder_dbl_jnt_L', 'shldr_L_Grp', 'scapula_jnt_01_L', 'shldr_L', 'spine_05_JNT', '_L')
 
-    jnts = ['shoulder_L_JNT', 'forearm_L_JNT', 'hand_L_JNT', 'front_foot_ctrl_placement_jnt_L']
-    aa = aal.autoAnkleIk(name='wingFront', suffix='_L', joints=jnts, ikParent='wing_L_Grp', pv=ankle_pv_loc)
+    # auto ankle/wrist, for carpal as main control
+    jnts = ['shoulder_L_JNT', 'uperarm_L_JNT', 'forearm_L_JNT', 'hand_L_JNT', 'front_foot_ctrl_placement_jnt_L']
+    aa = aal.reverseAutoCarpal(name='wingFront', suffix='_L', joints=jnts, ikParent='wing_L_Grp', rootParent='shoulder_dbl_jnt_L', pv=ankle_pv_loc, ctPlacement=jnts[3])
     # add parent for autoAnkle
-    place.parentSwitch('wingFront_autoAnkle_L', Ct=aa[4], CtGp=aa[4], TopGp=aa[4], ObjOff=aa_Ct[4], ObjOn=aa_Ct[4],
-                       Pos=True, Ornt=True, Prnt=True, OPT=True, attr=False, w=1.0)
+    place.parentSwitch('autoCarpal_wing_L', Ct=wrist_L_Ct[2], CtGp=wrist_L_Ct[1], TopGp=wrist_L_Ct[0], ObjOff='wing_L_Grp', ObjOn=aa[4], Pos=False, Ornt=False, Prnt=True, OPT=True, attr='autoCarpal', w=1.0)
 
-    place.cleanUp('Front_knee_pv_grp_L', Ctrl=True)
-    place.cleanUp('Front_auto_ankle_parent_grp_L', Ctrl=True)
-    place.cleanUp('Front_limb_ctrl_grp_L', Ctrl=True)
+    place.cleanUp(wrist_L_Ct[0], Ctrl=True)
+    place.cleanUp(pvElbow_L_Ct[0], Ctrl=True)
 
     # front right wing
     idx = cmds.optionMenu('atom_qls_limb_preset_optionMenu', edit=True, sl=4)
@@ -488,9 +489,8 @@ def buildAppendages(*args):
 
     aal.createVerticalScapRig('shoulder_R_JNT', 'shoulder_dbl_jnt_R', 'shldr_R_Grp', 'scapula_jnt_01_R', 'shldr_R', 'spine_05_JNT', '_R')
 
-    place.cleanUp('Front_knee_pv_grp_R', Ctrl=True)
-    place.cleanUp('Front_auto_ankle_parent_grp_R', Ctrl=True)
-    place.cleanUp('Front_limb_ctrl_grp_R', Ctrl=True)
+    place.cleanUp(wrist_R_Ct[0], Ctrl=True)
+    place.cleanUp(pvElbow_R_Ct[0], Ctrl=True)
 
     # reset some UI vals
     cmds.floatFieldGrp('atom_qls_anklePvFlip_floatFieldGrp', edit=True, v2=-5)
@@ -553,51 +553,52 @@ def buildSplines(*args):
     cmds.setAttr(null + '.rotateOrder', 2)
     cmds.parent(null, 'reverseWrist_L')
     cmds.orientConstraint('cog_Grp', null, mo=False)
+
     # hand_Carpal_01_L
     tailRig = splnFk.SplineFK('hand_Carpal_01_L', 'hand_Carpal_01_dbl_L_JNT', 'hand_finger1_04_L_JNT', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # hand_Carpal_02_L
     tailRig = splnFk.SplineFK('hand_Carpal_02_L', 'hand_Carpal_02_dbl_L_JNT', 'hand_finger2_04_L_JNT', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # hand_Carpal_03_L
     tailRig = splnFk.SplineFK('hand_Carpal_03_L', 'hand_Carpal_03_dbl_L_JNT', 'hand_finger3_04_L_JNT', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # hand_Carpal_04_L
     tailRig = splnFk.SplineFK('hand_Carpal_04_L', 'hand_Carpal_04_dbl_L_JNT', 'hand_finger4_03_L_JNT', 'left',
-                              controllerSize=5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # hand_Carpal_01_R
     tailRig = splnFk.SplineFK('hand_Carpal_01_R', 'hand_Carpal_01_dbl_R_JNT', 'hand_finger1_03_R_JNT', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # hand_Carpal_02_R
     tailRig = splnFk.SplineFK('hand_Carpal_02_R', 'hand_Carpal_02_dbl_R_JNT', 'hand_finger2_03_R_JNT', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # hand_Carpal_03_R
     tailRig = splnFk.SplineFK('hand_Carpal_03_R', 'hand_Carpal_03_dbl_R_JNT', 'hand_finger3_03_R_JNT', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # hand_Carpal_04_R
     tailRig = splnFk.SplineFK('hand_Carpal_04_R', 'hand_Carpal_04_dbl_R_JNT', 'hand_finger4_03_R_JNT', 'left',
-                              controllerSize=5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=5, rootParent='reverseWrist_R', parent1='cog_Grp', parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
@@ -692,7 +693,7 @@ def buildSplines(*args):
     wingInSize = wingSize
     wingInDistance = wingDistance
     wingInFalloff = 0
-    wingInPrnt = 'wing_L_jnt'
+    wingInPrnt = 'master_Grp'
     wingInStrt = 'wing_L_jnt'
     wingInEnd = 'spine_00_JNT'
     wingInAttr = wingIn
@@ -741,7 +742,7 @@ def buildSplines(*args):
     wingOutSize = wingSize
     wingOutDistance = wingDistance
     wingOutFalloff = 0
-    wingOutPrnt = 'wing_L_jnt'
+    wingOutPrnt = 'master_Grp'
     wingOutStrt = 'wing_L_jnt'
     wingOutEnd = 'hand_finger4_03_L_JNT'
     wingOutAttr = wingIn
@@ -790,7 +791,7 @@ def buildSplines(*args):
     wingInSize = wingSize
     wingInDistance = wingDistance
     wingInFalloff = 0
-    wingInPrnt = 'wing_R_jnt'
+    wingInPrnt = 'master_Grp'
     wingInStrt = 'wing_R_jnt'
     wingInEnd = 'spine_00_JNT'
     wingInAttr = wingIn
@@ -834,7 +835,7 @@ def buildSplines(*args):
     wingOutSize = wingSize
     wingOutDistance = wingDistance
     wingOutFalloff = 0
-    wingOutPrnt = 'wing_R_jnt'
+    wingOutPrnt = 'master_Grp'
     wingOutStrt = 'wing_R_jnt'
     wingOutEnd = 'hand_finger4_03_R_JNT'
     wingOutAttr = wingIn

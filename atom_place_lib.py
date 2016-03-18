@@ -940,7 +940,7 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
         cmds.setAttr(obj + '.rotateOrder', rotOrder)
 
     # make sure rotation orders are the same
-    RO = 'False'
+    RO = False
     if (cmds.getAttr(CtGp + '.rotateOrder')) == (cmds.getAttr(ObjOff + '.rotateOrder')):
         # print CtGp, ObjOff, 'Good'
         if cmds.getAttr(CtGp + '.rotateOrder') == cmds.getAttr(ObjOn + '.rotateOrder'):
@@ -983,53 +983,53 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
 
     # create orient switch
     if Ornt == True:
-        if RO == 'False':
+        if not RO:
             mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + CtGp + ObjOff + ObjOn + '\";')
-        else:
-            # constrain matching Obj1Gp and Obj2Gp
-            OrntOffGp = null2(name + '_OrntOffGp', Ct)[0]
-            OrntOnGp = null2(name + '_OrntOnGp', Ct)[0]
-            setRotOrder(OrntOffGp, RO)
-            setRotOrder(OrntOnGp, RO)
-            cmds.parent(OrntOffGp, TopGp)
-            cmds.parent(OrntOnGp, TopGp)
-            cmds.orientConstraint(ObjOff, OrntOffGp, w=1.0, mo=True)
-            cmds.orientConstraint(ObjOn, OrntOnGp, w=1.0, mo=True)
-            # contrain object with switch constraints
-            cmds.addAttr(Ct, ln=OrntOffOn, attributeType='float', k=True, dv=w, min=0.0, max=1.0)
-            SwitchCnst = cmds.orientConstraint(OrntOffGp, CtGp, w=1.0, mo=False)[0]
-            cmds.orientConstraint(OrntOnGp, CtGp, w=0.0, mo=False)
-            # build switch
-            wghtAttr = cmds.listAttr(SwitchCnst, k=True, ud=True)
-            revrsOrnt = cmds.shadingNode('reverse', au=True, n=(name + '_revrsOrnt'))
-            cmds.connectAttr(Ct + '.' + OrntOffOn, revrsOrnt + '.inputX')
-            cmds.connectAttr(revrsOrnt + '.outputX', SwitchCnst + '.' + wghtAttr[0])
-            cmds.connectAttr(Ct + '.' + OrntOffOn, SwitchCnst + '.' + wghtAttr[1])
+            # return None
+        # constrain matching Obj1Gp and Obj2Gp
+        OrntOffGp = null2(name + '_OrntOffGp', Ct)[0]
+        OrntOnGp = null2(name + '_OrntOnGp', Ct)[0]
+        setRotOrder(OrntOffGp, RO)
+        setRotOrder(OrntOnGp, RO)
+        cmds.parent(OrntOffGp, TopGp)
+        cmds.parent(OrntOnGp, TopGp)
+        cmds.orientConstraint(ObjOff, OrntOffGp, w=1.0, mo=True)
+        cmds.orientConstraint(ObjOn, OrntOnGp, w=1.0, mo=True)
+        # contrain object with switch constraints
+        cmds.addAttr(Ct, ln=OrntOffOn, attributeType='float', k=True, dv=w, min=0.0, max=1.0)
+        SwitchCnst = cmds.orientConstraint(OrntOffGp, CtGp, w=1.0, mo=False)[0]
+        cmds.orientConstraint(OrntOnGp, CtGp, w=0.0, mo=False)
+        # build switch
+        wghtAttr = cmds.listAttr(SwitchCnst, k=True, ud=True)
+        revrsOrnt = cmds.shadingNode('reverse', au=True, n=(name + '_revrsOrnt'))
+        cmds.connectAttr(Ct + '.' + OrntOffOn, revrsOrnt + '.inputX')
+        cmds.connectAttr(revrsOrnt + '.outputX', SwitchCnst + '.' + wghtAttr[0])
+        cmds.connectAttr(Ct + '.' + OrntOffOn, SwitchCnst + '.' + wghtAttr[1])
 
     # create parent switch
     if Prnt == True:
-        if RO == 'False':
+        if not RO:
             mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + CtGp + ObjOff + ObjOn + '\";')
-        else:
-            # constrain matching Obj1Gp and Obj2Gp
-            PrntOffGp = null2(name + '_PrntOffGp', CtGp)[0]
-            PrntOnGp = null2(name + '_PrntOnGp', CtGp)[0]
-            setRotOrder(PrntOffGp, RO)
-            setRotOrder(PrntOnGp, RO)
-            cmds.parent(PrntOffGp, TopGp)
-            cmds.parent(PrntOnGp, TopGp)
-            cmds.parentConstraint(ObjOff, PrntOffGp, w=1.0, mo=True)
-            cmds.parentConstraint(ObjOn, PrntOnGp, w=1.0, mo=True)
-            # contrain object with switch constraints
-            cmds.addAttr(Ct, ln=PrntOffOn, attributeType='float', k=True, dv=w, min=0.0, max=1.0)
-            SwitchCnst = cmds.parentConstraint(PrntOffGp, CtGp, w=1.0, mo=False)[0]
-            cmds.parentConstraint(PrntOnGp, CtGp, w=0.0, mo=False)
-            # build switch
-            wghtAttr = cmds.listAttr(SwitchCnst, k=True, ud=True)
-            revrsPrnt = cmds.shadingNode('reverse', au=True, n=(name + '_revrsPrnt'))
-            cmds.connectAttr(Ct + '.' + PrntOffOn, revrsPrnt + '.inputX')
-            cmds.connectAttr(revrsPrnt + '.outputX', SwitchCnst + '.' + wghtAttr[0])
-            cmds.connectAttr(Ct + '.' + PrntOffOn, SwitchCnst + '.' + wghtAttr[1])
+            # return None
+        # constrain matching Obj1Gp and Obj2Gp
+        PrntOffGp = null2(name + '_PrntOffGp', CtGp)[0]
+        PrntOnGp = null2(name + '_PrntOnGp', CtGp)[0]
+        setRotOrder(PrntOffGp, RO)
+        setRotOrder(PrntOnGp, RO)
+        cmds.parent(PrntOffGp, TopGp)
+        cmds.parent(PrntOnGp, TopGp)
+        cmds.parentConstraint(ObjOff, PrntOffGp, w=1.0, mo=True)
+        cmds.parentConstraint(ObjOn, PrntOnGp, w=1.0, mo=True)
+        # contrain object with switch constraints
+        cmds.addAttr(Ct, ln=PrntOffOn, attributeType='float', k=True, dv=w, min=0.0, max=1.0)
+        SwitchCnst = cmds.parentConstraint(PrntOffGp, CtGp, w=1.0, mo=False)[0]
+        cmds.parentConstraint(PrntOnGp, CtGp, w=0.0, mo=False)
+        # build switch
+        wghtAttr = cmds.listAttr(SwitchCnst, k=True, ud=True)
+        revrsPrnt = cmds.shadingNode('reverse', au=True, n=(name + '_revrsPrnt'))
+        cmds.connectAttr(Ct + '.' + PrntOffOn, revrsPrnt + '.inputX')
+        cmds.connectAttr(revrsPrnt + '.outputX', SwitchCnst + '.' + wghtAttr[0])
+        cmds.connectAttr(Ct + '.' + PrntOffOn, SwitchCnst + '.' + wghtAttr[1])
 
 
 def setRotOrder(obj, rotOrder=2, hier=False):
