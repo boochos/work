@@ -252,11 +252,9 @@ class SpaceSwitch():
                 cmds.autoKeyframe(state=False)
                 for key in self.keys:
                     cmds.currentTime(key)
-                    if cmds.nodeType(self.obj) == 'joint':
-                        self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
-                        self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
-                    else:
-                        self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
+                    self.pos.append(cmds.xform(self.obj, q=True, rp=True, ws=True))
+                    self.rot.append(cmds.xform(self.obj, q=True, ro=True, ws=True))
+                    self.mtrx.append(cmds.xform(self.obj, q=True, m=True, ws=True))
                 # restore everything
                 cmds.currentTime(current)
                 cmds.autoKeyframe(state=autoK)
@@ -268,11 +266,10 @@ class SpaceSwitch():
                 self.rng.keyEnd = self.rng.end
                 self.store()
 
-    def restore(self, useSelected=False):
+    def restore(self, useSelected=False, offset=[]):
         '''
         restore animation
         '''
-        # FIXME: alters jointOrient attrs. bad bug!!!
         if useSelected:
             self.obj = cmds.ls(sl=1)[0]
         # type of restore
@@ -280,7 +277,6 @@ class SpaceSwitch():
             # find if obj is keyed, if keyed insert key otherwise setAttr
             pass
         else:
-            print self.keys
             if self.keys:
                 current = cmds.currentTime(q=True)
                 # ui off
@@ -297,6 +293,13 @@ class SpaceSwitch():
                             cmds.xform(self.obj, ro=self.rot[i], ws=True)
                         else:
                             cmds.xform(self.obj, m=self.mtrx[i], ws=True)
+                        # object space offset X, Y, Z
+                        if offset:
+                            # objects need to be in same rotate order space
+                            # add feature to translate values to different rotate orders
+                            cmds.xform(self.obj, r=True, os=True, ro=(offset[0], 0, 0))
+                            cmds.xform(self.obj, r=True, os=True, ro=(0, offset[1], 0))
+                            cmds.xform(self.obj, r=True, os=True, ro=(0, 0, offset[2]))
                         # account for non-keyable rotate or translate attrs
                         cmds.setKeyframe(self.obj + '.rotate')
                         cmds.setKeyframe(self.obj + '.translate')
