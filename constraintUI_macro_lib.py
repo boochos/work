@@ -205,22 +205,31 @@ class CSUI(object):
                 self.animBucket.append(al.SpaceSwitch(obj))
                 message('Animation Stored: -- ' + obj, maya=True)
                 cmds.refresh(f=1)
+            self.actionColumn.prefGet()
         else:
             cmds.warning('Select object(s)')
 
     def cmdRestore(self, *args):
         if self.animBucket:
+            v = cmds.floatFieldGrp(self.actionColumn.floatGroup1, q=True, v=True)
+            if v == [0.0,0.0,0.0]:
+                v = []
             for obj in self.animBucket:
-                obj.restore()
+                obj.restore(offset=v)
                 message('Animation ReStored: -- ' + obj.obj, maya=True)
                 cmds.refresh(f=1)
+            self.actionColumn.prefGet()
         else:
             cmds.warning('No objects have been stored.')
 
     def cmdRestoreToSelected(self, *args):
         # TODO: if more than one object add window pop up to choose source
         if self.animBucket:
-            self.animBucket[0].restore(useSelected=True)
+            v = cmds.floatFieldGrp(self.actionColumn.floatGroup1, q=True, v=True)
+            if v == [0.0,0.0,0.0]:
+                v = []
+            self.animBucket[0].restore(useSelected=True, offset=v)
+            self.actionColumn.prefGet()
             message('Animation ReStored: -- ' + self.animBucket[0].obj, maya=True)
             cmds.refresh(f=1)
         else:

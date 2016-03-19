@@ -38,6 +38,7 @@ class Action(object):
         self.actionButton16 = name + '_actionButton16'
         self.actionButton17 = name + '_actionButton17'
         self.actionButton18 = name + '_actionButton18'
+        self.floatGroup1 = name + '_floatGrp1'
         self.c1 = ''
         self.c2 = ''
         self.c3 = ''
@@ -143,6 +144,8 @@ class Action(object):
         self.prefs['ConRot'] = cmds.checkBox(self.c11, q=True, v=True)
         self.prefs['DstKys'] = cmds.intField(self.actionField1, q=True, v=True)
         self.prefs['DstKysDstrct'] = cmds.checkBox(self.c14, q=True, v=True)
+        print cmds.floatFieldGrp(self.floatGroup1, q=True, v=True), '____get'
+        self.prefs['ObjctSpaceOffst'] = str(cmds.floatFieldGrp(self.floatGroup1, q=True, v=True))
         self.prefSave()
 
     def prefPut(self):
@@ -177,6 +180,8 @@ class Action(object):
         cmds.checkBox(self.c11, e=True, v=self.prefs['ConRot'])
         cmds.intField(self.actionField1, e=True, v=self.prefs['DstKys'])
         cmds.checkBox(self.c14, e=True, v=self.prefs['DstKysDstrct'])
+        print eval(self.prefs['ObjctSpaceOffst']), '____put'
+        cmds.floatFieldGrp(self.floatGroup1, e=True, v=[float(i) for i in eval(self.prefs['ObjctSpaceOffst'])])
 
     def buildColumn(self):
         cmds.setParent(self.parent)
@@ -239,6 +244,10 @@ class Action(object):
                                          ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Restore animation using restore button.')
         self.actionButton14 = cmds.button(self.actionButton14, label='Restore to Selected', c=self.cmdAction, bgc=self.purple2,
                                           ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Override - Restore animation to selected object.')
+        # object space rotate offset
+        self.floatGroup1 = cmds.floatFieldGrp(self.floatGroup1, numberOfFields=3, label='Rotate Offset', cc=self.prefGet, ad4=1, cw4=[50, 50, 50, 50], cl4=['left', 'left', 'left', 'left'], value1=0.0, value2=0.0, value3=0.0, w=self.w,
+                                              ann='Add a relative object space rotation to the stored animation' )
+        
         self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
         #
         # match things
