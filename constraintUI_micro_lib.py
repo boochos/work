@@ -144,8 +144,11 @@ class Action(object):
         self.prefs['ConRot'] = cmds.checkBox(self.c11, q=True, v=True)
         self.prefs['DstKys'] = cmds.intField(self.actionField1, q=True, v=True)
         self.prefs['DstKysDstrct'] = cmds.checkBox(self.c14, q=True, v=True)
-        print cmds.floatFieldGrp(self.floatGroup1, q=True, v=True), '____get'
-        self.prefs['ObjctSpaceOffst'] = str(cmds.floatFieldGrp(self.floatGroup1, q=True, v=True))
+        # float x3, needs to be x4 for, import requires it
+        l = cmds.floatFieldGrp(self.floatGroup1, q=True, v=True)
+        l.append(0.0)
+        self.prefs['ObjctSpaceOffst'] = l
+        #
         self.prefSave()
 
     def prefPut(self):
@@ -180,8 +183,7 @@ class Action(object):
         cmds.checkBox(self.c11, e=True, v=self.prefs['ConRot'])
         cmds.intField(self.actionField1, e=True, v=self.prefs['DstKys'])
         cmds.checkBox(self.c14, e=True, v=self.prefs['DstKysDstrct'])
-        print eval(self.prefs['ObjctSpaceOffst']), '____put'
-        cmds.floatFieldGrp(self.floatGroup1, e=True, v=[float(i) for i in eval(self.prefs['ObjctSpaceOffst'])])
+        cmds.floatFieldGrp(self.floatGroup1, e=True, v=self.prefs['ObjctSpaceOffst'])
 
     def buildColumn(self):
         cmds.setParent(self.parent)
@@ -245,9 +247,9 @@ class Action(object):
         self.actionButton14 = cmds.button(self.actionButton14, label='Restore to Selected', c=self.cmdAction, bgc=self.purple2,
                                           ann='Space switch tool\n1. Store animation before making changes to attributes.\n2. Make changes to attributes\n3. Override - Restore animation to selected object.')
         # object space rotate offset
-        self.floatGroup1 = cmds.floatFieldGrp(self.floatGroup1, numberOfFields=3, label='Rotate Offset', cc=self.prefGet, ad4=1, cw4=[50, 50, 50, 50], cl4=['left', 'left', 'left', 'left'], value1=0.0, value2=0.0, value3=0.0, w=self.w,
-                                              ann='Add a relative object space rotation to the stored animation' )
-        
+        self.floatGroup1 = cmds.floatFieldGrp(self.floatGroup1, numberOfFields=3, label='Restore with offset', cc=self.prefGet, ad4=1, cw4=[50, 40, 40, 40], cl4=['left', 'left', 'left', 'left'], value1=0.0, value2=0.0, value3=0.0, w=self.w,
+                                              ann='Add a relative object space rotation to the stored animation')
+
         self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
         #
         # match things
@@ -258,9 +260,9 @@ class Action(object):
         # self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)
         # stick
         self.actionButton10 = cmds.button(self.actionButton10, label='Stick', c=self.cmdAction, bgc=self.teal,
-        ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
+                                          ann='1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.')
         self.actionButton11 = cmds.button(self.actionButton11, label='UnStick', c=self.cmdAction, bgc=self.teal,
-        ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
+                                          ann='Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.')
         self.c1 = cmds.checkBox(label='On All Frames', v=False, ann=existing)
         self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
         #

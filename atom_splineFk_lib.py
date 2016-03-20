@@ -428,14 +428,15 @@ class SplineFK(object):
                     if ps2 == None:
                         #cmds.parentConstraint(self.firstCntCt, cntCt[0], mo=True)
                         # Dont need as of Nov 30th 2010
-                        place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp1, TopGrp1, self.ps1_Jnt, self.ctParent, False, False, True, True, 'FK_', w=self.FK)
+                        place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp1, TopGrp1, self.ps1_Jnt, self.ctParent,
+                                           False, False, True, True, 'FK_', w=self.FK)
                         # place.cleanUp(TopGrp1, Ctrl=True)
                         cmds.parent(TopGrp1, self.ctGp)
                 #
                 #
                 # self.parent2 check
                 if ps2 != None:
-                    print ps2
+                    # print ps2
                     # cmds.select(TopGrp1)
                     topRot = cmds.xform(cntCt[0], query=True, ws=True, ro=True)
                     # top 2 is placed above top 1, therefore this parent is only used of ps1 is turned off
@@ -468,6 +469,7 @@ class SplineFK(object):
                         place.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, JntIntmdt, False, False, True, False, 'Driver_', w=self.driven)
                     else:
                         place.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, ps2, False, False, True, False, 'Driver_', w=self.driven)
+
                 # forward group to be used as parent for next controller iteration
                 self.ctParent = cntCt[4]
                 # append same controller to list for vector parent
@@ -507,6 +509,8 @@ class SplineFK(object):
                     # all iterations of segment get scale additive to the joints
                     place.attrBlend(chainZero, self.skinJoints[i - 1], cntCt[2], scale=True, skip=2)
 
+                # root Parent, useless, object takes parent1 position
+                # cmds.parentConstraint(self.rootParent, TopGrp1, mo=True)
                 #
                 #
                 # segment iteration
@@ -527,7 +531,7 @@ class SplineFK(object):
                     place.setRotOrderWithXform(JntIntmdt, 'zxy', False)
                     cmds.parentConstraint(self.rootParent, JntIntmdt, mo=True)
                     rp = JntIntmdt
-                print self.ps1_Jnt, 'here\n'
+                # print self.ps1_Jnt, 'here\n'
                 # account for ps1 being a joint type
                 self.ps1_Jnt = ps1
                 if cmds.objectType(ps1) == 'joint':
@@ -600,7 +604,7 @@ class SplineFK(object):
                     s = s + 1
         return self.rootCt
 
-
+"""
 def splnFK(Name, sJnt, eJnt, direction=0, X=1):
     '''\n
     sJnt = 'start spline at this joint'
@@ -802,3 +806,4 @@ def vectors(Name, CtParent, VcParent, IKjnt, skinJnts, master='master', segItera
     #cmds.parentConstraint(start, upVctr[i], w=cc[0], mo=True)
     #cmds.parentConstraint(end, upVctr[i], w=cc[1], mo=True)
     #    i=i+1
+"""

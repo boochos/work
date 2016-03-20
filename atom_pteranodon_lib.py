@@ -11,6 +11,7 @@ ael = web.mod('atom_earRig_lib')
 splnFk = web.mod('atom_splineFk_lib')
 adl = web.mod('atom_deformer_lib')
 abl = web.mod('atom_body_lib')
+anm = web.mod('anim_lib')
 
 
 def preBuild(
@@ -447,8 +448,11 @@ def buildAppendages(*args):
     jnts = ['shoulder_L_JNT', 'uperarm_L_JNT', 'forearm_L_JNT', 'hand_L_JNT', 'front_foot_ctrl_placement_jnt_L']
     aa = aal.reverseAutoCarpal(name='wingFront', suffix='_L', joints=jnts, ikParent='wing_L_Grp', rootParent='shoulder_dbl_jnt_L', pv=ankle_pv_loc, ctPlacement=jnts[3])
     # add parent for autoAnkle
-    place.parentSwitch('autoCarpal_wing_L', Ct=wrist_L_Ct[2], CtGp=wrist_L_Ct[1], TopGp=wrist_L_Ct[0], ObjOff='wing_L_Grp', ObjOn=aa[4], Pos=False, Ornt=False, Prnt=True, OPT=True, attr='autoCarpal', w=1.0)
-
+    place.setRotOrderWithXform(wrist_L_Ct[1], rotOrder='zxy', hier=False)
+    place.setRotOrderWithXform(aa[4], rotOrder='zxy', hier=False)
+    # return None
+    place.parentSwitch('autoCarpal_wing_L', Ct=wrist_L_Ct[2], CtGp=wrist_L_Ct[1], TopGp=wrist_L_Ct[0], ObjOff='wing_L_Grp', ObjOn=aa[4], Pos=False, Ornt=False, Prnt=True, OPT=True, attr='autoCarpal', w=0.5)
+    # return None
     place.cleanUp(wrist_L_Ct[0], Ctrl=True)
     place.cleanUp(pvElbow_L_Ct[0], Ctrl=True)
 
@@ -532,19 +536,19 @@ def buildSplines(*args):
 
     # Tail
     tailRig = splnFk.SplineFK('tail', 'tailRoot_JNT', 'tail_03_JNT', 'mid',
-                              controllerSize=3, rootParent='PelvisAttch_CnstGp', parent1='master_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=3, rootParent='PelvisAttch_CnstGp', parent1='master_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # Tongue
     tailRig = splnFk.SplineFK('tongue', 'tongue_01_JNT', 'tongue_06_JNT', 'mid',
-                              controllerSize=4, rootParent='lower_jaw_01_JNT', parent1='head_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=4, rootParent='lower_jaw_03_JNT', parent1='head_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
     # jaw
     tailRig = splnFk.SplineFK('jaw', 'lower_jaw_01_JNT', 'lower_jaw_03_JNT', 'mid',
-                              controllerSize=5, rootParent='head_Grp', parent1='neck_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=5, rootParent='head_Grp', parent1='neck_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
     for i in tailRig.topGrp2:
         place.cleanUp(i, World=True)
 
@@ -685,7 +689,21 @@ def buildSplines(*args):
     CogCt = cog.createController()
     place.setRotOrder(CogCt[0], 2, True)
     cmds.parent(CogCt[0], '___CONTROLS')
-    cmds.parentConstraint('wing_L_Grp', CogCt[0], mo=True)
+    # anchors
+    anch0 = cmds.group(n='anch0_L', em=True)
+    anch1 = 'hand_finger4_01_L_JNT'
+    anch2 = 'forearm_L_JNT'
+    anchr1 = place.Controller('wingFlapAnchor1_L', anch1, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True)
+    anchrCt1 = anchr1.createController()
+    cmds.parentConstraint(anch1, anchrCt1[0], mo=True)
+    anchr2 = place.Controller('wingFlapAnchor2_L', anch2, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True)
+    anchrCt2 = anchr2.createController()
+    cmds.parentConstraint(anch2, anchrCt2[0], mo=True)
+    cmds.pointConstraint(anchrCt1[4], anch0, mo=False)
+    cmds.pointConstraint(anchrCt2[4], anch0, mo=False)
+    cmds.aimConstraint(anch1, anch0, wut='object', wuo='wing_L_Grp', aim=[0, 0, 1], u=[1, 0, 0], mo=False)
+
+    cmds.parentConstraint(anch0, CogCt[0], mo=True)
     cmds.parentConstraint(CogCt[4], 'wing_L_jnt', mo=True)
 
     # wingIn L
@@ -704,15 +722,16 @@ def buildSplines(*args):
     stage.splineStage(4)
     # return None
     # assemble
-    OptAttr(wingInAttr, 'WingInSpline')
+    # OptAttr(wingInAttr, 'WingInSpline')
     cmds.parentConstraint(wingInPrnt, wingInName + '_IK_CtrlGrp', mo=True)
     # return None
     cmds.parentConstraint(wingInStrt, wingInName + '_S_IK_PrntGrp', mo=True)
     # return None
     cmds.parentConstraint(wingInEnd, wingInName + '_E_IK_PrntGrp', mo=True)
     # return None
-    place.hijackCustomAttrs(wingInName + '_IK_CtrlGrp', wingInAttr)
+    # place.hijackCustomAttrs(wingInName + '_IK_CtrlGrp', wingInAttr)
     # set options
+    '''
     cmds.setAttr(wingInAttr + '.' + wingInName + 'Vis', 0)
     cmds.setAttr(wingInAttr + '.' + wingInName + 'Root', 0)
     cmds.setAttr(wingInAttr + '.' + wingInName + 'Stretch', 1)
@@ -727,7 +746,9 @@ def buildSplines(*args):
     cmds.setAttr(wingInName + '_S_IK_Cntrl.LockOrientOffOn', 0)
     cmds.setAttr(wingInName + '_E_IK_Cntrl.LockOrientOffOn', 1)
     # return None
+    '''
 
+    '''
     # Out #
     wingIn = 'wingOutFlap_L'
     cog = place.Controller(wingIn, 'wing_L_jnt', False, 'facetZup_ctrl', 9.5, 12, 8, 1, (0, 0, 1), True, True)
@@ -736,6 +757,7 @@ def buildSplines(*args):
     cmds.parent(CogCt[0], '___CONTROLS')
     cmds.parentConstraint('wing_L_Grp', CogCt[0], mo=True)
     cmds.parentConstraint(CogCt[4], 'wing_L_jnt', mo=True)
+    '''
 
     # wingOut L
     wingOutName = 'wingOut_L'
@@ -752,13 +774,14 @@ def buildSplines(*args):
     cmds.select(wingOut)
     stage.splineStage(4)
     # assemble
-    OptAttr(wingOutAttr, 'WingInSpline')
+    # OptAttr(wingOutAttr, 'WingInSpline')
     cmds.parentConstraint(wingOutPrnt, wingOutName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(wingOutStrt, wingOutName + '_S_IK_PrntGrp', mo=True)
     cmds.parentConstraint(wingOutEnd, wingOutName + '_E_IK_PrntGrp', mo=True)
     # return None
-    place.hijackCustomAttrs(wingOutName + '_IK_CtrlGrp', wingOutAttr)
+    # place.hijackCustomAttrs(wingOutName + '_IK_CtrlGrp', wingOutAttr)
     # set options
+    '''
     cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Vis', 0)
     cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Root', 0)
     cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Stretch', 1)
@@ -773,6 +796,7 @@ def buildSplines(*args):
     cmds.setAttr(wingOutName + '_S_IK_Cntrl.LockOrientOffOn', 0)
     cmds.setAttr(wingOutName + '_E_IK_Cntrl.LockOrientOffOn', 1)
     # return None
+    '''
 
     #
 
@@ -805,8 +829,9 @@ def buildSplines(*args):
     cmds.parentConstraint(wingInPrnt, wingInName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(wingInStrt, wingInName + '_S_IK_PrntGrp', mo=True)
     cmds.parentConstraint(wingInEnd, wingInName + '_E_IK_PrntGrp', mo=True)
-    place.hijackCustomAttrs(wingInName + '_IK_CtrlGrp', wingInAttr)
+    # place.hijackCustomAttrs(wingInName + '_IK_CtrlGrp', wingInAttr)
     # set options
+    '''
     cmds.setAttr(wingInAttr + '.' + wingInName + 'Vis', 0)
     cmds.setAttr(wingInAttr + '.' + wingInName + 'Root', 0)
     cmds.setAttr(wingInAttr + '.' + wingInName + 'Stretch', 1)
@@ -820,6 +845,7 @@ def buildSplines(*args):
     cmds.setAttr(wingInAttr + '.VctrMidTwstCstrntSE_W', 0.5)
     cmds.setAttr(wingInName + '_S_IK_Cntrl.LockOrientOffOn', 0)
     cmds.setAttr(wingInName + '_E_IK_Cntrl.LockOrientOffOn', 1)
+    '''
 
     # Out #
     wingIn = 'wingOutFlap_R'
@@ -849,8 +875,9 @@ def buildSplines(*args):
     cmds.parentConstraint(wingOutPrnt, wingOutName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(wingOutStrt, wingOutName + '_S_IK_PrntGrp', mo=True)
     cmds.parentConstraint(wingOutEnd, wingOutName + '_E_IK_PrntGrp', mo=True)
-    place.hijackCustomAttrs(wingOutName + '_IK_CtrlGrp', wingOutAttr)
+    # place.hijackCustomAttrs(wingOutName + '_IK_CtrlGrp', wingOutAttr)
     # set options
+    '''
     cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Vis', 0)
     cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Root', 0)
     cmds.setAttr(wingOutAttr + '.' + wingOutName + 'Stretch', 1)
@@ -864,3 +891,4 @@ def buildSplines(*args):
     cmds.setAttr(wingOutAttr + '.VctrMidTwstCstrntSE_W', 0.5)
     cmds.setAttr(wingOutName + '_S_IK_Cntrl.LockOrientOffOn', 0)
     cmds.setAttr(wingOutName + '_E_IK_Cntrl.LockOrientOffOn', 1)
+    '''

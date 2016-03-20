@@ -192,23 +192,22 @@ def circle(name='', obj='', shape='', size=1.0, color=17, sections=8, degree=1, 
 
 def null2(nllSuffix, obj, orient=True):
     null = []
+    defRoo = 'xyz'
     if type(obj) != list:
         pos = cmds.xform(obj, q=True, rp=True, ws=True)
         rot = cmds.xform(obj, q=True, ro=True, ws=True)
         n = cmds.group(name=nllSuffix, em=True)
+        objRoo = cmds.xform(obj, q=True, roo=True)
+        setRotOrderWithXform(n, objRoo)
         cmds.xform(n, t=pos, ro=rot, ws=True)
+        setRotOrderWithXform(n, defRoo)
         if orient == False:
             cmds.xform(n, ro=(0, 0, 0))
         null.append(n)
         return null
-    elif len(obj) > 0:
+    elif type(obj) == list:
         for item in obj:
-            pos = cmds.xform(item, q=True, rp=True, ws=True)
-            rot = cmds.xform(item, q=True, ro=True, ws=True)
-            n = cmds.group(name=nllSuffix, em=True)
-            cmds.xform(n, t=pos, ro=rot, ws=True)
-            if orient == False:
-                cmds.xform(n, ro=(0, 0, 0))
+            n = null2(nllSuffix, item, orient)[0]
             null.append(n)
         return null
     else:
@@ -946,6 +945,13 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
         if cmds.getAttr(CtGp + '.rotateOrder') == cmds.getAttr(ObjOn + '.rotateOrder'):
             # print CtGp, ObjOn, 'Good'
             RO = cmds.getAttr(CtGp + '.rotateOrder')
+            roD = {0: 'xyz', 1: 'yzx', 2: 'zxy', 3: 'xzy', 4: 'yxz', 5: 'zyx'}
+            RO = roD[RO]
+            # print RO
+
+    if not RO:
+        # print Pos, '______pos'
+        # print Ct
 
     # attrs
     prefix = ''
@@ -957,12 +963,12 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
     Parent = 'Parent'  # enum attr name
 
     # create 'OPTNS' enum
-    if OPT == True:
+    if OPT:
         cmds.addAttr(Ct, ln=Parent, attributeType='enum', en='OPTNS')
         cmds.setAttr(Ct + '.' + Parent, cb=True)
 
     # create point switch
-    if Pos == True:
+    if Pos:
         # create and constrain matching Obj1Gp and Obj2Gp
         PosOffGp = null2(name + '_PosOffGp', Ct)[0]
         PosOnGp = null2(name + '_PosOnGp', Ct)[0]
@@ -982,15 +988,15 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
         cmds.connectAttr(Ct + '.' + PosOffOn, SwitchCnst + '.' + wghtAttr[1])
 
     # create orient switch
-    if Ornt == True:
+    if Ornt:
         if not RO:
-            mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + CtGp + ObjOff + ObjOn + '\";')
+            mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + '--' + CtGp + '--' + ObjOff + '--' + ObjOn + '\";')
             # return None
         # constrain matching Obj1Gp and Obj2Gp
         OrntOffGp = null2(name + '_OrntOffGp', Ct)[0]
         OrntOnGp = null2(name + '_OrntOnGp', Ct)[0]
-        setRotOrder(OrntOffGp, RO)
-        setRotOrder(OrntOnGp, RO)
+        setRotOrderWithXform(OrntOffGp, RO)
+        setRotOrderWithXform(OrntOnGp, RO)
         cmds.parent(OrntOffGp, TopGp)
         cmds.parent(OrntOnGp, TopGp)
         cmds.orientConstraint(ObjOff, OrntOffGp, w=1.0, mo=True)
@@ -1007,15 +1013,15 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
         cmds.connectAttr(Ct + '.' + OrntOffOn, SwitchCnst + '.' + wghtAttr[1])
 
     # create parent switch
-    if Prnt == True:
+    if Prnt:
         if not RO:
-            mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + CtGp + ObjOff + ObjOn + '\";')
+            mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + '--' + CtGp + '--' + ObjOff + '--' + ObjOn + '\";')
             # return None
         # constrain matching Obj1Gp and Obj2Gp
         PrntOffGp = null2(name + '_PrntOffGp', CtGp)[0]
         PrntOnGp = null2(name + '_PrntOnGp', CtGp)[0]
-        setRotOrder(PrntOffGp, RO)
-        setRotOrder(PrntOnGp, RO)
+        setRotOrderWithXform(PrntOffGp, RO)
+        setRotOrderWithXform(PrntOnGp, RO)
         cmds.parent(PrntOffGp, TopGp)
         cmds.parent(PrntOnGp, TopGp)
         cmds.parentConstraint(ObjOff, PrntOffGp, w=1.0, mo=True)
@@ -1044,7 +1050,7 @@ def setRotOrder(obj, rotOrder=2, hier=False):
     ## 4 = yxz\n
     ## 5 = zyx\n
     '''
-    if hier == True:
+    if hier:
         transforms = []
         cmds.select(obj, hierarchy=True)
         sel = cmds.ls(sl=True)
@@ -1064,18 +1070,19 @@ def setRotOrderWithXform(obj, rotOrder='xyz', hier=False):
     ## obj          = object to change rotate order of\n
     ## rotOrder     = String expected of the 6 order types
     '''
-    if hier == True:
-        transforms = []
-        cmds.select(obj, hierarchy=True)
-        sel = cmds.ls(sl=True)
-        cmds.select(cl=True)
-        for item in sel:
-            if cmds.nodeType(item) == 'transform':
-                transforms.append(item)
-        for item in transforms:
-            cmds.xform(item, p=True, roo=rotOrder)
-    else:
-        cmds.xform(obj, p=True, roo=rotOrder)
+    if rotOrder:
+        if hier:
+            transforms = []
+            cmds.select(obj, hierarchy=True)
+            sel = cmds.ls(sl=True)
+            cmds.select(cl=True)
+            for item in sel:
+                if cmds.nodeType(item) == 'transform':
+                    transforms.append(item)
+            for item in transforms:
+                cmds.xform(item, p=True, roo=rotOrder)
+        else:
+            cmds.xform(obj, p=True, roo=rotOrder)
 
 
 def hijackScale(obj1, obj2):

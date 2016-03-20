@@ -146,205 +146,6 @@ def preBuild(
 
     if not face:
         pass
-        '''
-        # HIP L #
-        hipL = 'hip_L'
-        hipL = place.Controller(hipL, HIP_L_jnt, False, 'diamond_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
-        HipLCt = hipL.createController()
-        place.setRotOrder(HipLCt[0], 2, True)
-        cmds.parentConstraint(PelvisAttch_CnstGp, HipLCt[0], mo=True)
-        cmds.parentConstraint(HipLCt[4], 'back_hip_dbl_jnt_L', mo=True)
-        cmds.parent(HipLCt[0], CONTROLS)
-
-        place.setChannels(HipLCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        place.setChannels(HipLCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        place.setChannels(HipLCt[2], [True, False], [True, False], [True, False], [False, False, False])
-        place.setChannels(HipLCt[3], [True, False], [True, False], [True, False], [False, False, False])
-        cmds.setAttr(HipLCt[3] + '.visibility', cb=False)
-        place.setChannels(HipLCt[4], [True, False], [True, False], [True, False], [True, False, False])
-
-        # HIP R #
-        hipR = 'hip_R'
-        hipR = place.Controller(hipR, HIP_R_jnt, False, 'diamond_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
-        HipRCt = hipR.createController()
-        place.setRotOrder(HipRCt[0], 2, True)
-        cmds.parentConstraint(PelvisAttch_CnstGp, HipRCt[0], mo=True)
-        cmds.parentConstraint(HipRCt[4], 'back_hip_dbl_jnt_R', mo=True)
-        cmds.parent(HipRCt[0], CONTROLS)
-        place.setChannels(HipRCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        place.setChannels(HipRCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        place.setChannels(HipRCt[2], [True, False], [True, False], [True, False], [False, False, False])
-        place.setChannels(HipRCt[3], [True, False], [True, False], [True, False], [False, False, False])
-        cmds.setAttr(HipRCt[3] + '.visibility', cb=False)
-        place.setChannels(HipRCt[4], [True, False], [True, False], [True, False], [True, False, False])
-
-        # SHOULDER L #
-        shldrL = 'shldr_L'
-        shldrL = place.Controller(shldrL, SHLDR_L_jnt, False, 'shldrL_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
-        ShldrLCt = shldrL.createController()
-        place.setRotOrder(ShldrLCt[0], 2, True)
-        cmds.parentConstraint(ChestAttch_CnstGp, ShldrLCt[0], mo=True)
-        scapStrtchL = cmds.parentConstraint(ShldrLCt[4], 'front_shoulder_dbl_jnt_L', mo=True)[0]
-        UsrAttrL = cmds.listAttr(scapStrtchL, ud=True)[0]
-        cmds.addAttr(scapStrtchL + '.' + UsrAttrL, e=True, max=1)
-        place.hijackAttrs(scapStrtchL, ShldrLCt[2], UsrAttrL, 'ScapulaStretch', default=0)
-        cmds.parent(ShldrLCt[0], CONTROLS)
-        place.setChannels(ShldrLCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        place.setChannels(ShldrLCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        place.setChannels(ShldrLCt[2], [False, True], [True, False], [True, False], [True, False, False])
-        place.setChannels(ShldrLCt[3], [False, True], [True, False], [True, False], [False, False, False])
-        cmds.setAttr(ShldrLCt[3] + '.visibility', cb=False)
-        place.setChannels(ShldrLCt[4], [True, False], [True, False], [True, False], [True, False, False])
-        cmds.setAttr(ShldrLCt[2] + '.tx', l=True, k=False)
-        cmds.setAttr(ShldrLCt[3] + '.tx', l=True, k=False)
-
-        # SHOULDER R #
-        shldrR = 'shldr_R'
-        shldrR = place.Controller(shldrR, SHLDR_R_jnt, False, 'shldrR_ctrl', X * 15, 17, 8, 1, (0, 0, 1), True, True)
-        ShldrRCt = shldrR.createController()
-        place.setRotOrder(ShldrRCt[0], 2, True)
-        cmds.parentConstraint(ChestAttch_CnstGp, ShldrRCt[0], mo=True)
-        scapStrtchR = cmds.parentConstraint(ShldrRCt[4], 'front_shoulder_dbl_jnt_R', mo=True)[0]
-        UsrAttrR = cmds.listAttr(scapStrtchR, ud=True)[0]
-        cmds.addAttr(scapStrtchR + '.' + UsrAttrR, e=True, max=1)
-        place.hijackAttrs(scapStrtchR, ShldrRCt[2], UsrAttrR, 'ScapulaStretch', default=0)
-        cmds.parent(ShldrRCt[0], CONTROLS)
-        place.setChannels(ShldrRCt[0], [False, False], [False, False], [True, False], [True, False, False])
-        place.setChannels(ShldrRCt[1], [True, False], [True, False], [True, False], [True, False, False])
-        place.setChannels(ShldrRCt[2], [False, True], [True, False], [True, False], [True, False, False])
-        place.setChannels(ShldrRCt[3], [False, True], [True, False], [True, False], [False, False, False])
-        cmds.setAttr(ShldrRCt[3] + '.visibility', cb=False)
-        place.setChannels(ShldrRCt[4], [True, False], [True, False], [True, False], [True, False, False])
-        cmds.setAttr(ShldrRCt[2] + '.tx', l=True, k=False)
-        cmds.setAttr(ShldrRCt[3] + '.tx', l=True, k=False)
-
-        # Attrs for paws
-        attrVis = ['Pivot', 'Pad', 'Fk', 'AnkleUp', 'BaseDigit', 'MidDigit', 'PvDigit']
-        attrCstm = ['ToeRoll', 'HeelRoll', 'KneeTwist']
-        vis = 'Vis'
-        assist = 'Assist'
-
-        # BACK L  #
-        PawBckL = 'back_paw_L'
-        pawBckL = place.Controller(PawBckL, BACK_L_jnt, False, 'pawMaster_ctrl', X * 17.5, 12, 8, 1, (0, 0, 1), True, True)
-        PawBckLCt = pawBckL.createController()
-        cmds.parent(PawBckLCt[0], CONTROLS)
-        # More parent group Options
-        cmds.select(PawBckLCt[0])
-        PawBckL_TopGrp2 = place.insert('null', 1, PawBckL + '_TopGrp2')[0][0]
-        PawBckL_CtGrp2 = place.insert('null', 1, PawBckL + '_CtGrp2')[0][0]
-        PawBckL_TopGrp1 = place.insert('null', 1, PawBckL + '_TopGrp1')[0][0]
-        PawBckL_CtGrp1 = place.insert('null', 1, PawBckL + '_CtGrp1')[0][0]
-        # set RotateOrders for new groups
-        place.setRotOrder(PawBckL_TopGrp2, 2, True)
-        # attr
-        place.optEnum(PawBckLCt[2], attr=assist, enum='OPTNS')
-        for item in attrCstm:
-            cmds.addAttr(PawBckLCt[2], ln=item, at='float', h=False)
-            cmds.setAttr((PawBckLCt[2] + '.' + item), cb=True)
-            cmds.setAttr((PawBckLCt[2] + '.' + item), k=True)
-        # parentConstrain top group
-        cmds.parentConstraint(MasterCt[4], PawBckL_TopGrp2, mo=True)
-        place.parentSwitch('PRNT2_' + PawBckL, PawBckLCt[2], PawBckL_CtGrp2, PawBckL_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        place.parentSwitch('PRNT1_' + PawBckL, PawBckLCt[2], PawBckL_CtGrp1, PawBckL_TopGrp1, PawBckL_CtGrp2, PelvisCt[4], False, False, True, False, 'Pelvis', 0.0)
-        place.parentSwitch('PNT_' + PawBckL, PawBckLCt[2], PawBckLCt[1], PawBckLCt[0], PawBckL_CtGrp1, PelvisCt[4], True, False, False, False, 'Pelvis', 0.0)
-        # attrVis
-        place.optEnum(PawBckLCt[2], attr=vis, enum='OPTNS')
-        for item in attrVis:
-            place.addAttribute(PawBckLCt[2], item, 0, 1, False, 'long')
-
-        # BACK R  #
-        PawBckR = 'back_paw_R'
-        pawBckR = place.Controller(PawBckR, BACK_R_jnt, False, 'pawMaster_ctrl', X * 17.5, 12, 8, 1, (0, 0, 1), True, True)
-        PawBckRCt = pawBckR.createController()
-        cmds.parent(PawBckRCt[0], CONTROLS)
-        # More parent group Options
-        cmds.select(PawBckRCt[0])
-        PawBckR_TopGrp2 = place.insert('null', 1, PawBckR + '_TopGrp2')[0][0]
-        PawBckR_CtGrp2 = place.insert('null', 1, PawBckR + '_CtGrp2')[0][0]
-        PawBckR_TopGrp1 = place.insert('null', 1, PawBckR + '_TopGrp1')[0][0]
-        PawBckR_CtGrp1 = place.insert('null', 1, PawBckR + '_CtGrp1')[0][0]
-        # set RotateOrders for new groups
-        place.setRotOrder(PawBckR_TopGrp2, 2, True)
-        # attr
-        place.optEnum(PawBckRCt[2], attr=assist, enum='OPTNS')
-        for item in attrCstm:
-            cmds.addAttr(PawBckRCt[2], ln=item, at='float', h=False)
-            cmds.setAttr((PawBckRCt[2] + '.' + item), cb=True)
-            cmds.setAttr((PawBckRCt[2] + '.' + item), k=True)
-        # parentConstrain top group
-        cmds.parentConstraint(MasterCt[4], PawBckR_TopGrp2, mo=True)
-        place.parentSwitch('PRNT2_' + PawBckR, PawBckRCt[2], PawBckR_CtGrp2, PawBckR_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        place.parentSwitch('PRNT1_' + PawBckR, PawBckRCt[2], PawBckR_CtGrp1, PawBckR_TopGrp1, PawBckR_CtGrp2, PelvisCt[4], False, False, True, False, 'Pelvis', 0.0)
-        place.parentSwitch('PNT_' + PawBckR, PawBckRCt[2], PawBckRCt[1], PawBckRCt[0], PawBckR_CtGrp1, PelvisCt[4], True, False, False, False, 'Pelvis', 0.0)
-        # attrVis
-        place.optEnum(PawBckRCt[2], attr=vis, enum='OPTNS')
-        for item in attrVis:
-            place.addAttribute(PawBckRCt[2], item, 0, 1, False, 'long')
-
-        # FRONT L  #
-        PawFrntL = 'front_paw_L'
-        pawFrntL = place.Controller(PawFrntL, FRONT_L_jnt, False, 'pawMaster_ctrl', X * 17.5, 12, 8, 1, (0, 0, 1), True, True)
-        PawFrntLCt = pawFrntL.createController()
-        cmds.parent(PawFrntLCt[0], CONTROLS)
-        # More parent group Options
-        cmds.select(PawFrntLCt[0])
-        PawFrntL_TopGrp2 = place.insert('null', 1, PawFrntL + '_TopGrp2')[0][0]
-        PawFrntL_CtGrp2 = place.insert('null', 1, PawFrntL + '_CtGrp2')[0][0]
-        PawFrntL_TopGrp1 = place.insert('null', 1, PawFrntL + '_TopGrp1')[0][0]
-        PawFrntL_CtGrp1 = place.insert('null', 1, PawFrntL + '_CtGrp1')[0][0]
-        # set RotateOrders for new groups
-        place.setRotOrder(PawFrntL_TopGrp2, 2, True)
-        # attr
-        place.optEnum(PawFrntLCt[2], attr=assist, enum='OPTNS')
-        for item in attrCstm:
-            cmds.addAttr(PawFrntLCt[2], ln=item, at='float', h=False)
-            cmds.setAttr((PawFrntLCt[2] + '.' + item), cb=True)
-            cmds.setAttr((PawFrntLCt[2] + '.' + item), k=True)
-        # parentConstrain top group, switches
-        cmds.parentConstraint(MasterCt[4], PawFrntL_TopGrp2, mo=True)
-        place.parentSwitch('PRNT2_' + PawFrntL, PawFrntLCt[2], PawFrntL_CtGrp2, PawFrntL_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        place.parentSwitch('PRNT1_' + PawFrntL, PawFrntLCt[2], PawFrntL_CtGrp1, PawFrntL_TopGrp1, PawFrntL_CtGrp2, ChestCt[4], False, False, True, False, 'Chest', 0.0)
-        place.parentSwitch('PNT_' + PawFrntL, PawFrntLCt[2], PawFrntLCt[1], PawFrntLCt[0], PawFrntL_CtGrp1, ChestCt[4], True, False, False, False, 'Chest', 0.0)
-        # attrVis
-        place.optEnum(PawFrntLCt[2], attr=vis, enum='OPTNS')
-        for item in attrVis:
-            place.addAttribute(PawFrntLCt[2], item, 0, 1, False, 'long')
-
-        # FRONT R  #
-        PawFrntR = 'front_paw_R'
-        pawFrntR = place.Controller(PawFrntR, FRONT_R_jnt, False, 'pawMaster_ctrl', X * 17.5, 12, 8, 1, (0, 0, 1), True, True)
-        PawFrntRCt = pawFrntR.createController()
-        cmds.parent(PawFrntRCt[0], CONTROLS)
-        # More parent group Options
-        cmds.select(PawFrntRCt[0])
-        PawFrntR_TopGrp2 = place.insert('null', 1, PawFrntR + '_TopGrp2')[0][0]
-        PawFrntR_CtGrp2 = place.insert('null', 1, PawFrntR + '_CtGrp2')[0][0]
-        PawFrntR_TopGrp1 = place.insert('null', 1, PawFrntR + '_TopGrp1')[0][0]
-        PawFrntR_CtGrp1 = place.insert('null', 1, PawFrntR + '_CtGrp1')[0][0]
-        # set RotateOrders for new groups
-        place.setRotOrder(PawFrntR_TopGrp2, 2, True)
-        # attr
-        place.optEnum(PawFrntRCt[2], attr=assist, enum='OPTNS')
-        for item in attrCstm:
-            cmds.addAttr(PawFrntRCt[2], ln=item, at='float', h=False)
-            cmds.setAttr((PawFrntRCt[2] + '.' + item), cb=True)
-            cmds.setAttr((PawFrntRCt[2] + '.' + item), k=True)
-        # parentConstrain top group, switches
-        cmds.parentConstraint(MasterCt[4], PawFrntR_TopGrp2, mo=True)
-        place.parentSwitch('PRNT2_' + PawFrntR, PawFrntRCt[2], PawFrntR_CtGrp2, PawFrntR_TopGrp2, MasterCt[4], CogCt[4], False, False, True, True, 'Cog', 0.0)
-        place.parentSwitch('PRNT1_' + PawFrntR, PawFrntRCt[2], PawFrntR_CtGrp1, PawFrntR_TopGrp1, PawFrntR_CtGrp2, ChestCt[4], False, False, True, False, 'Chest', 0.0)
-        place.parentSwitch('PNT_' + PawFrntR, PawFrntRCt[2], PawFrntRCt[1], PawFrntRCt[0], PawFrntR_CtGrp1, ChestCt[4], True, False, False, False, 'Chest', 0.0)
-        # attrVis
-        place.optEnum(PawFrntRCt[2], attr=vis, enum='OPTNS')
-        for item in attrVis:
-            place.addAttribute(PawFrntRCt[2], item, 0, 1, False, 'long')
-    cmds.floatField('atom_qrig_conScale', edit=True, v=current_scale)
-    if face == False:
-        return MasterCt, CogCt, PelvisCt, ChestCt, NeckCt, HeadCt, HipLCt, HipRCt, ShldrLCt, ShldrRCt, PawBckLCt, PawBckRCt, PawFrntLCt, PawFrntRCt,
-    else:
-        return MasterCt, CogCt, PelvisCt, ChestCt, NeckCt, HeadCt
-    '''
 
 
 def buildSplines(*args):
@@ -570,7 +371,7 @@ def deform(*args):
     # belly
     SSTName = 'belly'
     SSTSize = X * 0.1
-    SSTDistance = X * 1.5
+    SSTDistance = X * 5
     SSTFalloff = 0
     SSTPrnt = 'chest_jnt'
     ##SSTStrt = 'spine_jnt_06'
@@ -578,7 +379,7 @@ def deform(*args):
     SSTAttr = 'belly'
     SST = ['belly_00_jnt', 'belly_04_jnt']
     # build controller
-    sst = place.Controller(SSTName, SST[0], True, 'facetZup_ctrl', X * 3, 12, 8, 1, (0, 0, 1), True, True)
+    sst = place.Controller(SSTName, SST[0], True, 'facetZup_ctrl', X * 9, 12, 8, 1, (0, 0, 1), True, True)
     sstCt = sst.createController()
     cmds.parentConstraint(SSTPrnt, sstCt[0], mo=True)
     # build spline
@@ -613,7 +414,7 @@ def deform(*args):
     # throat
     SSTName = 'throat'
     SSTSize = X * 0.1
-    SSTDistance = X * 1.5
+    SSTDistance = X * 5
     SSTFalloff = 0
     SSTPrnt = 'chest_jnt'
     ##SSTStrt = 'spine_jnt_06'
@@ -621,7 +422,7 @@ def deform(*args):
     SSTAttr = 'throat'
     SST = ['throat_00_jnt', 'throat_04_jnt']
     # build controller
-    sst = place.Controller(SSTName, SST[0], True, 'facetZup_ctrl', X * 3, 12, 8, 1, (0, 0, 1), True, True)
+    sst = place.Controller(SSTName, SST[0], True, 'facetZup_ctrl', X * 9, 12, 8, 1, (0, 0, 1), True, True)
     sstCt = sst.createController()
     cmds.parentConstraint(SSTPrnt, sstCt[0], mo=True)
     # build spline
