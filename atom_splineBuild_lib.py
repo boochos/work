@@ -502,9 +502,9 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
         Controls.append(ClusterCntrls[2])
         # create guide groups
         cmds.select(skinJnts[0])
-        guideGrp = place.null(prefix + suffix + '_Ctrl_GuideGrp')[0]
-        guideClstr = place.null(prefix + suffix + '_Ctrl_GuideClstrGrp')[0]
-        guideCrv = place.null(prefix + suffix + '_Ctrl_GuideCrvGrp')[0]
+        guideGrp = cmds.group(em=True, name=prefix + suffix + '_Ctrl_GuideGrp')
+        guideClstr = cmds.group(em=True, name=prefix + suffix + '_Ctrl_GuideClstrGrp')
+        guideCrv = cmds.group(em=True, name=prefix + suffix + '_Ctrl_GuideCrvGrp')
         cmds.parent(guideClstr, guideCrv, guideGrp)
         cmds.parent(guideGrp, guideGp)
         cmds.connectAttr(ClstrCtrlGrp + '.visibility', guideCrv + '.visibility')
@@ -1185,9 +1185,9 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
     # create guide groups
     guideGp = 'GuideGp'
     cmds.select(skinJnts[0])
-    guideGrp = place.null(prefix + '_Vctr_Cnnct_GuideGrp')[0]
-    guideClstr = place.null(prefix + '_GuideClstrGrp')[0]
-    guideCrv = place.null(prefix + '_GuideCrvGrp')[0]
+    guideGrp = cmds.group(em=True, name=prefix + '_Vctr_Cnnct_GuideGrp')
+    guideClstr = cmds.group(em=True, name=prefix + '_GuideClstrGrp')
+    guideCrv = cmds.group(em=True, name=prefix + '_GuideCrvGrp')
     cmds.parent(guideClstr, guideCrv, guideGrp)
     cmds.parent(guideGrp, guideGp)
     cmds.connectAttr(VectorMaster + '.visibility', guideCrv + '.visibility')

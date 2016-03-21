@@ -128,7 +128,7 @@ def preBuild(
     place.setRotOrder(Head_CnstGp, 2, True)
     cmds.parent(Head_CnstGp, HeadCt[2])
     # tip of head constrain to offset
-    cmds.orientConstraint(HeadCt[3], NECK_jnt, mo=True)
+    # cmds.orientConstraint(HeadCt[3], NECK_jnt, mo=True)
     # constrain head to neck
     cmds.parentConstraint(NeckCt[4], HeadCt[0], mo=True)
     # set channels

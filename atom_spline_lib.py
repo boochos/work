@@ -59,7 +59,7 @@ def splineIK(ikSuffix, start, end, upType=4, worldUpAxis=0, curve=False):
     if curve != False:
         chain = jnt.getJointChainHier(start, end, chain=None)
         crv = place.curve(ikSuffix + '_crv', chain)
-        print crv
+        # print crv
         result = cmds.ikHandle(sj=start, ee=end, sol='ikSplineSolver', n=ikSuffix, c=crv, scv=False, ccv=False, pcv=False)
         result.append(crv)
     else:

@@ -233,7 +233,7 @@ class SplineFK(object):
         # guide group
         # guide group is a null which houses templated lines between controllers and the corolating up vectors
         # all guides are parented under the guide group
-        guideGp = place.null2(self.nameBuilder(self.name + '_UpVctrGdGrp'), self.baseCtrl, orient=False)[0]
+        guideGp = cmds.group(em=True, name=self.nameBuilder(self.name + '_UpVctrGdGrp'))
         # the vis attr of guide group is connectged to an attr on the base controller
         place.addAttribute(self.baseCtrl, visAttr, 0, 1, False, 'long')
         place.hijackVis(guideGp, self.baseCtrl, name=visAttr, suffix=False, default=0)
@@ -469,6 +469,7 @@ class SplineFK(object):
                         place.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, JntIntmdt, False, False, True, False, 'Driver_', w=self.driven)
                     else:
                         place.parentSwitch(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i))), cntCt[2], CtGrp2, TopGrp2, TopGrp2, ps2, False, False, True, False, 'Driver_', w=self.driven)
+                    cmds.parent(TopGrp2, self.ctGp)
 
                 # forward group to be used as parent for next controller iteration
                 self.ctParent = cntCt[4]

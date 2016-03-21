@@ -167,7 +167,7 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     # rotate order dict
     rotOrderList = {'xyz': 0, 'yzx': 1, 'zxy': 2, 'xzy': 3, 'yxz': 4, 'zyx': 5}
 
-    def setRotOrder(obj, rotOrder):
+    def setRotOrderWithXform(obj, rotOrder):
         cmds.setAttr(obj + '.rotateOrder', rotOrder)
 
     # find rotate order
@@ -232,8 +232,8 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     # Top
     MstrTopGp = place.null2(name + '_MstrTopGp', Top)[0]
     IsoTopGp = place.null2(name + '_IsoTopGp', Top)[0]
-    setRotOrder(MstrTopGp, rotOrder)
-    setRotOrder(IsoTopGp, rotOrder)
+    setRotOrderWithXform(MstrTopGp, rotOrder)
+    setRotOrderWithXform(IsoTopGp, rotOrder)
     cmds.parent(IsoTopGp, MstrTopGp)
     cmds.parent(MstrTopGp, twstGp)
     cmds.pointConstraint(Top, MstrTopGp, w=1, mo=False)
@@ -243,8 +243,8 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     # Twst
     MstrTwstGp = place.null2(name + '_MstrTwstGp', Top)[0]
     IsoTwstGp = place.null2(name + '_IsoTwstGp', Top)[0]
-    setRotOrder(MstrTwstGp, rotOrder)
-    setRotOrder(IsoTwstGp, rotOrder)
+    setRotOrderWithXform(MstrTwstGp, rotOrder)
+    setRotOrderWithXform(IsoTwstGp, rotOrder)
     cmds.parent(IsoTwstGp, MstrTwstGp)
     cmds.parent(MstrTwstGp, twstGp)
     cmds.pointConstraint(Top, MstrTwstGp, w=1, mo=False)
@@ -253,8 +253,8 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     # Btm
     MstrBtmGp = place.null2(name + '_MstrBtmGp', Btm)[0]
     IsoBtmGp = place.null2(name + '_IsoBtmGp', Btm)[0]
-    setRotOrder(MstrBtmGp, rotOrder)
-    setRotOrder(IsoBtmGp, rotOrder)
+    setRotOrderWithXform(MstrBtmGp, rotOrder)
+    setRotOrderWithXform(IsoBtmGp, rotOrder)
     cmds.parent(IsoBtmGp, MstrBtmGp)
     cmds.parent(MstrBtmGp, twstGp)
     cmds.pointConstraint(Btm, MstrBtmGp, w=1, mo=False)
@@ -264,8 +264,8 @@ def ankleTwist(name, Master, Top, Btm, Ct, UpObj, AimObj, setChannels=True, up=[
     # Auto Switch Gps
     TwistTopGp = place.null2(name + '_TwistTopSwitchGp', Top)[0]
     TwistSwitchGp = place.null2(name + '_TwistSwitchGp', Top)[0]
-    setRotOrder(TwistTopGp, rotOrder)
-    setRotOrder(TwistSwitchGp, rotOrder)
+    setRotOrderWithXform(TwistTopGp, rotOrder)
+    setRotOrderWithXform(TwistSwitchGp, rotOrder)
     cmds.parent(UpObj, TwistSwitchGp)
     cmds.parent(AimObj, TwistSwitchGp)
     TwistBtmGp = place.null2(name + '_TwistBtmSwitchGp', Top)[0]
@@ -389,7 +389,7 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     cmds.connectAttr(pv + '.visibility', pvGds + '.visibility')
 
     # set rotate order
-    def setRotOrder(obj, rotOrder):
+    def setRotOrderWithXform(obj, rotOrder):
         cmds.setAttr(obj + '.rotateOrder', rotOrder)
 
     # find rotate order
@@ -452,7 +452,7 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
 
     # top grp
     topGp = place.null2(name + '_AimGp', Top)[0]
-    setRotOrder(topGp, rotOrder)
+    setRotOrderWithXform(topGp, rotOrder)
     cmds.parent(topGp, rig)
     cmds.pointConstraint(Top, topGp, w=0.5, mo=False)
 
@@ -465,8 +465,8 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     # main groups
     MstrUpGp = place.null2(name + '_AimUpGp', Top)[0]
     IsoUpGp = place.null2(name + '_IsoUpGp', Top)[0]
-    setRotOrder(MstrUpGp, rotOrder)
-    setRotOrder(IsoUpGp, rotOrder)
+    setRotOrderWithXform(MstrUpGp, rotOrder)
+    setRotOrderWithXform(IsoUpGp, rotOrder)
     cmds.parent(IsoUpGp, MstrUpGp)
     OrntSwtch = cmds.orientConstraint(Master, MstrUpGp, w=1, mo=False)[0]
     cmds.pointConstraint(Top, MstrUpGp, w=1, mo=False)
@@ -499,7 +499,7 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     place.addAttribute(pvWtCt, 'Pv_Vis', 0, 1, False, 'long')
     cmds.connectAttr(pvWtCt + '.Pv_Vis', pv + '.visibility')
     # place.hijackAttrs(pv, pvWtCt, 'visibility', 'pvVisibility', set=False)
-    setRotOrder(pvWtGp, rotOrder)
+    setRotOrderWithXform(pvWtGp, rotOrder)
     cmds.pointConstraint(topGp, pvWtGp, w=0.5, mo=False)
     cmds.pointConstraint(btmGp, pvWtGp, w=0.5, mo=False)
     # correct upObj position
@@ -515,8 +515,8 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     # Top
     MstrTopGp = place.null2(name + '_MstrTopGp', Top)[0]
     IsoTopGp = place.null2(name + '_IsoTopGp', Top)[0]
-    setRotOrder(MstrTopGp, rotOrder)
-    setRotOrder(IsoTopGp, rotOrder)
+    setRotOrderWithXform(MstrTopGp, rotOrder)
+    setRotOrderWithXform(IsoTopGp, rotOrder)
     cmds.parent(IsoTopGp, MstrTopGp)
     cmds.parent(MstrTopGp, twstGp)
     cmds.pointConstraint(Top, MstrTopGp, w=1, mo=False)
@@ -528,8 +528,8 @@ def pvRig(name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels=True
     MstrBtmGp = place.null2(name + '_MstrBtmGp', Btm)[0]
     IsoBtmGp = place.null2(name + '_IsoBtmGp', Btm)[0]  # likely cause of elbow flipping. interpolated value can be a flipped one
 
-    setRotOrder(MstrBtmGp, rotOrder)
-    setRotOrder(IsoBtmGp, rotOrder)
+    setRotOrderWithXform(MstrBtmGp, rotOrder)
+    setRotOrderWithXform(IsoBtmGp, rotOrder)
     cmds.parent(IsoBtmGp, MstrBtmGp)
 
     # ## try and fix flipping ########################
@@ -1015,7 +1015,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 suffix = cmds.optionMenu('atom_suffix_optionMenu', query=True, v=True)
                 limbName = cmds.optionMenu('atom_qls_limb_optionMenu', query=True, v=True)
 
-                # If the ui is blank, set empyt the variables
+                # If the ui is blank, set empty the variables
                 if suffix == 'none':
                     suffix = ''
                 if limbName == 'none':
@@ -1114,6 +1114,8 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # doesnt work for bipeds, turned off
                 # cmds.xform(ballRollCtrl, ws=True, t=[pawFkPos[0], pawFkPos[1] / divisionOffset, pawFkPos[2]])
                 cmds.parent(ballRollCtrl, heelRollCtrl)
+                cmds.select(ballRollCtrl)
+                place.insert('null', 1, ballRollCtrl[0] + '_Grp')
                 # cmds.makeIdentity(ballRollCtrl, apply=True, t=True, r=True, s=True, n=False)
 
                 # create the base rotation group
@@ -1333,6 +1335,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                                 place.setChannels(pivot_grp, [True, False], [False, False], [True, False], [True, True, False])
                                 place.setChannels(meta_pv[0], [False, True], [True, False], [True, False], [False, False, True], [True, True])
                                 place.setChannels(pv_loc, [False, True], [True, False], [True, False], [True, True, False], [True, True])
+
                 # print 'after loop'
                 # return None
                 printMeta('done digit loop')
@@ -1391,9 +1394,12 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.parent(autoAnkleUp_loc, heelRollCtrl)
                 # print 'line 1245'
                 # return None
+                # introduces CYCLE
+                print '__CYCLE__HERE__'
                 ankleFromToeRollGrpAim = cmds.aimConstraint(ankleFromToeRollGrp_aim_loc, ankleFromToeRollGrp,
                                                             wuo=autoAnkleUp_loc[0], mo=True, wut='object', aim=[0, 1, 0], u=[0, 0, 1])
 
+                # return None
                 # attempt to fix ankle position
                 '''
                 ankleCtrl = cmds.circle(n=place.buildName(prefix, suffix, limbName + '_ankle_ctrl'), ch=False, nr=(0, 1, 0), c=(0, 0, 0), s=8, d = 1)
@@ -1403,12 +1409,13 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 '''
                 ankleCtrl = place.circle(name=place.buildName(prefix, suffix, limbName + '_ankle_ctrl'), obj=ankleJnt, shape='diamond_ctrl', size=X * 4, color=17, sections=8, degree=1, normal=(0, 0, 1), orient=True)
                 cmds.parent(ankleCtrl, ankleFromToeRollGrp)
-                print 1395, 'freeze ankle turned off'
-                # cmds.makeIdentity(ankleCtrl, apply=True, t=True, r=True, s=True, n=False)
+                place.insert('null', 1, ankleCtrl[0] + '_Grp')
+                # return None
 
                 # create a group for pivot the ankle from halfway between the toe tip and foot placement
                 toeRollPivot_ornt_grp = cmds.group(n=place.buildName(prefix, suffix, '_toeRollPivot_ornt_grp'), em=True, world=True)
                 toeRollPivot_grp = cmds.group(n=place.buildName(prefix, suffix, '_toeRollPivot_grp'), em=True, parent=toeRollPivot_ornt_grp)
+                # return None
 
                 cmds.xform(toeRollPivot_ornt_grp, ws=True, t=toePlacementPos)
                 # correct orient of ornt group
@@ -1422,16 +1429,19 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 ankleCtrlGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankle_ctrl_grp'), em=True, parent=ankleCtrl[0])
                 cmds.xform(ankleCtrlGrp, ws=True, t=cmds.xform(ankleCtrl, query=True, ws=True, rp=True))
                 cmds.makeIdentity(ankleCtrlGrp, apply=True, t=True, r=True, s=True, n=False)
+                # return None
 
                 ankleToToeRollGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankle_toToeRoll_grp'), em=True, world=True)
                 ankleToToeRollGrpPos = cmds.xform(ankleToToeRollGrp, ws=True, t=pawFkPos)
                 cmds.pointConstraint(ankleToToeRollGrp, ankleFromToeRollGrp)
+                # return None
 
                 cmds.parent(ankleToToeRollGrp, toeRollPivot_grp)
                 cmds.xform(ankleToToeRollGrp, ws=True, t=pawFkPos)
                 cmds.parent(ankle_aim_loc[0], toeRollPivot_grp)
                 cmds.makeIdentity(ankle_aim_loc[0], apply=True, t=True, r=True, s=True, n=False)
                 place.hijack(ankle_aim_loc[0], ballRollCtrl[0], rotate=False, scale=False, visibility=False)
+                # return None
 
                 # create the ankleIkParentGrp
                 ankleIkParentGrp = cmds.group(n=place.buildName(prefix, suffix, '_ankleIkParent_grp'), em=True, world=True)
@@ -1439,6 +1449,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.parent(ankleIkParentGrp, toeRollPivot_grp)
                 cmds.makeIdentity(ankleIkParentGrp, apply=True, t=True, r=True, s=True, n=False)
                 place.hijack(ankleIkParentGrp, ballRollCtrl[0], rotate=False, scale=False, visibility=False)
+                # return None
 
                 ankleIkParent_up_loc = cmds.spaceLocator(n=place.buildName(prefix, suffix, '_ankleIkParent_up_loc'))
                 cmds.parent(ankleIkParent_up_loc, ballRollCtrl)
@@ -1446,6 +1457,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 cmds.makeIdentity(ankleIkParent_up_loc, apply=True, t=True, r=True, s=True, n=False)
                 cmds.aimConstraint(ankleCtrl, ankleIkParentGrp, wuo=ankleIkParent_up_loc[0], wut='object', aim=aimAxisList, u=upAxisList)
                 cmds.parent(ankleIkh[0][0], ankleIkParentGrp)
+                # return None
 
                 # set the rotate order
                 cmds.setAttr(ankleCtrlGrp + '.rotateOrder', 2)
@@ -1457,6 +1469,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # Rig up the reverse ankle aim constraints
                 pvRig(place.buildName(prefix, suffix, '_pv_ctrl'), 'master_Grp', hip_ctrl, ankleCtrlGrp, heelRollCtrl[0], ankle_pv_loc, kneeJnt, X * 4, sel[2], setChannels)
                 # pvRig(place.buildName(prefix, suffix, '_pv_ctrl'), 'master_Grp', hip_ctrl, ankleCtrlGrp, heelRollCtrl[0], ankle_pv_loc, kneeJnt, X * 4, sel[2], setChannels)
+                # return None
 
                 cmds.setAttr(ankleToToeRollGrp + '.rotateOrder', 2)
                 cmds.setAttr(ankleCtrl[0] + '.rotateOrder', 2)
@@ -1469,8 +1482,11 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3):
                 # '''
                 place.hijackScale(ankleScaleGp, limbCtrl_grp)
                 # '''
-                cmds.parentConstraint(limb_ctrl, limbCtrl_grp)
+                # return None
+                print limb_ctrl, ' --- ', limbCtrl_grp
+                cmds.parentConstraint(limb_ctrl, limbCtrl_grp, mo=True)
 
+                # return None
                 printMeta('before set channels')
                 # set the channels
                 if setChannels:

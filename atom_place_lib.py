@@ -568,67 +568,66 @@ def insert(what, where, name, order=None):
     'loc' = spaceLocator\n
     return = list\n
     """
+    # print '____insert'
     sel = cmds.ls(sl=True)
-    if len(sel) > 0:
-        i = 0
-        result = []
-        relative = []
-        exclusion = ['pointConstraint', 'orientConstraint', 'parentConstraint']
-        obj = None
-        if what == 'null':
-            if order != None:
-                obj = null(name, order)
-            else:
-                obj = null(name)
-        elif what == 'loc':
-            if order != None:
-                obj = loc(name, order)[0]
-            else:
-                obj = loc(name)[0]
+    if sel:
+        if len(sel) == 1:
+            sel = sel[0]
+            result = []
+            relative = []
+            exclusion = ['pointConstraint', 'orientConstraint', 'parentConstraint']
+            obj = None
+            if what == 'null':
+                if order != None:
+                    obj = null(name, order)
+                else:
+                    obj = null(name)
+            elif what == 'loc':
+                if order != None:
+                    obj = loc(name, order)[0]
+                else:
+                    obj = loc(name)[0]
 
-        else:
-            mel.eval('warning \"' + '////...  -what-  has two options: \'loc\' or \'null\' ...////' + '\";')
-        if obj != None:
-            for item in sel:
-                cmds.select(sel[i])
+            else:
+                mel.eval('warning \"' + '////...  -what-  has two options: \'loc\' or \'null\' ...////' + '\";')
+            if obj:
                 # above
                 if where == 1:
-                    parent = cmds.listRelatives(item, parent=True, typ='transform')
+                    prnt = cmds.listRelatives(sel, parent=True, typ='transform')
                     # if parent of item exists (middle of chain)
-                    if parent != None:
-                        for prnt in parent:
-                            if cmds.nodeType(prnt) in exclusion:
-                                child.remove(prnt)
-                        relative.append(parent)
+                    if prnt:
+                        prnt = prnt[0]
+                        relative.append(prnt)
                         # parent obj under parent of item
-                        cmds.parent(obj, parent)
+                        cmds.parent(obj, prnt)
                         # parent item under obj
-                        cmds.parent(item, obj)
+                        cmds.parent(sel, obj)
                     # if item has no parents (top of chain)
                     else:
                         # parent item under obj
-                        cmds.parent(item, obj)
+                        cmds.parent(sel, obj)
                 # below
                 else:
-                    child = cmds.listRelatives(item, children=True, typ='transform')
-                    # if item has children (middle of chain)
-                    if child != None:
+                    child = cmds.listRelatives(sel, children=True, typ='transform')
+                    # if sel has children (middle of chain)
+                    if child:
                         for chld in child:
                             if cmds.nodeType(chld) in exclusion:
                                 child.remove(chld)
                         relative.append(child)
                         # parent obj under item
-                        cmds.parent(obj, item)
+                        cmds.parent(obj, sel)
                         # parent child(s) under obj
                         for item in child:
                             cmds.parent(item, obj)
                     # if item has no children (bottom of chain)
                     else:
                         # parent obj under item
-                        cmds.parent(obj, item)
+                        cmds.parent(obj, sel)
                 result.append(obj)
-                i = i + 1
-            return result
+                return result
+            else:
+                print ' NO OBJ______'
     else:
         mel.eval('warning \"' + '////... select at least one object ...////' + '\";')
         return None
@@ -899,11 +898,16 @@ def guideLine(obj1, obj2, Name):
     Create curve with 2 points\n
     pointConstrain cv[0] to obj1, cv[1] to obj2\n
     """
+    # clusters dont seem to track well
+    # USE THIS METHOD: connectAttr locator1.translateZ curveShape1.controlPoints[0].zValue
+
     result = []
     curveTmp = cmds.curve(d=1, p=[(0, 0, 0), (0, 0, 0)], k=[0, 1])
     curve = cmds.rename(curveTmp, (Name + '_crv#'))
+    shape = cmds.listRelatives(curve, typ='shape')[0]
     cmds.setAttr(curve + '.overrideEnabled', 1)
     cmds.setAttr(curve + '.overrideDisplayType', 1)
+    '''
     clstr = clstrOnCV(curve, Name + '___' + obj1 + '___' + obj2)
     cmds.setAttr(clstr[0] + '.visibility', 0)
     cmds.setAttr(clstr[1] + '.visibility', 0)
@@ -911,6 +915,24 @@ def guideLine(obj1, obj2, Name):
     cmds.pointConstraint(obj2, clstr[1], mo=False, w=1.0)
     result.append(curve)
     result.append(clstr)
+    '''
+    # 1
+    loc1 = cmds.spaceLocator(name=Name + '_loc1___' + obj1 + '___' + obj2)[0]
+    cmds.setAttr(loc1 + '.visibility', 0)
+    cmds.connectAttr(loc1 + '.translateX', shape + '.controlPoints[0].xValue')
+    cmds.connectAttr(loc1 + '.translateY', shape + '.controlPoints[0].yValue')
+    cmds.connectAttr(loc1 + '.translateZ', shape + '.controlPoints[0].zValue')
+    cmds.pointConstraint(obj1, loc1, mo=False, w=1.0)
+    # 2
+    loc2 = cmds.spaceLocator(name=Name + '_loc2___' + obj1 + '___' + obj2)[0]
+    cmds.setAttr(loc2 + '.visibility', 0)
+    cmds.connectAttr(loc2 + '.translateX', shape + '.controlPoints[1].xValue')
+    cmds.connectAttr(loc2 + '.translateY', shape + '.controlPoints[1].yValue')
+    cmds.connectAttr(loc2 + '.translateZ', shape + '.controlPoints[1].zValue')
+    cmds.pointConstraint(obj2, loc2, mo=False, w=1.0)
+    #
+    result.append(curve)
+    result.append([loc1, loc2])
     return result
 
 
@@ -949,10 +971,6 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
             RO = roD[RO]
             # print RO
 
-    if not RO:
-        # print Pos, '______pos'
-        # print Ct
-
     # attrs
     prefix = ''
     if attr != False:
@@ -990,7 +1008,7 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
     # create orient switch
     if Ornt:
         if not RO:
-            mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + '--' + CtGp + '--' + ObjOff + '--' + ObjOn + '\";')
+            mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + ' -- ' + CtGp + ' -- ' + ObjOff + ' -- ' + ObjOn + '\";')
             # return None
         # constrain matching Obj1Gp and Obj2Gp
         OrntOffGp = null2(name + '_OrntOffGp', Ct)[0]
@@ -1015,7 +1033,7 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
     # create parent switch
     if Prnt:
         if not RO:
-            mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + '--' + CtGp + '--' + ObjOff + '--' + ObjOn + '\";')
+            mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + ' -- ' + CtGp + ' -- ' + ObjOff + ' -- ' + ObjOn + '\";')
             # return None
         # constrain matching Obj1Gp and Obj2Gp
         PrntOffGp = null2(name + '_PrntOffGp', CtGp)[0]
@@ -1071,6 +1089,9 @@ def setRotOrderWithXform(obj, rotOrder='xyz', hier=False):
     ## rotOrder     = String expected of the 6 order types
     '''
     if rotOrder:
+        if isinstance(rotOrder, int):
+            roD = {0: 'xyz', 1: 'yzx', 2: 'zxy', 3: 'xzy', 4: 'yxz', 5: 'zyx'}
+            rotOrder = roD[rotOrder]
         if hier:
             transforms = []
             cmds.select(obj, hierarchy=True)
