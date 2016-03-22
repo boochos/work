@@ -99,6 +99,35 @@ def transformTangentType(t=0):
 '''
 
 
+def transformRotationType(object='', rooNew=0):
+    #-------------------------------------------
+    # Part 1:  Get a MMatrix from an object for the sake of the example.
+    # You can use your own MMatrix if it already exists of course.
+    # Get the node's rotate order value:
+    node = cmds.ls(sl=1)[0]
+    rotOrder = cmds.getAttr('%s.rotateOrder' % object)
+    print rotOrder
+    # Get the world matrix as a list
+    matrixList = cmds.getAttr('%s.worldMatrix' % object)  # len(matrixList) = 16
+    # Create an empty MMatrix:
+    mMatrix = OpenMaya.MMatrix()  # MMatrix
+    # And populate the MMatrix object with the matrix list data:
+    OpenMaya.MScriptUtil.createMatrixFromList(matrixList, mMatrix)
+    #-------------------------------------------
+    # Part 2, get the euler values
+    # Convert to MTransformationMatrix to extract rotations:
+    mTransformMtx = OpenMaya.MTransformationMatrix(mMatrix)
+    # Get an MEulerRotation object
+    eulerRot = mTransformMtx.eulerRotation()  # MEulerRotation
+    # Update rotate order to match original object, since the orig MMatrix has
+    # no knoweldge of it:
+    eulerRot.reorderIt(rooNew)
+    # Convert from radians to degrees:
+    angles = [math.degrees(angle) for angle in (eulerRot.x, eulerRot.y, eulerRot.z)]
+    print angles, "MMatrix"
+    return angles
+
+
 def message(what='', maya=True):
     what = '-- ' + what + ' --'
     global tell

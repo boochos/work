@@ -2,6 +2,9 @@ import maya.cmds as cmds
 import maya.mel as mel
 import os
 import urllib2
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaAnim as OpenMayaAnim
+import math
 #
 import webrImport as web
 # web
@@ -372,6 +375,34 @@ def keyHi(v=0):
         cmds.setKeyframe(item, attribute='visibility', v=v)
 
 
+def transformRotationType(object='', rooNew=0):
+    #-------------------------------------------
+    # Part 1:  Get a MMatrix from an object for the sake of the example.
+    # You can use your own MMatrix if it already exists of course.
+    # Get the node's rotate order value:
+    node = cmds.ls(sl=1)[0]
+    rotOrder = cmds.getAttr('%s.rotateOrder' % object)
+    # Get the world matrix as a list
+    matrixList = cmds.getAttr('%s.worldMatrix' % object)  # len(matrixList) = 16
+    # Create an empty MMatrix:
+    mMatrix = OpenMaya.MMatrix()  # MMatrix
+    # And populate the MMatrix object with the matrix list data:
+    OpenMaya.MScriptUtil.createMatrixFromList(matrixList, mMatrix)
+    #-------------------------------------------
+    # Part 2, get the euler values
+    # Convert to MTransformationMatrix to extract rotations:
+    mTransformMtx = OpenMaya.MTransformationMatrix(mMatrix)
+    # Get an MEulerRotation object
+    eulerRot = mTransformMtx.eulerRotation()  # MEulerRotation
+    # Update rotate order to match original object, since the orig MMatrix has
+    # no knoweldge of it:
+    eulerRot.reorderIt(rooNew)
+    # Convert from radians to degrees:
+    angles = [math.degrees(angle) for angle in (eulerRot.x, eulerRot.y, eulerRot.z)]
+    print angles, "MMatrix"
+    return angles
+
+
 def matchObj():
     # queries dont work correctly when constraints, pairBlends and characterSets get involved
     # objs
@@ -382,33 +413,33 @@ def matchObj():
         # collect
         get = sel[1]
         put = sel[0]
+        rooGet = cmds.getAttr(get + '.rotateOrder')
+        rooPut = cmds.getAttr(put + '.rotateOrder')
+        if rooGet != rooPut:
+            r = transformRotationType(object=get, rooNew=rooPut)
+            print 'transform'
+        else:
+            r = cmds.xform(get, q=True, ws=True, ro=True)
+            print 'roo matches'
+        t = cmds.xform(get, q=True, ws=True, rp=True)
         mtrx = cmds.xform(get, q=True, m=True, ws=True)
-        '''
-        roo = cmds.getAttr(get + '.rotateOrder')
-        r = cmds.xform(get, q=True, ws=True, ro=True )
-        t = cmds.xform(get, q=True, ws=True, t=True )
-        '''
-        # collect put
-        # origRO = cmds.xform(put, q=True, roo=True)
-        # cmds.xform(put, m=mtrx, ws=True)
         #
         if cmds.nodeType(put) == 'nurbsSurface':
             t = cmds.xform(get, q=True, t=True, ws=True)
             cmds.xform(put, t=t, ws=True)
             return None
         try:
-            # print ' try '
-            # put
-            # cmds.setAttr(put + '.rotateOrder', roo)
-            # cmds.xform(put, ws=True, t=t)
-            # cmds.xform(put, ws=True, ro=r)
-            # cmds.xform(put, roo=origRO)
-            cmds.xform(put, m=mtrx, ws=True)
+
+            if cmds.nodeType(put) == 'joint':
+                cmds.xform(put, ws=True, t=t)
+                cmds.xform(put, ws=True, ro=r)
+            else:
+                cmds.xform(put, m=mtrx, ws=True)
         except:
             # print 'exception'
             # intermediate object
             loc = cmds.spaceLocator(name='getSpace_deleteMe')[0]
-            cmds.setAttr(loc + '.rotateOrder', roo)
+            cmds.setAttr(loc + '.rotateOrder', rooGet)
             cmds.xform(loc, ws=True, t=t)
             cmds.xform(loc, ws=True, ro=r)
             cmds.xform(put, roo=origRO)
@@ -421,7 +452,6 @@ def matchObj():
             # delete
             cmds.delete(loc)
         else:
-            print 'else'
             pass
         # reselect objects
         cmds.select(sel)
