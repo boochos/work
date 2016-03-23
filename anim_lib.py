@@ -225,6 +225,7 @@ class SpaceSwitch():
         self.keys = getKeyedFrames(self.obj)
         self.rng = fr.Get()
         self.store()
+        self.rooGet = cmds.getAttr(self.obj + '.rotateOrder')
 
         '''
         min
@@ -273,8 +274,13 @@ class SpaceSwitch():
         '''
         restore animation
         '''
+        reOrder = False 
         if useSelected:
             self.obj = cmds.ls(sl=1)[0]
+        rooPut = cmds.getAttr(self.obj + '.rotateOrder')
+        if self.rooGet != rooPut:
+            reOrder = True
+            print 'reorder'
         # type of restore
         if self.poseOnly:
             # find if obj is keyed, if keyed insert key otherwise setAttr
@@ -291,11 +297,21 @@ class SpaceSwitch():
                 for key in self.keys:
                     if key >= self.rng.keyStart and key <= self.rng.keyEnd:
                         cmds.currentTime(key)
-                        if cmds.nodeType(self.obj) == 'joint':
+                        cmds.xform(self.obj, t=self.pos[i], ws=True)
+                        # new method for applying rotations, accounts for differences in rotation order
+                        if reOrder:
+                            self.rot[i] = reorderAngles(matrix=self.mtrx[i], rooOld=self.rooGet, rooNew=rooPut)
+                        cmds.xform(self.obj, ro=self.rot[i], ws=True)
+                        '''
+                        # removed due to crappyness, applying matrix messes with jointOrient Value
+                        if cmds.nodeType(self.obj) == 'lol':
                             cmds.xform(self.obj, t=self.pos[i], ws=True)
+                            if reOrder:
+                                rot[i] = reorderAngles(matrix=mtrx[i], rooOld=rooGet, rooNew=rooPut)
                             cmds.xform(self.obj, ro=self.rot[i], ws=True)
                         else:
                             cmds.xform(self.obj, m=self.mtrx[i], ws=True)
+                        '''
                         # object space offset X, Y, Z
                         if offset:
                             # objects need to be in same rotate order space
@@ -375,9 +391,7 @@ def keyHi(v=0):
         cmds.setKeyframe(item, attribute='visibility', v=v)
 
 
-def transformRotationType(object='', rooNew=0):
-    #-------------------------------------------
-    # Part 1:  Get a MMatrix from an object for the sake of the example.
+def reorderObjectAngles(object='', rooNew=0):
     # You can use your own MMatrix if it already exists of course.
     # Get the node's rotate order value:
     node = cmds.ls(sl=1)[0]
@@ -388,8 +402,23 @@ def transformRotationType(object='', rooNew=0):
     mMatrix = OpenMaya.MMatrix()  # MMatrix
     # And populate the MMatrix object with the matrix list data:
     OpenMaya.MScriptUtil.createMatrixFromList(matrixList, mMatrix)
-    #-------------------------------------------
-    # Part 2, get the euler values
+    # Convert to MTransformationMatrix to extract rotations:
+    mTransformMtx = OpenMaya.MTransformationMatrix(mMatrix)
+    # Get an MEulerRotation object
+    eulerRot = mTransformMtx.eulerRotation()  # MEulerRotation
+    # Update rotate order to match original object, since the orig MMatrix has
+    # no knoweldge of it:
+    eulerRot.reorderIt(rooNew)
+    # Convert from radians to degrees:
+    angles = [math.degrees(angle) for angle in (eulerRot.x, eulerRot.y, eulerRot.z)]
+    print angles, "MMatrix"
+    return angles
+
+def reorderAngles(matrix=[], rooOld=0, rooNew=0):
+    # Create an empty MMatrix:
+    mMatrix = OpenMaya.MMatrix()  # MMatrix
+    # And populate the MMatrix object with the matrix list data:
+    OpenMaya.MScriptUtil.createMatrixFromList(matrix, mMatrix)
     # Convert to MTransformationMatrix to extract rotations:
     mTransformMtx = OpenMaya.MTransformationMatrix(mMatrix)
     # Get an MEulerRotation object
@@ -416,7 +445,7 @@ def matchObj():
         rooGet = cmds.getAttr(get + '.rotateOrder')
         rooPut = cmds.getAttr(put + '.rotateOrder')
         if rooGet != rooPut:
-            r = transformRotationType(object=get, rooNew=rooPut)
+            r = reorderObjectAngles(object=get, rooNew=rooPut)
             print 'transform'
         else:
             r = cmds.xform(get, q=True, ws=True, ro=True)

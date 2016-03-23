@@ -724,7 +724,7 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         if '.' in obj:  # component selection
             t = cmds.pointPosition(obj)
             r = 0.0, 0.0, 0.0
-            print t
+            # print t
         else:
             r = cmds.xform(obj, q=True, ws=True, ro=True)
             t = cmds.xform(obj, q=True, ws=True, rp=True)

@@ -648,13 +648,13 @@ def openSelected(path='', name='', ext='', start='', end=''):
     # sample code for wipe compare
     # rv P_139_sk_0490_anim_swe_0077____camera.####.png -wipe P_139_sk_0490_anim_swe_0077____lookCam.####.png
     # audio
-    print '_open'
+    print '-- open'
     print path
     print name
     print ext
     print start
     print end
-    print os.path.join(path,name), '__print'
+    print os.path.join(path,name)
     mov = ['mov', 'avi', 'mp4']
     if ext in mov:
         os.startfile(os.path.join(path, name + '.' + ext))
@@ -675,11 +675,11 @@ def openSelected(path='', name='', ext='', start='', end=''):
         elif os.name is 'posix':
             try:
                 if snd:
-                    print 'here'
+                    print '-- with audio'
                     # with audio
                     rvString = 'rv ' + os.path.join(path,name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ' + snd + ' &'
                 else:
-                    print 'there'
+                    print '-- no audio'
                     rvString = 'rv ' + os.path.join(path,name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' &'  # escaped
                 message('Play:  ' + rvString, maya=True)
                 # print rvString

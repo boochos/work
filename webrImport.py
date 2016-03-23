@@ -42,11 +42,23 @@ def mod(modulename='', f=False):
     else:
         #
         # check for local variable
+        try:
+            import webrSource as frm
+            local = frm.local
+            # print frm.local , '____local'
+        except:
+            print 'no local variable found'
+        # removed below, as its trying to find specific file and doesnt account for shared sys path
+        # perform regular import instead
+        # also need to find path to local file if in shared directory, check and parse sys path
+        '''
         if os.path.isfile(os.path.join(varPath, varFile)):
             import webrSource as frm
             reload(frm)
             local = frm.local
+        '''
 
+        '''
         #
         # piggy back function
         # paths
@@ -65,6 +77,7 @@ def mod(modulename='', f=False):
         module = imp.new_module(piggy)
         exec(codeobj, module.__dict__)
         module.run(modulename=modulename)
+        '''
 
         #
         # actual function
@@ -72,16 +85,29 @@ def mod(modulename='', f=False):
         urlPath = webPath + modulename + '.py'
         localPath = os.path.join(varPath, modulename + '.py')
         if local:
-            infile = open(localPath, 'r')
-            contents = infile.read()
+            localPath = os.path.join(varPath, modulename + '.py')
+            if os.path.isfile(localPath):
+                infile = open(localPath, 'r')
+                contents = infile.read()
+            else:
+                pth = os.sys.path
+                for p in pth:
+                    localPath = os.path.join(p, modulename + '.py')
+                    if os.path.isfile(localPath):
+                        infile = open(localPath, 'r')
+                        contents = infile.read()
         else:
             req = urllib2.Request(urlPath)
             response = urllib2.urlopen(req)
             contents = response.read()
         # create module
         # must be exec mode
-        codeobj = compile(contents, '', 'exec')
-        module = imp.new_module(modulename)
-        exec(codeobj, module.__dict__)
-        # print '___end'
-        return module
+        if contents:
+            codeobj = compile(contents, '', 'exec')
+            module = imp.new_module(modulename)
+            exec(codeobj, module.__dict__)
+            # print '___end'
+            return module
+        else:
+            print "Couldn't find module"
+            return None
