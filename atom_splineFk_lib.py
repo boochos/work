@@ -308,9 +308,14 @@ class SplineFK(object):
         # running it backwards prevents the ik joints from moving as the constraints are added.
         # if the proper order were to be used the chain would continually offset down the chain, as the orientation on a 2 joint ik chain is unpredictable.
         if self.ik == 'ik':
+            # print 'vectors___\n', upVctr
+            # print 'clusters___\n', self.clusterList
             # add pole vector constraint and try to cleanup
-            for i in range(len(upVctr) - 2, 0, -1):
-                cmds.poleVectorConstraint(upVctr[i], self.clusterList[i + 1])
+            for i in range(len(upVctr) - 1, -1, -1):
+                # print i, '  ______________________________________________i'
+                # print '___vectors___\n', upVctr[i]
+                # print '___clusters___\n', self.clusterList[i + 2]
+                cmds.poleVectorConstraint(upVctr[i], self.clusterList[i + 2])
             # place.cleanUp(self.clusterList, World=True)
             cmds.parent(self.clusterList, self.hideGp)
             # constrain skin joints to ik joints.

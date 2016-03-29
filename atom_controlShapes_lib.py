@@ -13,7 +13,7 @@ def shapeDir():
         parentPath = os.path.abspath(os.path.join(p, os.pardir))
         sharedPath = os.path.join(parentPath, shpPath)
         if os.path.isdir(sharedPath):
-            print sharedPath, '  __path found through sys path'
+            # print sharedPath, '  __path found through sys path'
             return sharedPath
     # make local version if non exist
     if not os.path.isdir(path):

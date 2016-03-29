@@ -26,7 +26,7 @@ def extractSebastionsControlSubgroup(obj):
     return subgrp
 
 
-def createVerticalScapRig(shoulder, shoulder_dbl, shoulder_grp, scapula, control, spine, suffix, setChannels=False):
+def createVerticalScapRig(shoulder, shoulder_dbl, shoulder_grp, scapula, control, spine, suffix, setChannels=False, moveAxis='translateZ'):
     '''
     Vertical is refering to the position of the parent of the scap, usually a neck or chest joint in this case
     the neck has the following orientation"
@@ -63,8 +63,8 @@ def createVerticalScapRig(shoulder, shoulder_dbl, shoulder_grp, scapula, control
     cmds.aimConstraint(scap_aimLoc, scapula, mo=True, wuo=scap_upLoc, wut='object', aim=[0, -1, 0], u=[0, 0, 1])
 
     adl = cmds.createNode('addDoubleLinear', name='scapula_adl' + suffix)
-    cmds.setAttr(adl + '.input1', cmds.getAttr(scapula + '.translateZ'))
-    cmds.connectAttr(adl + '.output', scapula + '.translateZ')
+    cmds.setAttr(adl + '.input1', cmds.getAttr(scapula + '.' + moveAxis))
+    cmds.connectAttr(adl + '.output', scapula + '.' + moveAxis)
 
     mult = cmds.createNode('multiplyDivide', name='scapula_MD' + suffix)
     cmds.setAttr(mult + '.input2Y', .2)
