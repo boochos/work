@@ -57,13 +57,17 @@ class SplineFK(object):
 
         # master groups
         self.masterGp = cmds.group(em=True, n='splineFk_' + name)
-        self.ctGp = cmds.group(em=True, n='splineFK_Ct__' + name)
+        self.ctGp = cmds.group(em=True, n='splineFK_Ct__' + name)  # scale plug group
         self.utilGp = cmds.group(em=True, n='splineFK_Util__' + name)
         self.hideGp = cmds.group(em=True, n='splineFK_Hide__' + name)
+        self.hideJntGp = cmds.group(em=True, n='splineFK_JntHide__' + name)
         cmds.parent(self.ctGp, self.masterGp)
         cmds.parent(self.utilGp, self.masterGp)
         cmds.parent(self.hideGp, self.masterGp)
+        cmds.parent(self.hideJntGp, self.hideGp)
         cmds.setAttr(self.hideGp + '.visibility', 0)
+        # scale joint group constraint
+        cmds.scaleConstraint(self.ctGp, self.hideJntGp)
         place.cleanUp(self.masterGp, Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
 
         # places ik joints if ik does not equal None
@@ -125,7 +129,7 @@ class SplineFK(object):
             self.ikJoints = place.joint(0, self.nameBuilder(self.name + '_Spln_jnt'))
             # try to clean up groups
             # place.cleanUp(self.ikJoints[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-            cmds.parent(self.ikJoints[0], self.hideGp)
+            cmds.parent(self.ikJoints[0], self.hideJntGp)
 
             # hardcoding 'oj' value. Shouldn't be any different. Otherwise spline up vector breaks.
             joint(self.ikJoints[0], e=True, oj='xyz', sao='yup', ch=True)
@@ -135,7 +139,6 @@ class SplineFK(object):
             # ls(self.ikJoints[len(self.ikJoints)-1])[0].jointOrientX.set(0)
             # ls(self.ikJoints[len(self.ikJoints)-1])[0].jointOrientY.set(0)
             # ls(self.ikJoints[len(self.ikJoints)-1])[0].jointOrientZ.set(0)
-            cmds.parent
         #
         #
         # Type of IK
@@ -318,6 +321,8 @@ class SplineFK(object):
                 cmds.poleVectorConstraint(upVctr[i], self.clusterList[i + 2])
             # place.cleanUp(self.clusterList, World=True)
             cmds.parent(self.clusterList, self.hideGp)
+            # root ik joint is in cluster list for this ik type, reparent to hideJnt group
+            cmds.parent(self.ikJoints[0], self.hideJntGp)
             # constrain skin joints to ik joints.
             for i in range(1, len(self.ikJoints) - 1, 1):
                 cmds.parentConstraint(self.ikJoints[i], self.skinJoints[i], mo=True)
@@ -549,6 +554,7 @@ class SplineFK(object):
                 place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2],
                                    cntCt[1], cntCt[0], self.ps1_Jnt, rp, False, True, False, True, 'FK_', w=self.FK)
                 cmds.parentConstraint(self.rootParent, cntCt[0], mo=True)
+                cmds.parent(cntCt[0], self.ctGp)
             #
             #
             # check state of segment iteration for a color change
