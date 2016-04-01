@@ -238,6 +238,7 @@ class Key():
             self.value = self.crvApi.value(self.i)
 
         # in angle, weight
+        # FIXME: sometimes doesnt work, first key angle is often stored wrong incorrectly, perhaps type is also wrong
         tangentAngle = OpenMaya.MAngle()
         scriptUtil = OpenMaya.MScriptUtil()
         curveWeightPtr = scriptUtil.asDoublePtr()
@@ -276,22 +277,22 @@ class Key():
                 cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
                 cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
                                 inTangentType=self.inTangentType, outTangentType=self.outTangentType)
+                if self.inAngle != None:
+                    cmds.keyTangent(self.crv, edit=True, time=(
+                        self.frame + self.offset, self.frame + self.offset), inAngle=self.inAngle)
+                if self.outAngle != None:
+                    cmds.keyTangent(self.crv, edit=True, time=(
+                        self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
                 if self.lock == True or self.lock == False:
                     cmds.keyTangent(self.crv, edit=True, time=(
                         self.frame + self.offset, self.frame + self.offset), lock=self.lock)
-                if self.inAngle:
-                    cmds.keyTangent(self.crv, edit=True, time=(
-                        self.frame + self.offset, self.frame + self.offset), inAngle=self.inAngle)
-                if self.outAngle:
-                    cmds.keyTangent(self.crv, edit=True, time=(
-                        self.frame + self.offset, self.frame + self.offset), outAngle=self.outAngle)
                 if self.weightedTangents:
                     cmds.keyTangent(self.crv, edit=True, time=(
                         self.frame + self.offset, self.frame + self.offset), weightLock=self.weightLock)
-                    if self.inWeight:
+                    if self.inWeight != None:
                         cmds.keyTangent(self.crv, edit=True, time=(
                             self.frame + self.offset, self.frame + self.offset), inWeight=self.inWeight)
-                    if self.outWeight:
+                    if self.outWeight != None:
                         cmds.keyTangent(self.crv, edit=True, time=(
                             self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
             else:
