@@ -645,27 +645,31 @@ def addAttribute(objList, attrList, minimum, maximum, keyable, attrType):
     """
     if type(objList) != list:
         if type(attrList) != list:
-            cmds.addAttr(objList, ln=attrList, at=attrType, min=minimum, max=maximum, h=False)
-            cmds.setAttr((objList + '.' + attrList), cb=True)
-            cmds.setAttr((objList + '.' + attrList), k=keyable)
+            if not cmds.attributeQuery(attrList, node=objList, exists=True):
+                cmds.addAttr(objList, ln=attrList, at=attrType, min=minimum, max=maximum, h=False)
+                cmds.setAttr((objList + '.' + attrList), cb=True)
+                cmds.setAttr((objList + '.' + attrList), k=keyable)
         else:
             for attr in attrList:
-                cmds.addAttr(objList, ln=attr, at=attrType, min=minimum, max=maximum)
-                cmds.setAttr((objList + '.' + attr), cb=True)
-                cmds.setAttr((objList + '.' + attr), k=keyable)
+                if not cmds.attributeQuery(attr, node=objList, exists=True):
+                    cmds.addAttr(objList, ln=attr, at=attrType, min=minimum, max=maximum)
+                    cmds.setAttr((objList + '.' + attr), cb=True)
+                    cmds.setAttr((objList + '.' + attr), k=keyable)
 
     elif len(objList) > 0:
         if len(attrList) > 0:
             for obj in objList:
                 if type(attrList) != list:
-                    cmds.addAttr(obj, ln=attrList, at=attrType, min=minimum, max=maximum)
-                    cmds.setAttr((obj + '.' + attrList), cb=True)
-                    cmds.setAttr((obj + '.' + attrList), k=keyable)
+                    if not cmds.attributeQuery(attrList, node=obj, exists=True):
+                        cmds.addAttr(obj, ln=attrList, at=attrType, min=minimum, max=maximum)
+                        cmds.setAttr((obj + '.' + attrList), cb=True)
+                        cmds.setAttr((obj + '.' + attrList), k=keyable)
                 else:
                     for attr in attrList:
-                        cmds.addAttr(obj, ln=attr, at=attrType, min=minimum, max=maximum)
-                        cmds.setAttr((obj + '.' + attr), cb=True)
-                        cmds.setAttr((obj + '.' + attr), k=keyable)
+                        if not cmds.attributeQuery(attr, node=obj, exists=True):
+                            cmds.addAttr(obj, ln=attr, at=attrType, min=minimum, max=maximum)
+                            cmds.setAttr((obj + '.' + attr), cb=True)
+                            cmds.setAttr((obj + '.' + attr), k=keyable)
 
         else:
             mel.eval('warning \"' + '////... Second argument -attrList- is empty...////' + '\";')
@@ -1122,6 +1126,18 @@ def hijackScale(obj1, obj2):
             cmds.connectAttr(obj2 + s, obj1 + s)
 
 
+def hijackScaleMerge(obj1, obj2, mergeAttr='Scale'):
+    '''\n
+    obj1 = slave
+    obj2 = master
+    '''
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    addAttribute(objList=[obj2], attrList=[mergeAttr], minimum=0.0, maximum=1000.0, keyable=True, attrType='float')
+    cmds.setAttr(obj2 + '.' + mergeAttr, cmds.getAttr(obj1 + scl[0]))
+    for s in scl:
+        cmds.connectAttr(obj2 + '.' + mergeAttr, obj1 + s)
+
+
 def scaleUnlock(obj, sx=True, sy=True, sz=True):
     scaleString = ['.sx', '.sy', '.sz']
     scaleList = [sx, sy, sz]
@@ -1139,19 +1155,19 @@ def hijack(obj1, obj2, translate=True, rotate=True, scale=True, visibility=True)
     obj1 = slave
     obj2 = master
     '''
-    if translate == True:
+    if translate:
         cmds.connectAttr(obj2 + '.translateX', obj1 + '.translateX')
         cmds.connectAttr(obj2 + '.translateY', obj1 + '.translateY')
         cmds.connectAttr(obj2 + '.translateZ', obj1 + '.translateZ')
-    if rotate == True:
+    if rotate:
         cmds.connectAttr(obj2 + '.rotateX', obj1 + '.rotateX')
         cmds.connectAttr(obj2 + '.rotateY', obj1 + '.rotateY')
         cmds.connectAttr(obj2 + '.rotateZ', obj1 + '.rotateZ')
-    if scale == True:
+    if scale:
         cmds.connectAttr(obj2 + '.scaleX', obj1 + '.scaleX')
         cmds.connectAttr(obj2 + '.scaleY', obj1 + '.scaleY')
         cmds.connectAttr(obj2 + '.scaleZ', obj1 + '.scaleZ')
-    if visibility == True:
+    if visibility:
         cmds.connectAttr(obj2 + '.visibility', obj1 + '.visibility')
 
 

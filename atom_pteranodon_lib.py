@@ -20,7 +20,7 @@ def preBuild(
         SHLDR_L_jnt='shoulder_L_jnt', SHLDR_R_jnt='shoulder_R_jnt',
         BACK_L_jnt='back_foot_ctrl_placement_jnt_L', BACK_R_jnt='back_foot_ctrl_placement_jnt_R',
         FRONT_L_jnt='front_foot_ctrl_placement_jnt_L', FRONT_R_jnt='front_foot_ctrl_placement_jnt_R',
-        TAIL_jnt='tail_00_jnt', TAILTIP_jnt='tail19', GEO_gp='Mesh', SKIN_jnt='pelvis_jnt'):
+        TAIL_jnt='tail_00_jnt', TAILTIP_jnt='tail19', GEO_gp='Mesh', SKIN_jnt='scaleOrigin_jnt'):
     '''\n
 
     '''
@@ -44,8 +44,16 @@ def preBuild(
     WORLD_SPACE = PreBuild[4]
     MasterCt = PreBuild[5]
 
-    # cmds.parent(SKIN_jnt, SKIN_JOINTS)
+    cmds.parent(SKIN_jnt, SKIN_JOINTS)
     cmds.parent(GEO_gp, GEO[3])
+
+    # MASTER #
+    cmds.parent(MasterCt[0], WORLD_SPACE)
+    scl = 'Scale'
+    place.scaleUnlock(MasterCt[2])
+    place.scaleUnlock(CONTROLS)
+    place.hijackScale(obj1='scaleMaster_jnt', obj2=MasterCt[2])
+    place.hijackScale(obj1=CONTROLS, obj2=MasterCt[2])
 
     # COG #
     Cog = 'cog'

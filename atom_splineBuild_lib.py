@@ -95,6 +95,8 @@ def clusterGroup(prefix, X, skinJnts, aim, up, rotate):
         cmds.parent(Sc, Ec, ClstrGrp)
         cmds.parent(Sjnt[0], Sitems[0], Sitems[2], S_MstrSplnGrp)
         cmds.parent(Ejnt[0], Eitems[0], Eitems[2], E_MstrSplnGrp)
+        place.cleanUp(Sitems[2], World=True)
+        place.cleanUp(Eitems[2], World=True)
 
         # place joints on CVs, point z down y up
         # for pointing down z... will be deleted

@@ -69,6 +69,7 @@ class SplineFK(object):
         # scale joint group constraint
         cmds.scaleConstraint(self.ctGp, self.hideJntGp)
         place.cleanUp(self.masterGp, Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+        place.cleanUp(self.utilGp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
 
         # places ik joints if ik does not equal None
         self.placeIkJnts()
@@ -174,6 +175,8 @@ class SplineFK(object):
             self.clusterGrp = place.null2(self.nameBuilder(self.name + 'Spline_ClstrGrp'), self.clusterList[0], orient=True)[0]
             for item in self.clusterList:
                 parent(item, self.clusterGrp)
+
+            place.cleanUp(self.ikCurve, World=False)
 
             # try to cleanup cluster group, turn visibility off
             # place.cleanUp(self.clusterGrp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
