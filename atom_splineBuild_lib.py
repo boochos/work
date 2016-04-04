@@ -179,6 +179,11 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
         # cluster control parent group
         cmds.select(skinJnts[0])
         ClstrCtrlGrp = place.null((prefix + suffix + '_CtrlGrp'))[0]
+        # group doesnt match object space placed wrong
+        if 'wingIn' in ClstrCtrlGrp:
+            if 'Vctr' in ClstrCtrlGrp:
+                return None
+
         # cluster group attrs
         place.setChannels(ClstrCtrlGrp, [False, False], [False, False], [True, False], [True, False, False])
         place.addAttribute(ClstrCtrlGrp, suffix[1:] + 'Vis', 0, 1, 0, 'long')
@@ -405,6 +410,10 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
                 ##
                 jj = jj + 1
         jj = jj + 1
+
+        if 'wingIn' in ClstrCtrlGrp:
+            if 'Vctr' in ClstrCtrlGrp:
+                return None
 
         ##Middle - End
         for i in range(0, len(M_E), 1):

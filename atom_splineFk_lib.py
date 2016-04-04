@@ -176,7 +176,7 @@ class SplineFK(object):
             for item in self.clusterList:
                 parent(item, self.clusterGrp)
 
-            place.cleanUp(self.ikCurve, World=False)
+            place.cleanUp(self.ikCurve, World=True)
 
             # try to cleanup cluster group, turn visibility off
             # place.cleanUp(self.clusterGrp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)

@@ -52,6 +52,10 @@ def preBuild(
     scl = 'Scale'
     place.scaleUnlock(MasterCt[2])
     place.scaleUnlock(CONTROLS)
+    place.scaleUnlock(SKIN_JOINTS)
+    cmds.scaleConstraint(WORLD_SPACE, 'scaleOrigin_jnt', mo=True)
+    cmds.parentConstraint(MasterCt[3], 'scaleMaster_jnt', mo=True)
+    place.hijackScale(obj1=SKIN_JOINTS, obj2=MasterCt[2])
     place.hijackScale(obj1='scaleMaster_jnt', obj2=MasterCt[2])
     place.hijackScale(obj1=CONTROLS, obj2=MasterCt[2])
 
@@ -662,6 +666,8 @@ def buildSplines(*args):
 
     stage.splineStage(4)
     # assemble
+    cmds.connectAttr('master.scaleX', spineName + '_S_IK_curve_scale.input2Z')
+    cmds.connectAttr('master.scaleX', spineName + '_E_IK_curve_scale.input2Z')
     OptAttr(spineAttr, 'SpineSpline')
     cmds.parentConstraint(spinePrnt, spineName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(spineStrt, spineName + '_S_IK_PrntGrp', mo=True)
@@ -698,6 +704,8 @@ def buildSplines(*args):
     cmds.select(neck)
     stage.splineStage(4)
     # assemble
+    cmds.connectAttr('master.scaleX', neckName + '_S_IK_curve_scale.input2Z')
+    cmds.connectAttr('master.scaleX', neckName + '_E_IK_curve_scale.input2Z')
     OptAttr(neckAttr, 'NeckSpline')
     cmds.parentConstraint(neckPrnt, neckName + '_IK_CtrlGrp')
     cmds.parentConstraint(neckStrt, neckName + '_S_IK_PrntGrp')
@@ -733,6 +741,8 @@ def buildSplines(*args):
     cmds.select(throat)
     stage.splineStage(4)
     # assemble
+    cmds.connectAttr('master.scaleX', throatName + '_S_IK_curve_scale.input2Z')
+    cmds.connectAttr('master.scaleX', throatName + '_E_IK_curve_scale.input2Z')
     OptAttr(throatAttr, 'ThroatSpline')
     cmds.parentConstraint(throatPrnt, throatName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(throatStrt, throatName + '_S_IK_PrntGrp', mo=True)
@@ -812,6 +822,8 @@ def buildSplines(*args):
     stage.splineStage(4)
     # return None
     # assemble
+    cmds.connectAttr('master.scaleX', wingInName + '_S_IK_curve_scale.input2Z')
+    cmds.connectAttr('master.scaleX', wingInName + '_E_IK_curve_scale.input2Z')
     OptAttr(wingInAttr, 'insideFlap')
     cmds.parentConstraint(wingInPrnt, wingInName + '_IK_CtrlGrp', mo=True)
     # return None
@@ -850,6 +862,8 @@ def buildSplines(*args):
     cmds.select(wingOut)
     stage.splineStage(4)
     # assemble
+    cmds.connectAttr('master.scaleX', wingOutName + '_S_IK_curve_scale.input2Z')
+    cmds.connectAttr('master.scaleX', wingOutName + '_E_IK_curve_scale.input2Z')
     OptAttr(wingOutAttr, 'outsideFlap')
     cmds.parentConstraint(wingOutPrnt, wingOutName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(wingOutStrt, wingOutName + '_S_IK_PrntGrp', mo=True)
@@ -932,6 +946,8 @@ def buildSplines(*args):
     stage.splineStage(4)
     # return None
     # assemble
+    cmds.connectAttr('master.scaleX', wingInName + '_S_IK_curve_scale.input2Z')
+    cmds.connectAttr('master.scaleX', wingInName + '_E_IK_curve_scale.input2Z')
     OptAttr(wingInAttr, 'insideFlap')
     cmds.parentConstraint(wingInPrnt, wingInName + '_IK_CtrlGrp', mo=True)
     # return None
@@ -970,6 +986,8 @@ def buildSplines(*args):
     cmds.select(wingOut)
     stage.splineStage(4)
     # assemble
+    cmds.connectAttr('master.scaleX', wingOutName + '_S_IK_curve_scale.input2Z')
+    cmds.connectAttr('master.scaleX', wingOutName + '_E_IK_curve_scale.input2Z')
     OptAttr(wingOutAttr, 'outsideFlap')
     cmds.parentConstraint(wingOutPrnt, wingOutName + '_IK_CtrlGrp', mo=True)
     cmds.parentConstraint(wingOutStrt, wingOutName + '_S_IK_PrntGrp', mo=True)
