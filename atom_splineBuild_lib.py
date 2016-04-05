@@ -178,11 +178,9 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
     if len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) > 2:
         # cluster control parent group
         cmds.select(skinJnts[0])
-        ClstrCtrlGrp = place.null((prefix + suffix + '_CtrlGrp'))[0]
-        # group doesnt match object space placed wrong
-        if 'wingIn' in ClstrCtrlGrp:
-            if 'Vctr' in ClstrCtrlGrp:
-                return None
+        # ClstrCtrlGrp = place.null((prefix + suffix + '_CtrlGrp'))[0]
+        # print ClstrCtrlGrp
+        ClstrCtrlGrp = place.null2(prefix + suffix + '_CtrlGrp', skinJnts[0])[0]
 
         # cluster group attrs
         place.setChannels(ClstrCtrlGrp, [False, False], [False, False], [True, False], [True, False, False])
@@ -410,10 +408,6 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
                 ##
                 jj = jj + 1
         jj = jj + 1
-
-        if 'wingIn' in ClstrCtrlGrp:
-            if 'Vctr' in ClstrCtrlGrp:
-                return None
 
         ##Middle - End
         for i in range(0, len(M_E), 1):
@@ -723,18 +717,14 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             place.setChannels(ctrl, [False, True], [False, True], [True, False], [True, False, False])
             place.setChannels(ctrlOfst, [False, True], [False, True], [True, False], [True, False, False])
             # intermediate nulls for orientation option
-            Sjnt_Strt = place.null(prefix + '_Sjnt_StrtIntrNll')[0]
-            Ejnt_Strt = place.null(prefix + '_Ejnt_StrtIntrNll')[0]
-            jnt_Strt = place.null(prefix + '_jnt_StrtIntrNll')[0]
-            Sctl_Strt = place.null(prefix + '_Sctl_StrtIntrNll')[0]
+            cmds.select(skinJnts[i])
+            Sjnt_Strt = place.null2(prefix + '_Sjnt_StrtIntrNll', skinJnts[i])[0]
+            Ejnt_Strt = place.null2(prefix + '_Ejnt_StrtIntrNll', skinJnts[i])[0]
+            jnt_Strt = place.null2(prefix + '_jnt_StrtIntrNll', skinJnts[i])[0]
+            Sctl_Strt = place.null2(prefix + '_Sctl_StrtIntrNll', skinJnts[i])[0]
             ##
             # option attrs
             place.addAttribute(ctrl, OptAttrs[0], 0, 1, True, 'float')
-            '''
-			place.addAttribute(ctrl, OptAttrs[1:], 0, 10, True, 'float')
-			cmds.setAttr(ctrl + '.' + OptAttrs[1], 1)
-			cmds.setAttr(ctrl + '.' + OptAttrs[2], 1)
-			'''
             # offset vis attr
             place.addAttribute(ctrl, vis, 0, 1, 0, 'long')
             cmds.setAttr(ctrl + '.' + vis, 0)
@@ -742,20 +732,17 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             ##
             xScnrl.append(ctrl)
             xScnrl.append(ctrlOfst)
-            clstr = place.null(prefix + '_S_IK_ClstrGrp')
-            jnt = place.null(prefix + '_S_IK_Jnt')
+            cmds.select(skinJnts[i])
+            clstr = place.null2(prefix + '_S_IK_ClstrGrp', skinJnts[i])
+            jnt = place.null2(prefix + '_S_IK_Jnt', skinJnts[i])
             xjnt.append(jnt[0])
-            ##vtr = place.null(prefix + '_M_IK' +  str(jj) + 'UpVctr')
-            ##aim = place.null(prefix + '_S_IK_AimCnst')
             # create hierarchy
-            ##cmds.parent(aim, jnt)
             cmds.parent(jnt, ctrlOfst)
             cmds.parent(clstr, ctrlOfst)
             cmds.parent(jnt_Strt, ctrlOfst)
             cmds.parent(Sjnt_Strt, ctrlOfst)
             cmds.parent(Ejnt_Strt, ctrlOfst)
             cmds.parent(Sctl_Strt, ctrlOfst)
-            ##cmds.parent(vtr, ctrlOfst)
             cmds.parent(ctrlOfst, ctrl)
             cmds.parent(ctrl, prnt)
             cmds.parent(prnt, grp)
@@ -789,14 +776,14 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
                 joint.ZeroJointOrient(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[2][i])
             cmds.orientConstraint(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[1][0], Sjnt_Strt, mo=True, w=1)
             cmds.orientConstraint(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[2][len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[2]) - 1], Ejnt_Strt, mo=True, w=1)
-            J_orient = cmds.orientConstraint(Sjnt_Strt, jnt_Strt, mo=True, w=1)[0]
-            cmds.orientConstraint(Ejnt_Strt, jnt_Strt, mo=True, w=1)
+            J_orient = cmds.orientConstraint(Sjnt_Strt, jnt_Strt, mo=False, w=1)[0]
+            cmds.orientConstraint(Ejnt_Strt, jnt_Strt, mo=False, w=1)
             J_orient_attrs = cmds.listAttr(J_orient, k=True)
             J_orient_weightAttrs = J_orient_attrs[-2:]
             cmds.connectAttr(SRblnd + '.outputR', J_orient + '.' + J_orient_weightAttrs[0])
             cmds.connectAttr(SRblnd + '.outputG', J_orient + '.' + J_orient_weightAttrs[1])
-            Orient_cnstrnt = cmds.orientConstraint(jnt_Strt, jnt, mo=True, w=1)[0]
-            cmds.orientConstraint(Sctl_Strt, jnt, mo=True, w=1)
+            Orient_cnstrnt = cmds.orientConstraint(jnt_Strt, jnt, mo=False, w=1)[0]
+            cmds.orientConstraint(Sctl_Strt, jnt, mo=False, w=1)
             Orient_cnstrnt_attrs = cmds.listAttr(Orient_cnstrnt, k=True)
             Orient_cnstrnt_weightAttrs = Orient_cnstrnt_attrs[-2:]
             S_OrientRvrs = cmds.shadingNode('reverse', name=(prefix + '_StartOrientation'), asUtility=True)
@@ -810,8 +797,6 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             # point constrained to start/end ik joints
             # aim constrained at 'M_IK_AimCnst' under next controller position in next stage
             prnt = place.null(prefix + '_M' + str(jj) + '_IK_PrntGrp')
-            # rotate Orders ...are breaking shit
-            ##cmds.setAttr((prnt[0] + '.rotateOrder'), rotOrder)
             place.setChannels(prnt[0], [False, True], [False, True], [True, False], [True, False, False])
             xprnt.append(prnt[0])
             ctrl = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl', skinJnts[i], 'tacZ_Ctrl', X * (3), 17, 8, 1, (0, 0, 1))[0]
@@ -829,9 +814,7 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             # worldUpObjects' parent gets pointConstrained to this position in next stage
             vtr = place.null(prefix + '_M' + str(jj) + '_IK_UpVtr')
             xvtr.append(vtr[0])
-            ##aim = place.null(prefix + '_M_IK_AimCnst')
             # create hierarchy
-            ##cmds.parent(aim, jnt)
             cmds.parent(jnt, ctrlOfst)
             cmds.parent(clstr, ctrlOfst)
             cmds.parent(vtr, ctrlOfst)
@@ -874,11 +857,6 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             ##
             # orient attr
             place.addAttribute(ctrl, OptAttrs[0], 0, 1, True, 'float')
-            '''
-			place.addAttribute(ctrl, OptAttrs[1:], 0, 10, True, 'float')
-			cmds.setAttr(ctrl + '.' + OptAttrs[1], 1)
-			cmds.setAttr(ctrl + '.' + OptAttrs[2], 1)
-			'''
             # offset vis attr
             place.addAttribute(ctrl, vis, 0, 1, 0, 'long')
             cmds.setAttr(ctrl + '.' + vis, 0)
@@ -889,7 +867,6 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             clstr = place.null(prefix + '_E_IK_ClstrGrp')
             jnt = place.null(prefix + '_E_IK_Jnt')
             xjnt.append(jnt[0])
-            ##vtr = place.null(prefix + '_M_IK' +  str(jj) + 'UpVctr')
             aim = place.null(prefix + '_E_IK_AimCnst')
             xaim.append(aim[0])
             # create hierarchy
@@ -900,7 +877,6 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             cmds.parent(Sjnt_End, ctrlOfst)
             cmds.parent(Ejnt_End, ctrlOfst)
             cmds.parent(Ectl_Strt, ctrlOfst)
-            ##cmds.parent(vtr, ctrlOfst)
             cmds.parent(ctrlOfst, ctrl)
             cmds.parent(ctrl, prnt)
             cmds.parent(prnt, grp)
@@ -955,8 +931,6 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             cmds.select(skinJnts[i])
             # point constrained to start/end ik joints, aim constrained at 'M_IK_AimCnst' under next controller position
             prnt = place.null(prefix + '_M' + str(jj) + '_IK_PrntGrp')
-            # rotate Orders ...are breaking shit
-            ##cmds.setAttr((prnt[0] + '.rotateOrder'), rotOrder)
             place.setChannels(prnt[0], [False, True], [False, True], [True, False], [True, False, False])
             xprnt.append(prnt[0])
             ctrl = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl', skinJnts[i], 'tacZ_Ctrl', X * (3), 17, 8, 1, (0, 0, 1))[0]
@@ -1002,7 +976,6 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             # increment 'M...' name
             jj = jj + 1
         i = i + 1
-    # make return list
     BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt.append(xprnt)
     BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt.append(xvtr)
     BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt.append(xaim)
@@ -1030,7 +1003,6 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
     xtan = []
     BUS_prntPos_ctrl_tan = []
     suffix = '_Vctr'
-
     # Vector parent groups
     # parent constrain to ik_ctrlGrp
     cmds.select(skinJnts[0])
@@ -1101,7 +1073,6 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
 
     # constrain Start Up Vector
     cmds.parentConstraint(BUS_clusterCntrlGrps_ClstrCtrlGrp_AttrList_ClusterCntrls_XtraP[3][0], BUS_VectorCntrlGrps_VctrCtrlGrp_AttrList_ClusterCntrls_XtraP[0][0], mo=True, w=1.0)
-
     # constrain Mid Up Vector
     # insert compensation groups for mid up vector constraint
     cmds.select(BUS_VectorCntrlGrps_VctrCtrlGrp_AttrList_ClusterCntrls_XtraP[4][0])
@@ -1122,7 +1093,6 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
     # add constraints
     pointMidCnstrnt = cmds.pointConstraint(BUS_clusterCntrlGrps_ClstrCtrlGrp_AttrList_ClusterCntrls_XtraP[3][1], X2, mo=True, w=1.0)[0]
     cmds.pointConstraint(X1, X2, mo=True, w=0.0)
-
     # mid upVector network for constraint switch/weight to mid cluster
     # switch network for pointConstraint
     MidVctr_PntRvrs = cmds.shadingNode('reverse', name=(prefix + suffix + '_' + MidCnstrnt[0]), asUtility=True)
@@ -1215,7 +1185,7 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
         place.setChannels(CrvCls[1][1], [False, False], [False, False], [False, False], [False, False, False])
 
     # add attrs to spline parent
-    if Constrain[0] == True:
+    if Constrain[0]:
         Spline = 'Spline'
         cmds.addAttr(Constrain[1], ln=Spline, attributeType='enum', en='OPTNS')
         cmds.setAttr(Constrain[1] + '.' + Spline, cb=True)
