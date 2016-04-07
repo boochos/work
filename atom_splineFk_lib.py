@@ -16,9 +16,10 @@ class SplineFK(object):
     ik:options= None, 'ik', 'splineIK'
     '''
 
-    def __init__(self, name, startJoint, endJoint, suffix, direction=0, controllerSize=1, rootParent=None, parent1=None, parent2=None, parentDefault=[1, 1], segIteration=4, stretch=0, ik=None):
+    def __init__(self, name, startJoint, endJoint, suffix, direction=0, controllerSize=1, rootParent=None, parent1=None, parent2=None, parentDefault=[1, 1], segIteration=4, stretch=0, ik=None, colorScheme='yellow'):
         '''\n
         ik:options= None, 'ik', 'splineIK'
+        colorScheme = red, blue, yellow
         '''
         self.name = name
         self.startJoint = startJoint
@@ -27,6 +28,7 @@ class SplineFK(object):
         self.segmentIteration = segIteration
         self.segmentAttr = 'Segments'
         self.stretch = stretch
+        self.colorScheme = colorScheme
         # Direction refers to which icon to use at the start of the controller creation
         self.direction = direction
         self.iconList = ['splineStart_ctrl', 'diamond_ctrl', 'facetZup_ctrl']
@@ -47,11 +49,22 @@ class SplineFK(object):
         self.FK = parentDefault[0]
         self.driven = parentDefault[1]
         self.ik = ik
-        self.seg = [17, 12]
+        self.seg = None
+        self.segB = [6, 18]
+        self.segR = [13, 20]
+        self.segY = [17, 22]
         self.topGrp1 = []
         self.topGrp2 = []
         self.ps1_Jnt = None
         self.rootCt = []
+
+        # colorScheme
+        if self.colorScheme == 'red':
+            self.seg = self.segR
+        elif self.colorScheme == 'blue':
+            self.seg = self.segB
+        else:
+            self.seg = self.segY
 
         # Build
 
@@ -88,7 +101,7 @@ class SplineFK(object):
         if ctrlType[0] == 'special':
             if ctrlType[1] == 'first':
                 cnt = place.Controller(self.nameBuilder(name), orientObj, orient=orient,
-                                       shape=self.iconList[0], size=self.controlerSize * 1.35, color=17, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
+                                       shape=self.iconList[0], size=self.controlerSize * 1.35, color=color, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
                 cntCt = cnt.createController()
                 self.rootCt = cntCt
                 place.setRotOrderWithXform(cntCt[0], 'zxy', True)
@@ -353,7 +366,7 @@ class SplineFK(object):
             cntCt = None
             # First iteration controller
             if i == 1:
-                cntCt = self.createController(self.name + '_' + str(('%0' + str(2) + 'd') % (i)), self.skinJoints[i - 1], handle, 17, ctrlType=['special', 'first'])
+                cntCt = self.createController(self.name + '_' + str(('%0' + str(2) + 'd') % (i)), self.skinJoints[i - 1], handle, color, ctrlType=['special', 'first'])
                 if self.parent2 == None:
                     self.firstCntCt = cntCt[4]
 
@@ -618,207 +631,3 @@ class SplineFK(object):
                     place.hijackVis(self.ctrlList[i][1], self.baseCtrl, name='Sub' + self.segmentAttr, suffix=False, default=0)
                     s = s + 1
         return self.rootCt
-
-"""
-def splnFK(Name, sJnt, eJnt, direction=0, X=1):
-    '''\n
-    sJnt = 'start spline at this joint'
-    eJnt = 'end spline at this joint'
-    '''
-    # START END JOINTS
-    skinJnts = jnt.getJointChainHier(sJnt, eJnt)
-
-    # PLACE IK JOINTS
-    cmds.select(skinJnts)
-    IKjnt = place.joint(0, (Name + '_Spln_jnt'))
-    place.cleanUp(IKjnt[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-    # orient joints
-    # hardcoding 'oj' value. Shouldn't be any different. Otherwise spline up vector breaks.
-    cmds.joint(IKjnt[0], e=True, oj='xyz', sao='yup', ch=True)
-    for item in IKjnt:
-        jnt.ZeroJointOrient(item)
-    #cmds.setAttr(IKjnt[len(IKjnt)-1] + '.jointOrientX', 0)
-    #cmds.setAttr(IKjnt[len(IKjnt)-1] + '.jointOrientY', 0)
-    #cmds.setAttr(IKjnt[len(IKjnt)-1] + '.jointOrientZ', 0)
-
-    # POINT CONSTRAIN SKIN JOINTS TO IK JOINTS
-    i = 0
-    for joint in skinJnts:
-        cmds.pointConstraint(IKjnt[i], joint, mo=True)
-        i = i + 1
-
-    # IK
-    Y = cmds.getAttr(IKjnt[1] + '.tx')
-    start = IKjnt[0]
-    end = IKjnt[len(IKjnt) - 1]
-    ikhandle = spln.splineIK(Name, start, end, 2)
-    cmds.setAttr(ikhandle[0] + '.visibility', 0)
-    place.cleanUp(ikhandle[0], Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
-    place.cleanUp(ikhandle[2], Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
-    path = ikhandle[2]
-
-    # CLUSTERS
-    cl = place.clstrOnCV(path, 'Clstr')
-    clGp = place.null2(Name + 'Spline_ClstrGrp', cl[0], orient=True)[0]
-    for item in cl:
-        cmds.parent(item, clGp)
-    place.cleanUp(clGp, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
-    cmds.setAttr(clGp + '.visibility', 0)
-
-    # CONTROLS
-    CtParent = None
-    VcParent = []
-    child = None
-    i = 1
-    j = 0
-    seg = [17, 12]
-    color = seg[0]
-    cluster = []
-    chainZero = None
-    for handle in cl:
-        if i == 1:
-            if direction == 0:
-                cnt = place.Controller(Name + '_' + str(('%0' + str(2) + 'd') % (i)), handle, orient=False,
-                                       shape='splineEnd_ctrl', size=X * 14, color=17, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
-            else:
-                cnt = place.Controller(Name + '_' + str(('%0' + str(2) + 'd') % (i)), handle, orient=False,
-                                       shape='splineStart_ctrl', size=X * 14, color=17, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
-        else:
-            cnt = place.Controller(Name + '_' + str(('%0' + str(2) + 'd') % (i)), handle, orient=False,
-                                   shape='facetZup_ctrl', size=X * 20, color=color, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
-        cntCt = cnt.createController()
-        place.setRotOrder(cntCt[4], 2, False)
-        place.setRotOrder(cntCt[2], 3, False)
-        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-        cmds.parentConstraint(cntCt[4], handle, mo=True)
-        cluster.append(cntCt[4])
-        # resolve special case, make sure this isn't first/secondLast/last iteration
-        # first
-        if CtParent != None:
-            # parent options
-            cmds.select(cntCt[0])
-            TopGrp1 = place.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_TopGrp1')[0][0]
-            CtGrp1 = place.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_CtGrp1')[0][0]
-            cmds.parentConstraint('master_Grp', TopGrp1, mo=True)
-            place.setRotOrder(TopGrp1, 2, True)
-            # second last
-            if i == len(cl) - 1:
-                child = cntCt[0]
-            # last
-            elif i == len(cl):
-                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
-                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
-                cmds.parentConstraint(cntCt[4], child, mo=True)
-                #cmds.parentConstraint(CtParent,cntCt[0], mo=True)
-                VcParent.append(cntCt[4])
-            elif i == 2:
-                # forward parent for next controller
-                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
-                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
-                CtParent = cntCt[4]
-            # all other iterations
-            else:
-                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], CtGrp1, TopGrp1, 'master_Grp', CtParent, False, False, True, True, '')
-                place.parentSwitch(Name + '_' + str(('%0' + str(2) + 'd') % (i)), cntCt[2], cntCt[1], cntCt[0], 'master_Grp', CtParent, False, True, False, False, '')
-                #cmds.parentConstraint(CtParent,cntCt[0], mo=True)
-                # forward parent for next controller
-                CtParent = cntCt[4]
-                VcParent.append(cntCt[4])
-                if j == 0:
-                    chainZero = cntCt[3]
-                else:
-                    cmds.select(cntCt[2])
-                    blendNull = place.insert('null', 1, Name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_RotBlendGrp')[0][0]
-                    place.attrBlend(chainZero, blendNull, cntCt[2], rot=True, pos=True, skip=3, default=1)
-                j = j + 1
-        elif i == 1:
-            CtParent = cntCt[4]
-            VcParent.append(cntCt[4])
-            cmds.parentConstraint('A_Grp', cntCt[0], mo=True)
-        # if 'U' type cluster hide
-        if i == 2:
-            cmds.setAttr(cntCt[0] + '.visibility', 0)
-        elif i == len(cl) - 1:
-            cmds.setAttr(cntCt[0] + '.visibility', 0)
-        i = i + 1
-        if j == 3:
-            if color == seg[0]:
-                color = seg[1]
-            else:
-                color = seg[0]
-            j = 0
-    return CtParent, VcParent, IKjnt, skinJnts
-
-
-def vectors(Name, CtParent, VcParent, IKjnt, skinJnts, master='master', segIteration=4, X=1):
-    # UP VECTORS
-    i = 1
-    upVctr = []
-    up_SE = []
-    j = 0
-    seg = [17, 12]
-    color = seg[0]
-    guideGp = place.null2(Name + '_UpVctrGdGrp', master, orient=False)[0]
-    visAttr = 'Vectors'
-    place.optEnum(master, 'ControllerVis')
-    place.addAttribute(master, visAttr, 0, 1, False, 'long')
-    place.hijackVis(guideGp, master, name=visAttr, suffix=False, default=0)
-    #place.cleanUp(guideGp, World=True)
-    # changed to skinJnts from ikJnt
-    for item in skinJnts:
-        print item
-
-        cnt = place.Controller(Name + '_upVctr_' + str(('%0' + str(2) + 'd') % (i + 1)), item, orient=True,
-                               shape='diamond_ctrl', size=X * 1, color=color, sections=8, degree=1, normal=(0, 0, 1), setChannels=True, groups=True)
-        cntCt = cnt.createController()
-
-        place.hijackVis(cntCt[2], master, name=visAttr, suffix=False, default=0)
-        place.setChannels(cntCt[2], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        place.setChannels(cntCt[3], translate=[False, True], rotate=[True, False], scale=[True, False], visibility=[True, False, False])
-        guide = place.guideLine(cntCt[4], skinJnts[i - 1], 'connect')
-        cmds.parent(guide[0], guideGp)
-        cmds.parent(guide[1][0], guideGp)
-        cmds.parent(guide[1][1], guideGp)
-        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-        cmds.setAttr(cntCt[1] + '.ty', X * 5)
-        if i == 1:
-            upVctr.append(cntCt[4])
-            up_SE.append(cntCt[0])
-            if self.ik == 'splineIK':
-                cmds.aimConstraint(IKjnt[i], skinJnts[i - 1], mo=True, aimVector=(0, 0, 1), upVector=(0, 1, 0), worldUpType='object', worldUpObject=cntCt[4])
-        elif i == len(IKjnt):
-            upVctr.append(cntCt[4])
-            up_SE.append(cntCt[0])
-            cmds.setAttr(cntCt[0] + '.visibility', 0)
-            cmds.setAttr(guide[0] + '.visibility', 0)
-            cmds.setAttr(guide[1][0] + '.visibility', 0)
-            cmds.setAttr(guide[1][1] + '.visibility', 0)
-        else:
-            upVctr.append(cntCt[0])
-            if self.ik == 'splineIK':
-                cmds.aimConstraint(IKjnt[i], skinJnts[i - 1], mo=True, aimVector=(0, 0, 1), upVector=(0, 1, 0), worldUpType='object', worldUpObject=cntCt[4])
-            j = j + 1
-        cmds.parentConstraint(VcParent[i - 1], cntCt[0], w=1, mo=True)
-
-        i = i + 1
-        if j == segIteration:
-            if color == seg[0]:
-                color = seg[1]
-            else:
-                color = seg[0]
-            j = 0
-    print upVctr, '\n', up_SE
-    #cmds.poleVectorConstraint(upVctr[i-1], clusterList[i])
-
-    #start = upVctr[0]
-    #end = upVctr[len(upVctr) - 1]
-    # i=1
-    #cmds.parentConstraint(cluster[0], up_SE[0], w=1, mo=True)
-    #cmds.parentConstraint(cluster[len(cluster) -1], up_SE[1], w=1, mo=True)
-
-    # while i < len(upVctr)-1:
-    #cc = spln.blendWeight2(upVctr, i, 2, 0)
-    #cmds.parentConstraint(start, upVctr[i], w=cc[0], mo=True)
-    #cmds.parentConstraint(end, upVctr[i], w=cc[1], mo=True)
-    #    i=i+1
-"""

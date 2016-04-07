@@ -7,7 +7,7 @@ spln = web.mod('atom_spline_lib')
 ui = web.mod('atom_ui_lib')
 
 
-def splineStage(stage):
+def splineStage(stage, colorScheme='yellow'):
     """Arguments:
     stage = int 1-4
     \rDescription:
@@ -22,6 +22,7 @@ def splineStage(stage):
     Stage2 = Build cluster groups
     Stage3 = Build IK groups
     Stage4 = Build vector groups
+    colorScheme = yellow, red, blue
     """
     if stage > 0 and stage < 5:
         # ############################## Variables ###################################
@@ -113,7 +114,7 @@ def splineStage(stage):
             # (up)                - up vector
             # (rotOrder)          - rotate order
             # (prefix)            - body part
-            BUS_Stage1_BUS = build.clusterGroup(prefix, X, skinJnts, aim, up, rotate)
+            BUS_Stage1_BUS = build.clusterGroup(prefix, X, skinJnts, aim, up, rotate, colorScheme)
             # RETURNS:
             # (clusterGrps)       - cluster groups
             # (Sjnt)              - spline start joints
@@ -131,7 +132,7 @@ def splineStage(stage):
             # BUS_STAGE_1_BUS
             # (clusterGrps)       - cluster groups
             # (buildControls)     - boolean, build controls or parent objects in BUS_Stage1_BUS list into hiearchy
-            BUS_Stage2_BUS = build.clusterControlGroup(prefix, '_Clstr', X, aim, 1, skinJnts, rotOrder, 0, F, BUS_Stage1_BUS)
+            BUS_Stage2_BUS = build.clusterControlGroup(prefix, '_Clstr', X, aim, 1, skinJnts, rotOrder, 0, F, BUS_Stage1_BUS, colorScheme)
             # RETURNS:
             # (clusterCntrlGrps)  - cluster control groups
             # (ClstrCntrlGrp)  - parent group for clusterCntrlGrps
@@ -155,7 +156,7 @@ def splineStage(stage):
             # (Sblnd)            - end blend nodes - stretch on/off
             # BUS_STAGE_2_BUS
             # (clusterCntrlGrps) - cluster control groups
-            BUS_Stage3_BUS = build.ikGroup(prefix, X, skinJnts, rotOrder, BUS_Stage1_BUS, BUS_Stage2_BUS)
+            BUS_Stage3_BUS = build.ikGroup(prefix, X, skinJnts, rotOrder, BUS_Stage1_BUS, BUS_Stage2_BUS, colorScheme)
             # RETURNS:
             # (prnt)             - top group of ik controls
             # (vtr)              - up vector group - second to secondlast positions only
@@ -186,7 +187,8 @@ def splineStage(stage):
             # (ik)               - integer, returns total number ofcontrol positions, same as len(skinJnts)
             # (cnstrnt)          - constraint that uses up vector created in STAGE 4
             # (aim)              - aim vector group - third to last positions only
-            BUS_Stage4_BUS = build.upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrder, Constrain, BUS_Stage1_BUS, BUS_Stage3_BUS, BUS_Stage2_BUS)
+            BUS_Stage4_BUS = build.upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat,
+                                                 rotOrder, Constrain, BUS_Stage1_BUS, BUS_Stage3_BUS, BUS_Stage2_BUS, colorScheme)
             # RETURNS:
             # BUS_Stage_4_BUS
             # ()

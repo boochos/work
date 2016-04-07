@@ -142,7 +142,7 @@ def null(nllSuffix, order=None):
         return None
 
 
-def circle(name='', obj='', shape='', size=1.0, color=17, sections=8, degree=1, normal=(0, 0, 1), orient=True):
+def circle(name='', obj='', shape='', size=1.0, color=17, sections=8, degree=1, normal=(0, 0, 1), orient=True, colorName=None):
     '''
     place circle
     name     = name of circle
@@ -152,6 +152,8 @@ def circle(name='', obj='', shape='', size=1.0, color=17, sections=8, degree=1, 
     degree   = Linear(1) or Cubic(3) ,has to be int
     normal   = plane on which to build circle
     '''
+    if colorName:
+        color = colorDict()[colorName]
     # path = os.path.expanduser('~') + '/GitHub/controlShapes/'
     path = None
     Circle = []
@@ -215,26 +217,36 @@ def null2(nllSuffix, obj, orient=True):
         return None
 
 
+def colorDict():
+    colors = {'darkRed': 4, 'blue': 6, 'brown': 10, 'red': 13, 'yellow': 17,
+              'lightBlue': 18, 'pink': 20, 'lightYellow': 22, 'green': 23,
+              'lightBrown': 24, 'purple': 30, 'burgundy': 31}
+    return colors
+
+
 class Controller():
     # initialize
 
     def __init__(self, name, obj, orient=True, shape='diamond_ctrl',
                  size=1, color=8, sections=8, degree=1, normal=(0, 0, 1), setChannels=True,
-                 groups=False, orientCt=False):
+                 groups=False, orientCt=False, colorName=None):
         self.name = name
         self.obj = obj
         self.orient = orient
         self.shape = shape
         self.size = size
         self.color = color
+        self.colorName = colorName
         self.sections = sections
         self.degree = degree
         self.normal = normal
         self.setChannels = setChannels
         self.groups = groups
         self.orientCt = orientCt
+        self.colors = colorDict()
 
     # conditions
+
     def condition(self):
         if type(self.obj) == list:
             if len(self.obj) == 1:
@@ -246,17 +258,22 @@ class Controller():
         else:
             mel.eval('warning \"' + '////... \'obj\' variable can only be one object...////' + '\";')
 
+    def whatColor(self):
+        if self.colorName:
+            self.color = self.colors[self.colorName]
+
     # create
     def createController(self):
+        self.whatColor()
         ct = circle(self.name, self.obj, self.shape, self.size * (0.3), self.color, self.sections, self.degree, self.normal)[0]
         ctO = circle(self.name + '_Offset', self.obj, self.shape, self.size * (0.25), self.color, self.sections, self.degree, self.normal)[0]
         gp = null2(self.name + '_Grp', self.obj)[0]
-        if self.groups == True:
+        if self.groups:
             ctgp = null2(self.name + '_CtGrp', self.obj)[0]
             topgp = null2(self.name + '_TopGrp', self.obj)[0]
             cmds.parent(ct, ctgp)
             cmds.parent(ctgp, topgp)
-            if self.setChannels == True:
+            if self.setChannels:
                 setChannels(ctgp, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False], other=[False, True])
                 setChannels(topgp, translate=[False, True], rotate=[False, True], scale=[True, False], visibility=[True, False, False], other=[False, True])
 
@@ -1244,7 +1261,7 @@ def cleanUp(obj, Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility
                 print obj, 'clean up to', Utility, 'failed.'
     if World == True:
         World = namePrebuild(World=True)
-        if cmds.objExists(World) == 1:
+        if cmds.objExists(World):
             try:
                 cmds.parent(obj, World)
             except:
@@ -1378,7 +1395,7 @@ def rigPrebuild(Top=0, Ctrl=True, SknJnts=True, Geo=True, World=True, Master=Tru
     if Master == True:
         Master = namePrebuild(Master=True)
         world = cmds.group(em=True)
-        master = Controller(Master, world, False, 'facetYup_ctrl', Size, 12, 8, 1, (0, 1, 0), True, True)
+        master = Controller(Master, world, False, 'facetYup_ctrl', Size, 12, 8, 1, (0, 1, 0), True, True, False, colorName='yellow')
         MasterCt = master.createController()
         setRotOrder(MasterCt[0], 2, True)
         cmds.delete(world)

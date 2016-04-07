@@ -61,7 +61,7 @@ def preBuild(
 
     # COG #
     Cog = 'cog'
-    cog = place.Controller(Cog, COG_jnt, False, 'facetZup_ctrl', X * 40, 12, 8, 1, (0, 0, 1), True, True)
+    cog = place.Controller(Cog, COG_jnt, False, 'facetZup_ctrl', X * 40, 12, 8, 1, (0, 0, 1), True, True, False, 'yellow')
     CogCt = cog.createController()
     place.setRotOrderWithXform(CogCt[0], 2, True)
     cmds.parent(CogCt[0], CONTROLS)
@@ -114,7 +114,7 @@ def preBuild(
 
     # NECK #
     Neck = 'neck'
-    neck = place.Controller(Neck, NECK_jnt, True, 'GDneck_ctrl', X * 5, 12, 8, 1, (0, 0, 1), True, True)
+    neck = place.Controller(Neck, NECK_jnt, True, 'GDneck_ctrl', X * 5, 12, 8, 1, (0, 0, 1), True, True, False, 'yellow')
     NeckCt = neck.createController()
     place.setRotOrderWithXform(NeckCt[0], 2, True)
     # parent switches
@@ -131,7 +131,7 @@ def preBuild(
 
     # HEAD #
     Head = 'head'
-    head = place.Controller(Head, HEAD_jnt, False, 'head_ctrl', X * 5, 12, 8, 1, (0, 0, 1), True, True)
+    head = place.Controller(Head, HEAD_jnt, False, 'head_ctrl', X * 5, 12, 8, 1, (0, 0, 1), True, True, False, 'yellow')
     HeadCt = head.createController()
     place.setRotOrderWithXform(HeadCt[0], 2, True)
     # parent switch
@@ -192,7 +192,7 @@ def preBuild(
 
         # SHOULDER L #
         shldrL = 'shldr_L'
-        shldrL = place.Controller(shldrL, SHLDR_L_jnt, False, 'facetXup_ctrl', X * 21, 17, 8, 1, (0, 0, 1), True, True)
+        shldrL = place.Controller(shldrL, SHLDR_L_jnt, False, 'facetXup_ctrl', X * 21, 17, 8, 1, (0, 0, 1), True, True, False, 'blue')
         ShldrLCt = shldrL.createController()
         place.setRotOrderWithXform(ShldrLCt[0], 2, True)
         cmds.parentConstraint(ChestAttch_CnstGp, ShldrLCt[0], mo=True)
@@ -219,7 +219,7 @@ def preBuild(
 
         # SHOULDER R #
         shldrR = 'shldr_R'
-        shldrR = place.Controller(shldrR, SHLDR_R_jnt, False, 'facetXup_ctrl', X * 21, 17, 8, 1, (0, 0, 1), True, True)
+        shldrR = place.Controller(shldrR, SHLDR_R_jnt, False, 'facetXup_ctrl', X * 21, 17, 8, 1, (0, 0, 1), True, True, False, 'red')
         ShldrRCt = shldrR.createController()
         place.setRotOrderWithXform(ShldrRCt[0], 2, True)
         cmds.parentConstraint(ChestAttch_CnstGp, ShldrRCt[0], mo=True)
@@ -252,7 +252,7 @@ def preBuild(
 
         # BACK L  #
         PawBckL = 'back_paw_L'
-        pawBckL = place.Controller(PawBckL, BACK_L_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True)
+        pawBckL = place.Controller(PawBckL, BACK_L_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True, 'blue')
         PawBckLCt = pawBckL.createController()
         cmds.parent(PawBckLCt[0], CONTROLS)
         # More parent group Options
@@ -281,7 +281,7 @@ def preBuild(
 
         # BACK R  #
         PawBckR = 'back_paw_R'
-        pawBckR = place.Controller(PawBckR, BACK_R_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True)
+        pawBckR = place.Controller(PawBckR, BACK_R_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True, 'red')
         PawBckRCt = pawBckR.createController()
         cmds.parent(PawBckRCt[0], CONTROLS)
         # More parent group Options
@@ -310,7 +310,7 @@ def preBuild(
 
         # FRONT L  #
         PawFrntL = 'wing_L'
-        pawFrntL = place.Controller(PawFrntL, FRONT_L_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True)
+        pawFrntL = place.Controller(PawFrntL, FRONT_L_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True, 'blue')
         PawFrntLCt = pawFrntL.createController()
         cmds.parent(PawFrntLCt[0], CONTROLS)
         # return None
@@ -341,7 +341,7 @@ def preBuild(
 
         # FRONT R  #
         PawFrntR = 'wing_R'
-        pawFrntR = place.Controller(PawFrntR, FRONT_R_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True)
+        pawFrntR = place.Controller(PawFrntR, FRONT_R_jnt, False, 'GDchest_ctrl', X * 2.5, 12, 8, 1, (0, 0, 1), True, True, True, 'red')
         PawFrntRCt = pawFrntR.createController()
         cmds.parent(PawFrntRCt[0], CONTROLS)
         # More parent group Options
@@ -401,7 +401,7 @@ def buildAppendages(*args):
 
     cmds.floatField('atom_qls_ldf_floatField', edit=True, v=3.5)
     cmds.floatField('atom_paw_qls_ldf_floatField', edit=True, v=1)
-    aal.createReverseLeg(traversDepth=3)
+    aal.createReverseLeg(traversDepth=3, colorName='blue')
     place.cleanUp('Back_knee_pv_grp_L', Ctrl=True)
     place.cleanUp('Back_auto_ankle_parent_grp_L', Ctrl=True)
     place.cleanUp('Back_limb_ctrl_grp_L', Ctrl=True)
@@ -421,7 +421,7 @@ def buildAppendages(*args):
     cmds.floatField('atom_qls_ldf_floatField', edit=True, v=-3.5)
     cmds.floatField('atom_paw_qls_ldf_floatField', edit=True, v=-1)
     # aal.createReverseLeg()
-    aal.createReverseLeg(traversDepth=3)
+    aal.createReverseLeg(traversDepth=3, colorName='red')
     place.cleanUp('Back_knee_pv_grp_R', Ctrl=True)
     place.cleanUp('Back_auto_ankle_parent_grp_R', Ctrl=True)
     place.cleanUp('Back_limb_ctrl_grp_R', Ctrl=True)
@@ -445,7 +445,7 @@ def buildAppendages(*args):
     flipVal.append(cmds.checkBoxGrp('atom_qls_flip_checkBoxGrp', query=True, v3=True))
     ankle_pv_loc = aal.create_3_joint_pv('shoulder_L_jnt', 'hand_L_jnt', 'Front', 'L', 'wing', 'atom_qls_limbRot_radioButtonGrp', 'atom_qls_limbAim_radioButtonGrp',
                                          'atom_qls_limbUp_radioButtonGrp', -8.5, 12, None, True, flipVal)
-    pvElbow_L = place.Controller('pvElbow_L', 'Front_uperarm_L_jnt_pv_loc_L', False, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True)
+    pvElbow_L = place.Controller('pvElbow_L', 'Front_uperarm_L_jnt_pv_loc_L', False, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True, False, 'blue')
     pvElbow_L_Ct = pvElbow_L.createController()
     cmds.parent(ankle_pv_loc, pvElbow_L_Ct[4])
     cmds.parentConstraint('cog_Grp', pvElbow_L_Ct[0], mo=True)
@@ -455,7 +455,7 @@ def buildAppendages(*args):
     # pv constraint
     ankle_pvc = cmds.poleVectorConstraint(ankle_pv_loc, ankleIkh[0][0])
     # wrist
-    wrist_L = place.Controller('wrist_L', 'hand_L_jnt', True, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True)
+    wrist_L = place.Controller('wrist_L', 'hand_L_jnt', True, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True, False, 'blue')
     wrist_L_Ct = wrist_L.createController()
     # cmds.parentConstraint('wing_L_Grp', wrist_L_Ct[0], mo=True)
     # reverse aim
@@ -496,7 +496,7 @@ def buildAppendages(*args):
     flipVal.append(cmds.checkBoxGrp('atom_qls_flip_checkBoxGrp', query=True, v3=True))
     ankle_pv_loc = aal.create_3_joint_pv('shoulder_R_jnt', 'hand_R_jnt', 'Front', 'R', 'wing', 'atom_qls_limbRot_radioButtonGrp', 'atom_qls_limbAim_radioButtonGrp',
                                          'atom_qls_limbUp_radioButtonGrp', 8.5, 12, None, True, flipVal)
-    pvElbow_R = place.Controller('pvElbow_R', 'Front_uperarm_R_jnt_pv_loc_R', False, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True)
+    pvElbow_R = place.Controller('pvElbow_R', 'Front_uperarm_R_jnt_pv_loc_R', False, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True, False, 'red')
     pvElbow_R_Ct = pvElbow_R.createController()
     cmds.parent(ankle_pv_loc, pvElbow_R_Ct[4])
     cmds.parentConstraint('cog_Grp', pvElbow_R_Ct[0], mo=True)
@@ -506,7 +506,7 @@ def buildAppendages(*args):
     # pv constraint
     ankle_pvc = cmds.poleVectorConstraint(ankle_pv_loc, ankleIkh[0][0])
     # wrist
-    wrist_R = place.Controller('wrist_R', 'hand_R_jnt', True, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True)
+    wrist_R = place.Controller('wrist_R', 'hand_R_jnt', True, 'diamond_ctrl', 6, 17, 8, 1, (0, 0, 1), True, True, False, 'red')
     wrist_R_Ct = wrist_R.createController()
     cmds.parentConstraint('wing_R_Grp', wrist_R_Ct[0], mo=True)
     # reverse aim
@@ -570,15 +570,18 @@ def buildSplines(*args):
 
     # Tail
     tailRig = splnFk.SplineFK('tail', 'tailRoot_jnt', 'tail_03_jnt', 'mid',
-                              controllerSize=3, rootParent='PelvisAttch_CnstGp', parent1='master_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
+                              controllerSize=3, rootParent='PelvisAttch_CnstGp', parent1='master_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
 
     # Tongue
     tailRig = splnFk.SplineFK('tongue', 'tongue_01_jnt', 'tongue_06_jnt', 'mid',
-                              controllerSize=4, rootParent='lower_jaw_03_jnt', parent1='head_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
+                              controllerSize=4, rootParent='lower_jaw_03_jnt', parent1='head_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
 
     # jaw
     tailRig = splnFk.SplineFK('jaw', 'lower_jaw_01_jnt', 'lower_jaw_03_jnt', 'mid',
-                              controllerSize=5, rootParent='head_Grp', parent1='neck_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
+                              controllerSize=5, rootParent='head_Grp', parent1='neck_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
 
     # make parent group, cog orient, hand position
     null = place.null2('digitParent_L', 'reverseWrist_L')[0]
@@ -588,28 +591,32 @@ def buildSplines(*args):
 
     # hand_Carpal_01_L
     tailRig = splnFk.SplineFK('hand_Carpal_01_L', 'hand_Carpal_01_dbl_L_jnt', 'hand_finger1_04_L_jnt', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='blue')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
 
     # hand_Carpal_02_L
     tailRig = splnFk.SplineFK('hand_Carpal_02_L', 'hand_Carpal_02_dbl_L_jnt', 'hand_finger2_04_L_jnt', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='blue')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
 
     # hand_Carpal_03_L
     tailRig = splnFk.SplineFK('hand_Carpal_03_L', 'hand_Carpal_03_dbl_L_jnt', 'hand_finger3_04_L_jnt', 'left',
-                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='blue')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
 
     # hand_Carpal_04_L
     tailRig = splnFk.SplineFK('hand_Carpal_04_L', 'hand_Carpal_04_dbl_L_jnt', 'hand_finger4_03_L_jnt', 'left',
-                              controllerSize=5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=5, rootParent='reverseWrist_L', parent1=null, parent2='wing_L_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='blue')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
@@ -622,28 +629,32 @@ def buildSplines(*args):
 
     # hand_Carpal_01_R
     tailRig = splnFk.SplineFK('hand_Carpal_01_R', 'hand_Carpal_01_dbl_R_jnt', 'hand_finger1_03_R_jnt', 'right',
-                              controllerSize=1.5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='red')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
 
     # hand_Carpal_02_R
     tailRig = splnFk.SplineFK('hand_Carpal_02_R', 'hand_Carpal_02_dbl_R_jnt', 'hand_finger2_03_R_jnt', 'right',
-                              controllerSize=1.5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='red')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
 
     # hand_Carpal_03_R
     tailRig = splnFk.SplineFK('hand_Carpal_03_R', 'hand_Carpal_03_dbl_R_jnt', 'hand_finger3_03_R_jnt', 'right',
-                              controllerSize=1.5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=1.5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='red')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
 
     # hand_Carpal_04_R
     tailRig = splnFk.SplineFK('hand_Carpal_04_R', 'hand_Carpal_04_dbl_R_jnt', 'hand_finger4_03_R_jnt', 'right',
-                              controllerSize=5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp', parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik')
+                              controllerSize=5, rootParent='reverseWrist_R', parent1=null, parent2='wing_R_Grp',
+                              parentDefault=[1, 0], segIteration=6, stretch=0, ik='ik', colorScheme='red')
     cmds.setAttr(tailRig.ctrlList[0][2] + '.SubSegments', 1)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0)
     cmds.setAttr(tailRig.ctrlList[2][2] + '.Driver_ParentOffOn', 1)
@@ -769,7 +780,7 @@ def buildSplines(*args):
     wingDistance = 3.5
     # In #
     wingIn = 'wingInFlap_L'
-    cog = place.Controller(wingIn, 'wing_L_jnt', False, 'facetZup_ctrl', 7, 12, 8, 1, (0, 0, 1), True, True)
+    cog = place.Controller(wingIn, 'wing_L_jnt', False, 'facetZup_ctrl', 7, 12, 8, 1, (0, 0, 1), True, True, False, 'lightBlue')
     CogCt = cog.createController()
     place.setRotOrderWithXform(CogCt[0], 2, True)
     cmds.parent(CogCt[0], '___CONTROLS')
@@ -777,11 +788,11 @@ def buildSplines(*args):
     anch0 = cmds.group(n='anch0_L', em=True)
     anch1 = 'hand_finger4_01_L_jnt'
     anch2 = 'forearm_L_jnt'
-    anchr1 = place.Controller('wingFlapAnchor1_L', anch1, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True)
+    anchr1 = place.Controller('wingFlapAnchor1_L', anch1, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True, False, 'lightBlue')
     anchrCt1 = anchr1.createController()
     cmds.setAttr(anchrCt1[0] + '.visibility', False)
     cmds.parentConstraint(anch1, anchrCt1[0], mo=True)
-    anchr2 = place.Controller('wingFlapAnchor2_L', anch2, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True)
+    anchr2 = place.Controller('wingFlapAnchor2_L', anch2, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True, False, 'lightBlue')
     anchrCt2 = anchr2.createController()
     cmds.setAttr(anchrCt2[0] + '.visibility', False)
     cmds.parentConstraint(anch2, anchrCt2[0], mo=True)
@@ -794,13 +805,13 @@ def buildSplines(*args):
     place.cleanUp(anchrCt1[0], Ctrl=True)
     place.cleanUp(anch0, Ctrl=True)
 
-    inside = place.circle(name='insideFlap_L', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True)[0]
+    inside = place.circle(name='insideFlap_L', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True, colorName='lightBlue')[0]
     cmds.parent(inside, CogCt[2])
     cmds.setAttr(inside + '.translateX', -1.5)
     cmds.setAttr(inside + '.translateY', 3.0)
     place.setChannels(inside, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, True, False])
 
-    outside = place.circle(name='outsideFlap_L', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True)[0]
+    outside = place.circle(name='outsideFlap_L', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True, colorName='lightBlue')[0]
     cmds.parent(outside, CogCt[2])
     cmds.setAttr(outside + '.translateX', 1.5)
     cmds.setAttr(outside + '.translateY', 3.0)
@@ -819,7 +830,7 @@ def buildSplines(*args):
     # build spline
     SplineOpts(wingInName, wingInSize, wingInDistance, wingInFalloff)
     cmds.select(wingIn)
-    stage.splineStage(4)
+    stage.splineStage(4, 'blue')
     # return None
     # assemble
     cmds.connectAttr('master.scaleX', wingInName + '_S_IK_curve_scale.input2Z')
@@ -860,7 +871,7 @@ def buildSplines(*args):
     # build spline
     SplineOpts(wingOutName, wingOutSize, wingOutDistance, wingOutFalloff)
     cmds.select(wingOut)
-    stage.splineStage(4)
+    stage.splineStage(4, 'blue')
     # assemble
     cmds.connectAttr('master.scaleX', wingOutName + '_S_IK_curve_scale.input2Z')
     cmds.connectAttr('master.scaleX', wingOutName + '_E_IK_curve_scale.input2Z')
@@ -893,7 +904,7 @@ def buildSplines(*args):
     wingDistance = 3.5
     # In #
     wingIn = 'wingInFlap_R'
-    cog = place.Controller(wingIn, 'wing_R_jnt', False, 'facetZup_ctrl', 7, 12, 8, 1, (0, 0, 1), True, True)
+    cog = place.Controller(wingIn, 'wing_R_jnt', False, 'facetZup_ctrl', 7, 12, 8, 1, (0, 0, 1), True, True, False, 'pink')
     CogCt = cog.createController()
     place.setRotOrderWithXform(CogCt[0], 2, True)
     cmds.parent(CogCt[0], '___CONTROLS')
@@ -901,11 +912,11 @@ def buildSplines(*args):
     anch0 = cmds.group(n='anch0_R', em=True)
     anch1 = 'hand_finger4_01_R_jnt'
     anch2 = 'forearm_R_jnt'
-    anchr1 = place.Controller('wingFlapAnchor1_R', anch1, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True)
+    anchr1 = place.Controller('wingFlapAnchor1_R', anch1, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True, False, 'pink')
     anchrCt1 = anchr1.createController()
     cmds.setAttr(anchrCt1[0] + '.visibility', False)
     cmds.parentConstraint(anch1, anchrCt1[0], mo=True)
-    anchr2 = place.Controller('wingFlapAnchor2_R', anch2, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True)
+    anchr2 = place.Controller('wingFlapAnchor2_R', anch2, False, 'diamond_ctrl', 2, 12, 8, 1, (0, 0, 1), True, True, False, 'pink')
     anchrCt2 = anchr2.createController()
     cmds.setAttr(anchrCt2[0] + '.visibility', False)
     cmds.parentConstraint(anch2, anchrCt2[0], mo=True)
@@ -918,13 +929,13 @@ def buildSplines(*args):
     place.cleanUp(anchrCt1[0], Ctrl=True)
     place.cleanUp(anch0, Ctrl=True)
 
-    inside = place.circle(name='insideFlap_R', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True)[0]
+    inside = place.circle(name='insideFlap_R', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True, colorName='pink')[0]
     cmds.parent(inside, CogCt[2])
     cmds.setAttr(inside + '.translateX', 1.5)
     cmds.setAttr(inside + '.translateY', 3.0)
     place.setChannels(inside, translate=[True, False], rotate=[True, False], scale=[True, False], visibility=[True, True, False])
 
-    outside = place.circle(name='outsideFlap_R', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True)[0]
+    outside = place.circle(name='outsideFlap_R', obj=CogCt[2], shape='facetZup_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), orient=True, colorName='pink')[0]
     cmds.parent(outside, CogCt[2])
     cmds.setAttr(outside + '.translateX', -1.5)
     cmds.setAttr(outside + '.translateY', 3.0)
@@ -943,7 +954,7 @@ def buildSplines(*args):
     # build spline
     SplineOpts(wingInName, wingInSize, wingInDistance, wingInFalloff)
     cmds.select(wingIn)
-    stage.splineStage(4)
+    stage.splineStage(4, 'red')
     # return None
     # assemble
     cmds.connectAttr('master.scaleX', wingInName + '_S_IK_curve_scale.input2Z')
@@ -984,7 +995,7 @@ def buildSplines(*args):
     # build spline
     SplineOpts(wingOutName, wingOutSize, wingOutDistance, wingOutFalloff)
     cmds.select(wingOut)
-    stage.splineStage(4)
+    stage.splineStage(4, 'red')
     # assemble
     cmds.connectAttr('master.scaleX', wingOutName + '_S_IK_curve_scale.input2Z')
     cmds.connectAttr('master.scaleX', wingOutName + '_E_IK_curve_scale.input2Z')

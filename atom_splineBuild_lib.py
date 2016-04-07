@@ -8,9 +8,20 @@ spln = web.mod('atom_spline_lib')
 joint = web.mod('atom_joint_lib')
 
 
+def getColors(colorScheme=''):
+    # colorSchemes
+    if colorScheme == 'red':
+        return [20, 13]
+    elif colorScheme == 'blue':
+        return [18, 6]
+    else:
+        return [22, 17]
+
+
 ###############################################################################
 # ############################## STAGE 1 ######################################
-def clusterGroup(prefix, X, skinJnts, aim, up, rotate):
+def clusterGroup(prefix, X, skinJnts, aim, up, rotate, colorScheme='yellow'):
+    colors = getColors(colorScheme)
     if len(skinJnts) > 2:
         # return
         BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp = []
@@ -173,7 +184,9 @@ def clusterGroup(prefix, X, skinJnts, aim, up, rotate):
 
 ###############################################################################
 # ############################## STAGE 2 ######################################
-def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrder, function, F, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp):
+def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrder, function, F,
+                        BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp, colorScheme='yellow'):
+    colors = getColors(colorScheme)
     #sel = cmds.ls(sl=True)
     if len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) > 2:
         # cluster control parent group
@@ -224,7 +237,7 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
         if buildControls == 0:
             Sloc = BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][0]
         else:
-            Sloc = place.circle(prefix + suffix + '_S_Ctrl', BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][0], 'diamond_ctrl', X * (1.5), 17, 8, 1, (0, 0, 1))[0]
+            Sloc = place.circle(prefix + suffix + '_S_Ctrl', BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][0], 'diamond_ctrl', X * (1.5), colors[0], 8, 1, (0, 0, 1))[0]
             cmds.parent(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][0], Sloc)
         cmds.select(Sloc)
         ClusterCntrls.append(Sloc)
@@ -243,7 +256,7 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
         if buildControls == 0:
             Eloc = BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][(len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1)]
         else:
-            Eloc = place.circle(prefix + suffix + '_E_Ctrl', BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][(len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1)], 'diamond_ctrl', X * (1.5), 17, 8, 1, (0, 0, 1))[0]
+            Eloc = place.circle(prefix + suffix + '_E_Ctrl', BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][(len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1)], 'diamond_ctrl', X * (1.5), colors[0], 8, 1, (0, 0, 1))[0]
             cmds.parent((BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][(len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1)]), Eloc)
         cmds.select(Eloc)
         Epr = place.insert('null', 1, ((prefix + suffix + '_E_PrntGrp')))[0]
@@ -262,7 +275,7 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
         if buildControls == 0:
             MMloc = BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][int((len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1) / 2)]
         else:
-            MMloc = place.circle(prefix + suffix + '_M' + num + '_Ctrl', BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][int((len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1) / 2)], 'v_ctrl', X * (1.6), 17, 8, 1, (0, 0, 1))[0]
+            MMloc = place.circle(prefix + suffix + '_M' + num + '_Ctrl', BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][int((len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1) / 2)], 'v_ctrl', X * (1.6), colors[0], 8, 1, (0, 0, 1))[0]
             cmds.parent(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0][int((len(BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp[0]) - 1) / 2)], MMloc)
         cmds.select(MMloc)
         ClusterCntrls.append(MMloc)
@@ -275,11 +288,11 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
         cmds.select(MMloc)
         MMMps = place.insert('null', 0, (prefix + suffix + 'M_M' + num + '_PosGrp'))[0]
         # Corresponding groups under 'S' and 'E'
-        Sprn = place.circle(prefix + suffix + '_S_M' + num + '_PrntGrp', MMloc, 'diamond_ctrl', X * (0.4), 17, 8, 1, (0, 0, 1))[0]
+        Sprn = place.circle(prefix + suffix + '_S_M' + num + '_PrntGrp', MMloc, 'diamond_ctrl', X * (0.4), colors[0], 8, 1, (0, 0, 1))[0]
         cmds.connectAttr((ClstrCtrlGrp + '.' + attrList[3]), (Sprn + '.visibility'), f=True)
         cmds.parent(Sprn, Sloc)
         PrntCnstrnt = cmds.pointConstraint(Sprn, MMpr, mo=True, w=0.5)[0]
-        Eprn = place.circle(prefix + suffix + '_E_M' + num + '_PrntGrp', MMloc, 'diamond_ctrl', X * (0.4), 17, 8, 1, (0, 0, 1))[0]
+        Eprn = place.circle(prefix + suffix + '_E_M' + num + '_PrntGrp', MMloc, 'diamond_ctrl', X * (0.4), colors[0], 8, 1, (0, 0, 1))[0]
         cmds.connectAttr((ClstrCtrlGrp + '.' + attrList[3]), (Eprn + '.visibility'), f=True)
         cmds.parent(Eprn, Eloc)
         cmds.pointConstraint(Eprn, MMpr, mo=True, w=0.5)
@@ -357,7 +370,7 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
                 if buildControls == 0:
                     Mloc = S_M[i]
                 else:
-                    Mloc = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', S_M[i], 'diamond_ctrl', X * (0.5), 17, 8, 1, (0, 0, 1))[0]
+                    Mloc = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', S_M[i], 'diamond_ctrl', X * (0.5), colors[0], 8, 1, (0, 0, 1))[0]
                     cmds.parent(S_M[i], Mloc)
                 cmds.select(Mloc)
                 SMidClusterCntrls.append(Mloc)
@@ -427,7 +440,7 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
                 if buildControls == 0:
                     Mloc = M_E[i]
                 else:
-                    Mloc = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', M_E[i], 'diamond_ctrl', X * (0.5), 17, 8, 1, (0, 0, 1))[0]
+                    Mloc = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', M_E[i], 'diamond_ctrl', X * (0.5), colors[0], 8, 1, (0, 0, 1))[0]
                     cmds.parent(M_E[i], Mloc)
                 cmds.select(Mloc)
                 EMidClusterCntrls.append(Mloc)
@@ -560,7 +573,9 @@ def clusterControlGroup(prefix, suffix, X, aim, buildControls, skinJnts, rotOrde
 # ############################## STAGE 3 ######################################
 
 
-def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp, BUS_clusterCntrlGrps_ClstrCtrlGrp_AttrList_ClusterCntrls_XtraP):
+def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp,
+            BUS_clusterCntrlGrps_ClstrCtrlGrp_AttrList_ClusterCntrls_XtraP, colorScheme='yellow'):
+    colors = getColors(colorScheme)
     # Variables
 
     # point constrained to start/end ik joints
@@ -712,8 +727,8 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             prnt = place.null(prefix + '_S_IK_PrntGrp')
             SEprnt[0] = prnt[0]
             place.setChannels(prnt[0], [False, True], [False, True], [True, False], [True, False, False])
-            ctrl = place.circle(prefix + '_S_IK_Cntrl', skinJnts[i], 'splineStart_ctrl', X * (2.5), 17, 8, 1, (0, 0, 1))[0]
-            ctrlOfst = place.circle(prefix + '_S_IK_Cntrl_Offst', skinJnts[i], 'splineStart_ctrl', X * (2.2), 17, 8, 1, (0, 0, 1))[0]
+            ctrl = place.circle(prefix + '_S_IK_Cntrl', skinJnts[i], 'splineStart_ctrl', X * (2.5), colors[0], 8, 1, (0, 0, 1))[0]
+            ctrlOfst = place.circle(prefix + '_S_IK_Cntrl_Offst', skinJnts[i], 'splineStart_ctrl', X * (2.2), colors[0], 8, 1, (0, 0, 1))[0]
             place.setChannels(ctrl, [False, True], [False, True], [True, False], [True, False, False])
             place.setChannels(ctrlOfst, [False, True], [False, True], [True, False], [True, False, False])
             # intermediate nulls for orientation option
@@ -799,8 +814,8 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             prnt = place.null(prefix + '_M' + str(jj) + '_IK_PrntGrp')
             place.setChannels(prnt[0], [False, True], [False, True], [True, False], [True, False, False])
             xprnt.append(prnt[0])
-            ctrl = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl', skinJnts[i], 'tacZ_Ctrl', X * (3), 17, 8, 1, (0, 0, 1))[0]
-            ctrlOfst = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl_Offst', skinJnts[i], 'tacZ_Ctrl', X * (2.7), 17, 8, 1, (0, 0, 1))[0]
+            ctrl = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl', skinJnts[i], 'tacZ_Ctrl', X * (3), colors[0], 8, 1, (0, 0, 1))[0]
+            ctrlOfst = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl_Offst', skinJnts[i], 'tacZ_Ctrl', X * (2.7), colors[0], 8, 1, (0, 0, 1))[0]
             place.setChannels(ctrl, [False, True], [False, True], [True, False], [True, False, False])
             place.setChannels(ctrlOfst, [False, True], [False, True], [True, False], [True, False, False])
             # offset vis attr
@@ -845,8 +860,8 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             prnt = place.null(prefix + '_E_IK_PrntGrp')
             SEprnt[1] = prnt[0]
             place.setChannels(prnt[0], [False, True], [False, True], [True, False], [True, False, False])
-            ctrl = place.circle(prefix + '_E_IK_Cntrl', skinJnts[i], 'splineEnd_ctrl', X * (2.5), 17, 8, 1, (0, 0, 1))[0]
-            ctrlOfst = place.circle(prefix + '_E_IK_Cntrl_Offst', skinJnts[i], 'splineEnd_ctrl', X * (2.2), 17, 8, 1, (0, 0, 1))[0]
+            ctrl = place.circle(prefix + '_E_IK_Cntrl', skinJnts[i], 'splineEnd_ctrl', X * (2.5), colors[0], 8, 1, (0, 0, 1))[0]
+            ctrlOfst = place.circle(prefix + '_E_IK_Cntrl_Offst', skinJnts[i], 'splineEnd_ctrl', X * (2.2), colors[0], 8, 1, (0, 0, 1))[0]
             place.setChannels(ctrl, [False, True], [False, True], [True, False], [True, False, False])
             place.setChannels(ctrlOfst, [False, True], [False, True], [True, False], [True, False, False])
             # intermediate nulls for orientation option
@@ -933,8 +948,8 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
             prnt = place.null(prefix + '_M' + str(jj) + '_IK_PrntGrp')
             place.setChannels(prnt[0], [False, True], [False, True], [True, False], [True, False, False])
             xprnt.append(prnt[0])
-            ctrl = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl', skinJnts[i], 'tacZ_Ctrl', X * (3), 17, 8, 1, (0, 0, 1))[0]
-            ctrlOfst = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl_Offst', skinJnts[i], 'tacZ_Ctrl', X * (2.7), 17, 8, 1, (0, 0, 1))[0]
+            ctrl = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl', skinJnts[i], 'tacZ_Ctrl', X * (3), colors[0], 8, 1, (0, 0, 1))[0]
+            ctrlOfst = place.circle(prefix + '_M' + str(jj) + '_IK_Cntrl_Offst', skinJnts[i], 'tacZ_Ctrl', X * (2.7), colors[0], 8, 1, (0, 0, 1))[0]
             place.setChannels(ctrl, [False, True], [False, True], [True, False], [True, False, False])
             place.setChannels(ctrlOfst, [False, True], [False, True], [True, False], [True, False, False])
             # offset vis attr
@@ -994,8 +1009,12 @@ def ikGroup(prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd
 # ############################## STAGE 4 ######################################
 
 
-def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrder, Constrain, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp, BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt, BUS_clusterCntrlGrps_ClstrCtrlGrp_AttrList_ClusterCntrls_XtraP):
+def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrder, Constrain,
+                  BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Eblnd_Crv_Sik_Eik_SplnCtrlGrp_ClstrGrp,
+                  BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt,
+                  BUS_clusterCntrlGrps_ClstrCtrlGrp_AttrList_ClusterCntrls_XtraP, colorScheme='yellow'):
 
+    colors = getColors(colorScheme)
     # lists
     xprntPos = []
     xprntRot = []
@@ -1020,8 +1039,8 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
     # Start UP Vector controls
     BUS_VctrCntrls_BUS = [[], [None], [None], [None], [None], [None], [None], [None], [None]]
     BUS_VctrCntrls_BUS[8] = SplnCntrlGrp
-    sTan = place.circle(prefix + suffix + '_S_Ctrl', skinJnts[0], 'vctrArrow_ctrl', X * (0.3), 17, 8, 1, (0, 0, 1))[0]
-    sTmp = place.circle(prefix + '_S_DELETEME', skinJnts[0], 'vctrArrow_ctrl', X * (0.6), 17, 8, 1, (0, 0, 1))[0]
+    sTan = place.circle(prefix + suffix + '_S_Ctrl', skinJnts[0], 'vctrArrow_ctrl', X * (0.3), colors[0], 8, 1, (0, 0, 1))[0]
+    sTmp = place.circle(prefix + '_S_DELETEME', skinJnts[0], 'vctrArrow_ctrl', X * (0.6), colors[0], 8, 1, (0, 0, 1))[0]
     # create hierarchy
     cmds.parent(sTan, sTmp)
     cmds.setAttr(sTan + '.translate' + up.upper(), Y * (locTY))
@@ -1035,10 +1054,10 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
     for item in BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt[1]:
         # up vector control
         if item == BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt[1][int((len(BUS_prnt_vtr_aim_Scnr_Ecnrl_ik_xjnt_cnstrnt_SRblnd_ERblnd_MidB_SEprnt[1]) - 1) / 2)]:
-            mTan = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', item, 'diamond_ctrl', X * (0.3), 17, 8, 1, (0, 0, 1))[0]
+            mTan = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', item, 'diamond_ctrl', X * (0.3), colors[0], 8, 1, (0, 0, 1))[0]
         else:
-            mTan = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', item, 'diamond_ctrl', X * (0.15), 17, 8, 1, (0, 0, 1))[0]
-        mTmp = place.circle(prefix + suffix + '_M' + str(jj) + '_DELETEME', item, 'diamond_ctrl', X * (0.6), 17, 8, 1, (0, 0, 1))[0]
+            mTan = place.circle(prefix + suffix + '_M' + str(jj) + '_Ctrl', item, 'diamond_ctrl', X * (0.15), colors[0], 8, 1, (0, 0, 1))[0]
+        mTmp = place.circle(prefix + suffix + '_M' + str(jj) + '_DELETEME', item, 'diamond_ctrl', X * (0.6), colors[0], 8, 1, (0, 0, 1))[0]
         # create hierarchy
         cmds.parent(mTan, mTmp)
         cmds.setAttr(mTan + '.translate' + up.upper(), Y * (locTY))
@@ -1052,8 +1071,8 @@ def upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat, rotOrde
         i = i + 1
 
     # End UP Vector controls
-    eTan = place.circle(prefix + suffix + '_E_Ctrl', skinJnts[len(skinJnts) - 1], 'vctrArrowInv_ctrl', X * (0.3), 17, 8, 1, (0, 0, 1))[0]
-    eTmp = place.circle(prefix + '_E_DELETEME', skinJnts[len(skinJnts) - 1], 'vctrArrowInv_ctrl', X * (0.6), 17, 8, 1, (0, 0, 1))[0]
+    eTan = place.circle(prefix + suffix + '_E_Ctrl', skinJnts[len(skinJnts) - 1], 'vctrArrowInv_ctrl', X * (0.3), colors[0], 8, 1, (0, 0, 1))[0]
+    eTmp = place.circle(prefix + '_E_DELETEME', skinJnts[len(skinJnts) - 1], 'vctrArrowInv_ctrl', X * (0.6), colors[0], 8, 1, (0, 0, 1))[0]
 
     # create hierarchy
     cmds.parent(eTan, eTmp)
