@@ -1029,7 +1029,8 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
     # create orient switch
     if Ornt:
         if not RO:
-            mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + ' -- ' + CtGp + ' -- ' + ObjOff + ' -- ' + ObjOn + '\";')
+            pass
+            # mel.eval('warning \"' + '////... Orient: Rotation Orders dont match. IM OUT!...////' + ' -- ' + CtGp + ' -- ' + ObjOff + ' -- ' + ObjOn + '\";')
             # return None
         # constrain matching Obj1Gp and Obj2Gp
         OrntOffGp = null2(name + '_OrntOffGp', Ct)[0]
@@ -1054,7 +1055,8 @@ def parentSwitch(name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos=True, Ornt=True, Prnt
     # create parent switch
     if Prnt:
         if not RO:
-            mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + ' -- ' + CtGp + ' -- ' + ObjOff + ' -- ' + ObjOn + '\";')
+            pass
+            # mel.eval('warning \"' + '////... Parent: Rotation Orders dont match. IM OUT!...////' + ' -- ' + CtGp + ' -- ' + ObjOff + ' -- ' + ObjOn + '\";')
             # return None
         # constrain matching Obj1Gp and Obj2Gp
         PrntOffGp = null2(name + '_PrntOffGp', CtGp)[0]

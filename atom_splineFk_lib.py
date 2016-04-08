@@ -561,14 +561,15 @@ class SplineFK(object):
                 # print self.ps1_Jnt, 'here\n'
                 # account for ps1 being a joint type
                 self.ps1_Jnt = ps1
-                if cmds.objectType(ps1) == 'joint':
-                    JntIntmdt = place.null2(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_Prnt1OnAssistGp'), cntCt[0])[0]
-                    cmds.parent(JntIntmdt, cntCt[0])
-                    place.setRotOrderWithXform(JntIntmdt, 'zxy', False)
-                    cmds.parentConstraint(ps1, JntIntmdt, mo=True)
-                    self.ps1_Jnt = JntIntmdt
-                place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2],
-                                   cntCt[1], cntCt[0], self.ps1_Jnt, rp, False, True, False, True, 'FK_', w=self.FK)
+                if ps1:
+                    if cmds.objectType(ps1) == 'joint':
+                        JntIntmdt = place.null2(self.nameBuilder(self.name + '_' + str(('%0' + str(2) + 'd') % (i)) + '_Prnt1OnAssistGp'), cntCt[0])[0]
+                        cmds.parent(JntIntmdt, cntCt[0])
+                        place.setRotOrderWithXform(JntIntmdt, 'zxy', False)
+                        cmds.parentConstraint(ps1, JntIntmdt, mo=True)
+                        self.ps1_Jnt = JntIntmdt
+                    place.parentSwitch(self.nameBuilder(self.name + '__' + str(('%0' + str(2) + 'd') % (i))), cntCt[2],
+                                       cntCt[1], cntCt[0], self.ps1_Jnt, rp, False, True, False, True, 'FK_', w=self.FK)
                 cmds.parentConstraint(self.rootParent, cntCt[0], mo=True)
                 cmds.parent(cntCt[0], self.ctGp)
             #

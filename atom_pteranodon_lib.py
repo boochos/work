@@ -419,7 +419,7 @@ def buildAppendages(*args):
     cmds.floatFieldGrp('atom_qls_anklePvFlip_floatFieldGrp', edit=True, v3=-3.0)
 
     cmds.floatField('atom_qls_ldf_floatField', edit=True, v=-3.5)
-    cmds.floatField('atom_paw_qls_ldf_floatField', edit=True, v=-1)
+    cmds.floatField('atom_paw_qls_ldf_floatField', edit=True, v=1)
     # aal.createReverseLeg()
     aal.createReverseLeg(traversDepth=3, colorName='red')
     place.cleanUp('Back_knee_pv_grp_R', Ctrl=True)
@@ -575,12 +575,12 @@ def buildSplines(*args):
 
     # Tongue
     tailRig = splnFk.SplineFK('tongue', 'tongue_01_jnt', 'tongue_06_jnt', 'mid',
-                              controllerSize=4, rootParent='lower_jaw_03_jnt', parent1='head_Grp',
+                              controllerSize=4, rootParent='lower_jaw_03_jnt', parent1='head_jnt',
                               parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
 
     # jaw
     tailRig = splnFk.SplineFK('jaw', 'lower_jaw_01_jnt', 'lower_jaw_03_jnt', 'mid',
-                              controllerSize=5, rootParent='head_Grp', parent1='neck_Grp',
+                              controllerSize=5, rootParent='head_jnt', parent1='neck_Grp',
                               parentDefault=[1, 0], segIteration=6, stretch=0, ik='splineIK')
 
     # make parent group, cog orient, hand position

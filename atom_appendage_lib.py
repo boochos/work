@@ -651,7 +651,7 @@ def stepToGoal(goal=[0.0, 0.0, 0.0], sample=0.001, obj=[], operation='<', goalAx
 
 
 def xformDigitLoc(locator, flip, axis, dis, scale):
-    flip = place.convertFlipValue(flip)
+    # flip = place.convertFlipValue(flip)
     dis = flip[2] * dis
     cmds.setAttr(locator + '.translate' + axis, dis)
 
@@ -777,6 +777,7 @@ def create_3_joint_pv(stJnt, endJnt, prefix, suffix, limbName, rotControl, aimCo
     # over the total distance
 
     upList = ui.createListForTransform(upControl, disFactor)
+    print upControl, '______________________up______________________________', upList
     cmds.xform(tmpLoc, os=True, t=upList)
 
     cmds.parent(tmpLoc, w=True)
@@ -885,7 +886,7 @@ def createStandardDigit(base_digit, end_digit, prefix, suffix, limbName, rotAxis
         # 0 =x, 1=y, 2=z
         if flipVar[i] == 1:
             digitAim[i] = -1 * (digitAim[i])
-            digitUp[i] = -1 * (digitUp[i])
+            # digitUp[i] = -1 * (digitUp[i])
 
     xformDigitLoc(digit_up_loc, [0, 0, 0], upAxis, disFactor, scale)
     cmds.aimConstraint(digit_aim_loc, base_digit, wuo=digit_up_loc, wut='object', aim=digitAim, u=[0, 1, 0])
@@ -1003,7 +1004,7 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3, color
                     elif len(cmds.listRelatives(ankleChildren[i], ad=True)) == 3:
                         vol_metacarpal = ankleChildren[i]
 
-                printMeta('ankle 2')
+                # printMeta('ankle 2')
                 # print '+'
                 # return None
                 # For best results paw_fk should have 0 transform in the x
@@ -1295,7 +1296,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3, color
                             # '''
                             #
                             if cmds.xform(proximal_phalanx, q=True, ws=True, t=True)[0] < 0:
-                                cmds.xform(baseCtrlGrp, ws=True, ro=[pp_rot[0] + 180, pp_rot[1], pp_rot[2]])
+                                # not sure why the control needs to be adjusted for opposite side... should investigate further or rebuild entire limb...fuct!
+                                cmds.xform(baseCtrlGrp, ws=True, ro=pp_rot)
+                                cmds.xform(baseCtrlGrp, r=True, os=True, ro=[0, 180, 0])
                             else:
                                 cmds.xform(baseCtrlGrp, ws=True, ro=pp_rot)
 
@@ -1418,6 +1421,9 @@ def createReverseLeg(setChannels=True, traversDepth=2, ballRollOffset=0.3, color
                 '''
                 ankleCtrl = place.circle(name=place.buildName(prefix, suffix, limbName + '_ankle_ctrl'), obj=ankleJnt, shape='diamond_ctrl', size=X * 4, color=color, sections=8, degree=1, normal=(0, 0, 1), orient=True)
                 cmds.parent(ankleCtrl, ankleFromToeRollGrp)
+                cmds.setAttr(ankleCtrl[0] + '.rotateX', 0)
+                cmds.setAttr(ankleCtrl[0] + '.rotateY', 0)
+                cmds.setAttr(ankleCtrl[0] + '.rotateZ', 0)
                 place.insert('null', 1, ankleCtrl[0] + '_Grp')
                 # return None
 
