@@ -19,7 +19,7 @@ def setProjectFromFilename(dirVar):
                 setPath = path[:idx - 1]
             else:
                 setPath = path[:idx + len(dirVar)]
-            # print setPath
+            print setPath
             mel.eval('setProject "' + setPath + '";')
             message('Project set to: %s' % (setPath))
         else:

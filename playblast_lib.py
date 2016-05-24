@@ -7,6 +7,7 @@ import datetime
 import shutil
 import tempfile
 from functools import partial
+import platform
 #
 import webrImport as web
 # web
@@ -33,6 +34,7 @@ def message(what='', maya=False):
 def getTempPath():
     blastD = '___A___PLAYBLAST___A___'
     tempD = tempfile.gettempdir()
+    # print tempD, '__temp'
     return os.path.join(tempD, blastD)
 
 
@@ -149,7 +151,7 @@ def sceneName(full=False, suffix=None, bracket=False):
     # print sceneName, '_______get name'
     if suffix:
         sceneName = sceneName + suffix
-    # print sceneName
+    print sceneName
     return sceneName
 
 
@@ -318,9 +320,10 @@ def blastWin():
         width = col0 + col1 + col2 + col3
         wAdd = scrollBar + 10
         # status
+        print '__detect'
         detectCompatibleStructure(rootDir)
         blastDirs = getBlastDirs(rootDir)
-        # print blastDirs, '++++++++++++++++'
+        print blastDirs, '++++++++++++++++'
 
         if blastDirs:
             f2 = cmds.columnLayout('column' + suf, w=width, bgc=[0.17, 0.17, 0.17], adj=True)
@@ -331,9 +334,12 @@ def blastWin():
             for blastDir in blastDirs:
                 contents = os.listdir(os.path.join(getTempPath(), blastDir))
                 if contents:
-                    # print 'here'
+                    print 'here'
+                    print blastDir
+                    print getTempPath()
+                    print os.path.join(getTempPath(), blastDir)
                     clips = getClips(path=os.path.join(getTempPath(), blastDir))
-                    # print clips, '___clips'
+                    print clips, '___clips'
                     if clips:
                         for clip in clips:
                             cmds.setParent(f2)
@@ -564,6 +570,8 @@ def cmdOpen(path=''):
         # print path
         if os.path.isdir(path):
             subprocess.Popen(r'explorer /open, ' + path)
+    elif platform.system() == 'Darwin':
+        subprocess.call(["open", "-R", path])
     else:
         message('Close file window to regain control over MAYA.')
         app = "nautilus"
@@ -640,7 +648,7 @@ def getAudio(path='', format=['wav', 'aiff']):
 
 
 def getClips(path=''):
-    '___getting'
+    print '___getting'
     return cl.getClips(path=path)
 
 

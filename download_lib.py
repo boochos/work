@@ -54,10 +54,15 @@ class Depend():
 
 def shelfRefresh(getAll=False):
     if getAll:
+        print 'all'
         get(getScripts=1, getButtons=1, compileAll=1)
+    print 'done all'
     shelfRename()
+    print 'here'
     shelfBuild()
+    print 'there'
     shelfDeleteWin()
+    print 'done'
 
 
 def shelfDeleteWin():
@@ -179,7 +184,7 @@ def get(getScripts=False, getButtons=False, compileAll=False):
     'playBlastMan.xpm', 'PrjtSet.xpm']'''
 
     # LOCAL_____
-
+    print '____'
     # scripts
     scriptDir = cmds.internalVar(usd=1)
     scriptDir = pathDepth(path=scriptDir, depth='maya')
@@ -196,12 +201,13 @@ def get(getScripts=False, getButtons=False, compileAll=False):
     if os.path.isdir(home):
         # os.remove(home)
         print 'remove   ', home
-    #urllib.urlretrieve(url, home)
-    pc.compile(file)
-import webrFiles_lib as df
-
+    urllib.urlretrieve(url, home)
+    pc.compile(home)
+    print '000'
+    import webrFiles_lib as df
+    print '001'
     # get scripts
-    for lib in df.downloadlibs:
+    for lib in df.libs:
         url = urlScripts + '/' + lib
         # print url
         home = os.path.join(scriptDir, lib)
@@ -218,7 +224,7 @@ import webrFiles_lib as df
         ca.compile_dir(scriptDir, force=True)
         message('compile_______________________')
     # get icons
-    for icon in df.downloadIcons:
+    for icon in df.icons:
         url = urlIcons + '/' + icon
         # print url
         home = os.path.join(iconDir, icon)
@@ -227,4 +233,4 @@ import webrFiles_lib as df
             print home
             message('downloading -- ' + home)
             cmds.refresh()
-            #urllib.urlretrieve(url, home)
+            urllib.urlretrieve(url, home)
