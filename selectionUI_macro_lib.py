@@ -501,7 +501,7 @@ class CSUI(object):
         '''
         selAdd = []
         for s in sets:
-            setDict = ss.loadDict(os.path.join(ss.defaultPath()) + s + self.ext)
+            setDict = ss.loadDict(os.path.join(ss.defaultPath(), s + self.ext))
             selection = ss.remapMultiNs(sel='', assets=ss.splitSetToAssets(setDict=setDict))
             for sel in selection:
                 selAdd.append(sel)
