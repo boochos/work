@@ -53,8 +53,11 @@ def createDefaultPath():
 
 
 def defaultPath():
-    user = os.path.expanduser('~')
-    mainDir = user + '/maya/selectionSets/'
+    # user = os.path.expanduser('~')
+    # mainDir = user + '/maya/selectionSets/'
+    # proper directory query
+    varPath = cmds.internalVar(userAppDir=True)
+    mainDir = os.path.join(varPath, 'selectionSets')
     return mainDir
 
 

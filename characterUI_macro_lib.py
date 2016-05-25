@@ -23,10 +23,11 @@ class CSUI(object):
     '''
     Build CharacterSet UI
     '''
-    def __init__(self, export=False, path=os.path.expanduser('~') + '/maya/characterSets/', filters=['.chr', '.txt', '.mb', '.ma', '*.*'], columnWidth=200):
+
+    def __init__(self, export=False, path='', filters=['.chr', '.txt', '.mb', '.ma', '*.*'], columnWidth=200):
         # external
         self.export = export
-        self.path = path
+        self.path = cs.defaultPath()
         self.filters = filters
         self.columnWidth = columnWidth
         # internal

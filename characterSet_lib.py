@@ -36,7 +36,7 @@ def sceneName():
 
 def shotPath():
     shotDir = sceneName()
-    #print shotDir, '___________________________'
+    # print shotDir, '___________________________'
     if sceneName() != '':
         shotDir = shotDir[0:shotDir.rfind('_')] + '/'
         print shotDir
@@ -63,8 +63,11 @@ def createDefaultPath():
 
 
 def defaultPath():
-    user = os.path.expanduser('~')
-    mainDir = user + '/maya/characterSets/'
+    # user = os.path.expanduser('~')
+    # mainDir = user + '/maya/characterSets/'
+    # proper directory query
+    varPath = cmds.internalVar(userAppDir=True)
+    mainDir = os.path.join(varPath, 'characterSets')
     return mainDir
 
 
@@ -495,7 +498,7 @@ def toggleMembershipToCurrentSet(sel=[], attrs=[], shapeAttrs=[]):
                         # print attr, '  removed'
                 else:
                     pass
-                     # print 'doesnt exist  ', sel + '.' + attr
+                    # print 'doesnt exist  ', sel + '.' + attr
         # shape attr toggle
         elif shapeAttrs:
             # print '__2'
@@ -562,8 +565,8 @@ def parent(parent=True):
     else:
         # remove membership from second selection
         cmds.character(cmds.ls(sl=True)[0], rm=cmds.ls(sl=True)[1])
-        
-        
+
+
 def matchCharSet(source=None, objs=[]):
     '''
     source = get character set if connected
@@ -577,4 +580,3 @@ def matchCharSet(source=None, objs=[]):
                 cmds.character(obj, include=char[0])
         else:
             message('Object not added to Charecter set. More than one option found.')
-
