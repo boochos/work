@@ -371,10 +371,18 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     alignI = 'center'
     alignM = 'left'
     alignD = 'right'
+    w = 0
+    h = 0
+    padW = 0
+    padH = 0
+    padBtns = 4
     path = blastDir.path
 
     # iconSize
-    icon = blastDir.thumbnail
+    if os.path.isfile(blastDir.thumbnail):
+        icon = blastDir.thumbnail
+    else:
+        icon = None
     # print 'icon'
 
     # row form
@@ -388,24 +396,25 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
                           ofc="import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeChecked(%s)" % (getString(strings=[path])))
 
     # icon
-    padW = 0
-    padH = 0
-    w = float(blastDir.width)
-    h = float(blastDir.height)
-    padBtns = 4
     cmdI = 'partial( openSelected, path=blastDir.path, name=blastDir.name, ext=blastDir.ext, start=blastDir.start, end=blastDir.end)'
-    iconH = col[1] * (h / w)
-    iconW = col[1]
-    if iconH > height:
-        iconH = height
-        iconW = iconH * (w / h)
-        padW = int((col[1] - iconW) / 2)
-    if iconW < col[0]:
-        padW = int((col[1] - iconW) / 2)
-    if iconH < height:
-        padH = int((height - iconH) / 2)
-    # print blastDir.files
-    iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, al=alignI, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
+    if icon and blastDir.width:
+        w = float(blastDir.width)
+        h = float(blastDir.height)
+        print icon
+        iconH = col[1] * (h / w)
+        iconW = col[1]
+        if iconH > height:
+            iconH = height
+            iconW = iconH * (w / h)
+            padW = int((col[1] - iconW) / 2)
+        if iconW < col[0]:
+            padW = int((col[1] - iconW) / 2)
+        if iconH < height:
+            padH = int((height - iconH) / 2)
+        # print blastDir.files
+        iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, al=alignI, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
+    else:
+        iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', al=alignI, c=eval(cmdI), l=blastDir.name, w=col[1], h=height-padBtns, iol='PLAY', bgc=[0.13, 0.13, 0.13])
 
     # meta
     pt = '...' + path.split(getTempPath())[1].split('/')[0] + '\n'
