@@ -414,7 +414,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
         # print blastDir.files
         iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, al=alignI, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
     else:
-        iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', al=alignI, c=eval(cmdI), l=blastDir.name, w=col[1], h=height-padBtns, iol='PLAY', bgc=[0.13, 0.13, 0.13])
+        iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='textOnly', al=alignI, c=eval(cmdI), l='- NO THUMBNAIL - \nINSTALL FFMPEG', w=col[1], h=height-padBtns, iol='PLAY', bgc=[0.13, 0.13, 0.13])
 
     # meta
     pt = '...' + path.split(getTempPath())[1].split('/')[0] + '\n'
