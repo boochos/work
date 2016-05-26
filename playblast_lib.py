@@ -331,23 +331,22 @@ def blastWin():
             # print f2
             # build rows
             # print blastDirs
+            allClips = []
             for blastDir in blastDirs:
                 contents = os.listdir(os.path.join(getTempPath(), blastDir))
                 if contents:
-                    print 'here'
-                    print blastDir
-                    print getTempPath()
-                    print os.path.join(getTempPath(), blastDir)
+                    # print 'here'
                     clips = getClips(path=os.path.join(getTempPath(), blastDir))
-                    print clips, '___clips'
+                    # print clips, '___clips'
                     if clips:
                         for clip in clips:
-                            cmds.setParent(f2)
+                            allClips.append(clip)
+                            # cmds.setParent(f2)
                             # print blastDir
                             # print clip.name
                             # print clip.path
                             # print clip.dir
-                            buildRow_new(clip, height=height, parent=f2, col=[col0, col1, col2, col3])
+                            # buildRow_new(clip, height=height, parent=f2, col=[col0, col1, col2, col3])
                     cmds.refresh(f=1)
                 else:
                     # rebuild
@@ -355,6 +354,13 @@ def blastWin():
                     cmds.deleteUI(winName)
                     blastWin()
                     break
+            # start experiment for reordering clips according to date
+            allClips.sort(key=operator.attrgetter('date'))
+            allClips.reverse()
+            for clip in allClips:
+                cmds.setParent(f2)
+                buildRow_new(clip, height=height, parent=f2, col=[col0, col1, col2, col3])
+            # end experiment
             cmds.window(win, e=1, w=width + wAdd, h=(height * 4) + scrollBarOffset)
             cmds.refresh(f=1)
         else:
