@@ -132,22 +132,27 @@ def buildClip(frames=[], path=''):
 def getMeta(filename):
     pf = '-print_format'
     js = 'json'
-    cmnd = ['ffprobe', pf, js, '-show_streams', '-show_format', '-pretty', '-loglevel', 'quiet', filename]
-    p = subprocess.Popen(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # print filename
-    out, err = p.communicate()
-    # print "==========output=========="
-    # print out
-    js = json.loads(out)
-    # print js
-    if err:
-        print "========= error ========"
-        print err
     try:
-        p.kill()
+        cmnd = ['ffprobe', pf, js, '-show_streams', '-show_format', '-pretty', '-loglevel', 'quiet', filename]
+        p = subprocess.Popen(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # print filename
+        out, err = p.communicate()
+        # print "==========output=========="
+        # print out
+        js = json.loads(out)
+        # print js
+        if err:
+            print "========= error ========"
+            print err
+        try:
+            p.kill()
+        except:
+            pass
+            # print 'couldnt kill ffprobe'
+        return js
     except:
-        pass
-    return js
+        print ' failed getMeta '
+    return None
 
 
 def getThumbSuffix():
@@ -177,18 +182,21 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
         # add new directory in tmp for thumbs, deleting clip in pb man will need to delete thumbnail as well
         if create:
             # cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-vframes', '1', fileout]
-            cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-y', '-frames:v', '1', fileout]
-            p = subprocess.Popen(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            # print filein
-            out, err = p.communicate()
-            print "==========output=========="
-            # print out
-            if out:
-                js = json.loads(out)
-            # print js
-            if err:
-                print "========= error ========"
-                print err
+            try:
+                cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-y', '-frames:v', '1', fileout]
+                p = subprocess.Popen(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                # print filein
+                out, err = p.communicate()
+                print "==========output=========="
+                # print out
+                if out:
+                    js = json.loads(out)
+                # print js
+                if err:
+                    print "========= error ========"
+                    print err
+            except:
+                pass
     return fileout
 
 
@@ -286,8 +294,9 @@ def buildImg(content=[], path=''):
     clip.thumbnail = clip.movPath
     clip.files = content
     # print clip.thumbnail
-    clip.height = str(meta['streams'][0]['height'])
-    clip.width = str(meta['streams'][0]['width'])
+    if meta:
+        clip.height = str(meta['streams'][0]['height'])
+        clip.width = str(meta['streams'][0]['width'])
     return clip
 
 
