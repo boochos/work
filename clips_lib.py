@@ -151,7 +151,7 @@ def getMeta(filename):
             # print 'couldnt kill ffprobe'
         return js
     except:
-        print ' failed getMeta '
+        print 'Failed getMeta: ', filename
     return None
 
 
@@ -247,29 +247,26 @@ def buildSeqName(path=''):
 def buildMov(content, path='', createThumb=True):
     meta = getMeta(os.path.join(path, content[0]))
     clip = Clip()
+    clip.name = content[0].split('.')[0]
     clip.path = path
-    # print meta, '\n-------------'
+    clip.files = content
+    clip.ext = content[0].split('.')[1]
+    clip.movPath = os.path.join(path, content[0])
+    clip.date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(clip.movPath)))
+    if os.name == 'nt':
+        clip.dir = clip.path.split('\\')[len(clip.path.split('\\')) - 2]
+    else:
+        clip.dir = clip.path.split('/')[len(clip.path.split('/')) - 1]
     if meta:
-        clip.name = content[0].split('.')[0]
-        if os.name == 'nt':
-            clip.dir = clip.path.split('\\')[len(clip.path.split('\\')) - 2]
-        else:
-            clip.dir = clip.path.split('/')[len(clip.path.split('/')) - 1]
-        clip.ext = content[0].split('.')[1]
-        clip.movPath = os.path.join(path, content[0])
+        # print content, ' ____content'
         # print clip.movPath
         clip.start = str(0)
         clip.end = str(int(meta['streams'][0]['nb_frames']) - 1)
         clip.length = meta['streams'][0]['nb_frames']
-        clip.date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(clip.movPath)))
         clip.height = str(meta['streams'][0]['height'])
         clip.width = str(meta['streams'][0]['width'])
-        clip.files = content
         if createThumb:
             path = clip.movPath
-            # print path, path.replace( '.' + clip.ext, '.png' ), clip.ext
-            # print path
-            # print os.path.join(getDataPath(), clip.name + getThumbSuffix() + '.png')
             f = getThumb(path, os.path.join(getDataPath(), clip.name + getThumbSuffix() + '.png'), delete=False)
             clip.thumbnail = f
     return clip

@@ -1,7 +1,9 @@
 import os
+import sys
+import subprocess
 import maya.cmds as cmds
 import maya.mel as mel
-import subprocess
+import operator
 from subprocess import call
 import datetime
 import shutil
@@ -163,9 +165,9 @@ def shotDir2(idx=7):
 
 
 def createPath(path):
-    #print path
+    # print path
     if not os.path.isdir(path):
-        #print path
+        # print path
         os.mkdir(path)
     else:
         pass
@@ -243,7 +245,8 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
         message('Set project', maya=True)
     else:
         if 'image' not in format:
-            path = cmds.playblast(format=format, filename=blastFullPAth, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=True, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            path = cmds.playblast(format=format, filename=blastFullPAth, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=False, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            openSelected(path=blastPath, name=blastName, ext='mov')
         else:
             playLo, playHi, current = getRange()
             # sound
@@ -323,7 +326,7 @@ def blastWin():
         print '__detect'
         detectCompatibleStructure(rootDir)
         blastDirs = getBlastDirs(rootDir)
-        print blastDirs, '++++++++++++++++'
+        # print blastDirs, '++++++++++++++++'
 
         if blastDirs:
             f2 = cmds.columnLayout('column' + suf, w=width, bgc=[0.17, 0.17, 0.17], adj=True)
@@ -383,6 +386,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     padH = 0
     padBtns = 4
     path = blastDir.path
+    # print blastDir.__dict__
 
     # iconSize
     if os.path.isfile(blastDir.thumbnail):
@@ -420,7 +424,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
         # print blastDir.files
         iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='iconOnly', image=icon, al=alignI, c=eval(cmdI), l=blastDir.name, w=iconW, h=iconH, iol='PLAY', mw=padBtns, mh=padBtns, bgc=[0.13, 0.13, 0.13])
     else:
-        iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='textOnly', al=alignI, c=eval(cmdI), l='- NO THUMBNAIL - \nINSTALL FFMPEG', w=col[1], h=height-padBtns, iol='PLAY', bgc=[0.13, 0.13, 0.13])
+        iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='textOnly', al=alignI, c=eval(cmdI), l='- NO THUMBNAIL - \nINSTALL FFMPEG', w=col[1], h=height - padBtns, iol='PLAY', bgc=[0.13, 0.13, 0.13])
 
     # meta
     pt = '...' + path.split(getTempPath())[1].split('/')[0] + '\n'
@@ -663,7 +667,7 @@ def getAudio(path='', format=['wav', 'aiff']):
 
 
 def getClips(path=''):
-    print '___getting'
+    # print '___getting'
     return cl.getClips(path=path)
 
 
@@ -671,16 +675,22 @@ def openSelected(path='', name='', ext='', start='', end=''):
     # sample code for wipe compare
     # rv P_139_sk_0490_anim_swe_0077____camera.####.png -wipe P_139_sk_0490_anim_swe_0077____lookCam.####.png
     # audio
-    print '-- open'
-    print path
+    # print '-- open'
+    # print path
     print name
-    print ext
-    print start
-    print end
-    print os.path.join(path,name)
+    # print ext
+    # print start
+    # print end
+    # print os.path.join(path, name)
     mov = ['mov', 'avi', 'mp4']
     if ext in mov:
-        os.startfile(os.path.join(path, name + '.' + ext))
+        # os.startfile(os.path.join(path, name + '.' + ext))
+        filename = os.path.join(path, name + '.' + ext)
+        if sys.platform == "win32":
+            os.startfile(filename)
+        else:
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, filename])
     else:
         path = str(path)
         if path:
@@ -700,17 +710,17 @@ def openSelected(path='', name='', ext='', start='', end=''):
                 if snd:
                     print '-- with audio'
                     # with audio
-                    rvString = 'rv ' + os.path.join(path,name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ' + snd + ' &'
+                    rvString = 'rv ' + os.path.join(path, name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' ' + snd + ' &'
                 else:
                     print '-- no audio'
-                    rvString = 'rv ' + os.path.join(path,name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' &'  # escaped
+                    rvString = 'rv ' + os.path.join(path, name) + '.#.' + ext + ' -in ' + start + ' -out ' + end + ' &'  # escaped
                 message('Play:  ' + rvString, maya=True)
                 # print rvString
                 os.system(rvString)
             except:
                 # print rvString
                 message('Failed to play  ', maya=True)
-                print os.path.join(path,name)
+                print os.path.join(path, name)
         else:
             message('OS: ' + os.name + '  not configured to play image seq.', maya=True)
 
