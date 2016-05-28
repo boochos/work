@@ -393,7 +393,11 @@ class Attribute(Key):
                         if not cmds.getAttr(self.obj + '.' + self.name, l=True):
                             k.putKey()
                             self.putCurveAttrs()
+                    else:
+                        # print 'obj doesnt exist', self.obj + '.' + self.name
+                        pass
             else:
+                # print 'no keys'
                 self.putAttr()
         else:
             self.putAttr()
@@ -473,8 +477,8 @@ class Obj(Attribute):
             # create frame list from frame range
             min = self.bakeRange[0]  # cmds.playbackOptions(q=True, ast=True)
             max = self.bakeRange[1]  # cmds.playbackOptions(q=True, aet=True)
-            print self.bakeRange
-            print min, max
+            # print self.bakeRange
+            # print min, max
             rng = range(int(min), int(max + 1))
             rng = [float(i) for i in rng]
             # instantiate class for every driven attr
@@ -496,6 +500,7 @@ class Obj(Attribute):
                     # store value in attr class, instantiate Key class
                     k = Key(
                         self.name, attr.name, '', frame, weightedTangents=False, auto=False)
+                    # print self.name, attr.name, '____BAKED____'
                     k.get()
                     k.value = val
                     k.inTangentType = 'auto'
@@ -801,16 +806,43 @@ class Clip(Layer):
         else:
             mel.eval('selectLayer(\"");')
 
-    def putLayers(self, mergeExistingLayers=True, applyLayerSettings=True):
+    def layerAddObjects(self, layer='', objects=[]):
+        # set layer to current
+        self.setActiveLayer(l=layer)
+        if objects:
+            for obj in objects:
+                if cmds.objExists(obj.name):
+                    cmds.select(obj.name)
+                    print '___adding here'
+                    cmds.animLayer(layer, e=True, aso=True)
+
+    def layerNew(self, name='', prefix='CLASH__'):
+        i = 0
+        prfx = prefix
+        while cmds.animLayer(prfx + name, q=True, ex=True) == True:
+            prfx = prfx + prefix
+            i = i+1
+            if i == 100:
+                break
+        cmds.animLayer(prfx + name)
+        return prfx + name
+
+    def putLayers(self, mergeExistingLayers=True, applyLayerSettings=True, applyRootAsOverride=False):
         # restore layers from class
-        clash = '__CLASH__'
+        clash = 'CLASH__'
         for layer in self.layers:
             # set import options
             layer.offset = self.offset
             sceneRootLayer = cmds.animLayer(q=True, root=True)
             # check if iteration is root layer, root layer name = None
             if not layer.name:
-                self.setActiveLayer(l=sceneRootLayer)
+                if not applyRootAsOverride:
+                    self.setActiveLayer(l=sceneRootLayer)
+                else:
+                    # creates new name for base layer
+                    layer.name = self.layerNew(name='BaseAnimation')
+                    cmds.setAttr(layer.name + '.override', True)
+                self.layerAddObjects(layer=layer.name, objects=layer.objects)
                 layer.putObjects()
             else:
                 if not cmds.animLayer(layer.name, q=True, ex=True):
@@ -818,7 +850,7 @@ class Clip(Layer):
                     cmds.animLayer(layer.name)
                 else:
                     # print mergeExistingLayers
-                    if not mergeExistingLayers:
+                    if not mergeExistingLayers: # dont merge with existing layer of same name
                         if not cmds.animLayer(clash + layer.name, q=True, ex=True):
                             # update name in class with clashing prefix
                             layer.name = cmds.animLayer(clash + layer.name)
@@ -838,6 +870,7 @@ class Clip(Layer):
                         if cmds.objExists(obj.name):
                             cmds.select(obj.name)
                             cmds.animLayer(layer.name, e=True, aso=True)
+                
                 # should check if layer is empty, no objects exist in scene that existed during export, should delete if layer is empty or putObjects
                 # add animation
                 layer.putObjects()
@@ -937,8 +970,8 @@ def populate_from_json(cls, dct={}):
     return cls
 
 
-def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, putLayerList=[], putObjectList=[],
-              start=None, end=None, poseOnly=False):
+def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, applyRootAsOverride=False, 
+              putLayerList=[], putObjectList=[], start=None, end=None, poseOnly=False):
     '''
     apply animation from file
     #FIX: note <>
@@ -965,7 +998,7 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     clp = setType(clp, poseOnly=poseOnly)
     #
     # clp = cutKeysToRange(clp, 1020.0, 1090)
-    clp.putLayers(mergeExistingLayers, applyLayerSettings)
+    clp.putLayers(mergeExistingLayers, applyLayerSettings, applyRootAsOverride)
     # print clp.layers
     if sel:
         cmds.select(sel)

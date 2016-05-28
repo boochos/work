@@ -43,7 +43,7 @@ class CPUI(object):
         self.clipFiles = []
         self.objX = None
         self.anim = None
-        self.rootLayer = '(Root)'
+        self.rootLayer = 'BaseAnimation'
         # execute
         self.cleanUI()
         self.gui()
@@ -148,14 +148,13 @@ class CPUI(object):
             c5 = cmds.checkBox(self.control.c5, q=True, v=True)
             # merge with existing layers
             c6 = cmds.checkBox(self.control.c6, q=True, v=True)
-            # print c6
             # apply layer settings
             c7 = cmds.checkBox(self.control.c7, q=True, v=True)
-            # print c7
+            c8 = cmds.checkBox(self.control.c8, q=True, v=True)
             # get import type
             poseOnly = self.cmdTypeIm()
             # import
-            cp.clipApply(path=path, ns=c5, onCurrentFrame=c1, mergeExistingLayers=c6, applyLayerSettings=c7, putLayerList=putLayerList, putObjectList=putObjectList,
+            cp.clipApply(path=path, ns=c5, onCurrentFrame=c1, mergeExistingLayers=c6, applyLayerSettings=c7, applyRootAsOverride=c8, putLayerList=putLayerList, putObjectList=putObjectList,
                          start=None, end=None, poseOnly=poseOnly)
         else:
             message('Select a clip to import.')
@@ -225,6 +224,34 @@ class CPUI(object):
         if scroll3:
             scroll3 = scroll3[0]
         return scroll1, scroll2, scroll3
+
+    def cmdRangeUpdateMin(self, *arg):
+        # get slider value
+        v = cmds.intSlider(self.control.sl1, q=True, v=True)
+        # edit int field
+        cmds.intField(self.control.int1, edit=True, value=v )
+        # highest value for minimum value of slider2 has to be 1 less than max value
+        if v+1 <= cmds.intSlider(self.control.sl2, q=True, max=True):
+            cmds.intSlider(self.control.sl2, e=True, min=v)
+        else:
+            pass
+            # cmds.intSlider(self.control.sl2, e=True, min=v-1)
+        print v, cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
+
+    def cmdRangeUpdateMax(self, *arg):
+        # get slider value
+        v = cmds.intSlider(self.control.sl2, q=True, v=True)
+        # edit int field
+        cmds.intField(self.control.int2, edit=True, value=v )
+        # lowest value for maximum value of slider 1 has to be 1 higher than minimum value
+        if v-1 >= cmds.intSlider(self.control.sl1, q=True, min=True):
+            cmds.intSlider(self.control.sl1, e=True, max=v)
+            
+        else:
+            pass
+            # cmds.intSlider(self.control.sl1, e=True, max=v+1)
+        print v, cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), '  upper range'
+
 
     def populateClipList(self):
         # Make sure the path exists and access is permitted
@@ -297,6 +324,7 @@ class CPUI(object):
             self.populateLayers()
             self.populateInfo()
             self.populateExportName()
+            self.populateRange()
 
     def populateLayers(self):
         cmds.textScrollList(self.control.scroll3, edit=True, ra=True)
@@ -347,6 +375,17 @@ class CPUI(object):
         else:
             cmds.text( self.control.heading21, edit=True, label='' )
         '''
+
+    def populateRange(self):
+        # cmd doesnt quite work to keep 1 frame gap between low and high range
+        # self.control.heading5
+        if self.clip.start:
+            # sliders
+            cmds.intSlider(self.control.sl1, edit=True, min=self.clip.start, max=self.clip.end-1, value=self.clip.start, step=1, dc=self.cmdRangeUpdateMin )
+            cmds.intSlider(self.control.sl2, edit=True, min=self.clip.start+1, max=self.clip.end, value=self.clip.end, step=1, dc=self.cmdRangeUpdateMax )
+            # fields
+            cmds.intField(self.control.int1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=1, en=False)
+            cmds.intField(self.control.int2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=1, en=False)
 
     def progressBar(self):
         # calculate progress bar....wont work
