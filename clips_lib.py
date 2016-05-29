@@ -1,6 +1,7 @@
 import subprocess
 import json
 import time
+import platform
 import re
 import glob
 import itertools
@@ -129,16 +130,36 @@ def buildClip(frames=[], path=''):
         # print 'pass', frames
 
 
+def locateffprobe():
+    # FIXME: find ffprobe hack
+    if os.name == 'nt':
+        return 'ffprobe'
+    elif platform.system() == 'Darwin':
+        return '/usr/local/bin/ffprobe'
+    else:
+        return 'ffprobe'
+
+
+def locateffmpeg():
+    # FIXME: find ffmpeg hack
+    if os.name == 'nt':
+        return 'ffmpeg'
+    elif platform.system() == 'Darwin':
+        return '/usr/local/bin/ffmpeg'
+    else:
+        return 'ffmpeg'
+
+
 def getMeta(filename):
     pf = '-print_format'
     js = 'json'
+    ff = locateffprobe()
+    # if ffprobe on mac errors try locate ffprobe in shell (run this if db doesnt exist - updatedb)
     try:
-        cmnd = ['ffprobe', pf, js, '-show_streams', '-show_format', '-pretty', '-loglevel', 'quiet', filename]
+        cmnd = [ff, pf, js, '-show_streams', '-show_format', '-pretty', '-loglevel', 'quiet', filename]
         p = subprocess.Popen(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # print filename
         out, err = p.communicate()
         # print "==========output=========="
-        # print out
         js = json.loads(out)
         # print js
         if err:
@@ -183,7 +204,8 @@ def getThumb(filein, fileout, delete=False, scale=1.0):
         if create:
             # cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-vframes', '1', fileout]
             try:
-                cmnd = ['ffmpeg', '-ss', '00:00:00', '-i', filein, '-y', '-frames:v', '1', fileout]
+                ff = locateffmpeg()
+                cmnd = [ff, '-ss', '00:00:00', '-i', filein, '-y', '-frames:v', '1', fileout]
                 p = subprocess.Popen(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 # print filein
                 out, err = p.communicate()
