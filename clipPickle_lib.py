@@ -707,6 +707,7 @@ class Clip(Layer):
         self.poseOnly = poseOnly
         self.bakeRange = bakeRange
         self.source = None
+        self.path = None
         self.user = None
         self.date = None
         #
@@ -742,6 +743,7 @@ class Clip(Layer):
     def getClipAttrs(self):
         # scene name
         sceneName = cmds.file(q=True, sn=True)
+        self.path = sceneName
         self.source = sceneName[sceneName.rfind('/') + 1:]
 
     def getLayers(self):

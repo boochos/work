@@ -229,29 +229,41 @@ class CPUI(object):
         # get slider value
         v = cmds.intSlider(self.control.sl1, q=True, v=True)
         # edit int field
-        cmds.intField(self.control.int1, edit=True, value=v )
+        cmds.floatField(self.control.int1, edit=True, value=v )
         # highest value for minimum value of slider2 has to be 1 less than max value
-        if v+1 <= cmds.intSlider(self.control.sl2, q=True, max=True):
+        if v < cmds.intSlider(self.control.sl2, q=True, max=True):
             cmds.intSlider(self.control.sl2, e=True, min=v)
+            cmds.intSlider(self.control.sl2, e=True, en=True)
+        elif v == cmds.intSlider(self.control.sl2, q=True, max=True):
+            #cmds.intSlider(self.control.sl2, e=True, min=v+1)
+            cmds.intSlider(self.control.sl2, e=True, en=False)
         else:
             pass
             # cmds.intSlider(self.control.sl2, e=True, min=v-1)
-        print v, cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
+        # print v, 'upper slider -----    ', cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), 'upper range   -----', cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
+        e = cmds.floatField(self.control.int2, q=True, value=True )
+        s = cmds.floatField(self.control.int1, q=True, value=True )
+        cmds.text(self.control.heading13, edit=True, label=str(e-s))
 
     def cmdRangeUpdateMax(self, *arg):
         # get slider value
         v = cmds.intSlider(self.control.sl2, q=True, v=True)
         # edit int field
-        cmds.intField(self.control.int2, edit=True, value=v )
+        cmds.floatField(self.control.int2, edit=True, value=v )
         # lowest value for maximum value of slider 1 has to be 1 higher than minimum value
-        if v-1 >= cmds.intSlider(self.control.sl1, q=True, min=True):
+        if v > cmds.intSlider(self.control.sl1, q=True, min=True):
             cmds.intSlider(self.control.sl1, e=True, max=v)
-            
+            cmds.intSlider(self.control.sl1, e=True, en=True)
+        elif v == cmds.intSlider(self.control.sl1, q=True, min=True):
+            #cmds.intSlider(self.control.sl1, e=True, max=v-1)
+            cmds.intSlider(self.control.sl1, e=True, en=False)
         else:
             pass
             # cmds.intSlider(self.control.sl1, e=True, max=v+1)
-        print v, cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), '  upper range'
-
+        # print v, 'lower slider -----    ', cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), 'upper range   -----', cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
+        e = cmds.floatField(self.control.int2, q=True, value=True )
+        s = cmds.floatField(self.control.int1, q=True, value=True )
+        cmds.text(self.control.heading13, edit=True, label=str(e-s))
 
     def populateClipList(self):
         # Make sure the path exists and access is permitted
@@ -338,23 +350,23 @@ class CPUI(object):
 
     def populateInfo(self):
         if self.clip.comment:
-            cmds.text(self.control.heading5, edit=True, label='     ' + str(self.clip.comment))
+            cmds.textField(self.control.field2, edit=True, tx=str(self.clip.comment))
         else:
-            cmds.text(self.control.heading5, edit=True, label='')
+            cmds.textField(self.control.field2, edit=True, tx='')
         if self.clip.source:
-            cmds.text(self.control.heading7, edit=True, label='     ' + str(self.clip.source))
+            cmds.textField(self.control.heading7, edit=True, tx=str(self.clip.source))
         else:
-            cmds.text(self.control.heading7, edit=True, label='')
+            cmds.textField(self.control.heading7, edit=True, tx='')
         if self.clip.user:
-            cmds.text(self.control.heading9, edit=True, label='     ' + str(self.clip.user))
+            cmds.text(self.control.heading9, edit=True, label=str(self.clip.user))
         else:
             cmds.text(self.control.heading9, edit=True, label='')
         if self.clip.date:
-            cmds.text(self.control.heading11, edit=True, label='     ' + str(self.clip.date))
+            cmds.text(self.control.heading11, edit=True, label=str(self.clip.date))
         else:
             cmds.text(self.control.heading11, edit=True, label='')
         if self.clip.length:
-            cmds.text(self.control.heading13, edit=True, label='     ' + str(self.clip.length))
+            cmds.text(self.control.heading13, edit=True, label=str(self.clip.length))
         else:
             cmds.text(self.control.heading13, edit=True, label='')
         '''
@@ -380,12 +392,20 @@ class CPUI(object):
         # cmd doesnt quite work to keep 1 frame gap between low and high range
         # self.control.heading5
         if self.clip.start:
-            # sliders
-            cmds.intSlider(self.control.sl1, edit=True, min=self.clip.start, max=self.clip.end-1, value=self.clip.start, step=1, dc=self.cmdRangeUpdateMin )
-            cmds.intSlider(self.control.sl2, edit=True, min=self.clip.start+1, max=self.clip.end, value=self.clip.end, step=1, dc=self.cmdRangeUpdateMax )
-            # fields
-            cmds.intField(self.control.int1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=1, en=False)
-            cmds.intField(self.control.int2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=1, en=False)
+            if (self.clip.end - self.clip.start) > 0.0:
+                # sliders
+                cmds.intSlider(self.control.sl1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=1, dc=self.cmdRangeUpdateMin, en=True )
+                cmds.intSlider(self.control.sl2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=1, dc=self.cmdRangeUpdateMax, en=True )
+                # fields
+                cmds.floatField(self.control.int1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=0.1, en=False)
+                cmds.floatField(self.control.int2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=0.1, en=False)
+            else:
+                # sliders
+                cmds.intSlider(self.control.sl1, edit=True, min=0, max=10, value=0, step=1, en=False )
+                cmds.intSlider(self.control.sl2, edit=True, min=0, max=10, value=0, step=1, en=False )
+                # fields
+                cmds.floatField(self.control.int1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=0.1, en=True)
+                cmds.floatField(self.control.int2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=0.1, en=True)
 
     def progressBar(self):
         # calculate progress bar....wont work
