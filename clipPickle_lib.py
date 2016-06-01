@@ -103,7 +103,7 @@ def transformTangentType(t=0):
 
 
 def transformRotationType(object='', rooNew=0):
-    #-------------------------------------------
+    # -------------------------------------------
     # Part 1:  Get a MMatrix from an object for the sake of the example.
     # You can use your own MMatrix if it already exists of course.
     # Get the node's rotate order value:
@@ -116,7 +116,7 @@ def transformRotationType(object='', rooNew=0):
     mMatrix = OpenMaya.MMatrix()  # MMatrix
     # And populate the MMatrix object with the matrix list data:
     OpenMaya.MScriptUtil.createMatrixFromList(matrixList, mMatrix)
-    #-------------------------------------------
+    # -------------------------------------------
     # Part 2, get the euler values
     # Convert to MTransformationMatrix to extract rotations:
     mTransformMtx = OpenMaya.MTransformationMatrix(mMatrix)
@@ -186,7 +186,7 @@ class Key():
         self.outTangentType = None
         self.outWeight = None
         self.outAngle = None
-        self.lock = None
+        self.lock = True
         self.offset = offset
         self.auto = auto
         '''
@@ -267,17 +267,23 @@ class Key():
 
     def putKey(self):
         # set key, creates curve node
-        # print self.obj, self.attr, self.frame, self.offset, self.value,
-        # '_____________________________'
+        # print self.obj, self.attr, self.frame, self.offset, self.value, '_____________________________'
         if cmds.getAttr(self.obj + '.' + self.attr, se=True):
+            tmp = 3.0
+            crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)
+            # print crv, '____crv'
+            if not crv:
+                cmds.setKeyframe(self.obj, at=self.attr, time=(self.frame + self.offset - tmp, self.frame + self.offset - tmp), value=self.value, shape=False)
+            else:
+                self.crv = crv[0]
             s = cmds.setKeyframe(self.obj, at=self.attr, time=(
-                self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False)
+                self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False, nr=False, mr=True, i=True)
             if s:
                 # update curve name, set curve type, set weights
-                self.crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
+                cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
                 cmds.keyframe(self.crv, time=(self.frame + self.offset, self.frame +
                                               self.offset), valueChange=self.value)  # correction, hacky, should fix
-                cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
+                # cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
                 cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
                                 inTangentType=self.inTangentType, outTangentType=self.outTangentType)
                 if self.inAngle != None:
@@ -301,6 +307,11 @@ class Key():
             else:
                 # message('Unable to add animation to ' + self.obj + '.' + self.attr)
                 pass
+            if not crv:
+                # pass
+                # print self.frame, self.offset, tmp
+                # print self.frame + self.offset - tmp
+                cmds.cutKey(self.obj, at=self.attr, time=(self.frame + self.offset - tmp, self.frame + self.offset - tmp), option='keys')
 
 
 class Attribute(Key):
@@ -395,6 +406,7 @@ class Attribute(Key):
                     if cmds.objExists(self.obj + '.' + self.name):
                         if not cmds.getAttr(self.obj + '.' + self.name, l=True):
                             k.putKey()
+                            print '\n', k.__dict__, '\n'
                             self.putCurveAttrs()
                     else:
                         # print 'obj doesnt exist', self.obj + '.' + self.name
@@ -827,7 +839,7 @@ class Clip(Layer):
         prfx = prefix
         while cmds.animLayer(prfx + name, q=True, ex=True) == True:
             prfx = prfx + prefix
-            i = i+1
+            i = i + 1
             if i == 100:
                 break
         cmds.animLayer(prfx + name)
@@ -856,7 +868,7 @@ class Clip(Layer):
                     cmds.animLayer(layer.name)
                 else:
                     # print mergeExistingLayers
-                    if not mergeExistingLayers: # dont merge with existing layer of same name
+                    if not mergeExistingLayers:  # dont merge with existing layer of same name
                         if not cmds.animLayer(clash + layer.name, q=True, ex=True):
                             # update name in class with clashing prefix
                             layer.name = cmds.animLayer(clash + layer.name)
@@ -876,7 +888,7 @@ class Clip(Layer):
                         if cmds.objExists(obj.name):
                             cmds.select(obj.name)
                             cmds.animLayer(layer.name, e=True, aso=True)
-                
+
                 # should check if layer is empty, no objects exist in scene that existed during export, should delete if layer is empty or putObjects
                 # add animation
                 layer.putObjects()
@@ -976,7 +988,7 @@ def populate_from_json(cls, dct={}):
     return cls
 
 
-def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, applyRootAsOverride=False, 
+def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, applyRootAsOverride=False,
               putLayerList=[], putObjectList=[], start=None, end=None, poseOnly=False):
     '''
     apply animation from file
@@ -1060,7 +1072,7 @@ def insertKey(clp, frame=0.0):
                     # loop, if it does dont overwrite
                     # find appropriate value
                     k = insertKeyValue(attr, frame)
-                    print k.frame
+                    # print k.frame
                     attr.keys.append(k)
                 else:
                     # print 'no crv exists, skipping insert'
@@ -1090,15 +1102,15 @@ def insertKeyValue(attr, frame=0.0):
         p0 = [preFrm, preVal, attr.keys[i - 1].outAngle]
         p3 = [nexFrm, nexVal, attr.keys[i].inAngle]
         corX, corY = cpb.getControlPoints(p0, p3)
-        print corX, corY
+        # print corX, corY
         degIn, hlengthIn, value, degOut, hlengthOut = cpb.seekPoint(corX, corY, frame)
         k = Key(attr.obj, attr.name, attr.crv, frame, weightedTangents=weighted, auto=False)
         # print degIn, value, degOut, crv
         k.value = value
         k.inAngle = degIn
         k.outAngle = degOut
-        k.inTangentType = 'auto'
-        k.outTangentType = 'auto'
+        k.inTangentType = 'fixed'
+        k.outTangentType = 'fixed'
         if weighted:
             k.inWeight = hlengthIn
             k.outWeight = hlengthOut

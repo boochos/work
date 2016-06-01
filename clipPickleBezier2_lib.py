@@ -86,7 +86,7 @@ def getPointTangents(xList, yList):
 
 
 def seekPoint(corX=[1, 4, 7, 10], corY=[0, 0, 10, 10], frame=3.25, accuracy=0.001):
-    steps = 10000
+    steps = 20000
     for k in range(steps):
         # print k
         t = float(k) / (steps - 1)
@@ -114,7 +114,7 @@ def feeder(clp, time=1.0):
         time = cmds.currentTime(q=1)
         crvs = cmds.findKeyframe(sel, c=True)
         for crv in crvs:
-            print crv
+            # print crv
             frames = cmds.keyframe(crv, q=True)
             # print frames
             for frame in frames:
@@ -123,7 +123,8 @@ def feeder(clp, time=1.0):
                 elif frame > time:
                     greater.append(frame)
                 else:
-                    print frame, time, ' here'
+                    # print frame, time, ' here'
+                    pass
             #
             sm = smaller[len(smaller) - 1]
             y = cmds.keyframe(crv, q=True, time=(sm, sm), valueChange=True, a=True)
@@ -164,4 +165,3 @@ def feeder(clp, time=1.0):
             greater = []
     else:
         print 'Select something'
-
