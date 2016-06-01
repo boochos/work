@@ -151,11 +151,14 @@ class CPUI(object):
             # apply layer settings
             c7 = cmds.checkBox(self.control.c7, q=True, v=True)
             c8 = cmds.checkBox(self.control.c8, q=True, v=True)
+            # range
+            start = cmds.floatField(self.control.int1, q=True, v=True)
+            end = cmds.floatField(self.control.int2, q=True, v=True)
             # get import type
             poseOnly = self.cmdTypeIm()
             # import
             cp.clipApply(path=path, ns=c5, onCurrentFrame=c1, mergeExistingLayers=c6, applyLayerSettings=c7, applyRootAsOverride=c8, putLayerList=putLayerList, putObjectList=putObjectList,
-                         start=None, end=None, poseOnly=poseOnly)
+                         start=start, end=end, poseOnly=poseOnly)
         else:
             message('Select a clip to import.')
 
@@ -225,6 +228,20 @@ class CPUI(object):
             scroll3 = scroll3[0]
         return scroll1, scroll2, scroll3
 
+    def cmdLoadingHintToggle(self, off=False):
+        '''
+        disables some ui elements for clarity
+        '''
+        if off:
+            cmds.textScrollList(self.control.scroll3, e=True, en=False)
+            cmds.textField(self.control.heading7, e=True, en=False)
+            #cmds.button(self.control.heading6, e=True, en=False)
+        else:
+            cmds.textScrollList(self.control.scroll3, e=True, en=True)
+            cmds.textField(self.control.heading7, e=True, en=True)
+            #cmds.button(self.control.heading6, e=True, en=True)
+        cmds.refresh()
+
     def cmdRangeUpdateMin(self, *arg):
         # get slider value
         v = cmds.intSlider(self.control.sl1, q=True, v=True)
@@ -243,7 +260,7 @@ class CPUI(object):
         # print v, 'upper slider -----    ', cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), 'upper range   -----', cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
         e = cmds.floatField(self.control.int2, q=True, value=True )
         s = cmds.floatField(self.control.int1, q=True, value=True )
-        cmds.text(self.control.heading13, edit=True, label=str(e-s))
+        cmds.text(self.control.heading13, edit=True, label=str((e-s)+1))
 
     def cmdRangeUpdateMax(self, *arg):
         # get slider value
@@ -263,7 +280,7 @@ class CPUI(object):
         # print v, 'lower slider -----    ', cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), 'upper range   -----', cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
         e = cmds.floatField(self.control.int2, q=True, value=True )
         s = cmds.floatField(self.control.int1, q=True, value=True )
-        cmds.text(self.control.heading13, edit=True, label=str(e-s))
+        cmds.text(self.control.heading13, edit=True, label=str((e-s)+1))
 
     def populateClipList(self):
         # Make sure the path exists and access is permitted
@@ -329,6 +346,7 @@ class CPUI(object):
         cmds.textField(self.control.field1, e=True, tx=selFile)
 
     def populatePreview(self):
+        self.cmdLoadingHintToggle(off=True)
         path = self.cmdClipPath()
         if path:
             # print path
@@ -337,6 +355,7 @@ class CPUI(object):
             self.populateInfo()
             self.populateExportName()
             self.populateRange()
+        self.cmdLoadingHintToggle()
 
     def populateLayers(self):
         cmds.textScrollList(self.control.scroll3, edit=True, ra=True)

@@ -8,6 +8,9 @@ import os
 import platform
 import json
 import math
+import webrImport as web
+# web
+cpb = web.mod('clipPickleBezier2_lib')
 # TODO: add new class to deal with multi ref selections
 
 
@@ -816,6 +819,7 @@ class Clip(Layer):
                 if cmds.objExists(obj.name):
                     cmds.select(obj.name)
                     print '___adding here'
+                    print layer
                     cmds.animLayer(layer, e=True, aso=True)
 
     def layerNew(self, name='', prefix='CLASH__'):
@@ -844,7 +848,7 @@ class Clip(Layer):
                     # creates new name for base layer
                     layer.name = self.layerNew(name='BaseAnimation')
                     cmds.setAttr(layer.name + '.override', True)
-                self.layerAddObjects(layer=layer.name, objects=layer.objects)
+                    self.layerAddObjects(layer=layer.name, objects=layer.objects)
                 layer.putObjects()
             else:
                 if not cmds.animLayer(layer.name, q=True, ex=True):
@@ -998,8 +1002,9 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
         clp = pruneLayers(clp, putLayerList)  # working
     # set type of import
     clp = setType(clp, poseOnly=poseOnly)
-    #
-    # clp = cutKeysToRange(clp, 1020.0, 1090)
+    # frame range
+    if clp.start != start or clp.end != end:
+        clp = cutKeysToRange(clp, start, end)
     clp.putLayers(mergeExistingLayers, applyLayerSettings, applyRootAsOverride)
     # print clp.layers
     if sel:
@@ -1053,12 +1058,9 @@ def insertKey(clp, frame=0.0):
                 if attr.crv:
                     # make sure no key exists on given frame, add short form
                     # loop, if it does dont overwrite
-                    k = Key(attr.obj, attr.name, attr.crv, frame,
-                            weightedTangents=False, auto=False)
                     # find appropriate value
-                    k.value = insertKeyValue(attr, frame)
-                    k.inTangentType = 'auto'
-                    k.outTangentType = 'auto'
+                    k = insertKeyValue(attr, frame)
+                    print k.frame
                     attr.keys.append(k)
                 else:
                     # print 'no crv exists, skipping insert'
@@ -1067,11 +1069,14 @@ def insertKey(clp, frame=0.0):
 
 
 def insertKeyValue(attr, frame=0.0):
-    # HACK: lack of calculus skills method, good for approximation.
     # does not consider tangents, only key positions
     val = 0.0
     i = 0
+    # weighted
+    weighted = attr.keys[i].weightedTangents
     # can reach end of list before finding a qualifying frame number
+    # do not insert frames out of original range
+    # may adversly affect offest and start positions, should investigate
     while frame > attr.keys[i].frame:
         i = i + 1
         if len(attr.keys) - 1 < i:
@@ -1082,27 +1087,36 @@ def insertKeyValue(attr, frame=0.0):
         nexVal = attr.keys[i].value
         preFrm = attr.keys[i - 1].frame
         nexFrm = attr.keys[i].frame
-        # frame range between keys
-        frameRange = int((preFrm - nexFrm) * -1)
-        valueRange = preVal - nexVal
-        if valueRange != 0.0:
-            # force positive
-            if valueRange < 0:
-                valueRange = valueRange * -1
-            # find increments
-            inc = valueRange / frameRange
-            # how many increments to add
-            mlt = int((preFrm - frame) * -1)
-            # add up increments
-            val = inc * mlt
-            # operation depends on preVal relative to nexVal value
-            if preVal < nexVal:
-                val = preVal + val
-            else:
-                val = preVal - val
-        else:
-            return preVal
-        return val
+        p0 = [preFrm, preVal, attr.keys[i - 1].outAngle]
+        p3 = [nexFrm, nexVal, attr.keys[i].inAngle]
+        corX, corY = cpb.getControlPoints(p0, p3)
+        print corX, corY
+        degIn, hlengthIn, value, degOut, hlengthOut = cpb.seekPoint(corX, corY, frame)
+        k = Key(attr.obj, attr.name, attr.crv, frame, weightedTangents=weighted, auto=False)
+        # print degIn, value, degOut, crv
+        k.value = value
+        k.inAngle = degIn
+        k.outAngle = degOut
+        k.inTangentType = 'auto'
+        k.outTangentType = 'auto'
+        if weighted:
+            k.inWeight = hlengthIn
+            k.outWeight = hlengthOut
+            # adjust existing tangent weights
+            ow = attr.keys[i - 1].outWeight
+            iw = attr.keys[i].inWeight
+            #
+            gap = p3[0] - p0[0]
+            #
+            front = (frame - p0[0])
+            back = (p3[0] - frame)
+            #
+            front = (time - p0[0]) / gap
+            back = (p3[0] - time) / gap
+            #
+            attr.keys[i - 1].outWeightt = ow * front
+            attr.keys[i].inWeightinWeight = iw * back
+        return k
 
 
 def cutKeysToRange(clp, start=None, end=None):

@@ -3,7 +3,10 @@ from math import sqrt
 import maya.cmds as cmds
 
 
-def getControlPoints(crv='', p0=[1.0, 0.0], p3=[10.0, 10.0]):
+def getControlPoints(p0=[1.0, 0.0, 0.0], p3=[10.0, 10.0, 0.0]):
+    '''
+    feed p0=[frame, value, outAngle], p3=[frame, value, inAngle]
+    '''
     # could use multiplier to adjust length of existing weights after key is inserted
     mltp = 0.3333333333333333  # multiplier to solve adjacent side, p[1] x coor, 33.333333333333%
     # gap between keys
@@ -11,7 +14,7 @@ def getControlPoints(crv='', p0=[1.0, 0.0], p3=[10.0, 10.0]):
     # print gap, ' gap'
 
     # p1
-    outA = cmds.keyTangent(crv, q=True, time=(p0[0], p0[0]), outAngle=True)[0]
+    outA = p0[2]
     # print outA, ' p1 hyp angle'
     adj = gap * mltp  # tangent coor in x
     # print adj, ' p1 adj length'
@@ -21,7 +24,7 @@ def getControlPoints(crv='', p0=[1.0, 0.0], p3=[10.0, 10.0]):
     # print p1
 
     # p2
-    outA = cmds.keyTangent(crv, q=True, time=(p3[0], p3[0]), inAngle=True)[0]
+    outA = p3[2]
     # print outA, ' p2 hyp angle'
     adj = gap * mltp  # tangent coor in x
     # print adj, ' p2 adj length'
