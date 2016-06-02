@@ -266,24 +266,28 @@ class Key():
             self.outWeight = outw
 
     def putKey(self):
-        # set key, creates curve node
         # print self.obj, self.attr, self.frame, self.offset, self.value, '_____________________________'
         if cmds.getAttr(self.obj + '.' + self.attr, se=True):
-            tmp = 3.0
+            # get curve name, set key
             crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)
             # print crv, '____crv'
             if not crv:
-                cmds.setKeyframe(self.obj, at=self.attr, time=(self.frame + self.offset - tmp, self.frame + self.offset - tmp), value=self.value, shape=False)
+                s = cmds.setKeyframe(self.obj, at=self.attr, time=(
+                    self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False, nr=False, mr=True)
+                self.crv = cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
+                # make tangents spline type, if default is 'auto', tangent edit doesn't take on first key in anim curve
+                cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
+                                inTangentType='spline', outTangentType='spline')
             else:
                 self.crv = crv[0]
-            s = cmds.setKeyframe(self.obj, at=self.attr, time=(
-                self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False, nr=False, mr=True, i=True)
+                s = cmds.setKeyframe(self.obj, at=self.attr, time=(
+                    self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False, nr=False, mr=True, i=True)
+            # apply the rest
             if s:
-                # update curve name, set curve type, set weights
-                cmds.findKeyframe(self.obj, at=self.attr, c=True)[0]
+                # set curve type, set weights
                 cmds.keyframe(self.crv, time=(self.frame + self.offset, self.frame +
-                                              self.offset), valueChange=self.value)  # correction, hacky, should fix
-                # cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
+                                              self.offset), valueChange=self.value)  # correction, hacky, (not sure what this is doing)
+                cmds.setAttr(self.crv + '.weightedTangents', self.weightedTangents)
                 cmds.keyTangent(self.crv, edit=True, time=(self.frame + self.offset, self.frame + self.offset),
                                 inTangentType=self.inTangentType, outTangentType=self.outTangentType)
                 if self.inAngle != None:
@@ -308,10 +312,8 @@ class Key():
                 # message('Unable to add animation to ' + self.obj + '.' + self.attr)
                 pass
             if not crv:
-                # pass
+                pass
                 # print self.frame, self.offset, tmp
-                # print self.frame + self.offset - tmp
-                cmds.cutKey(self.obj, at=self.attr, time=(self.frame + self.offset - tmp, self.frame + self.offset - tmp), option='keys')
 
 
 class Attribute(Key):
@@ -406,7 +408,7 @@ class Attribute(Key):
                     if cmds.objExists(self.obj + '.' + self.name):
                         if not cmds.getAttr(self.obj + '.' + self.name, l=True):
                             k.putKey()
-                            print '\n', k.__dict__, '\n'
+                            # print '\n', k.__dict__, '\n'
                             self.putCurveAttrs()
                     else:
                         # print 'obj doesnt exist', self.obj + '.' + self.name
@@ -1015,8 +1017,14 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     # set type of import
     clp = setType(clp, poseOnly=poseOnly)
     # frame range
-    if clp.start != start or clp.end != end:
-        clp = cutKeysToRange(clp, start, end)
+    s = None
+    e = None
+    if clp.start != start:
+        s = start
+    if clp.end != end:
+        e = end
+    if s or e:
+        clp = cutKeysToRange(clp, s, e)
     clp.putLayers(mergeExistingLayers, applyLayerSettings, applyRootAsOverride)
     # print clp.layers
     if sel:
@@ -1134,17 +1142,22 @@ def insertKeyValue(attr, frame=0.0):
 def cutKeysToRange(clp, start=None, end=None):
     if start:
         clp = insertKey(clp, start)
+    else:
+        start = clp.start
+    if end:
         clp = insertKey(clp, end)
-        for layer in clp.layers:
-            for obj in layer.objects:
-                for attr in obj.attributes:
-                    if attr.crv:
-                        keys = []
-                        for key in attr.keys:
-                            if key.frame >= start and key.frame <= end:
-                                keys.append(key)
-                        if keys:
-                            attr.keys = keys
+    else:
+        end = clp.end
+    for layer in clp.layers:
+        for obj in layer.objects:
+            for attr in obj.attributes:
+                if attr.crv:
+                    keys = []
+                    for key in attr.keys:
+                        if key.frame >= start and key.frame <= end:
+                            keys.append(key)
+                    if keys:
+                        attr.keys = keys
     return clp
 
 

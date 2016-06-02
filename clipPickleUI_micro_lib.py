@@ -159,8 +159,8 @@ class Action(object):
         #
 
         # Import
-        self.heading3 = cmds.text(self.heading3, label='\nCLIP LIBRARY', al='center')
-        self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
+        self.heading3 = cmds.button(self.heading3, label='CLIP LIBRARY', al='center')
+        # self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
 
         # 2 scroll lists in form: clip, clip version
         self.form1 = cmds.formLayout(self.form1, h=220, w=1)
@@ -171,7 +171,7 @@ class Action(object):
         attachForm = [(self.scroll2, 'right', 0)]
         attachControl = [(self.scroll2, 'left', 5, self.scroll1)]
         cmds.formLayout(self.form1, edit=True, attachForm=attachForm, attachControl=attachControl)
-        self.scroll3 = cmds.textScrollList(self.scroll3, sc=self.cmdAction, allowMultiSelection=True, dcc=self.cmdAction, fn='plainLabelFont', h=80, w=10)
+        self.scroll3 = cmds.textScrollList(self.scroll3, sc=self.cmdAction, allowMultiSelection=True, dcc=self.cmdAction, fn='plainLabelFont', h=90, w=10)
         attachForm = [(self.scroll3, 'left', 0), (self.scroll3, 'right', 0)]
         attachControl = [(self.scroll3, 'top', 5, self.scroll1)]
         cmds.formLayout(self.form1, edit=True, attachForm=attachForm, attachControl=attachControl)

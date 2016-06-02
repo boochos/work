@@ -1,6 +1,8 @@
 import maya.cmds as cmds
 import maya.mel as mel
 import os
+import platform
+from subprocess import call
 #
 # import clipPickleUI_micro_lib as ui
 # import clipPickle_lib as cp
@@ -40,6 +42,7 @@ class CPUI(object):
         # store/restore
         # self.objects = [] not used
         # self.animBucket = [] not used
+        self.clip = None
         self.clipFiles = []
         self.objX = None
         self.anim = None
@@ -60,6 +63,8 @@ class CPUI(object):
         # action
         self.control = ui.Action('clipAction', cmdAction='', label='', w=self.columnWidth)
         cmds.button(self.control.button1, e=True, c=self.cmdExport, h=40)
+        cmds.button(self.control.heading3, e=True, c=self.cmdLibrary)
+        cmds.button(self.control.heading6, e=True, c=self.cmdOpenFileWIndow)
         # cmds.button( self.control.button2, e=True, c=self.cmdImport )
         cmds.button(self.control.button3, e=True, c=self.cmdImport, h=40)
         cmds.textScrollList(self.control.scroll1, e=True, sc=self.populateVersionList, ams=False, dcc=self.cmdSelectObjectsInClip)
@@ -69,18 +74,57 @@ class CPUI(object):
         cmds.showWindow(self.win)
         self.populateClipList()
 
+    def cmdOpenFile(self, *args):
+        cmds.file(self.clip.path, open=True)
+
+    def cmdOpenFileWIndow(self, path=''):
+        ofw = 'openClipFileWIndow'
+        ofwc = 'openClipFileWIndowForm'
+        ofb = 'openClipFileButton'
+        path = self.clip.path
+        if cmds.window(ofw, q=True, ex=True):
+            cmds.deleteUI(ofw)
+        ofw = cmds.window(ofw, h=40, w=150)
+        ofwc = cmds.columnLayout(ofwc)
+        print path
+        if path:
+            if os.path.isfile(path):
+                cmds.text(label=path, al='center')
+                cmds.button(ofb, label='Open File', al='center', c=self.cmdOpenFile)
+            else:
+                cmds.text(label='File doesnt exist: ' + path, al='center')
+        else:
+            cmds.text(label='Cant open file: nothing selected or file path missing from clip', al='center')
+        cmds.showWindow(ofw)
+
+
+    def cmdLibrary(self, *args):
+        path = cp.clipDefaultPath()
+        if os.name == 'nt':
+            # print path
+            # path = path.replace('\'', '\\')
+            # print path
+            if os.path.isdir(path):
+                subprocess.Popen(r'explorer /open, ' + path)
+        elif platform.system() == 'Darwin':
+            subprocess.call(["open", "-R", path])
+        else:
+            # message('Close file window to regain control over MAYA.')
+            app = "nautilus"
+            call([app, path])
+
     def cmdTypeEx(self):
         # type of export
         typ = [None, False, True]
         v = cmds.radioButtonGrp(self.control.typGrpEx, q=True, select=True)
-        print typ[v]
+        # print typ[v]
         return typ[v]
 
     def cmdTypeIm(self):
         # type of export
         typ = [None, False, True]
         v = cmds.radioButtonGrp(self.control.typGrpIm, q=True, select=True)
-        print typ[v]
+        # print typ[v]
         return typ[v]
 
     def cmdExport(self, *args):
