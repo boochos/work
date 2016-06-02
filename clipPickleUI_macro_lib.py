@@ -2,6 +2,7 @@ import maya.cmds as cmds
 import maya.mel as mel
 import os
 import platform
+import subprocess
 from subprocess import call
 #
 # import clipPickleUI_micro_lib as ui
@@ -75,28 +76,30 @@ class CPUI(object):
         self.populateClipList()
 
     def cmdOpenFile(self, *args):
-        cmds.file(self.clip.path, open=True)
+        cmds.file(self.clip.path, open=True, f=True)
+        cmds.deleteUI('OpenSourceFile')
 
     def cmdOpenFileWIndow(self, path=''):
-        ofw = 'openClipFileWIndow'
-        ofwc = 'openClipFileWIndowForm'
+        ofw = 'OpenSourceFile'
+        ofwc = 'openSourceFileForm'
         ofb = 'openClipFileButton'
-        path = self.clip.path
+        font = 'obliqueLabelFont'
+        if self.clip:
+            path = self.clip.path
         if cmds.window(ofw, q=True, ex=True):
             cmds.deleteUI(ofw)
-        ofw = cmds.window(ofw, h=40, w=150)
-        ofwc = cmds.columnLayout(ofwc)
+        ofw = cmds.window(ofw)
+        ofwc = cmds.columnLayout(ofwc, cal='center', cat=['both', 1], adj=True, w=350)
         print path
         if path:
+            cmds.textField(tx=path + '\n', fn=font, ed=False)
             if os.path.isfile(path):
-                cmds.text(label=path, al='center')
                 cmds.button(ofb, label='Open File', al='center', c=self.cmdOpenFile)
             else:
-                cmds.text(label='File doesnt exist: ' + path, al='center')
+                cmds.button(ofb, label="File doesn't exist", al='center')
         else:
-            cmds.text(label='Cant open file: nothing selected or file path missing from clip', al='center')
+            cmds.text(label=' -- NO PATH --  ', al='center', fn=font)
         cmds.showWindow(ofw)
-
 
     def cmdLibrary(self, *args):
         path = cp.clipDefaultPath()
@@ -196,8 +199,11 @@ class CPUI(object):
             c7 = cmds.checkBox(self.control.c7, q=True, v=True)
             c8 = cmds.checkBox(self.control.c8, q=True, v=True)
             # range
-            start = cmds.floatField(self.control.int1, q=True, v=True)
-            end = cmds.floatField(self.control.int2, q=True, v=True)
+            start = None
+            end = None
+            if cmds.floatField(self.control.int1, q=True, en=True):
+                start = cmds.floatField(self.control.int1, q=True, v=True)
+                end = cmds.floatField(self.control.int2, q=True, v=True)
             # get import type
             poseOnly = self.cmdTypeIm()
             # import
@@ -277,20 +283,20 @@ class CPUI(object):
         disables some ui elements for clarity
         '''
         if off:
-            cmds.textScrollList(self.control.scroll3, e=True, en=False)
+            # cmds.textScrollList(self.control.scroll3, e=True, en=False)
             cmds.textField(self.control.heading7, e=True, en=False)
-            #cmds.button(self.control.heading6, e=True, en=False)
+            cmds.button(self.control.heading6, e=True, en=False)
         else:
-            cmds.textScrollList(self.control.scroll3, e=True, en=True)
+            # cmds.textScrollList(self.control.scroll3, e=True, en=True)
             cmds.textField(self.control.heading7, e=True, en=True)
-            #cmds.button(self.control.heading6, e=True, en=True)
+            cmds.button(self.control.heading6, e=True, en=True)
         cmds.refresh()
 
     def cmdRangeUpdateMin(self, *arg):
         # get slider value
         v = cmds.intSlider(self.control.sl1, q=True, v=True)
         # edit int field
-        cmds.floatField(self.control.int1, edit=True, value=v )
+        cmds.floatField(self.control.int1, edit=True, value=v)
         # highest value for minimum value of slider2 has to be 1 less than max value
         if v < cmds.intSlider(self.control.sl2, q=True, max=True):
             cmds.intSlider(self.control.sl2, e=True, min=v)
@@ -302,15 +308,15 @@ class CPUI(object):
             pass
             # cmds.intSlider(self.control.sl2, e=True, min=v-1)
         # print v, 'upper slider -----    ', cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), 'upper range   -----', cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
-        e = cmds.floatField(self.control.int2, q=True, value=True )
-        s = cmds.floatField(self.control.int1, q=True, value=True )
-        cmds.text(self.control.heading13, edit=True, label=str((e-s)+1))
+        e = cmds.floatField(self.control.int2, q=True, value=True)
+        s = cmds.floatField(self.control.int1, q=True, value=True)
+        cmds.text(self.control.heading13, edit=True, label=str((e - s) + 1))
 
     def cmdRangeUpdateMax(self, *arg):
         # get slider value
         v = cmds.intSlider(self.control.sl2, q=True, v=True)
         # edit int field
-        cmds.floatField(self.control.int2, edit=True, value=v )
+        cmds.floatField(self.control.int2, edit=True, value=v)
         # lowest value for maximum value of slider 1 has to be 1 higher than minimum value
         if v > cmds.intSlider(self.control.sl1, q=True, min=True):
             cmds.intSlider(self.control.sl1, e=True, max=v)
@@ -322,9 +328,9 @@ class CPUI(object):
             pass
             # cmds.intSlider(self.control.sl1, e=True, max=v+1)
         # print v, 'lower slider -----    ', cmds.intSlider(self.control.sl1, q=True, min=True), cmds.intSlider(self.control.sl1, q=True, max=True), 'upper range   -----', cmds.intSlider(self.control.sl2, q=True, min=True), cmds.intSlider(self.control.sl2, q=True, max=True), '  lower range'
-        e = cmds.floatField(self.control.int2, q=True, value=True )
-        s = cmds.floatField(self.control.int1, q=True, value=True )
-        cmds.text(self.control.heading13, edit=True, label=str((e-s)+1))
+        e = cmds.floatField(self.control.int2, q=True, value=True)
+        s = cmds.floatField(self.control.int1, q=True, value=True)
+        cmds.text(self.control.heading13, edit=True, label=str((e - s) + 1))
 
     def populateClipList(self):
         # Make sure the path exists and access is permitted
@@ -432,43 +438,49 @@ class CPUI(object):
             cmds.text(self.control.heading13, edit=True, label=str(self.clip.length))
         else:
             cmds.text(self.control.heading13, edit=True, label='')
-        '''
-        if self.clip.start:
-            cmds.text( self.control.heading15, edit=True, label='     ' + str( self.clip.start ) )
+        if self.clip.poseOnly:
+            cmds.textScrollList(self.control.scroll3, edit=True, en=False)
+            cmds.radioButtonGrp(self.control.typGrpIm, edit=True, select=2, en=False)
+            cmds.checkBox(self.control.c1, e=True, en=False)
+            cmds.checkBox(self.control.c2, e=True, en=False)
+            cmds.checkBox(self.control.c5, e=True, en=False)
+            cmds.checkBox(self.control.c6, e=True, en=False)
+            cmds.checkBox(self.control.c7, e=True, en=False)
+            cmds.checkBox(self.control.c8, e=True, en=False)
         else:
-            cmds.text( self.control.heading15, edit=True, label='' )
-        if self.clip.start:
-            cmds.text( self.control.heading17, edit=True, label='     ' + str( self.clip.start ) )
-        else:
-            cmds.text( self.control.heading17, edit=True, label='' )
-        if self.clip.start:
-            cmds.text( self.control.heading19, edit=True, label='     ' + str( self.clip.start ) )
-        else:
-            cmds.text( self.control.heading19, edit=True, label='' )
-        if self.clip.start:
-            cmds.text( self.control.heading21, edit=True, label='     ' + str( self.clip.start ) )
-        else:
-            cmds.text( self.control.heading21, edit=True, label='' )
-        '''
+            cmds.textScrollList(self.control.scroll3, edit=True, en=True)
+            cmds.radioButtonGrp(self.control.typGrpIm, edit=True, select=1, en=True)
+            cmds.checkBox(self.control.c1, e=True, en=True)
+            cmds.checkBox(self.control.c2, e=True, en=True)
+            cmds.checkBox(self.control.c5, e=True, en=True)
+            cmds.checkBox(self.control.c6, e=True, en=True)
+            cmds.checkBox(self.control.c7, e=True, en=True)
+            cmds.checkBox(self.control.c8, e=True, en=True)
 
     def populateRange(self):
-        # cmd doesnt quite work to keep 1 frame gap between low and high range
         # self.control.heading5
         if self.clip.start:
             if (self.clip.end - self.clip.start) > 0.0:
                 # sliders
-                cmds.intSlider(self.control.sl1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=1, dc=self.cmdRangeUpdateMin, en=True )
-                cmds.intSlider(self.control.sl2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=1, dc=self.cmdRangeUpdateMax, en=True )
+                cmds.intSlider(self.control.sl1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=1, dc=self.cmdRangeUpdateMin, en=True)
+                cmds.intSlider(self.control.sl2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=1, dc=self.cmdRangeUpdateMax, en=True)
                 # fields
                 cmds.floatField(self.control.int1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=0.1, en=False)
                 cmds.floatField(self.control.int2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=0.1, en=False)
             else:
                 # sliders
-                cmds.intSlider(self.control.sl1, edit=True, min=0, max=10, value=0, step=1, en=False )
-                cmds.intSlider(self.control.sl2, edit=True, min=0, max=10, value=0, step=1, en=False )
+                cmds.intSlider(self.control.sl1, edit=True, min=0, max=10, value=0, step=1, en=False)
+                cmds.intSlider(self.control.sl2, edit=True, min=0, max=10, value=0, step=1, en=False)
                 # fields
                 cmds.floatField(self.control.int1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=0.1, en=True)
                 cmds.floatField(self.control.int2, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.end, step=0.1, en=True)
+        else:
+            # sliders
+            cmds.intSlider(self.control.sl1, edit=True, min=0, max=10, value=0, step=1, en=False)
+            cmds.intSlider(self.control.sl2, edit=True, min=0, max=10, value=0, step=1, en=False)
+            # fields
+            cmds.floatField(self.control.int1, edit=True, min=0, max=10, value=0, step=0.1, en=False)
+            cmds.floatField(self.control.int2, edit=True, min=0, max=10, value=0, step=0.1, en=False)
 
     def progressBar(self):
         # calculate progress bar....wont work

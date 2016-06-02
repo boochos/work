@@ -1001,6 +1001,7 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     '''
     # BUG:linear curves don't import correctly
     # TODO: apply should only take name, path should be predetermined
+    # TODO: fix pose only export to not take anim curves
     # update all other functions that use the behaviour
     sel = cmds.ls(sl=1, fl=1)
     # set import attrs
