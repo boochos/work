@@ -11,12 +11,17 @@ fr = web.mod('frameRange_lib')
 plc = web.mod('atom_place_lib')
 
 
-def message(what='', maya=False):
+def message(what='', maya=True, warning=False):
     what = '-- ' + what + ' --'
-    if maya:
-        mel.eval('print \"' + what + '\";')
+    if '\\' in what:
+        what = what.replace('\\', '/')
+    if warning:
+        cmds.warning(what)
     else:
-        print what
+        if maya:
+            mel.eval('print \"' + what + '\";')
+        else:
+            print wha
 
 
 def uiEnable(controls='modelPanel'):

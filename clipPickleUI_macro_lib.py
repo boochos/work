@@ -19,12 +19,17 @@ fr = web.mod('frameRange_lib')
 # each ref gets its on class, objects with no namespace get their own class
 
 
-def message(what='', maya=False):
+def message(what='', maya=True, warning=False):
     what = '-- ' + what + ' --'
-    if maya:
-        mel.eval('print \"' + what + '\";')
+    if '\\' in what:
+        what = what.replace('\\', '/')
+    if warning:
+        cmds.warning(what)
     else:
-        print what
+        if maya:
+            mel.eval('print \"' + what + '\";')
+        else:
+            print wha
 
 
 class CPUI(object):
@@ -71,7 +76,7 @@ class CPUI(object):
         cmds.textScrollList(self.control.scroll1, e=True, sc=self.populateVersionList, ams=False, dcc=self.cmdSelectObjectsInClip)
         cmds.textScrollList(self.control.scroll2, e=True, sc=self.populatePreview, ams=False, dcc=self.cmdSelectObjectsInClip)  # edit in future
         cmds.textScrollList(self.control.scroll3, e=True, sc='print "not setup"', dcc=self.cmdSelectObjectsInLayer)  # edit in future
-        
+
         self.cmdLoadingHintToggle(on=False)
         cmds.showWindow(self.win)
         self.populateClipList()
@@ -137,30 +142,36 @@ class CPUI(object):
         sel = self.cmdCollectSelections()
         # export
         name = cmds.textField(self.control.field1, q=True, tx=True)
-        comment = cmds.textField(self.control.field2, q=True, tx=True)
-        version = '.' + self.cmdCreateVersionNumber()
-        #
-        poseOnly = self.cmdTypeEx()
-        #
-        start = cmds.floatField(self.control.float1, q=True, value=True)
-        end = cmds.floatField(self.control.float2, q=True, value=True)
-        # print start, end, '___ ui'
-        bakeRange = [start, end]
-        #
-        cp.clipSave(name=name + version, comment=comment, poseOnly=poseOnly, bakeRange=bakeRange)
-        cmds.textScrollList(self.control.scroll1, edit=True, ra=True)
-        self.populateClipList()
-        path = os.path.join(self.path, name + '.clip')
-        message('Set   ' + name + '   exported to   ' + path)
-        # apply selections
-        # print sel
-        if sel[0]:
-            cmds.textScrollList(self.control.scroll1, e=True, si=sel[0])
-            self.populateVersionList()
-        if sel[1]:
-            cmds.textScrollList(self.control.scroll2, e=True, si=sel[1])
-        if sel[2]:
-            cmds.textScrollList(self.control.scroll3, e=True, si=sel[2])
+        if name:
+            if cmds.ls(sl=True):
+                comment = cmds.textField(self.control.field2, q=True, tx=True)
+                version = '.' + self.cmdCreateVersionNumber()
+                #
+                poseOnly = self.cmdTypeEx()
+                #
+                start = cmds.floatField(self.control.float1, q=True, value=True)
+                end = cmds.floatField(self.control.float2, q=True, value=True)
+                # print start, end, '___ ui'
+                bakeRange = [start, end]
+                #
+                cp.clipSave(name=name + version, comment=comment, poseOnly=poseOnly, bakeRange=bakeRange)
+                cmds.textScrollList(self.control.scroll1, edit=True, ra=True)
+                self.populateClipList()
+                path = os.path.join(self.path, name + '.clip')
+                message('Set   ' + name + '   exported to   ' + path)
+                # apply selections
+                # print sel
+                if sel[0]:
+                    cmds.textScrollList(self.control.scroll1, e=True, si=sel[0])
+                    self.populateVersionList()
+                if sel[1]:
+                    cmds.textScrollList(self.control.scroll2, e=True, sii=1)
+                if sel[2]:
+                    cmds.textScrollList(self.control.scroll3, e=True, si=sel[2])
+            else:
+                message('Select some objects. Export aborted.', maya=True, warning=True)
+        else:
+            message('Provided a name. Export aborted.', maya=True, warning=True)
 
     def cmdImport(self, *args):
         # file

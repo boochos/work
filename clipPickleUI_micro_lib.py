@@ -9,9 +9,17 @@ import maya.mel as mel
 #
 
 
-def message(what=''):
-    mel.eval('print \"' + '-- ' + what + ' --' + '\";')
-    # print "\n"
+def message(what='', maya=True, warning=False):
+    what = '-- ' + what + ' --'
+    if '\\' in what:
+        what = what.replace('\\', '/')
+    if warning:
+        cmds.warning(what)
+    else:
+        if maya:
+            mel.eval('print \"' + what + '\";')
+        else:
+            print wha
 
 
 class Action(object):

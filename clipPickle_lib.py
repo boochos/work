@@ -131,14 +131,17 @@ def transformRotationType(object='', rooNew=0):
     return angles
 
 
-def message(what='', maya=True):
+def message(what='', maya=True, warning=False):
     what = '-- ' + what + ' --'
-    global tell
-    tell = what
-    if maya:
-        mel.eval('print \"' + what + '\";')
+    if '\\' in what:
+        what = what.replace('\\', '/')
+    if warning:
+        cmds.warning(what)
     else:
-        print what
+        if maya:
+            mel.eval('print \"' + what + '\";')
+        else:
+            print wha
 
 
 def uiEnable(controls='modelPanel'):
@@ -747,15 +750,18 @@ class Clip(Layer):
         start = cmds.timerX()
         #
         self.sel = cmds.ls(sl=True, fl=True)
-        self.user = getpass.getuser()
-        self.date = time.strftime("%c")
-        self.getLayers()
-        self.getClipAttrs()
-        self.getClipStartEndLength()
-        # timer end
-        # code that is being timed
-        totalTime = cmds.timerX(startTime=start)
-        print "------------  Total time: ", totalTime
+        if self.sel:
+            self.user = getpass.getuser()
+            self.date = time.strftime("%c")
+            self.getLayers()
+            self.getClipAttrs()
+            self.getClipStartEndLength()
+            # timer end
+            # code that is being timed
+            totalTime = cmds.timerX(startTime=start)
+            print "------------  Total time: ", totalTime
+        else:
+            message('Select some objects. Export aborted.', maya=True, warning=True)
 
     def getClipAttrs(self):
         # scene name
