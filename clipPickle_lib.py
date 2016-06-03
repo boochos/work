@@ -286,7 +286,7 @@ class Key():
                 s = cmds.setKeyframe(self.obj, at=self.attr, time=(
                     self.frame + self.offset, self.frame + self.offset), value=self.value, shape=False, nr=False, mr=True, i=True)
             # apply the rest
-            if s:
+            if self.crv:
                 # set curve type, set weights
                 cmds.keyframe(self.crv, time=(self.frame + self.offset, self.frame +
                                               self.offset), valueChange=self.value)  # correction, hacky, (not sure what this is doing)
@@ -312,8 +312,8 @@ class Key():
                         cmds.keyTangent(self.crv, edit=True, time=(
                             self.frame + self.offset, self.frame + self.offset), outWeight=self.outWeight)
             else:
-                # message('Unable to add animation to ' + self.obj + '.' + self.attr)
-                pass
+                message('Unable to add animation to ' + self.obj + '.' + self.attr)
+                # pass
             if not crv:
                 pass
                 # print self.frame, self.offset, tmp
@@ -838,8 +838,8 @@ class Clip(Layer):
             for obj in objects:
                 if cmds.objExists(obj.name):
                     cmds.select(obj.name)
-                    print '___adding here'
-                    print layer
+                    # print '___adding here'
+                    # print layer
                     cmds.animLayer(layer, e=True, aso=True)
 
     def layerNew(self, name='', prefix='CLASH__'):
@@ -997,7 +997,7 @@ def populate_from_json(cls, dct={}):
 
 
 def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, applyLayerSettings=True, applyRootAsOverride=False,
-              putLayerList=[], putObjectList=[], start=None, end=None, poseOnly=False):
+              putLayerList=[], putObjectList=[], start=None, end=None, poseOnly=False, clp=''):
     '''
     apply animation from file
     #FIX: note <>
@@ -1011,7 +1011,9 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     # update all other functions that use the behaviour
     sel = cmds.ls(sl=1, fl=1)
     # set import attrs
-    clp = clipOpen(path=path)
+    # print clp.name, '_____name'
+    if not clp:
+        clp = clipOpen(path=path)  
     # print clp.__dict__
     if onCurrentFrame:
         clp.offset = onCurrentFrameOffset(start=clp.start)
@@ -1030,6 +1032,7 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
         s = start
     if clp.end != end:
         e = end
+    # print s, start, end, e
     if s or e:
         clp = cutKeysToRange(clp, s, e)
     clp.putLayers(mergeExistingLayers, applyLayerSettings, applyRootAsOverride)
@@ -1084,11 +1087,15 @@ def insertKey(clp, frame=0.0):
             for attr in obj.attributes:
                 if attr.crv:
                     # make sure no key exists on given frame, add short form
-                    # loop, if it does dont overwrite
-                    # find appropriate value
-                    k = insertKeyValue(attr, frame)
-                    # print k.frame
-                    attr.keys.append(k)
+                    # make sure insert is not out of anim curve range
+                    # add condition if whole anim curve is out of range, edit last known key to be in new range, delete the rest
+                    if frame > attr.frames[0] and frame < attr.frames[len(attr.frames)-1] and frame not in attr.frames:
+                        k = insertKeyValue(attr, frame)
+                        # print k.frame
+                        attr.keys.append(k)
+                    else:
+                        pass
+                        # message('Skipping key insert: ' + str(frame))
                 else:
                     # print 'no crv exists, skipping insert'
                     pass
@@ -1101,9 +1108,7 @@ def insertKeyValue(attr, frame=0.0):
     i = 0
     # weighted
     weighted = attr.keys[i].weightedTangents
-    # can reach end of list before finding a qualifying frame number
-    # do not insert frames out of original range
-    # may adversly affect offest and start positions, should investigate
+    # may adversely affect offset and start positions, should investigate
     while frame > attr.keys[i].frame:
         i = i + 1
         if len(attr.keys) - 1 < i:

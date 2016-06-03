@@ -3,6 +3,7 @@ import maya.mel as mel
 import os
 import platform
 import subprocess
+import copy
 from subprocess import call
 #
 # import clipPickleUI_micro_lib as ui
@@ -49,6 +50,7 @@ class CPUI(object):
         # self.objects = [] not used
         # self.animBucket = [] not used
         self.clip = None
+        self.clipOut = None # editable copy for importing
         self.clipFiles = []
         self.objX = None
         self.anim = None
@@ -211,16 +213,14 @@ class CPUI(object):
             c7 = cmds.checkBox(self.control.c7, q=True, v=True)
             c8 = cmds.checkBox(self.control.c8, q=True, v=True)
             # range
-            start = None
-            end = None
-            if cmds.floatField(self.control.int1, q=True, en=True):
-                start = cmds.floatField(self.control.int1, q=True, v=True)
-                end = cmds.floatField(self.control.int2, q=True, v=True)
+            start = cmds.floatField(self.control.int1, q=True, v=True)
+            end = cmds.floatField(self.control.int2, q=True, v=True)
             # get import type
             poseOnly = self.cmdTypeIm()
             # import
+            self.clipOut = copy.deepcopy(self.clip)
             cp.clipApply(path=path, ns=c5, onCurrentFrame=c1, mergeExistingLayers=c6, applyLayerSettings=c7, applyRootAsOverride=c8, putLayerList=putLayerList, putObjectList=putObjectList,
-                         start=start, end=end, poseOnly=poseOnly)
+                         start=start, end=end, poseOnly=poseOnly, clp=self.clipOut)
         else:
             message('Select a clip to import.')
 
@@ -298,7 +298,7 @@ class CPUI(object):
             if info:
                 cmds.textScrollList(self.control.scroll2, e=True, en=False)
                 cmds.textScrollList(self.control.scroll3, e=True, en=False)
-                cmds.textField(self.control.heading7, e=True, en=False, tx='')
+                cmds.textField(self.control.heading7, e=True, en=False, tx='off')
                 cmds.button(self.control.heading6, e=True, en=False)
                 cmds.rowLayout(self.control.row5, e=True, en=False)
                 cmds.text(self.control.heading9, e=True, l='')
@@ -348,7 +348,7 @@ class CPUI(object):
                 cmds.text(self.control.heading13, e=True, en=True)
                 cmds.text(self.control.heading24, e=True, en=True)
                 cmds.text(self.control.heading26, e=True, en=True)
-        cmds.refresh()
+        # cmds.refresh()
 
     def cmdRangeUpdateMin(self, *arg):
         # get slider value
