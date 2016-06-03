@@ -71,7 +71,8 @@ class CPUI(object):
         cmds.textScrollList(self.control.scroll1, e=True, sc=self.populateVersionList, ams=False, dcc=self.cmdSelectObjectsInClip)
         cmds.textScrollList(self.control.scroll2, e=True, sc=self.populatePreview, ams=False, dcc=self.cmdSelectObjectsInClip)  # edit in future
         cmds.textScrollList(self.control.scroll3, e=True, sc='print "not setup"', dcc=self.cmdSelectObjectsInLayer)  # edit in future
-
+        
+        self.cmdLoadingHintToggle(on=False)
         cmds.showWindow(self.win)
         self.populateClipList()
 
@@ -278,18 +279,64 @@ class CPUI(object):
             scroll3 = scroll3[0]
         return scroll1, scroll2, scroll3
 
-    def cmdLoadingHintToggle(self, off=False):
+    def cmdLoadingHintToggle(self, on=False, info=True, options=True, range=True):
         '''
         disables some ui elements for clarity
         '''
-        if off:
-            # cmds.textScrollList(self.control.scroll3, e=True, en=False)
-            cmds.textField(self.control.heading7, e=True, en=False)
-            cmds.button(self.control.heading6, e=True, en=False)
+        if not on:
+            if info:
+                cmds.textScrollList(self.control.scroll2, e=True, en=False)
+                cmds.textScrollList(self.control.scroll3, e=True, en=False)
+                cmds.textField(self.control.heading7, e=True, en=False, tx='')
+                cmds.button(self.control.heading6, e=True, en=False)
+                cmds.rowLayout(self.control.row5, e=True, en=False)
+                cmds.text(self.control.heading9, e=True, l='')
+                cmds.rowLayout(self.control.row4, e=True, en=False)
+                cmds.text(self.control.heading11, e=True, l='')
+                cmds.radioButtonGrp(self.control.typGrpIm, edit=True, en=False)
+            if options:
+                cmds.checkBox(self.control.c1, e=True, en=False)
+                cmds.checkBox(self.control.c2, e=True, en=False)
+                cmds.checkBox(self.control.c5, e=True, en=False)
+                cmds.checkBox(self.control.c6, e=True, en=False)
+                cmds.checkBox(self.control.c7, e=True, en=False)
+                cmds.checkBox(self.control.c8, e=True, en=False)
+            if range:
+                # headings
+                cmds.text(self.control.heading12, e=True, en=False)
+                cmds.text(self.control.heading13, e=True, en=False, l='')
+                cmds.text(self.control.heading24, e=True, en=False)
+                cmds.text(self.control.heading26, e=True, en=False)
+                # sliders
+                cmds.intSlider(self.control.sl1, edit=True, min=0, max=10, value=0, step=1, en=False)
+                cmds.intSlider(self.control.sl2, edit=True, min=0, max=10, value=0, step=1, en=False)
+                # fields
+                cmds.floatField(self.control.int1, edit=True, min=0, max=10, value=0, step=0.1, en=False)
+                cmds.floatField(self.control.int2, edit=True, min=0, max=10, value=0, step=0.1, en=False)
         else:
-            # cmds.textScrollList(self.control.scroll3, e=True, en=True)
-            cmds.textField(self.control.heading7, e=True, en=True)
-            cmds.button(self.control.heading6, e=True, en=True)
+            if info:
+                cmds.textScrollList(self.control.scroll2, e=True, en=True)
+                cmds.textScrollList(self.control.scroll3, e=True, en=True)
+                cmds.textField(self.control.heading7, e=True, en=True)
+                cmds.button(self.control.heading6, e=True, en=True)
+                cmds.rowLayout(self.control.row5, e=True, en=True)
+                cmds.text(self.control.heading9, e=True)
+                cmds.rowLayout(self.control.row4, e=True, en=True)
+                cmds.text(self.control.heading11, e=True)
+                cmds.radioButtonGrp(self.control.typGrpIm, edit=True, en=True)
+            if options:
+                cmds.checkBox(self.control.c1, e=True, en=True)
+                cmds.checkBox(self.control.c2, e=True, en=True)
+                cmds.checkBox(self.control.c5, e=True, en=True)
+                cmds.checkBox(self.control.c6, e=True, en=True)
+                cmds.checkBox(self.control.c7, e=True, en=True)
+                cmds.checkBox(self.control.c8, e=True, en=True)
+            if range:
+                # headings
+                cmds.text(self.control.heading12, e=True, en=True)
+                cmds.text(self.control.heading13, e=True, en=True)
+                cmds.text(self.control.heading24, e=True, en=True)
+                cmds.text(self.control.heading26, e=True, en=True)
         cmds.refresh()
 
     def cmdRangeUpdateMin(self, *arg):
@@ -366,6 +413,9 @@ class CPUI(object):
                     cmds.textScrollList(self.control.scroll1, edit=True, append=i)
 
     def populateVersionList(self):
+        self.cmdLoadingHintToggle(on=False)
+        cmds.textField(self.control.heading7, e=True, tx='  --  LOADING  --  ')
+        cmds.refresh()
         cmds.textScrollList(self.control.scroll2, edit=True, ra=True)
         sel = cmds.textScrollList(self.control.scroll1, q=True, si=True)[0]
         version = []
@@ -396,7 +446,6 @@ class CPUI(object):
         cmds.textField(self.control.field1, e=True, tx=selFile)
 
     def populatePreview(self):
-        self.cmdLoadingHintToggle(off=True)
         path = self.cmdClipPath()
         if path:
             # print path
@@ -405,7 +454,6 @@ class CPUI(object):
             self.populateInfo()
             self.populateExportName()
             self.populateRange()
-        self.cmdLoadingHintToggle()
 
     def populateLayers(self):
         cmds.textScrollList(self.control.scroll3, edit=True, ra=True)
@@ -439,23 +487,19 @@ class CPUI(object):
         else:
             cmds.text(self.control.heading13, edit=True, label='')
         if self.clip.poseOnly:
-            cmds.textScrollList(self.control.scroll3, edit=True, en=False)
-            cmds.radioButtonGrp(self.control.typGrpIm, edit=True, select=2, en=False)
-            cmds.checkBox(self.control.c1, e=True, en=False)
-            cmds.checkBox(self.control.c2, e=True, en=False)
-            cmds.checkBox(self.control.c5, e=True, en=False)
-            cmds.checkBox(self.control.c6, e=True, en=False)
-            cmds.checkBox(self.control.c7, e=True, en=False)
-            cmds.checkBox(self.control.c8, e=True, en=False)
+            self.cmdLoadingHintToggle(on=True, info=True, options=False, range=False)
+            cmds.button(self.control.button3, e=True, l='P O S E')
+            cmds.textScrollList(self.control.scroll3, edit=True, en=False, ra=True)
+            cmds.radioButtonGrp(self.control.typGrpIm, edit=True, select=2, en1=False, en=True)
+            cmds.columnLayout(self.control.col2, e=True, en=False)
+            cmds.rowLayout(self.control.row3, e=True, en=False)
         else:
+            self.cmdLoadingHintToggle(on=True, info=True, options=True, range=True)
+            cmds.button(self.control.button3, e=True, l='I M P O R T')
             cmds.textScrollList(self.control.scroll3, edit=True, en=True)
-            cmds.radioButtonGrp(self.control.typGrpIm, edit=True, select=1, en=True)
-            cmds.checkBox(self.control.c1, e=True, en=True)
-            cmds.checkBox(self.control.c2, e=True, en=True)
-            cmds.checkBox(self.control.c5, e=True, en=True)
-            cmds.checkBox(self.control.c6, e=True, en=True)
-            cmds.checkBox(self.control.c7, e=True, en=True)
-            cmds.checkBox(self.control.c8, e=True, en=True)
+            cmds.radioButtonGrp(self.control.typGrpIm, edit=True, select=1, en1=True)
+            cmds.columnLayout(self.control.col2, e=True, en=True)
+            cmds.rowLayout(self.control.row3, e=True, en=True)
 
     def populateRange(self):
         # self.control.heading5

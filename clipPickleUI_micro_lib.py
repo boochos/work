@@ -152,8 +152,8 @@ class Action(object):
         cmds.setParent('..')
 
         #
-        self.typGrpEx = cmds.radioButtonGrp(label='Export:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
-        self.button1 = cmds.button(self.button1, label='Export', c=self.cmdAction, bgc=redD,
+        self.typGrpEx = cmds.radioButtonGrp(label='Export Type:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
+        self.button1 = cmds.button(self.button1, label='E X P O R T', c=self.cmdAction, bgc=redD,
                                    ann='Export selected controls to a clip file')
         self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
         #
@@ -190,35 +190,27 @@ class Action(object):
         self.s0 = cmds.separator(height=self.sepH, style=self.sepStl)
         self.row5 = cmds.rowLayout(self.row5, numberOfColumns=2, adjustableColumn=2, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0)])
         self.heading8 = cmds.text(self.heading8, label='User:', al='left', fn=self.fn)
-        self.heading9 = cmds.text(self.heading9, label='', al='right', en=False)
+        self.heading9 = cmds.text(self.heading9, label='', al='right', en=True)
         cmds.setParent('..')
         self.row4 = cmds.rowLayout(self.row4, numberOfColumns=2, adjustableColumn=2, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0)])
         self.heading10 = cmds.text(self.heading10, label='Date:', al='left', fn=self.fn)
-        self.heading11 = cmds.text(self.heading11, label='', al='right', en=False)
+        self.heading11 = cmds.text(self.heading11, label='', al='right', en=True)
         cmds.setParent('..')
+        # import type
+        self.typGrpIm = cmds.radioButtonGrp(label='Import:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
         self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
+        # range
         self.row3 = cmds.rowLayout(self.row3, numberOfColumns=2, adjustableColumn=2, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0)])
         self.heading12 = cmds.text(self.heading12, label='Length:', al='left', fn=self.fn)
-        self.heading13 = cmds.text(self.heading13, label='', al='right', en=False)
+        self.heading13 = cmds.text(self.heading13, label='', al='right', en=True)
         cmds.setParent('..')
-        '''
-        self.heading14 = cmds.text( self.heading14, label='objects:', al='left' , fn=self.fn )
-        self.heading15 = cmds.text( self.heading15, label='', al='left', ww=True )
-        self.heading16 = cmds.text( self.heading16, label='source:', al='left' , fn=self.fn )
-        self.heading17 = cmds.text( self.heading17, label='', al='left', ww=True )
-        self.heading18 = cmds.text( self.heading18, label='user:', al='left' , fn=self.fn )
-        self.heading19 = cmds.text( self.heading19, label='', al='left', ww=True )
-        self.heading20 = cmds.text( self.heading20, label='date:', al='left' , fn=self.fn )
-        self.heading21 = cmds.text( self.heading21, label='', al='left', ww=True )
-        '''
-        # import options
         # range
         self.col2 = cmds.columnLayout(self.col2, adjustableColumn=True)
         self.row2 = cmds.rowLayout(self.row2, numberOfColumns=5, adjustableColumn=3, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0), (3, 'right', 0), (4, 'right', 0), (5, 'right', 0)])
-        self.heading24 = cmds.text('Start:')
+        self.heading24 = cmds.text(self.heading24, l='Start:')
         self.int1 = cmds.floatField(self.int1, en=False, pre=2)
         self.heading25 = cmds.text(' - ')
-        self.heading26 = cmds.text('End:')
+        self.heading26 = cmds.text(self.heading26, l='End:')
         self.int2 = cmds.floatField(self.int2, en=False, pre=2)
         cmds.setParent('..')
         self.sl1 = cmds.intSlider(self.sl1)
@@ -235,8 +227,6 @@ class Action(object):
         self.c6 = cmds.checkBox(label='Merge with existing layers', v=True, ann='...annotation...')
         self.c7 = cmds.checkBox(label='Apply layer attributes', v=True, ann='...annotation...')
         self.c8 = cmds.checkBox(label='Base layer as new OVERRIDE layer', v=False, ann='...annotation...')
-        # import type
-        self.typGrpIm = cmds.radioButtonGrp(label='Import:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
         # import
-        self.button3 = cmds.button(self.button3, label='Import', c=self.cmdAction, bgc=blue)
+        self.button3 = cmds.button(self.button3, label='I M P O R T', c=self.cmdAction, bgc=blue)
         # self.heading22 = cmds.text(self.heading22, label='\n', al='left')
