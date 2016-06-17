@@ -17,7 +17,7 @@ def zero():
     # predefined attrs
     transform = ["translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ"]
     scale = ["scaleX", "scaleY", "scaleZ"]
-    custom = {'footTilt': 1, 'blender': 1, 'kneeTwist': 0, 'index': 0, 'middle': 0, 'ring': 0,
+    custom = {'footTilt': 1, 'blender': 1, 'KneeTwist': 0, 'index': 0, 'middle': 0, 'ring': 0,
               'openclose': 0, 'Spread_toes': 0, 'rotateToes': 0}
 
     # make sure object selected

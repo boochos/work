@@ -430,11 +430,14 @@ class Attribute(Key):
                 if cmds.getAttr(self.obj + '.' + self.name, se=True):
                     # TODO: set attr does not make a key, pose is lost if live scene has keys
                     # should set key if curve exists in scene, or inform user or potential problem
-                    # TODO: on clicking clip, find potential problems, try and find a remedy
-                    # TODO: replace parts of clip feature, manual value attr change
-                    # TODO: auto refresh ui for new files
                     try:
-                        cmds.setAttr(self.obj + '.' + self.name, self.value)
+                        crv = cmds.findKeyframe(self.obj, at=self.name, c=True)
+                        if not crv:
+                            cmds.setAttr(self.obj + '.' + self.name, self.value)
+                        else:
+                            # range keys need to be from start to end
+                            cmds.setKeyframe(self.obj, at=self.attr, time=(self.frame + self.offset, self.frame + self.offset),
+                                             value=self.value, shape=False, nr=False, mr=True)
                     except:
                         message('setAttr failed on  ' + self.obj + '.' + self.name)
 
@@ -1029,8 +1032,11 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
     # frame range
     s = None
     e = None
+    print start, clp.start
     if clp.start != start:
         s = start
+    else:
+        print '____'
     if clp.end != end:
         e = end
     # print s, start, end, e
@@ -1082,6 +1088,30 @@ def onCurrentFrameOffset(start=0.0):
         return 0.0
 
 
+def insertIntoRange(attr, rng=[0.0, 0.0], extendEnd=True):
+    keys = []
+    if extendEnd:
+        k = copy.deepcopy(attr.keys[len(attr.keys) - 1])
+    else:
+        k = copy.deepcopy(attr.keys[0])
+    keys.append(k)
+    # make another copy
+    keys.append(copy.deepcopy(k))
+    # set start, end frame
+    print rng, attr.name
+    keys[0].frame = rng[0]
+    keys[1].frame = rng[1]
+    # some more key attrs
+    keys[0].inAngle = 0.0
+    keys[0].outAngle = 0.0
+    keys[1].inAngle = 0.0
+    keys[1].outAngle = 0.0
+    keys[0].weightedTangents = False
+    keys[1].weightedTangents = False
+    attr.keys = keys
+    return attr
+
+
 def insertKey(clp, frame=0.0, rng=[0.0, 0.0]):
     for layer in clp.layers:
         for obj in layer.objects:
@@ -1092,22 +1122,10 @@ def insertKey(clp, frame=0.0, rng=[0.0, 0.0]):
                     end = attr.frames[len(attr.frames) - 1]
                     if end < rng[0]:
                         # keep last key in attr.keys, duplicate it and alter frame numbers to new range, make tangents flat
-                        attrRng.append(copy.deepcopy(attr.keys[len(attr.keys) - 1]))
-                        attrRng.append(copy.deepcopy(attr.keys[len(attr.keys) - 1]))
-                        attrRng[0].frame = rng[0]
-                        attrRng[1].frame = rng[1]
-                        attr.keys = attrRng
-                        attrRng = []
-                        # pass
+                        insertIntoRange(attr, rng=rng, extendEnd=True)
                     elif start > rng[1]:
                         # keep first key in attr.keys, duplicate it and alter frame numbers to new range, make tangents flat
-                        attrRng.append(copy.deepcopy(attr.keys[0]))
-                        attrRng.append(copy.deepcopy(attr.keys[0]))
-                        attrRng[0].frame = rng[0]
-                        attrRng[1].frame = rng[1]
-                        attr.keys = attrRng
-                        attrRng = []
-                        # pass
+                        insertIntoRange(attr, rng=rng, extendEnd=False)
                     elif frame > attr.frames[0] and frame < attr.frames[len(attr.frames) - 1] and frame not in attr.frames:
                         k = insertKeyValue(attr, frame)
                         # print k.frame
@@ -1115,8 +1133,8 @@ def insertKey(clp, frame=0.0, rng=[0.0, 0.0]):
                     else:
                         pass
                         # message('Skipping key insert: ' + str(frame))
-                    print attr.keys[0].__dict__
-                    print attr.keys[1].__dict__
+                    # print attr.keys[0].__dict__
+                    # print attr.keys[1].__dict__
                 else:
                     # print 'no crv exists, skipping insert'
                     pass
@@ -1174,14 +1192,23 @@ def insertKeyValue(attr, frame=0.0):
 
 
 def cutKeysToRange(clp, start=None, end=None):
-    if start:
-        clp = insertKey(clp, start, rng=[start, clp.end])
+    # sort range
+    s = None
+    e = None
+    if start != None:
+        s = start
     else:
-        start = clp.start
-    if end:
-        clp = insertKey(clp, end, rng=[clp.start, end])
+        s = clp.start
+    if end != None:
+        e = end
     else:
-        end = clp.end
+        e = clp.end
+    # insert
+    if end != None:
+        clp = insertKey(clp, end, rng=[s, e])
+    if start != None:
+        clp = insertKey(clp, start, rng=[s, e])
+    # exclude keys out of range
     for layer in clp.layers:
         for obj in layer.objects:
             for attr in obj.attributes:
