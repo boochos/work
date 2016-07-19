@@ -514,6 +514,7 @@ class CPUI(object):
             cmds.text(self.control.heading11, edit=True, label=str(self.clip.date))
         else:
             cmds.text(self.control.heading11, edit=True, label='')
+        print self.clip.length
         if self.clip.length:
             cmds.text(self.control.heading13, edit=True, label=str(self.clip.length))
         else:
@@ -535,7 +536,7 @@ class CPUI(object):
 
     def populateRange(self):
         # self.control.heading5
-        if self.clip.start:
+        if self.clip.start != None:
             if (self.clip.end - self.clip.start) > 0.0:
                 # sliders
                 cmds.intSlider(self.control.sl1, edit=True, min=self.clip.start, max=self.clip.end, value=self.clip.start, step=1, dc=self.cmdRangeUpdateMin, en=True)

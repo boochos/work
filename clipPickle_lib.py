@@ -821,7 +821,7 @@ class Clip(Layer):
                     self.start = layer.start
                 if layer.end > self.end:
                     self.end = layer.end
-        if self.start and self.end:
+        if self.start != None and self.end != None:
             self.length = self.end - self.start + 1
 
     def setActiveLayer(self, l=None):

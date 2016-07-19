@@ -103,6 +103,7 @@ def scaleCrv(val):
     -Scale selected Graph Editor curves with given value.
     -Pivot derived from selection - get selected keys of curves, if values are the same, the pivot is from that position, otherwise pivot defaults to 0.
     '''
+    print '___here'
     # get curves of selected keys
     crvs = cmds.keyframe(q=True, name=True, sl=True)
     pvt = 0.0
@@ -198,7 +199,7 @@ def unifyKeys():
         i = len(frames)
         for frame in frames:
             for c in sel:
-                if not cmds.keyframe(c, q=True, time=(frame,frame)):
+                if not cmds.keyframe(c, q=True, time=(frame, frame)):
                     message('adding keys on frame -- ' + str(frame))
                     cmds.refresh(f=1)
                     cmds.setKeyframe(sel, i=True, t=frame)
@@ -324,6 +325,7 @@ def subframe():
                 message('no keys')
     else:
         message('no curves selected')
+
 
 def distributeKeys(step=3.0, destructive=True, forceWholeFrames=True):
     '''

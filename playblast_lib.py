@@ -40,6 +40,26 @@ def getTempPath():
     return os.path.join(tempD, blastD)
 
 
+def getPath(name='', temp=False):
+    if temp:
+        path = getTempPath()
+    else:
+        path = getDefaultPath()
+    if os.path.isdir(path):
+        return os.path.join(path, name)
+    else:
+        os.mkdir(path)
+        return os.path.join(path, name)
+
+
+def getDefaultPath():
+    # print os.name
+    varPath = cmds.internalVar(userAppDir=True)
+    path = os.path.join(varPath, '__PLAYBLASTS__')
+    # print path
+    return path
+
+
 def getWipe():
     return 'wipe_PB'
 
@@ -219,9 +239,9 @@ def blastDir(forceTemp=False, brackets=False):
                 # print project, 'here'
                 # print scene, 'here'
         else:
-            return getTempPath()
+            return getPath()
     else:
-        return getTempPath()
+        return getPath()
 
 
 def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=False, forceTemp=True):
@@ -261,7 +281,7 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
 
 
 def blastWin():
-    rootDir = getTempPath()
+    rootDir = getPath()
     # print rootDir, ' here'
     suf = '_PB'
     winName = 'PB_Man'
@@ -336,10 +356,10 @@ def blastWin():
             # print blastDirs
             allClips = []
             for blastDir in blastDirs:
-                contents = os.listdir(os.path.join(getTempPath(), blastDir))
+                contents = os.listdir(os.path.join(getPath(), blastDir))
                 if contents:
                     # print 'here'
-                    clips = getClips(path=os.path.join(getTempPath(), blastDir))
+                    clips = getClips(path=os.path.join(getPath(), blastDir))
                     # print clips, '___clips'
                     if clips:
                         for clip in clips:
@@ -384,7 +404,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
     h = 0
     padW = 0
     padH = 0
-    padBtns = 4
+    padBtns = 2
     path = blastDir.path
     # print blastDir.__dict__
 
@@ -427,7 +447,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
         iconBtn = cmds.iconTextButton(blastDir.name + '_Icon', st='textOnly', al=alignI, c=eval(cmdI), l='- NO THUMBNAIL - \nINSTALL FFMPEG', w=col[1], h=height - padBtns, iol='PLAY', bgc=[0.13, 0.13, 0.13])
 
     # meta
-    pt = '...' + path.split(getTempPath())[1].split('/')[0] + '\n'
+    pt = '...' + path.split(getPath())[1].split('/')[0] + '\n'
     # sc    = 'Scene Name:  ' + blastDir + '\n'
     im = blastDir.name + '\n'
     di = str(int(w)) + ' x ' + str(int(h)) + '\n'
@@ -450,7 +470,7 @@ def buildRow_new(blastDir='', height=1, parent='', col=[10, 10, 10, 10]):
 
 
 def flushDefaultDir(*args):
-    path = getTempPath()
+    path = getPath()
     shutil.rmtree(path)
     createPath(path)
 
@@ -582,7 +602,7 @@ def removeRow(row, path, files, *arg):
 
 
 def cmdOpen(path=''):
-    #path = getTempPath()
+    #path = getPath()
     if os.name == 'nt':
         # print path
         # path = path.replace('\'', '\\')
@@ -754,7 +774,7 @@ def getBlastDirs(path=''):
             sortedDir = []
             # list shots in the default path
             for shot in shots:
-                shotPath = os.path.join(getTempPath(), shot)
+                shotPath = os.path.join(getPath(), shot)
                 mtime = lambda f: os.stat(os.path.join(shotPath, f)).st_ctime  # this doesn't work, remove!
                 if os.path.isdir(shotPath):
                     contents = list(sorted(os.listdir(shotPath), key=mtime))
@@ -773,7 +793,7 @@ def getBlastDirs(path=''):
                             else:
                                 nonDir.append(i)
                 else:
-                    shutil.rmtree(os.path.join(getTempPath(), shot))
+                    shutil.rmtree(os.path.join(getPath(), shot))
                     # errors on next line if something is deleted here
             mtime = lambda f: os.path.getmtime(f)
             '''
@@ -784,7 +804,7 @@ def getBlastDirs(path=''):
             sortedShots = []
             shotsPaths = []
             for shot in shots:
-                shotsPaths.append(os.path.join(getTempPath(), shot))
+                shotsPaths.append(os.path.join(getPath(), shot))
             shotsD = sorted(shotsPaths, key=mtime)
             for shot in shots:
                 for sd in shotsD:

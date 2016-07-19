@@ -57,7 +57,7 @@ def undoSel():
 
 def job(*args):
     # left/right scheme
-    side = ['_R', '_L']
+    side = ['R_', 'L_']
     p = Get()
     pairList = []
     pair = []
