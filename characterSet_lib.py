@@ -146,7 +146,7 @@ def flush():
         if len(all) > 0:
             path = shotPath()
             for set in all:
-                exportFile(set, path + set)
+                exportFile(set, os.path.join(path + set))
                 print "-- flushed:   '" + set + "'  --"
             deleteAll()
         else:

@@ -566,7 +566,8 @@ def bakeConstrained(obj, removeConstraint=True, timeLine=False, sim=False, uiOff
 
     # recover range
     if gRange.selection:
-        gRange.selRangeRecover()
+        message('cant reselect selected range')
+        # gRange.selRangeRecover()
     '''
     if sparseKeys:
         if keyedOrig:

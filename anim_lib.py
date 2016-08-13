@@ -26,7 +26,7 @@ def motionPathRandom():
     cmds.connectAttr(shape + '.worldSpace[0]', moP + '.geometryPath', force=True)
 
 
-def secondaryChain(offset=0.5):
+def secondaryChain(offset=0.5, lst='tailSecondary'):
     '''
     loads selectSet and performs bake and offset of objects
     '''
@@ -35,7 +35,7 @@ def secondaryChain(offset=0.5):
     if sel:
         obj = sel[0].split(':')[1]
         cmds.select(clear=True)
-        setDict = ss.loadDict(os.path.join(ss.defaultPath(), 'tailSecondary.sel'))
+        setDict = ss.loadDict(os.path.join(ss.defaultPath(), lst + '.sel'))
         if obj in setDict.values():
             # convert set to list of objects
             remapped = ss.remapSet(sel[0], setDict)
@@ -274,7 +274,7 @@ class SpaceSwitch():
         '''
         restore animation
         '''
-        reOrder = False 
+        reOrder = False
         if useSelected:
             self.obj = cmds.ls(sl=1)[0]
         rooPut = cmds.getAttr(self.obj + '.rotateOrder')
@@ -413,6 +413,7 @@ def reorderObjectAngles(object='', rooNew=0):
     angles = [math.degrees(angle) for angle in (eulerRot.x, eulerRot.y, eulerRot.z)]
     print angles, "MMatrix"
     return angles
+
 
 def reorderAngles(matrix=[], rooOld=0, rooNew=0):
     # Create an empty MMatrix:
