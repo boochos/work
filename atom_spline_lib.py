@@ -26,8 +26,9 @@ def startEndJntList():
             else:
                 x = 1
         if x == 1:
+            print 'here_____'
             jntList = jnt.getJointChainHier(sel[0], sel[1])
-            # print jntList
+            print jntList
             if len(jntList) % 2 == 1:
                 return jntList
             else:

@@ -225,7 +225,10 @@ class SpaceSwitch():
         self.keys = getKeyedFrames(self.obj)
         self.rng = fr.Get()
         self.store()
-        self.rooGet = cmds.getAttr(self.obj + '.rotateOrder')
+        try:
+            self.rooGet = cmds.getAttr(self.obj + '.rotateOrder')
+        except:
+            self.rooGet = False
 
         '''
         min
@@ -278,9 +281,12 @@ class SpaceSwitch():
         if useSelected:
             self.obj = cmds.ls(sl=1)[0]
         rooPut = cmds.getAttr(self.obj + '.rotateOrder')
-        if self.rooGet != rooPut:
-            reOrder = True
-            print 'reorder'
+        if self.rooGet == False:
+            pass
+        else:
+            if self.rooGet != rooPut:
+                reOrder = True
+                print 'reorder'
         # type of restore
         if self.poseOnly:
             # find if obj is keyed, if keyed insert key otherwise setAttr

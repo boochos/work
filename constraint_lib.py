@@ -861,8 +861,17 @@ def attrStrings(pos=True, rot=True, period=True):
 def constrainEnabled(obj1, obj2, mo=True):
     # check keyable transforms
     tState = cmds.getAttr(obj2 + attrStrings(rot=False)[0][0], k=True)
+    if tState:
+        l = cmds.getAttr(obj2 + attrStrings(rot=False)[0][0], l=True)
+        if l:
+            tState = False
     rState = cmds.getAttr(obj2 + attrStrings(pos=False)[0][0], k=True)
+    if rState:
+        l = cmds.getAttr(obj2 + attrStrings(pos=False)[0][0], l=True)
+        if l:
+            rState = False
     allState = [tState, rState]
+    print allState
     if False not in allState:
         cnAll = cmds.parentConstraint(obj1, obj2, mo=mo)
         # print 'here ========='

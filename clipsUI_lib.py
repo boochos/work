@@ -665,10 +665,10 @@ def run():
     leaf2 = '*\\Maya\\movies'
     path3 = 'C:\\Users\\Sebastian\\Dropbox (Personal)\\share'
     leaf3 = ''
-    path4 = '/var/tmp/rv_playblasts'
-    leaf4 = '*/*'
-    path = path3
-    leaf = leaf3
+    path4 = '/VFX/projects/NBH/Dropbox(VFX Animation)/VFXAnimationTeam/Dmitry_Format/NBH/shots'
+    leaf4 = '*/maya/movies'
+    path = path4
+    leaf = leaf4
     # if the folder isn't created, make it, this shouldn't happen, but just t
     if not os.path.isdir(path):
         os.mkdir(path, 0777)
