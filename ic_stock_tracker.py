@@ -34,7 +34,7 @@ wcapi = API(
     wp_api=True,
     version="wc/v1",
     query_string_auth=True,  # Force Basic Authentication as query string true and using under HTTPS
-    timeout=10
+    timeout=20
 )
 
 
@@ -53,6 +53,8 @@ class SyncTools():
         self.propertiesPruned = {}  # only compatible keys   woo <--> sheets
         self.propertiesColumn = ''
         self.propertiesRow = ''
+        self.nonCompatible = []  # non compatible indices, check to rebuild row values
+        self.rowList = []  # empty list, same length as column list, populate list with values, to update entire row at once
         self.columnList = []
         self.skuList = {}  # {sku_number:row_number}
         # populate sheets basic variables
@@ -103,7 +105,7 @@ class SyncTools():
         return service
 
     def sheets_get_read_only(self):
-        # properties that dont need updating with this tool as they are managed by other means
+        # properties that dont need updating with this tool as they are managed by other means, but are in both(woo, sheets) data sets
         return ['regular_price', 'weight', 'sku']
 
     def sheets_properties_to_lowercase(self, propertiesList=[]):
@@ -168,14 +170,17 @@ class SyncTools():
         else:
             print(' --- Worksheet: ' + self.worksheet + ' doesnt exist in given spreadsheet ID. --- ')
 
-    def sheets_get_property(self, sku='', proprty='weight'):
+    def sheets_get_property(self, sku='', proprty='weight', valueRenderOption='UNFORMATTED_VALUE'):
+        '''
+        valueRenderOption: FORMATTED_VALUE UNFORMATTED_VALUE FORMULA
+        '''
         # build range string
         row = self.sheets_get_sku_row(sku=sku)
         column = self.columnList[self.properties[proprty]]
         cellRange = column + str(row) + ':' + column + str(row)
         rangeName = self.worksheet + '!' + cellRange
         result = self.service.spreadsheets().values().get(
-            spreadsheetId=self.sheetId, range=rangeName, valueRenderOption='UNFORMATTED_VALUE').execute()
+            spreadsheetId=self.sheetId, range=rangeName, valueRenderOption=valueRenderOption).execute()
         if result:
             if 'values' in result:
                 values = result['values'][0][0]
@@ -196,6 +201,9 @@ class SyncTools():
             print(' --- Property: ' + proprty + ' doesnt exist in worksheet: ' + self.worksheet)
 
     def sheets_get_sku_row(self, sku=0):
+        '''
+        gets the row # corresponding to the sku #
+        '''
         rangeName = self.worksheet + '!' + self.propertiesColumn + ':' + self.propertiesColumn
         result = self.service.spreadsheets().values().get(
             spreadsheetId=self.sheetId, range=rangeName).execute()
@@ -283,9 +291,12 @@ class SyncTools():
         '''
         woo to sheets
         '''
+        # add query if sku exists in current worksheet, else bail
         wooData = self.woo_get_product(skuSeek=skuSeek)
         if wooData:
+            offline = False
             row = self.sheets_get_sku_row(sku=wooData['sku'])
+            # print(row)
             # prune keys, only use keys that exist in both sets of data (from woo and sheets)
             self.prune_uncompatible_keys(wooData=wooData, sheetsData=self.properties, readOnly=True)
             # print(self.properties)
@@ -308,6 +319,7 @@ class SyncTools():
                             # use position 0 as icon
                             if image['position'] == 0:
                                 val = "=IMAGE(\"" + image['src'] + "\", 1)"
+                                self.rowList[0] = val
                                 result = self.service.spreadsheets().values().update(
                                     spreadsheetId=self.sheetId, range=self.worksheet + '!' + self.columnList[0] + str(row), body={'values': [[val]]}, valueInputOption='USER_ENTERED').execute()
                                 # use as image icon
@@ -320,7 +332,7 @@ class SyncTools():
                         # return None
                     elif key == 'dimensions':
                         value = " ".join(str(elm) for elm in [wooData[key]])
-                        # print(value)
+                        #print(value, '_______')
                     elif key == 'categories':
                         # will need to properly format the string for woo
                         for category in wooData[key]:
@@ -347,7 +359,7 @@ class SyncTools():
                         value = self.sheets_format_stringList(d=wooData[key])
                         # print(value)
                     elif key == 'variations':
-                        print(json.dumps(wooData[key], sort_keys=True, indent=4))
+                        # print(json.dumps(wooData[key], sort_keys=True, indent=4))
                         # print(json.dumps(self.properties, sort_keys=True, indent=4))
                         # print(self.columnList)
                         # like images need to strip out read only
@@ -370,12 +382,14 @@ class SyncTools():
                         value = self.sheets_format_stringList(d=wooData[key])
                     else:
                         # print (type(wooData[key]))
+                        # print('_____', wooData[key], key, rangeName)
                         p = wooData[key]
-                        # isinstance(wooData[key], unicode)
                         if isinstance(wooData[key], unicode):
+                            '''
                             htmls = ['<p>', ',/p>']
                             if htmls[0] in p:
-                                value = p.split('<')[1].split('>')[1]
+                                value = p.split('<')[1].split('>')[1]'''
+                            value = p
                         elif isinstance(wooData[key], bool):
                             value = wooData[key]
                         elif isinstance(wooData[key], int):
@@ -383,11 +397,87 @@ class SyncTools():
                         else:
                             print(' --- none at all, __weird____  --- ', key)
                     # print(cellRange, key, value)
+                    self.rowList[self.propertiesPruned[key]] = value
+                    '''
                     result = self.service.spreadsheets().values().update(
-                        spreadsheetId=self.sheetId, range=rangeName, body={'values': [[value]]}, valueInputOption='USER_ENTERED').execute()
-                    # print(result)
+                        spreadsheetId=self.sheetId, range=rangeName, body={'values': [[value]]}, valueInputOption='USER_ENTERED').execute()'''
+            # print(result)
+            # range
+            cellRange = 'A' + str(row) + ':$' + str(row)
+            # build range string
+            rangeName = self.worksheet + '!' + cellRange
+            # add expressions back into the row indices
+            rslt = self.service.spreadsheets().values().get(
+                spreadsheetId=self.sheetId, range=rangeName, valueRenderOption='FORMULA').execute()
+            vls = rslt['values']
+            if vls:
+                vls = vls[0]
+            # EDIT HERE
+            # print('__', len(self.rowList), self.rowList)
+            # print('__', len(vls), vls)
+            # new list, merged of pulled and existing
+            # lists should be same length or attrs are skipped
+            r = []
+            for i in range(len(vls)):
+                #print(type(vls[i]), vls[i])
+                if i in self.nonCompatible:
+                    # r.append(vls[i])
+                    self.rowList[i] = vls[i]
+                else:
+                    # reformat to utf string
+                    if type(vls[i]) == type('unicode'):
+                        attr = vls[i].encode('utf-8')
+                    else:
+                        attr = vls[i]
+                    # sort values
+                    if vls[i] == self.rowList[i]:
+                        # print(vls[i])
+                        # print(self.rowList[i])  # if same take spreadsheet value
+                        # r.append(vls[i])
+                        self.rowList[i] = vls[i]
+                    elif '=' in str(attr):  # if expression possible
+                        if '=' == str(attr[0]):  # make sure expression, first string should be =
+                            # expression
+                            if '=IMAGE' in attr:  # icon field
+                                # r.append(self.rowList[i])  # take woo icon
+                                pass
+                            else:
+                                # r.append(vls[i])  # take sheets expression, so it doesnt change
+                                self.rowList[i] = vls[i]
+                        else:
+                            print('whaa', attr)
+                    else:
+                        # print(self.rowList[i])
+                        r.append(self.rowList[i])  # take woo value
+                    '''
+                    if vls[i] == self.rowList[i]:
+                        r.append(vls[i])
+                    elif '=' in str(vls[i]):
+                        if '=' == str(vls[i][0]):
+                            # expression
+                            if '=IMAGE' in vls[i]:  # icon field
+                                r.append(self.rowList[i])  # take woo icon
+                            else:
+                                r.append(vls[i])  # take sheets expression, so it doesnt change
+                        else:
+                            print('whaa', vls[i])
+                    else:
+                        r.append(self.rowList[i])
+                    '''
+
+            # print(len(r), r)
+            # print('__', len(self.rowList), self.rowList)
+            # update row
+            result = self.service.spreadsheets().values().update(
+                spreadsheetId=self.sheetId, range=rangeName, body={'values': [self.rowList]}, valueInputOption='USER_ENTERED').execute()
+            # update offline field
+            self.sheets_update_property(value=False, sku=skuSeek, proprty='offline')
         else:
+            self.sheets_update_property(value=True, sku=skuSeek, proprty='offline')
             print('SKU not found on woo. Nothing to add to sheets.')
+
+    def sheets_update_product_row(self, row=''):
+        pass
 
     def sheets_update_icon(self, sku=''):
         '''
@@ -620,8 +710,10 @@ class SyncTools():
         # remove non matching keys
         for key in removeKeys:
             if key in self.propertiesPruned:
+                self.nonCompatible.append(self.propertiesPruned[key])
                 self.propertiesPruned.pop(key)
         print(' --- non compatible keys removed --- :  ', removeKeys)
+        print(self.nonCompatible)
 
     def build_alphabet_list(self):
         # initial list for column names
@@ -644,6 +736,7 @@ class SyncTools():
                 # print(j, i)
                 column = alphabet[j] + alphabet[i]
                 self.columnList.append(column)
+            self.rowList.append('')
             # iterate
             if i < alphaLength:
                 i = i + 1
@@ -666,13 +759,28 @@ class SyncTools():
 
 
 # SANDBOX
-sync = SyncTools(worksheet='Legep')
-sync.sheets_update_icon_bulk()
-# sync.woo_get_ship_classes()
-# sync.sheets_guess_woo_weight_class()
-# sync.sheets_get_property(sku='test_19I53', proprty='images')
-# when uploading to woo, some attributes are dicts, but they should be lists, categories only works if more than 1 is listed,
-# if one the value stays as dict, need to force it into a list
+sync = SyncTools(sheetId='1Hf-HDaj7mjV0gbjpO6Ki9yBrse8W4oI9rh5y3UZlYtU', worksheet='Legep')
+# sync.sheets_update_product(skuSeek='N0022')
+'''
+print('\nvariables___')
+print('properties___ ', sync.properties)
+print('propertiesColumn___ ', sync.propertiesColumn)
+print('propertiesRow___ ', sync.propertiesRow)
+print('columnList___ ', len(sync.columnList), sync.columnList)
+print('rowList___ ', len(sync.rowList), sync.rowList)
+'''
+# EASILY RUNS INTO OVER QUOTA, NEED TO DUMP DATA IN BULK, ACCESS SHEETS LESS... try creating a list of values for an entire row
+
+
+for sku in sync.skuList:
+    sync.sheets_update_product(skuSeek=sku)
+
+'''
+skus = []
+for sku in skus:
+    sync.sheets_update_product(skuSeek=sku)
+'''
+# print(sync.sheets_get_property(sku='18F22', proprty='weight', valueRenderOption='FORMULA'))
 
 # sync.woo_create_product(sku='test_19I53')
-# sync.sheets_update_product(skuSeek='test_19I53')
+# sync.sheets_update_product(skuSeek='18F22')
