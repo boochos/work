@@ -78,6 +78,7 @@ def tent():
     # Tentacle
     # tentacle_world_Parent
     # CNTRL_God
+    # added branch, for testing
     all = [
         ['tentacle_L1', 'splineTentacle_L1_00_jnt', 'splineTentacle_L1_18_jnt', 'L', 'blue'],
         ['tentacle_L2', 'splineTentacle_L2_00_jnt', 'splineTentacle_L2_17_jnt', 'L', 'blue'],
