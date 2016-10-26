@@ -74,8 +74,9 @@ def matchKeyedFramesLoop():
         cmds.select(sel)
 
 
-def subframe():
-    sel = cmds.ls(sl=True)
+def subframe(sel=[]):
+    if not sel:
+        sel = cmds.ls(sl=True)
     if sel:
         for s in sel:
             animCurves = cmds.findKeyframe(s, c=True)
@@ -596,7 +597,7 @@ def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, u
         cmds.warning('Select constrained object(s)')
 
 
-def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1, uiOff=True, color=30, suffix='__BAKE__', matchSet=True, shape='loc_ctrl'):
+def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1, uiOff=True, color=30, suffix='__BAKE__', matchSet=True, shape='loc_ctrl', subframeOut=False):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -640,6 +641,8 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
                 matchKeyedFrames(item, lc)
                 bakeConstrained(
                     lc, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
+                if subframeOut:
+                    subframe(sel=[lc])
                 if sim is not True:
                     matchKeyedFrames(item, lc)
                 if p is False:

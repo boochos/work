@@ -33,7 +33,10 @@ def secondaryChain(offset=0.5, lst='tailSecondary'):
     addSel = []
     sel = cmds.ls(sl=1)
     if sel:
-        obj = sel[0].split(':')[1]
+        if ':' in sel[0]:
+            obj = sel[0].split(':')[1]
+        else:
+            obj = sel[0]
         cmds.select(clear=True)
         setDict = ss.loadDict(os.path.join(ss.defaultPath(), lst + '.sel'))
         if obj in setDict.values():
@@ -44,9 +47,9 @@ def secondaryChain(offset=0.5, lst='tailSecondary'):
                 addSel.append(con)
             cmds.select(addSel)
         # bake to world
-        locs = sorted(cn.controllerToLocator(matchSet=True))
-        print locs
-        print range(len(locs))
+        locs = sorted(cn.controllerToLocator(matchSet=True, timeLine=True, sim=True))
+        # print locs
+        # print range(len(locs))
         for i in range(len(locs)):
             animCurves = cmds.findKeyframe(locs[i], c=True)
             for crv in animCurves:
