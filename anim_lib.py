@@ -33,10 +33,7 @@ def secondaryChain(offset=0.5, lst='tailSecondary'):
     addSel = []
     sel = cmds.ls(sl=1)
     if sel:
-        if ':' in sel[0]:
-            obj = sel[0].split(':')[1]
-        else:
-            obj = sel[0]
+        obj = sel[0].split(':')[1]
         cmds.select(clear=True)
         setDict = ss.loadDict(os.path.join(ss.defaultPath(), lst + '.sel'))
         if obj in setDict.values():
@@ -47,9 +44,9 @@ def secondaryChain(offset=0.5, lst='tailSecondary'):
                 addSel.append(con)
             cmds.select(addSel)
         # bake to world
-        locs = sorted(cn.controllerToLocator(matchSet=True, timeLine=True, sim=True))
-        # print locs
-        # print range(len(locs))
+        locs = sorted(cn.controllerToLocator(matchSet=True))
+        print locs
+        print range(len(locs))
         for i in range(len(locs)):
             animCurves = cmds.findKeyframe(locs[i], c=True)
             for crv in animCurves:
@@ -228,10 +225,7 @@ class SpaceSwitch():
         self.keys = getKeyedFrames(self.obj)
         self.rng = fr.Get()
         self.store()
-        try:
-            self.rooGet = cmds.getAttr(self.obj + '.rotateOrder')
-        except:
-            self.rooGet = False
+        self.rooGet = cmds.getAttr(self.obj + '.rotateOrder')
 
         '''
         min
@@ -284,12 +278,9 @@ class SpaceSwitch():
         if useSelected:
             self.obj = cmds.ls(sl=1)[0]
         rooPut = cmds.getAttr(self.obj + '.rotateOrder')
-        if self.rooGet == False:
-            pass
-        else:
-            if self.rooGet != rooPut:
-                reOrder = True
-                print 'reorder'
+        if self.rooGet != rooPut:
+            reOrder = True
+            print 'reorder'
         # type of restore
         if self.poseOnly:
             # find if obj is keyed, if keyed insert key otherwise setAttr
@@ -420,7 +411,7 @@ def reorderObjectAngles(object='', rooNew=0):
     eulerRot.reorderIt(rooNew)
     # Convert from radians to degrees:
     angles = [math.degrees(angle) for angle in (eulerRot.x, eulerRot.y, eulerRot.z)]
-    print angles, "MMatrix"
+    # print angles, "MMatrix"
     return angles
 
 
@@ -438,7 +429,7 @@ def reorderAngles(matrix=[], rooOld=0, rooNew=0):
     eulerRot.reorderIt(rooNew)
     # Convert from radians to degrees:
     angles = [math.degrees(angle) for angle in (eulerRot.x, eulerRot.y, eulerRot.z)]
-    print angles, "MMatrix"
+    # print angles, "MMatrix"
     return angles
 
 
@@ -456,10 +447,10 @@ def matchObj():
         rooPut = cmds.getAttr(put + '.rotateOrder')
         if rooGet != rooPut:
             r = reorderObjectAngles(object=get, rooNew=rooPut)
-            print 'transform'
+            # print 'transform'
         else:
             r = cmds.xform(get, q=True, ws=True, ro=True)
-            print 'roo matches'
+            # print 'roo matches'
         t = cmds.xform(get, q=True, ws=True, rp=True)
         mtrx = cmds.xform(get, q=True, m=True, ws=True)
         #
@@ -473,9 +464,25 @@ def matchObj():
                 cmds.xform(put, ws=True, t=t)
                 cmds.xform(put, ws=True, ro=r)
             else:
-                cmds.xform(put, m=mtrx, ws=True)
+                locked = cmds.getAttr(put + '.rx', l=True)
+                if not locked:
+                    cmds.xform(put, m=mtrx, ws=True)
+                else:
+                    # print '___translate only'
+                    cmds.xform(put, t=t, ws=True)
+                    t_test = cmds.xform(put, q=True, ws=True, rp=True)
+                    t_test = roundListFloats(t_test)
+                    t = roundListFloats(t)
+                    if t_test == t:
+                        pass
+                        # print 'good'
+                    else:
+                        # print '___bad___', put
+                        # print t_test
+                        # print t
+                        t_test = cmds.xform(get, q=True, ws=True, t=True)
+                        cmds.xform(put, ws=True, t=t_test)
         except:
-            # print 'exception'
             # intermediate object
             loc = cmds.spaceLocator(name='getSpace_deleteMe')[0]
             cmds.setAttr(loc + '.rotateOrder', rooGet)
@@ -497,6 +504,12 @@ def matchObj():
     else:
         message('Select 2 objects.', maya=True, warning=True)
 
+
+def roundListFloats(l=[]):
+    rnd = []
+    for i in l:
+        rnd.append(round(i, 4))
+    return rnd
 
 def shapeSize(obj=None, mltp=1):
     '''\n
@@ -647,3 +660,53 @@ def importCurveShape(name='loc_ctrl', scale=1.0, overRide=False):
                     message('CV count[' + str(len(cmds.getAttr(shapeNode + '.cv[*]'))) + '] from selected does not match import CV count[' + str(len(cvInfo)) + ']')
     else:
         message('Select a NURBS curve if you truly want to proceed...')
+
+def relativeOffsetWindow():
+    # create window
+    win = 'Relative_Offset'
+    dg = 'degrees_ui'
+    axs = 'axis_ui'
+    try:
+        cmds.deleteUI(win)
+    except:
+        pass
+    window = cmds.window(win, title='Relative Offset', w=100, h=100)
+    cmds.columnLayout(adj=True)
+    degOpt = cmds.radioButtonGrp(dg, label='Degrees', labelArray4=['10', '45', '90', '180'], numberOfRadioButtons=4, sl=1, columnWidth5=[50, 35, 35, 35, 35])
+    axsOpt = cmds.radioButtonGrp(axs, label='Axis', labelArray3=['X', 'Y', 'Z'], numberOfRadioButtons=3, sl=1, columnWidth4=[50, 35, 35, 35])
+    vars = 'degOpt="%s", axsOpt="%s"' % (degOpt, axsOpt,)
+    cmd = 'import webrImport as web\nanm = web.mod("anim_lib")\nanm.cmdRelativeOffset(%s)' % vars
+    cmds.button(label='Offset + ', c=cmd)
+    cmd = 'import webrImport as web\nanm = web.mod("anim_lib")\nanm.cmdRelativeOffset(%s, direction=0)' % vars
+    cmds.button(label='Offset - ', c=cmd)
+    cmds.showWindow()
+
+def cmdRelativeOffset(degOpt='', axsOpt='', direction=1, *args):
+    sel = cmds.ls(sl=True)
+    amount = [0, 10, 45, 90, 180]
+    if direction:
+        d = 1.0
+    else:
+        d = -1.0
+    if sel:
+        # axis to rotate in
+        slAxs = cmds.radioButtonGrp(axsOpt, q=True, sl=True)
+        # degrees to rotate
+        slDeg = cmds.radioButtonGrp(degOpt, q=True, sl=True)
+        # print amount[slDeg]*d
+        if slAxs == 1:
+            relativeOffset(x=amount[slDeg] * d, y=0, z=0)
+        elif slAxs == 2:
+            relativeOffset(x=0, y=amount[slDeg] * d, z=0)
+        else:
+            relativeOffset(x=0, y=0, z=amount[slDeg] * d)
+    else:
+        message('Select at least 1 object', warning=True)
+
+def relativeOffset(x=0, y=0, z=0):
+    sel = cmds.ls(sl=True)
+    if sel:
+        for item in sel:
+            cmds.xform(item, r=True, os=True, ro=(x, y, z))
+    else:
+        message('Select at least 1 object', warning=True)

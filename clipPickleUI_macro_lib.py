@@ -45,7 +45,10 @@ class CPUI(object):
         # internal
         self.windowName = 'ClipManager'
         #self.path = os.path.expanduser('~') + '/maya/clipLibrary/'
-        self.path = cp.clipDefaultPath()
+        self.public = False
+        self.pathMe = cp.clipDefaultPath()
+        self.pathPublic = cp.clipDefaultPublicPath()
+        self.path = self.pathMe
         # store/restore
         # self.objects = [] not used
         # self.animBucket = [] not used
@@ -70,6 +73,7 @@ class CPUI(object):
         self.win = cmds.window(self.windowName, w=self.columnWidth, rtf=1)
         # action
         self.control = ui.Action('clipAction', cmdAction='', label='', w=self.columnWidth)
+        cmds.radioButtonGrp(self.control.srcGrp, edit=True, cc1=self.cmdSource, cc2=self.cmdSource)
         cmds.button(self.control.button1, e=True, c=self.cmdExport, h=40)
         cmds.button(self.control.heading3, e=True, c=self.cmdLibrary)
         cmds.button(self.control.heading6, e=True, c=self.cmdOpenFileWIndow)
@@ -111,7 +115,7 @@ class CPUI(object):
         cmds.showWindow(ofw)
 
     def cmdLibrary(self, *args):
-        path = cp.clipDefaultPath()
+        path = self.path
         if os.name == 'nt':
             # print path
             # path = path.replace('\'', '\\')
@@ -157,7 +161,7 @@ class CPUI(object):
                 # print start, end, '___ ui'
                 bakeRange = [start, end]
                 #
-                cp.clipSave(name=name + version, comment=comment, poseOnly=poseOnly, bakeRange=bakeRange)
+                cp.clipSave(name=name + version, comment=comment, poseOnly=poseOnly, bakeRange=bakeRange, public=self.public)
                 cmds.textScrollList(self.control.scroll1, edit=True, ra=True)
                 self.populateClipList()
                 path = os.path.join(self.path, name + '.clip')
@@ -411,12 +415,27 @@ class CPUI(object):
         else:
             self.cmdLoadingHintToggle(on=True, info=False, options=True, range=True)
 
-    def populateClipList(self):
+    def cmdSource(self, *args):
+        sel = cmds.radioButtonGrp(self.control.srcGrp, q=True, select=True)
+        if sel == 2:
+            self.path = self.pathPublic
+            self.public = True
+        else:
+            self.path = self.pathMe
+            self.public = False
+        self.populateClipList(clear=True)
+
+
+    def populateClipList(self, clear=False):
         # Make sure the path exists and access is permitted
         if os.path.isdir(self.path) and os.access(self.path, os.R_OK):
             #
-            # Clear the textScrollList
-            # cmds.textScrollList( self.control.scroll1, edit=True, ra=True )
+            if clear:
+                # Clear the textScrollList
+                cmds.textScrollList( self.control.scroll1, edit=True, ra=True )
+                cmds.textScrollList( self.control.scroll2, edit=True, ra=True )
+                cmds.textScrollList( self.control.scroll3, edit=True, ra=True )
+                
             # Populate the directories and non-directories for organization
             #
             dirs = []

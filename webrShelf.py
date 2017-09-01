@@ -28,7 +28,7 @@ class Depend():
 
 
 def shelfRefresh():
-    getIcons(download=True)
+    getIcons(download=False)
     shelfBuild()
     message('Shelf Refreshed!')
 
@@ -107,7 +107,7 @@ def shelfAddButtons(*args):
                      h=wh, image='srv_mirSel_off_icon.xpm', command='import webrImport as web\nps = web.mod("pairSelect")\nps.toggleJob()')
 
     cmds.shelfButton(label='playblast', annotation='playblast', w=wh, h=wh, image='rvBlast.png',
-                     command='import webrImport as web\npb = web.mod("playblast_lib")\npb.blast(x=1, format="image", qlt=100, compression="png", offScreen=True )')
+                     command='import webrImport as web\npb = web.mod("playblast_lib")\npb.blast(x=1, format="image", qlt=100, compression="jpg", offScreen=True )')
 
     cmds.shelfButton(label='manage playblasts in temp folder', annotation='playblast Manager', w=wh, h=wh,
                      image='playBlastMan.png', command='import webrImport as web\npb = web.mod("playblast_lib")\npb.blastWin()')

@@ -244,7 +244,7 @@ def blastDir(forceTemp=False, brackets=False):
         return getPath()
 
 
-def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScreen=True, useGlobals=False, forceTemp=True):
+def blast(w=1920, h=1080, x=1, format='qt', qlt=70, compression='H.264', offScreen=True, useGlobals=False, forceTemp=True):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
@@ -265,16 +265,16 @@ def blast(w=1920, h=1080, x=1, format='qt', qlt=100, compression='H.264', offScr
         message('Set project', maya=True)
     else:
         if 'image' not in format:
-            path = cmds.playblast(format=format, filename=blastFullPAth, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=False, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h)
+            path = cmds.playblast(format=format, filename=blastFullPAth, sound=sound(path=False), showOrnaments=True, st=min, et=max, viewer=False, fp=4, fo=True, qlt=qlt, offScreen=offScreen, percent=100, compression=compression, width=w, height=h, quality=qlt)
             openSelected(path=blastPath, name=blastName, ext='mov')
         else:
             playLo, playHi, current = getRange()
             # sound
             snd = copySound(toPath=createBlastPath('', forceTemp=forceTemp))
             # blast
-            path = cmds.playblast(format='image', filename=blastFullPAth, showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression='png', width=w, height=h)
+            path = cmds.playblast(format='image', filename=blastFullPAth, showOrnaments=False, st=min, et=max, viewer=False, fp=4, fo=True, offScreen=offScreen, percent=100, compression=compression, width=w, height=h, quality=qlt)
             # play
-            openSelected(path=blastPath, name=blastName, ext='png', start=str(playLo), end=str(playHi))
+            openSelected(path=blastPath, name=blastName, ext=compression, start=str(playLo), end=str(playHi))
             cmds.currentTime(current)
     if cmds.window('PB_Man', q=True, ex=True):
         blastWin()

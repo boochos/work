@@ -29,7 +29,7 @@ class Depend():
 
 
 def shelfRefresh():
-    getIcons(download=True)
+    getIcons(download=False)
     shelfBuild()
     cmds.deleteUI(Depend().ref)
 

@@ -4,8 +4,17 @@ import os
 import subprocess
 
 
-def message(what=''):
-    mel.eval('print \"' + '-- ' + what + ' --' + '\";')
+def message(what='', maya=True, warning=False):
+    what = '-- ' + what + ' --'
+    if '\\' in what:
+        what = what.replace('\\', '/')
+    if warning:
+        cmds.warning(what)
+    else:
+        if maya:
+            mel.eval('print \"' + what + '\";')
+        else:
+            print what
 
 
 def setProjectFromFilename(dirVar):
@@ -123,3 +132,65 @@ def openDirFromScenePath(inDir='maya', openDir='movies'):
             cmds.warning(inDir + '  --  not found in path')
     else:
         cmds.warning('No file path found, operation aborted.')
+
+def makeRefWindow():
+    # make obj a reference
+    path = cmds.file(q=True, sceneName=True)
+    win = 'Convert_to_ref'
+    # ui
+    try:
+        cmds.deleteUI(win)
+    except:
+        pass
+    if path:
+        pth = path.split('/')
+        pth = pth[len(pth)-1]
+        path = path.split(pth)[0]
+        cmds.window(win, title='Convert to Reference')
+        cmds.columnLayout(adj=True)
+        pathFld = cmds.textFieldGrp( label='Path: ', text= path, cal=(1, 'left'), adj=2, cw=(1, 80), editable=False)
+        fileField = cmds.textFieldGrp( label='Filename: ', text='', cal=(1, 'left'), adj=2, cw=(1, 80))
+        nsField = cmds.textFieldGrp( label='NameSpace: ', text='', cal=(1, 'left'), adj=2, cw=(1, 80))
+        # ns auto fill
+        vars = 'fileField="%s", nsField="%s"' % (fileField, nsField,)
+        cmd = 'import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.cmd_fillNs(%s)' % vars
+        cmds.textFieldGrp(fileField, e=True, cc=cmd)
+        # file export vars
+        vars = 'pathField="%s", fileField="%s", nsField="%s"' % (pathFld, fileField, nsField,)
+        cmd = 'import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.cmd_makeRefOfSelection(%s)' % vars
+        cmds.button(label='Convert', c=cmd)
+        cmds.showWindow()
+    else:
+        message( 'save current scene before exporting', warning=True)
+
+def cmd_fillNs(fileField='', nsField='', *args):
+    ns = cmds.textFieldGrp(fileField, q=True, text=True)
+    cmds.textFieldGrp(nsField, e=True, text=ns)
+    
+
+def cmd_makeRefOfSelection(pathField='', fileField='', nsField='', *args):
+    path = cmds.textFieldGrp(pathField, q=True, text=True)
+    fyle = cmds.textFieldGrp(fileField, q=True, text=True)
+    ns = cmds.textFieldGrp(nsField, q=True, text=True)
+    nsList = cmds.namespaceInfo(lon=True)
+    sel = cmds.ls(sl=True)
+    if sel:
+        f = fyle
+        if f:
+            path = os.path.join(path, f)
+        else:
+            message('Provide a file name, excluding path.', warning=True)
+            return None
+        if ns:
+            if ns not in nsList:
+                try:
+                    cmds.file(path, type='mayaAscii', er=True, namespace=ns)
+                except:
+                    message('Export Failed... In case your object is already a reference, make a duplicate or import it. Then try again.', warning=True)
+            else:
+                message('Namespace "'  + ns + '" already exists. Choose another!', warning=True)
+        else:
+            message('Provide a namespace for the reference.', warning=True)
+            return None
+    else:
+        message( 'Select and object', warning=True)

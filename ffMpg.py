@@ -1,4 +1,21 @@
 import subprocess
+import os
+
+
+def movToMp4(dir='', fl=''):
+    filein = os.path.join(dir, fl)
+    fileout = os.path.join(dir, fl).replace('.mov', '.mp4')
+    print filein
+    print fileout
+    # All
+    # cmd = ['ffmpeg', '-i', filein, '-vcodec', 'png', fileout]
+    cmd = ['ffmpeg', '-i', filein, '-c', 'copy', fileout]
+    cmd = ['ffmpeg', '-i', filein, '-strict', '-2', '-c:v', 'libx264', fileout]
+    cmd = ['ffmpeg', '-i', filein, '-strict', '-2', '-an', fileout]
+    # -c:v libx264
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    out, err = p.communicate()
+    print out
 
 
 def renderFrames(*args):
@@ -17,3 +34,17 @@ def renderFrames(*args):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, err = p.communicate()
     print out
+
+def go():
+    dir = '/jobs/SITE/DOC/breakdowns/SARC/SpiderRef/new'
+    for fl in os.listdir(dir):
+        if '.mov' in fl:
+            print fl
+            movToMp4(dir, fl)
+        # break
+
+'''
+import ffMpg
+reload(ffMpg)
+ffMpg.go()
+'''

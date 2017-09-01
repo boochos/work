@@ -558,6 +558,15 @@ def insertKey():
             cmds.setKeyframe()
 
 
+def insertKeyToAnimLayer():
+    '''
+    inserts key to all animcurves in anim layer, wont key if objects has not been keyed but is in anim layer
+    '''
+    currentLayer = cmds.treeView ('AnimLayerTabanimLayerEditor', q=True, selectItem=True)
+    curves = cmds.animLayer(currentLayer[0], q=True, anc=True)
+    cmds.setKeyframe(curves, i=True)
+
+
 def parent(parent=True):
     if parent:
         # make member of second selection

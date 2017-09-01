@@ -28,3 +28,15 @@ class Sel():
                 print "'" + item + "'"
             i = i + 1
         print ']'
+
+def reduceSelection():
+    selT = cmds.ls(sl=True)
+    sel = []
+    i = True
+    for s in selT:
+        if i:
+            sel.append(s)
+        i = not(i)
+    print len(sel)
+    cmds.select(sel)
+    return sel

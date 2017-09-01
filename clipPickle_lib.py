@@ -478,11 +478,21 @@ class Obj(Attribute):
             for attr in keyable:
                 if attr not in self.attributesDriven:
                     # hacky -- if attr.attr format, remove first attr
+                    hack = False
                     if '.' in attr:
                         attr = attr.split('.')[1]
-                    a = Attribute(self.name, attr, poseOnly=self.poseOnly)
-                    a.get()
-                    self.attributes.append(a)
+                        hack = True
+                        try:
+                            a = Attribute(self.name, attr, poseOnly=self.poseOnly)
+                            a.get()
+                            self.attributes.append(a)
+                        except:
+                            message('Hack fail:  ' + attr)
+                    else:
+                        
+                        a = Attribute(self.name, attr, poseOnly=self.poseOnly)
+                        a.get()
+                        self.attributes.append(a)
         settable = cmds.listAttr(self.name, cb=True)  # future fix, make part of one pass, current code copied from above
         if settable:
             for attr in settable:
@@ -521,6 +531,7 @@ class Obj(Attribute):
                 for attr in attributesBaked:
                     # get value of attribute from maya
                     val = cmds.getAttr(self.name + '.' + attr.name)
+                    message('Sampling driven attr: ' + self.name + '.' + attr.name)
                     # store value in attr class, instantiate Key class
                     k = Key(
                         self.name, attr.name, '', frame, weightedTangents=False, auto=False)
@@ -565,8 +576,11 @@ class Obj(Attribute):
         driven = []
         if drivers:
             for driver in drivers:
-                driven.append(
-                    self.getDriven(driver, typ='', plugs=True)[0].split('.')[1])
+                qualifyAttr = self.getDriven(driver, typ='', plugs=True)[0].split('.')[1]
+                qualify = cmds.getAttr(self.name+ '.' + qualifyAttr, cb=True)
+                if qualify:
+                    driven.append(
+                        self.getDriven(driver, typ='', plugs=True)[0].split('.')[1])
             return sorted(driven)
         else:
             return None
@@ -906,11 +920,11 @@ class Clip(Layer):
                 layer.putObjects()
 
 
-def clipSave(name='clipTemp', comment='', poseOnly=False, temp=False, bakeRange=[0, 0]):
+def clipSave(name='clipTemp', comment='', poseOnly=False, temp=False, bakeRange=[0, 0], public=False):
     '''
     save clip to file
     '''
-    path = clipPath(name=name + '.clip', temp=temp)
+    path = clipPath(name=name + '.clip', temp=temp, public=public)
     clp = Clip(name=name, comment=comment, poseOnly=poseOnly, bakeRange=bakeRange)
     clp.get()
     # print clp.name
@@ -1048,11 +1062,14 @@ def clipApply(path='', ns=True, onCurrentFrame=True, mergeExistingLayers=True, a
         cmds.select(sel)
 
 
-def clipPath(name='', temp=False):
+def clipPath(name='', temp=False, public=False):
     if temp:
         path = clipDefaultTempPath()
     else:
-        path = clipDefaultPath()
+        if public:
+            path = clipDefaultPublicPath()
+        else:
+            path = clipDefaultPath()
     if os.path.isdir(path):
         return os.path.join(path, name)
     else:
@@ -1067,6 +1084,10 @@ def clipDefaultPath():
     # print path
     return path
 
+def clipDefaultPublicPath():
+    path = '/u/swe/Public/clipLibrary'
+    # print path
+    return path
 
 def clipDefaultTempPath():
     varPath = cmds.internalVar(userAppDir=True)

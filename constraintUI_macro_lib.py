@@ -224,14 +224,19 @@ class CSUI(object):
 
     def cmdRestoreToSelected(self, *args):
         # TODO: if more than one object add window pop up to choose source
+        print len(self.animBucket)
         if self.animBucket:
             v = cmds.floatFieldGrp(self.actionColumn.floatGroup1, q=True, v=True)
             if v == [0.0,0.0,0.0]:
                 v = []
-            self.animBucket[0].restore(useSelected=True, offset=v)
-            self.actionColumn.prefGet()
-            message('Animation ReStored: -- ' + self.animBucket[0].obj, maya=True)
-            cmds.refresh(f=1)
+            sel = cmds.ls(sl=True)
+            for i in range(len(self.animBucket)):
+                print i
+                cmds.select(sel[i])
+                self.animBucket[i].restore(useSelected=True, offset=v)
+                self.actionColumn.prefGet()
+                message('Animation ReStored: -- ' + self.animBucket[i].obj, maya=True)
+                cmds.refresh(f=1)
         else:
             cmds.warning('No objects have been stored.')
 

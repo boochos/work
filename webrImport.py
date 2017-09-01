@@ -84,7 +84,6 @@ def mod(modulename='', f=False):
         # paths
         urlPath = webPath + modulename + '.py'
         localPath = os.path.join(varPath, modulename + '.py')
-        contents = None
         if local:
             localPath = os.path.join(varPath, modulename + '.py')
             if os.path.isfile(localPath):

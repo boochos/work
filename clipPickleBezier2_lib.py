@@ -85,7 +85,10 @@ def getPointTangents(xList, yList):
     return degIn, hlengthIn, degOut, hlengthOut
 
 
-def seekPoint(corX=[1, 4, 7, 10], corY=[0, 0, 10, 10], frame=3.25, accuracy=0.001):
+def seekPoint(corX=[1, 4, 7, 10], corY=[0, 0, 10, 10], frame=3.25, accuracy=0.002):
+    '''
+    accuracy can cause error, recursion too high
+    '''
     steps = 20000
     for k in range(steps):
         # print k
@@ -102,7 +105,7 @@ def seekPoint(corX=[1, 4, 7, 10], corY=[0, 0, 10, 10], frame=3.25, accuracy=0.00
             return degIn, hlengthIn, y[1], degOut, hlengthOut
     # if loop fails due to high accuracy, keep trying
     steps = steps * 3
-    # print steps
+    print steps
     return seekPoint(corX, corY, frame, accuracy)
 
 

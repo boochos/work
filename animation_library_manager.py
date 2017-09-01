@@ -106,7 +106,7 @@ class AnimationToolbox( object ):
         if len( sel ) > 0:
             frame = self.frameRange()
             copyKey( sel, time=( frame[0], frame[1] ), option='keys', hierarchy='none', controlPoints=0, shape=1 )
-            openMaya.MGlobal.displayInfo( 'Animation copied from  -' + str( frame[0] ) + '-  to  -' + str( frame[1] ) + '-\";' )
+            # openMaya.MGlobal.displayInfo( 'Animation copied from  -' + str( frame[0] ) + '-  to  -' + str( frame[1] ) + '-\";' )
         else:
             openMaya.MGlobal.displayWarning( '... Select at least one object with animation...' )
 

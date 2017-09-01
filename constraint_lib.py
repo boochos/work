@@ -74,9 +74,8 @@ def matchKeyedFramesLoop():
         cmds.select(sel)
 
 
-def subframe(sel=[]):
-    if not sel:
-        sel = cmds.ls(sl=True)
+def subframe():
+    sel = cmds.ls(sl=True)
     if sel:
         for s in sel:
             animCurves = cmds.findKeyframe(s, c=True)
@@ -597,7 +596,7 @@ def bakeConstrainedSelection(removeConstraint=True, timeLine=False, sim=False, u
         cmds.warning('Select constrained object(s)')
 
 
-def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1, uiOff=True, color=30, suffix='__BAKE__', matchSet=True, shape='loc_ctrl', subframeOut=False):
+def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, size=1, uiOff=True, color=30, suffix='__BAKE__', matchSet=True, shape='loc_ctrl'):
     '''
     all three axis per transform type have to be unlocked, all rotates or translates
     takes every object in selection creates a locator in world space
@@ -624,7 +623,15 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
     if len(sel) != 0:
         for item in sel:
             # setup locator
-            if not getConstraint(item):
+            pGo = True
+            rGo = True
+            if p:
+                tx = getDrivers(item + '.tx', typ='constraint')
+                pGo = False
+            if r:
+                rx = getDrivers(item + '.rx', typ='constraint')
+                rGo =False
+            if not rGo or not pGo:
                 lc = locator(obj=item, ro='zxy', X=size, constrain=False, toSelection=False, suffix=suffix, color=color, matchSet=False, shape=shape)[0]
                 # check keyable transforms
                 tState = cmds.getAttr(item + '.tx', k=True)
@@ -641,8 +648,6 @@ def controllerToLocator(obj=None, p=True, r=True, timeLine=False, sim=False, siz
                 matchKeyedFrames(item, lc)
                 bakeConstrained(
                     lc, removeConstraint=False, timeLine=timeLine, sim=sim, uiOff=uiOff)
-                if subframeOut:
-                    subframe(sel=[lc])
                 if sim is not True:
                     matchKeyedFrames(item, lc)
                 if p is False:
@@ -709,6 +714,8 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
     locs = []
     roo = None
     if obj is not None:
+        # for face selection
+        m = None
         if not shape:
             lc = cmds.spaceLocator(name=plc.getUniqueName(obj + suffix))[0]
             locSize(lc, X=X)
@@ -731,15 +738,24 @@ def locator(obj=None, ro='zxy', X=0.01, constrain=True, toSelection=False, suffi
         else:
             roo = cmds.getAttr(obj + '.rotateOrder')
         if '.' in obj:  # component selection
-            t = cmds.pointPosition(obj)
-            r = 0.0, 0.0, 0.0
+            if '.f[' in obj:
+                m = cmds.xform(obj, q=True, ws=True, rp=True)
+                pos = cmds.xform(obj, q=True, ws=True, rp=True)
+            else:
+                t = cmds.pointPosition(obj)
+                r = 0.0, 0.0, 0.0
             # print t
         else:
             r = cmds.xform(obj, q=True, ws=True, ro=True)
             t = cmds.xform(obj, q=True, ws=True, rp=True)
-        cmds.setAttr(lc + '.rotateOrder', roo)
-        cmds.xform(lc, ws=True, t=t, ro=r)
-        cmds.xform(lc, roo=ro)
+        # apply position
+        if m:
+            cmds.xform(lc, ws=True, t=m)
+            # cmds.xform(lc, ws=True, t=pos)
+        else:
+            cmds.setAttr(lc + '.rotateOrder', roo)
+            cmds.xform(lc, ws=True, t=t, ro=r)
+            cmds.xform(lc, roo=ro)
         if constrain:
             if toSelection:
                 constrainEnabled(obj, lc, mo=True)
@@ -864,17 +880,8 @@ def attrStrings(pos=True, rot=True, period=True):
 def constrainEnabled(obj1, obj2, mo=True):
     # check keyable transforms
     tState = cmds.getAttr(obj2 + attrStrings(rot=False)[0][0], k=True)
-    if tState:
-        l = cmds.getAttr(obj2 + attrStrings(rot=False)[0][0], l=True)
-        if l:
-            tState = False
     rState = cmds.getAttr(obj2 + attrStrings(pos=False)[0][0], k=True)
-    if rState:
-        l = cmds.getAttr(obj2 + attrStrings(pos=False)[0][0], l=True)
-        if l:
-            rState = False
     allState = [tState, rState]
-    print allState
     if False not in allState:
         cnAll = cmds.parentConstraint(obj1, obj2, mo=mo)
         # print 'here ========='
