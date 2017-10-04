@@ -1,12 +1,14 @@
+import os
 import urllib  # need this for downloading icons, line is sometimes commented out
+
 import maya.cmds as cmds
 import maya.mel as mel
-import os
-#
 import webrImport as web
+#
 # web
 wf = web.mod('webrFiles_lib')
-# FUTURE: when new version is pushed, server lags about 5min. Short find a way to time the updates
+# FUTURE: when new version is pushed, server lags about 5min. Short find a
+# way to time the updates
 
 
 def message(what='', maya=True):
@@ -28,7 +30,7 @@ class Depend():
 
 
 def shelfRefresh():
-    getIcons(download=False)
+    getIcons(download=True)
     shelfBuild()
     message('Shelf Refreshed!')
 
@@ -212,7 +214,8 @@ def createMyShelf():
     shelfName = 'My_Shelf'
     test = cmds.shelfLayout(shelfName, ex=True)
     if test:
-        # If the shelf already exists, clear the contents and re-add the buttons.
+        # If the shelf already exists, clear the contents and re-add the
+        # buttons.
         newShelf = shelfName
         buttons = cmds.shelfLayout(newShelf, query=True, childArray=True)
         cmds.deleteUI(buttons, control=True)
