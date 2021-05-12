@@ -2,12 +2,12 @@ import maya.cmds as cmds
 import maya.mel as mel
 import webrImport as web
 # web
-build = web.mod('atom_splineBuild_lib')
-spln = web.mod('atom_spline_lib')
-ui = web.mod('atom_ui_lib')
+build = web.mod( 'atom_splineBuild_lib' )
+spln = web.mod( 'atom_spline_lib' )
+ui = web.mod( 'atom_ui_lib' )
 
 
-def splineStage(stage, colorScheme='yellow'):
+def splineStage( stage, colorScheme = 'yellow' ):
     """Arguments:
     stage = int 1-4
     \rDescription:
@@ -24,6 +24,7 @@ def splineStage(stage, colorScheme='yellow'):
     Stage4 = Build vector groups
     colorScheme = yellow, red, blue
     """
+    # print 'in'
     if stage > 0 and stage < 5:
         # ############################## Variables ###################################
         BUS_Stage1_BUS = [None]
@@ -35,29 +36,29 @@ def splineStage(stage, colorScheme='yellow'):
         # print '----Stage 0 -starting-'
         # OPTIONS
         # Prefix
-        prefix = cmds.textField('atom_prefix_textField', query=True, text=True)
+        prefix = cmds.textField( 'atom_prefix_textField', query = True, text = True )
         # Orient
-        rotate = ui.convertAxisNum(cmds.radioButtonGrp('atom_spln_rot_radioButtonGrp', query=True, sl=True)).lower()
-        aim = ui.convertAxisNum(cmds.radioButtonGrp('atom_spln_aim_radioButtonGrp', query=True, sl=True)).lower()
-        up = ui.convertAxisNum(cmds.radioButtonGrp('atom_spln_up_radioButtonGrp', query=True, sl=True)).lower()
+        rotate = ui.convertAxisNum( cmds.radioButtonGrp( 'atom_spln_rot_radioButtonGrp', query = True, sl = True ) ).lower()
+        aim = ui.convertAxisNum( cmds.radioButtonGrp( 'atom_spln_aim_radioButtonGrp', query = True, sl = True ) ).lower()
+        up = ui.convertAxisNum( cmds.radioButtonGrp( 'atom_spln_up_radioButtonGrp', query = True, sl = True ) ).lower()
 
         # Float version of rotate,aim,up. ie.(0.0, 1.0, 0.0)
-        rotateFloat = ui.getRadioSelectionAsList('atom_spln_rot_radioButtonGrp')
-        for i in range(0, len(rotateFloat), 1):
-            rotateFloat[i] = float(rotateFloat[i])
-        aimFloat = ui.getRadioSelectionAsList('atom_spln_aim_radioButtonGrp')
-        for i in range(0, len(aimFloat), 1):
-            aimFloat[i] = float(aimFloat[i])
-        upFloat = ui.getRadioSelectionAsList('atom_spln_up_radioButtonGrp')
-        for i in range(0, len(upFloat), 1):
-            upFloat[i] = float(upFloat[i])
+        rotateFloat = ui.getRadioSelectionAsList( 'atom_spln_rot_radioButtonGrp' )
+        for i in range( 0, len( rotateFloat ), 1 ):
+            rotateFloat[i] = float( rotateFloat[i] )
+        aimFloat = ui.getRadioSelectionAsList( 'atom_spln_aim_radioButtonGrp' )
+        for i in range( 0, len( aimFloat ), 1 ):
+            aimFloat[i] = float( aimFloat[i] )
+        upFloat = ui.getRadioSelectionAsList( 'atom_spln_up_radioButtonGrp' )
+        for i in range( 0, len( upFloat ), 1 ):
+            upFloat[i] = float( upFloat[i] )
 
         # Scale  multipliers
         # X = controller scale
         # Y = vector distance
-        X = cmds.floatField('atom_spln_scaleFactor_floatField', q=True, v=True)
-        Y = cmds.floatField('atom_spln_vectorDistance_floatField', q=True, v=True)
-        F = cmds.floatField('atom_spln_falloff_floatField', q=True, v=True)
+        X = cmds.floatField( 'atom_spln_scaleFactor_floatField', q = True, v = True )
+        Y = cmds.floatField( 'atom_spln_vectorDistance_floatField', q = True, v = True )
+        F = cmds.floatField( 'atom_spln_falloff_floatField', q = True, v = True )
 
         # Rotate Order - aim vector should be last in rotate hierarchy
         # 0=xyz
@@ -66,40 +67,40 @@ def splineStage(stage, colorScheme='yellow'):
         # 3=xzy
         # 4=yxz
         # 5=zyx
-        #rotOrder = 2
-        rotOrder = cmds.optionMenu('atom_spln_rotOrder_optionMenu', query=True, sl=True) - 1
-        # print '%s,%s,%s,%s,%s' %(str(prefix), str(rotate), str(aim), str(up), str(rotOrder))
+        # rotOrder = 2
+        rotOrder = cmds.optionMenu( 'atom_spln_rotOrder_optionMenu', query = True, sl = True ) - 1
+        # print '%s,%s,%s,%s,%s' % ( str( prefix ), str( rotate ), str( aim ), str( up ), str( rotOrder ) )
 
         # Collect joints
         # Three objects selected = Means third object parentConstrains spline Ik control group to itself
         Constrain = [False, None, None, None]
-        sel = cmds.ls(sl=True)
-        if len(sel) == 5:
-            cmds.select(sel[:2])
+        sel = cmds.ls( sl = True )
+        if len( sel ) == 5:
+            cmds.select( sel[:2] )
             Constrain[0] = True
             Constrain[1] = sel[2]
             Constrain[2] = sel[3]
             Constrain[3] = sel[4]
             skinJnts = spln.startEndJntList()
-            cmds.select(skinJnts)
-        if len(sel) == 4:
-            cmds.select(sel[:2])
+            cmds.select( skinJnts )
+        if len( sel ) == 4:
+            cmds.select( sel[:2] )
             Constrain[0] = True
             Constrain[1] = sel[2]
             Constrain[2] = sel[3]
             skinJnts = spln.startEndJntList()
-            cmds.select(skinJnts)
-        elif len(sel) == 3:
-            cmds.select(sel[:2])
+            cmds.select( skinJnts )
+        elif len( sel ) == 3:
+            cmds.select( sel[:2] )
             Constrain[0] = True
             Constrain[1] = sel[2]
             skinJnts = spln.startEndJntList()
-            cmds.select(skinJnts)
-        elif len(sel) == 2:
+            cmds.select( skinJnts )
+        elif len( sel ) == 2:
             skinJnts = spln.startEndJntList()
-            cmds.select(skinJnts)
+            cmds.select( skinJnts )
         else:
-            mel.eval('warning \"' + '////... Select 2 joints ... Select a 3rd if spline is to be constrained ...////' + '\";')
+            mel.eval( 'warning \"' + '////... Select 2 joints ... Select a 3rd if spline is to be constrained ...////' + '\";' )
         # print '----Stage 0 -variables collected-'
         ##############################################################################
 
@@ -114,7 +115,7 @@ def splineStage(stage, colorScheme='yellow'):
             # (up)                - up vector
             # (rotOrder)          - rotate order
             # (prefix)            - body part
-            BUS_Stage1_BUS = build.clusterGroup(prefix, X, skinJnts, aim, up, rotate, colorScheme)
+            BUS_Stage1_BUS = build.clusterGroup( prefix, X, skinJnts, aim, up, rotate, colorScheme )
             # RETURNS:
             # (clusterGrps)       - cluster groups
             # (Sjnt)              - spline start joints
@@ -132,7 +133,7 @@ def splineStage(stage, colorScheme='yellow'):
             # BUS_STAGE_1_BUS
             # (clusterGrps)       - cluster groups
             # (buildControls)     - boolean, build controls or parent objects in BUS_Stage1_BUS list into hiearchy
-            BUS_Stage2_BUS = build.clusterControlGroup(prefix, '_Clstr', X, aim, 1, skinJnts, rotOrder, 0, F, BUS_Stage1_BUS, colorScheme)
+            BUS_Stage2_BUS = build.clusterControlGroup( prefix, '_Clstr', X, aim, 1, skinJnts, rotOrder, 0, F, BUS_Stage1_BUS, colorScheme )
             # RETURNS:
             # (clusterCntrlGrps)  - cluster control groups
             # (ClstrCntrlGrp)  - parent group for clusterCntrlGrps
@@ -156,7 +157,7 @@ def splineStage(stage, colorScheme='yellow'):
             # (Sblnd)            - end blend nodes - stretch on/off
             # BUS_STAGE_2_BUS
             # (clusterCntrlGrps) - cluster control groups
-            BUS_Stage3_BUS = build.ikGroup(prefix, X, skinJnts, rotOrder, BUS_Stage1_BUS, BUS_Stage2_BUS, colorScheme)
+            BUS_Stage3_BUS = build.ikGroup( prefix, X, skinJnts, rotOrder, BUS_Stage1_BUS, BUS_Stage2_BUS, colorScheme )
             # RETURNS:
             # (prnt)             - top group of ik controls
             # (vtr)              - up vector group - second to secondlast positions only
@@ -187,8 +188,8 @@ def splineStage(stage, colorScheme='yellow'):
             # (ik)               - integer, returns total number ofcontrol positions, same as len(skinJnts)
             # (cnstrnt)          - constraint that uses up vector created in STAGE 4
             # (aim)              - aim vector group - third to last positions only
-            BUS_Stage4_BUS = build.upVectorGroup(prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat,
-                                                 rotOrder, Constrain, BUS_Stage1_BUS, BUS_Stage3_BUS, BUS_Stage2_BUS, colorScheme)
+            BUS_Stage4_BUS = build.upVectorGroup( prefix, X, Y, F, skinJnts, aim, up, aimFloat, upFloat,
+                                                 rotOrder, Constrain, BUS_Stage1_BUS, BUS_Stage3_BUS, BUS_Stage2_BUS, colorScheme )
             # RETURNS:
             # BUS_Stage_4_BUS
             # ()
@@ -199,4 +200,4 @@ def splineStage(stage, colorScheme='yellow'):
         ##############################################################################
 
     else:
-        mel.eval('warning \"' + '////... \'stage\' variable must be an integer between -1- and -4- ...////' + '\";')
+        mel.eval( 'warning \"' + '////... \'stage\' variable must be an integer between -1- and -4- ...////' + '\";' )

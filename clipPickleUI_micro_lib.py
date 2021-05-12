@@ -9,23 +9,23 @@ import maya.mel as mel
 #
 
 
-def message(what='', maya=True, warning=False):
+def message( what = '', maya = True, warning = False ):
     what = '-- ' + what + ' --'
     if '\\' in what:
-        what = what.replace('\\', '/')
+        what = what.replace( '\\', '/' )
     if warning:
-        cmds.warning(what)
+        cmds.warning( what )
     else:
         if maya:
-            mel.eval('print \"' + what + '\";')
+            mel.eval( 'print \"' + what + '\";' )
         else:
             print wha
 
 
-class Action(object):
+class Action( object ):
     # builds row of buttons for bottom of window
 
-    def __init__(self, name, parent=None, h=15, w=80, cmdAction='', label=''):
+    def __init__( self, name, parent = None, h = 15, w = 80, cmdAction = '', label = '' ):
         self.fn = 'obliqueLabelFont'
         self.bld = 'boldLabelFont'
         self.parent = parent
@@ -116,17 +116,17 @@ class Action(object):
         self.buildColumn()
         self.buildAction()
 
-    def cleanUI(self):
-        cmds.setParent(self.parent)
+    def cleanUI( self ):
+        cmds.setParent( self.parent )
         for ui in self.ui:
-            if cmds.control(ui, q=True, exists=True):
-                cmds.deleteUI(ui)
+            if cmds.control( ui, q = True, exists = True ):
+                cmds.deleteUI( ui )
 
-    def buildColumn(self):
-        cmds.setParent(self.parent)
-        self.column = cmds.columnLayout(adjustableColumn=True)
+    def buildColumn( self ):
+        cmds.setParent( self.parent )
+        self.column = cmds.columnLayout( adjustableColumn = True )
 
-    def buildAction(self):
+    def buildAction( self ):
         # colors
         grey = [0.5, 0.5, 0.5]
         greyD = [0.2, 0.2, 0.2]
@@ -150,44 +150,44 @@ class Action(object):
         self.s1 = cmds.separator(height=self.sepH, style=self.sepStl)
         '''
         # import type
-        self.srcGrp = cmds.radioButtonGrp(label='Source:', labelArray2=['me', 'public', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
-        self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
+        self.srcGrp = cmds.radioButtonGrp( label = 'Source:', labelArray2 = ['me', 'public', ], select = 1, numberOfRadioButtons = 2, w = self.w, ad3 = 1, cw3 = [50, 50, 50], cl3 = ['left', 'both', 'right'], ct3 = ['left', 'both', 'right'] )
+        self.s4 = cmds.separator( height = self.sepH, style = self.sepStl )
 
-        self.heading1 = cmds.text(self.heading1, label='Name:', al='left', fn=self.fn)
-        self.field1 = cmds.textField(self.field1, tx='', pht='None')
-        self.heading2 = cmds.text(self.heading2, label='Comment:', al='left', fn=self.fn)
-        self.field2 = cmds.textField(self.field2, tx='', pht='None')
+        self.heading1 = cmds.text( self.heading1, label = 'Name:', al = 'left', fn = self.fn )
+        self.field1 = cmds.textField( self.field1, tx = '', pht = 'None' )
+        self.heading2 = cmds.text( self.heading2, label = 'Comment:', al = 'left', fn = self.fn )
+        self.field2 = cmds.textField( self.field2, tx = '', pht = 'None' )
         #
-        self.typGrpEx = cmds.radioButtonGrp(label='Export Type:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
+        self.typGrpEx = cmds.radioButtonGrp( label = 'Export Type:', labelArray2 = ['anim', 'pose', ], select = 1, numberOfRadioButtons = 2, w = self.w, ad3 = 1, cw3 = [50, 50, 50], cl3 = ['left', 'both', 'right'], ct3 = ['left', 'both', 'right'] )
         # range
-        self.row = cmds.rowLayout(self.row, numberOfColumns=3, columnWidth3=(100, 50, 50), adjustableColumn=1, columnAlign=(1, 'left'), columnAttach=[(1, 'both', 0), (2, 'both', 0), (3, 'both', 0)])
-        cmds.text('Range for driven attrs:')
-        self.float1 = cmds.floatField(self.float1, value=cmds.playbackOptions(q=True, min=True), pre=2)
-        self.float2 = cmds.floatField(self.float2, value=cmds.playbackOptions(q=True, max=True), pre=2)
-        cmds.setParent('..')
-        self.button1 = cmds.button(self.button1, label='E X P O R T', c=self.cmdAction, bgc=redD,
-                                   ann='Export selected controls to a clip file')
-        self.s2 = cmds.separator(height=self.sepH, style=self.sepStl)
+        self.row = cmds.rowLayout( self.row, numberOfColumns = 3, columnWidth3 = ( 100, 50, 50 ), adjustableColumn = 1, columnAlign = ( 1, 'left' ), columnAttach = [( 1, 'both', 0 ), ( 2, 'both', 0 ), ( 3, 'both', 0 )] )
+        cmds.text( 'Range for driven attrs:' )
+        self.float1 = cmds.floatField( self.float1, value = cmds.playbackOptions( q = True, min = True ), pre = 2 )
+        self.float2 = cmds.floatField( self.float2, value = cmds.playbackOptions( q = True, max = True ), pre = 2 )
+        cmds.setParent( '..' )
+        self.button1 = cmds.button( self.button1, label = 'E X P O R T', c = self.cmdAction, bgc = redD,
+                                   ann = 'Export selected controls to a clip file' )
+        self.s2 = cmds.separator( height = self.sepH, style = self.sepStl )
         #
 
         # Import
-        self.heading3 = cmds.button(self.heading3, label='CLIP LIBRARY', al='center')
+        self.heading3 = cmds.button( self.heading3, label = 'CLIP LIBRARY', al = 'center' )
         # self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
 
         # 2 scroll lists in form: clip, clip version
-        self.form1 = cmds.formLayout(self.form1, h=295, w=1)
-        self.scroll1 = cmds.textScrollList(self.scroll1, sc=self.cmdAction, allowMultiSelection=False, dcc=self.cmdAction, fn='plainLabelFont', h=200, w=10)
-        attachForm = [(self.scroll1, 'left', 0), (self.scroll1, 'right', 50)]
-        cmds.formLayout(self.form1, edit=True, attachForm=attachForm)
-        self.scroll2 = cmds.textScrollList(self.scroll2, sc=self.cmdAction, allowMultiSelection=False, dcc=self.cmdAction, fn='plainLabelFont', h=200, w=45)
-        attachForm = [(self.scroll2, 'right', 0)]
-        attachControl = [(self.scroll2, 'left', 5, self.scroll1)]
-        cmds.formLayout(self.form1, edit=True, attachForm=attachForm, attachControl=attachControl)
-        self.scroll3 = cmds.textScrollList(self.scroll3, sc=self.cmdAction, allowMultiSelection=True, dcc=self.cmdAction, fn='plainLabelFont', h=85, w=10)
-        attachForm = [(self.scroll3, 'left', 0), (self.scroll3, 'right', 0)]
-        attachControl = [(self.scroll3, 'top', 5, self.scroll1)]
-        cmds.formLayout(self.form1, edit=True, attachForm=attachForm, attachControl=attachControl)
-        cmds.setParent('..')
+        self.form1 = cmds.formLayout( self.form1, h = 295, w = 1 )
+        self.scroll1 = cmds.textScrollList( self.scroll1, sc = self.cmdAction, allowMultiSelection = False, dcc = self.cmdAction, fn = 'plainLabelFont', h = 200, w = 10 )
+        attachForm = [( self.scroll1, 'left', 0 ), ( self.scroll1, 'right', 50 )]
+        cmds.formLayout( self.form1, edit = True, attachForm = attachForm )
+        self.scroll2 = cmds.textScrollList( self.scroll2, sc = self.cmdAction, allowMultiSelection = False, dcc = self.cmdAction, fn = 'plainLabelFont', h = 200, w = 45 )
+        attachForm = [( self.scroll2, 'right', 0 )]
+        attachControl = [( self.scroll2, 'left', 5, self.scroll1 )]
+        cmds.formLayout( self.form1, edit = True, attachForm = attachForm, attachControl = attachControl )
+        self.scroll3 = cmds.textScrollList( self.scroll3, sc = self.cmdAction, allowMultiSelection = True, dcc = self.cmdAction, fn = 'plainLabelFont', h = 85, w = 10 )
+        attachForm = [( self.scroll3, 'left', 0 ), ( self.scroll3, 'right', 0 )]
+        attachControl = [( self.scroll3, 'top', 5, self.scroll1 )]
+        cmds.formLayout( self.form1, edit = True, attachForm = attachForm, attachControl = attachControl )
+        cmds.setParent( '..' )
 
         # Clip attrs
         # commenting out and using export field instead
@@ -195,50 +195,51 @@ class Action(object):
         self.heading4 = cmds.text(self.heading4, label='Comment:', al='left', fn=self.fn)
         self.heading5 = cmds.textField(self.heading5, pht='None')
         '''
-        self.row6 = cmds.rowLayout(self.row6, numberOfColumns=2, adjustableColumn=2, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0)])
-        self.heading6 = cmds.button(self.heading6, label='Filename:', al='left')
-        self.heading7 = cmds.textField(self.heading7, tx='', en=True, pht='None', ed=False)
-        cmds.setParent('..')
-        self.s0 = cmds.separator(height=self.sepH, style=self.sepStl)
-        self.row5 = cmds.rowLayout(self.row5, numberOfColumns=2, adjustableColumn=2, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0)])
-        self.heading8 = cmds.text(self.heading8, label='User:', al='left', fn=self.fn)
-        self.heading9 = cmds.text(self.heading9, label='', al='right', en=True)
-        cmds.setParent('..')
-        self.row4 = cmds.rowLayout(self.row4, numberOfColumns=2, adjustableColumn=2, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0)])
-        self.heading10 = cmds.text(self.heading10, label='Date:', al='left', fn=self.fn)
-        self.heading11 = cmds.text(self.heading11, label='', al='right', en=True)
-        cmds.setParent('..')
+        self.row6 = cmds.rowLayout( self.row6, numberOfColumns = 2, adjustableColumn = 2, columnAlign = ( 1, 'left' ), columnAttach = [( 1, 'left', 0 ), ( 2, 'left', 0 )] )
+        self.heading6 = cmds.button( self.heading6, label = 'Filename:', al = 'left' )
+        self.heading7 = cmds.textField( self.heading7, tx = '', en = True, pht = 'None', ed = False )
+        cmds.setParent( '..' )
+        self.s0 = cmds.separator( height = self.sepH, style = self.sepStl )
+        self.row5 = cmds.rowLayout( self.row5, numberOfColumns = 2, adjustableColumn = 2, columnAlign = ( 1, 'left' ), columnAttach = [( 1, 'left', 0 ), ( 2, 'left', 0 )] )
+        self.heading8 = cmds.text( self.heading8, label = 'User:', al = 'left', fn = self.fn )
+        self.heading9 = cmds.text( self.heading9, label = '', al = 'right', en = True )
+        cmds.setParent( '..' )
+        self.row4 = cmds.rowLayout( self.row4, numberOfColumns = 2, adjustableColumn = 2, columnAlign = ( 1, 'left' ), columnAttach = [( 1, 'left', 0 ), ( 2, 'left', 0 )] )
+        self.heading10 = cmds.text( self.heading10, label = 'Date:', al = 'left', fn = self.fn )
+        self.heading11 = cmds.text( self.heading11, label = '', al = 'right', en = True )
+        cmds.setParent( '..' )
         # import type
-        self.typGrpIm = cmds.radioButtonGrp(label='Import Type:', labelArray2=['anim', 'pose', ], select=1, numberOfRadioButtons=2, w=self.w, ad3=1, cw3=[50, 50, 50], cl3=['left', 'both', 'right'], ct3=['left', 'both', 'right'])
-        self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
+        self.typGrpIm = cmds.radioButtonGrp( label = 'Import Type:', labelArray2 = ['anim', 'pose', ], select = 1, numberOfRadioButtons = 2, w = self.w, ad3 = 1, cw3 = [50, 50, 50], cl3 = ['left', 'both', 'right'], ct3 = ['left', 'both', 'right'] )
+        self.s4 = cmds.separator( height = self.sepH, style = self.sepStl )
         # range
-        self.row3 = cmds.rowLayout(self.row3, numberOfColumns=2, adjustableColumn=2, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0)])
-        self.heading12 = cmds.text(self.heading12, label='Length:', al='left', fn=self.fn)
-        self.heading13 = cmds.text(self.heading13, label='', al='right', en=True)
-        cmds.setParent('..')
+        self.row3 = cmds.rowLayout( self.row3, numberOfColumns = 2, adjustableColumn = 2, columnAlign = ( 1, 'left' ), columnAttach = [( 1, 'left', 0 ), ( 2, 'left', 0 )] )
+        self.heading12 = cmds.text( self.heading12, label = 'Length:', al = 'left', fn = self.fn )
+        self.heading13 = cmds.text( self.heading13, label = '', al = 'right', en = True )
+        cmds.setParent( '..' )
         # range
-        self.col2 = cmds.columnLayout(self.col2, adjustableColumn=True)
-        self.row2 = cmds.rowLayout(self.row2, numberOfColumns=5, adjustableColumn=3, columnAlign=(1, 'left'), columnAttach=[(1, 'left', 0), (2, 'left', 0), (3, 'right', 0), (4, 'right', 0), (5, 'right', 0)])
-        self.heading24 = cmds.text(self.heading24, l='Start:')
-        self.int1 = cmds.floatField(self.int1, en=False, pre=2)
-        self.heading25 = cmds.text(' - ')
-        self.heading26 = cmds.text(self.heading26, l='End:')
-        self.int2 = cmds.floatField(self.int2, en=False, pre=2)
-        cmds.setParent('..')
-        self.sl1 = cmds.intSlider(self.sl1)
-        self.sl2 = cmds.intSlider(self.sl2)
-        cmds.setParent('..')
+        self.col2 = cmds.columnLayout( self.col2, adjustableColumn = True )
+        print self.col2
+        self.row2 = cmds.rowLayout( self.row2, numberOfColumns = 5, adjustableColumn = 3, columnAlign = ( 1, 'left' ), columnAttach = [( 1, 'left', 0 ), ( 2, 'left', 0 ), ( 3, 'right', 0 ), ( 4, 'right', 0 ), ( 5, 'right', 0 )] )
+        self.heading24 = cmds.text( self.heading24, l = 'Start:' )
+        self.int1 = cmds.floatField( self.int1, en = False, pre = 2 )
+        self.heading25 = cmds.text( ' - ' )
+        self.heading26 = cmds.text( self.heading26, l = 'End:' )
+        self.int2 = cmds.floatField( self.int2, en = False, pre = 2 )
+        cmds.setParent( '..' )
+        self.sl1 = cmds.intSlider( self.sl1 )
+        self.sl2 = cmds.intSlider( self.sl2 )
+        cmds.setParent( '..' )
         # self.button2 = cmds.button( self.button2, label='Select objects in clip', c=self.cmdAction, bgc=greyD, h=20 )
-        self.c1 = cmds.checkBox(label='Current frame as START frame', v=False, ann='...annotation...')
-        self.s4 = cmds.separator(height=self.sepH, style=self.sepStl)
-        self.c2 = cmds.checkBox(label='Filter selected objects only', v=True, ann='...annotation...')
+        self.c1 = cmds.checkBox( label = 'Current frame as START frame', v = False, ann = '...annotation...' )
+        self.s4 = cmds.separator( height = self.sepH, style = self.sepStl )
+        self.c2 = cmds.checkBox( label = 'Filter selected objects only', v = True, ann = '...annotation...' )
         # self.c3 = cmds.checkBox( label='Apply infinity', v=True, ann='...annotation...' )
         # self.c4 = cmds.checkBox( label='Import pose on exported frame', v=True, ann='...annotation...' )
-        self.c5 = cmds.checkBox(label='NAMESPACE from selection', v=True, ann='...annotation...')
-        self.s5 = cmds.separator(height=self.sepH, style=self.sepStl)
-        self.c6 = cmds.checkBox(label='Merge with existing layers', v=True, ann='...annotation...')
-        self.c7 = cmds.checkBox(label='Apply layer attributes', v=True, ann='...annotation...')
-        self.c8 = cmds.checkBox(label='Base layer as new OVERRIDE layer', v=False, ann='...annotation...')
+        self.c5 = cmds.checkBox( label = 'NAMESPACE from selection', v = True, ann = '...annotation...' )
+        self.s5 = cmds.separator( height = self.sepH, style = self.sepStl )
+        self.c6 = cmds.checkBox( label = 'Merge with existing layers', v = True, ann = '...annotation...' )
+        self.c7 = cmds.checkBox( label = 'Apply layer attributes', v = True, ann = '...annotation...' )
+        self.c8 = cmds.checkBox( label = 'Base layer as new OVERRIDE layer', v = False, ann = '...annotation...' )
         # import
-        self.button3 = cmds.button(self.button3, label='I M P O R T', c=self.cmdAction, bgc=blue)
+        self.button3 = cmds.button( self.button3, label = 'I M P O R T', c = self.cmdAction, bgc = blue )
         # self.heading22 = cmds.text(self.heading22, label='\n', al='left')
