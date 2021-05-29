@@ -1,4 +1,5 @@
 # run to list unknown plugins
+from shutil import copyfile
 import json
 import os
 import subprocess
@@ -71,12 +72,18 @@ def init_ui():
     ref_button.clicked.connect( lambda: ref_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
     explore_button = QtWidgets.QPushButton( "Explore" )
     explore_button.clicked.connect( lambda: explore_path( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    range_button = QtWidgets.QPushButton( "Set Scene Range" )
+    range_button.clicked.connect( lambda: frameRangeFromMaFile( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    sync_button = QtWidgets.QPushButton( "Sync File" )
+    sync_button.clicked.connect( lambda: sync_file( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
     #
     bottom_layout.addWidget( set_project_button )
     bottom_layout.addWidget( create_button )
     bottom_layout.addWidget( set_open_button )
     bottom_layout.addWidget( ref_button )
-    bottom_layout.addWidget( explore_button )
+    top_layout.addWidget( explore_button )
+    top_layout.addWidget( sync_button )
+    top_layout.addWidget( range_button )
     main_layout.addLayout( bottom_layout )
 
     main_window.setLayout( main_layout )
@@ -177,7 +184,7 @@ def get_assets( ep_path ):
             if os.path.isdir( os.path.join( ep_path, asstype ) ):
                 assets = os.listdir( os.path.join( ep_path, asstype ) )
                 for asset in assets:
-                    if asset not in skips:
+                    if asset not in skips and '.' not in asset:
                         asset_list.append( os.path.join( 'assets', asstype, asset ) )
     asset_list.sort()
     return asset_list
@@ -442,7 +449,8 @@ def explore_path( project, entity, task, scene ):
 
 def nmspc( entity = '', task = '' ):
     '''
-    iterate string til namespace doesnt exist
+    iterate namespace string unttil namespace is unused
+    for referencing same file multiple times
     '''
     e = entity.split( '\\' )
     if e:
@@ -569,6 +577,7 @@ def pref_window( path ):
     a_str = prefs.a_str
     at_str = prefs.at_str
     t_str = prefs.t_str
+    prj_sync_str = prefs.prj_sync_str
     #
     w = 150
     main_window = QtWidgets.QDialog()
@@ -623,12 +632,22 @@ def pref_window( path ):
     task_line_layout.addWidget( task_edit )
     main_layout.addLayout( task_line_layout )
 
+    # sync
+    sync_line_layout = QtWidgets.QHBoxLayout()
+    sync_label = QtWidgets.QLabel( 'Sync roots:' )
+    sync_edit = QtWidgets.QLineEdit( prj_sync_str )
+    sync_label.setMinimumWidth( w )
+    #
+    sync_line_layout.addWidget( sync_label )
+    sync_line_layout.addWidget( sync_edit )
+    main_layout.addLayout( sync_line_layout )
+
     # prefs manage
     # prefs = Prefs()
     # save and close
     buttons_layout = QtWidgets.QHBoxLayout()
     save_button = QtWidgets.QPushButton( "Save" )
-    save_button.clicked.connect( lambda: Prefs( prj_edit, entity_edit, assets_edit, assettype_edit, task_edit ) )
+    save_button.clicked.connect( lambda: Prefs( prj_edit, entity_edit, assets_edit, assettype_edit, task_edit, sync_edit ) )
     close_button = QtWidgets.QPushButton( "Close" )
     close_button.clicked.connect( lambda: main_window.close() )
 
@@ -652,16 +671,18 @@ def pref_window( path ):
 
 class Prefs():
 
-    def __init__( self, projects = None, entities = None, assets = None, assettypes = None, tasks = None ):
+    def __init__( self, projects = None, entities = None, assets = None, assettypes = None, tasks = None, sync = None ):
         '''
         '''
-        self.prefs = {'p_str':[], 'e_str':[], 'at_str':[], 't_str':[], 'a_str':[]}
+        self.prefs = {'p_str':[], 'e_str':[], 'at_str':[], 't_str':[], 'a_str':[], 'prj_sync_str':[]}
+        self.sync_roots = {}
         # qt objects
         self.p_str = ''
         self.e_str = ''
         self.a_str = ''
         self.at_str = ''
         self.t_str = ''
+        self.prj_sync_str = ''
         # dict value strings
         #
         if projects:
@@ -690,6 +711,11 @@ class Prefs():
             t_ = self.t_str.split( ',' )
             for i in t_:
                 self.prefs['t_str'].append( i )
+            #
+            self.prj_sync_str = sync.text()
+            s_ = self.prj_sync_str.split( ',' )
+            for i in s_:
+                self.prefs['prj_sync_str'].append( i )
             # save
             '''
             for k, v in self.prefs.items():
@@ -739,6 +765,16 @@ class Prefs():
                 else:
                     c = ''
                 self.t_str = self.t_str + c + self.prefs['t_str'][i]
+            #
+            self.prj_sync_str = ''
+            for i in range( len( self.prefs['prj_sync_str'] ) ):
+                if i > 0:
+                    c = ','
+                else:
+                    c = ''
+                self.prj_sync_str = self.prj_sync_str + c + self.prefs['prj_sync_str'][i]
+                print( 'parse sync roots' )
+                self.prefSync()
 
     def prefPath( self, *args ):
         varPath = cmds.internalVar( userAppDir = True )
@@ -755,24 +791,156 @@ class Prefs():
     def prefLoad( self, *args ):
         # load
         if os.path.isfile( self.prefPath() ):
+            # fileObjectJSON = open( self.prefPath(), 'r' )
+            # self.prefs = json.load( fileObjectJSON )
             try:
                 fileObjectJSON = open( self.prefPath(), 'r' )
                 self.prefs = json.load( fileObjectJSON )
-                # print( 'prefs    ', self.prefs )
+                print( 'prefs    ', self.prefs )
                 fileObjectJSON.close()
             except:
                 # os.remove( self.prefPath() )
                 message( 'Pref file not compatible.' )
 
+    def prefSync( self ):
+        roots = self.prj_sync_str.split( ',' )
+        # print roots
+        for root in roots:
+            k = root.split( ':' )[0]
+            v = root.replace( k + ':', '' )
+            # print k
+            # print v
+            self.sync_roots[k] = v
+        print self.sync_roots
+
+
+def frameRangeFromMaFile( project, entity, task, scene, handles = 0 ):
+    '''
+    
+    '''
+    go = True
+    if project.selectedItems():
+        project = project.selectedItems()[0].text()
+    else:
+        go = False
+    if entity.selectedItems():
+        entity = entity.selectedItems()[0].text()
+    else:
+        go = False
+    if task.selectedItems():
+        task = task.selectedItems()[0].text()
+    else:
+        go = False
+    if scene.selectedItems():
+        scene = scene.selectedItems()[0].text()
+    else:
+        go = False
+
+    if go:
+        path = 'P:/XMAG/075/XMAG_075_035/anim/maya/scenes/XMAG_075_035_anim_v003.ma'
+        path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
+        play_start = 0
+        play_end = 0
+        all_start = 0
+        all_end = 0
+        # print path
+        if os.path.isfile( path ) and '.ma' in path:
+            inFile = open( path, 'r' )
+            for line in inFile.readlines():
+                cvLine = line.strip( '\n' )
+                if 'playbackOptions' in line:
+                    print line
+                    line_parts = line.split( ' ' )
+                    i = 0
+                    for part in line_parts:
+                        if part == '-min':
+                            play_start = int( line_parts[i + 1] )
+                        if part == '-max':
+                            play_end = int( line_parts[i + 1] )
+                        if part == '-ast':
+                            all_start = int( line_parts[i + 1] )
+                        if part == '-aet':
+                            all_end = int( line_parts[i + 1] )
+                        i = i + 1
+                    print play_start
+                    print play_end
+                    print all_start
+                    print all_end
+                    cmds.playbackOptions( animationStartTime = all_start )
+                    cmds.playbackOptions( animationEndTime = all_end )
+                    if handles:
+                        cmds.playbackOptions( minTime = play_start + handles )
+                        cmds.playbackOptions( maxTime = play_end - handles )
+                    else:
+                        cmds.playbackOptions( minTime = play_start )
+                        cmds.playbackOptions( maxTime = play_end )
+            inFile.close()
+            return None
+        else:
+            maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
+            # print 'not a directory'
+    else:
+        maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
+
+
+def sync_file( project, entity, task, scene ):
+    '''
+    
+    '''
+    go = True
+    if project.selectedItems():
+        project = project.selectedItems()[0].text()
+    else:
+        go = False
+    if entity.selectedItems():
+        entity = entity.selectedItems()[0].text()
+    else:
+        go = False
+    if task.selectedItems():
+        task = task.selectedItems()[0].text()
+    else:
+        go = False
+    if scene.selectedItems():
+        scene = scene.selectedItems()[0].text()
+    else:
+        go = False
+
+    if go:
+        # sync file
+        prefs = Prefs()
+        sync_roots = prefs.sync_roots
+        for k in sync_roots.keys():
+            if k == project:
+                project_root = sync_roots[k]
+                destination_path = os.path.join( project_root, entity, task, 'maya', 'scenes' )
+                if os.path.isdir( destination_path ):
+                    working_path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
+                    sync_path = os.path.join( project_root, entity, task, 'maya', 'scenes', scene )
+                    copyfile( working_path, sync_path )
+                    # subprocess.Popen( r'explorer /open, ' + destination_path )
+                    print sync_path
+                else:
+                    print 'Destination path doesnt exist'
+            else:
+                print 'Project sync path not defined'
+    else:
+        maya.mel.eval( 'print \" -- Cant build sync path, select more variables -- \";' )
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
     main_window.show()
     app.exec_()
 else:
     print 'nah'
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
     main_window.show()
     app.exec_()

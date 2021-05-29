@@ -1411,7 +1411,7 @@ def namePrebuild( Top = 0, Ctrl = False, SknJnts = False, Geo = False, World = F
 
 def rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = True, Size = 110 ):
     '''\n
-    Top  = (0 creates ___CHARACTER___ group) (1 creates ___PROP___ group)\n
+    Top  = (0 creates ___CHARACTER___ group) (1 creates ___PROP___ group) (2 creates ___VEHICLE___ group)\n
     '''
     TOP = None
     CONTROLS = None
