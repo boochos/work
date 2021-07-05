@@ -595,6 +595,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     pvPsGp = place.null2( name + '_PsGp', pv )[0]
     cmds.parent( pv, pvPsGp )
     cmds.parent( pvPsGp, pvWtCt )
+    print slider, pvWtCt
     cmds.connectAttr( slider + '.KneeTwist', pvWtCt + '.ry' )
 
     if setChannels:
@@ -710,9 +711,13 @@ def create_ik( fstJnt, lstJnt, prefix, suffix, limbName, curveShapePath = None, 
     return returnList
 
 
-def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimControl, upControl, disFactor, locScale, curveShapePath, useFlip = True, flipVar = [0, 0, 0], color = 17 ):
+def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimControl, upControl, disFactor, locScale, curveShapePath, useFlip = True, flipVar = [0, 0, 0], color = 17, X = 1, midJnt = '' ):
+    '''
+    stJnt HAS TO BE ORIENTED PROPERLY ALIGNED TO THE TRIANGLE, OBJECTS GET PARENT TO IT AND ASSUME PROPER ORIENTATION !!!!
+    '''
+
     # make a copy of flipVar so the original varaible doesnt get changed
-    X = cmds.floatField( 'atom_qrig_conScale', query = True, value = True )
+    # X = cmds.floatField( 'atom_qrig_conScale', query = True, value = True )
     flip = place.convertFlipValue( flipVar )
 
     #        A
@@ -726,11 +731,13 @@ def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimC
     #       \|
     #        C
     # A,B and C are angles, a,b and c are the distances lengths points
-    midJnt = joint.jointTravers( stJnt, 1 )
+    if not midJnt:
+        midJnt = joint.jointTravers( stJnt, 1 )
     pvGuideJnt = midJnt
 
     point_A = cmds.xform( stJnt, query = True, ws = True, rp = True )
     point_B = cmds.xform( midJnt, query = True, ws = True, rp = True )
+    print 'point B', midJnt, point_B
     point_C = cmds.xform( endJnt, query = True, ws = True, rp = True )
 
     # solve the lengths

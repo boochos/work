@@ -78,6 +78,586 @@ def createWrap( *args, **kwargs ):
     return wrapNode
 
 
+def heli():
+    '''
+    
+    '''
+    X = 20
+    # main rig groups/controllers
+    PreBuild = place.rigPrebuild( Top = 2, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 80 * X )
+    cmds.select( cl = True )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    #
+    geo_grp = 'bell_grp'
+    geo_grp2 = 'BELL_CONTROL'
+    geo = [
+    'parasailBoat_body_geo_0001',
+    'parasailBoat_pole_geo_0001'
+    ]
+
+    #
+    cmds.parent( geo_grp, GEO[0] )
+    cmds.parent( geo_grp2, GEO[1] )
+    # cmds.setAttr( geo_grp + '.translateY', -0.082 )
+    cmds.setAttr( geo_grp + '.translateZ', -165.5 )
+    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
+    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
+
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    # place.setChannels( geo[0], [True, False], [True, False], [True, False], [False, False, False] )
+    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
+    dstnc = 500
+    sz = 20
+    # lid_2 #
+    Lid_2 = 'heli'
+    lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2Ct = lid_2.createController()
+    place.setRotOrder( Lid_2Ct[0], 2, True )
+    cmds.parent( Lid_2Ct[0], CONTROLS )
+    # cmds.setAttr( Lid_2Ct[0] + '.translateY', 0.75 )
+    cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
+    cmds.parentConstraint( Lid_2Ct[4], geo_grp, mo = True )
+
+    # lid_2 up #
+    Lid_2_u = 'tip'
+    lid_2_u = place.Controller( Lid_2_u, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_u_Ct = lid_2_u.createController()
+    place.setRotOrder( Lid_2_u_Ct[0], 2, True )
+    cmds.parent( Lid_2_u_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_u_Ct[0] + '.translateZ', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2_u_Ct[0], mo = True )
+
+    # lid_2 tip #
+    Lid_2_t = 'up'
+    lid_2_t = place.Controller( Lid_2_t, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_t_Ct = lid_2_t.createController()
+    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
+    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', dstnc / 2 )
+    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
+    cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    place.setChannels( Lid_2Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
+
+    # propeller
+    prop = 'frontRotor_lod0_geo_grp'
+    # lid_2 tip #
+    Lid_2_t = 'propeller'
+    lid_2_t = place.Controller( Lid_2_t, prop, False, 'diamond_ctrl', X * sz * 0.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_t_Ct = lid_2_t.createController()
+    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
+    place.setRotOrder( Lid_2_t_Ct[2], 5, True )
+    place.setRotOrder( Lid_2_t_Ct[3], 5, True )
+    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', 250 )
+    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
+    cmds.parentConstraint( Lid_2_t_Ct[4], prop, mo = True )
+    # cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    place.setChannels( Lid_2_t_Ct[2], [True, False], [False, True], [True, False], [True, False, False] )
+
+    # propeller
+    rprop = 'rearRotor_lod0_geo'
+    # lid_2 tip #
+    Lid_2_t = 'rear_propeller'
+    lid_2_t = place.Controller( Lid_2_t, rprop, False, 'diamond_ctrl', X * sz * 0.2, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_t_Ct = lid_2_t.createController()
+    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
+    # place.setRotOrder( Lid_2_t_Ct[2], 5, True )
+    # place.setRotOrder( Lid_2_t_Ct[3], 5, True )
+    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
+    # cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', 250 )
+    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
+    cmds.parentConstraint( Lid_2_t_Ct[4], rprop, mo = True )
+    # cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    place.setChannels( Lid_2_t_Ct[2], [True, False], [False, True], [True, False], [True, False, False] )
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    #
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )
+
+
+def harness():
+    '''
+    
+    '''
+    X = 20
+    # main rig groups/controllers
+    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 10 * X )
+    cmds.select( cl = True )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    #
+    geo_grp = 'Prop_Harness_lod0_grp'
+    geo = [
+    'parasailBoat_body_geo_0001',
+    'parasailBoat_pole_geo_0001'
+    ]
+
+    #
+    cmds.parent( geo_grp, GEO[0] )
+    # cmds.setAttr( geo_grp + '.translateY', -0.082 )
+    # cmds.setAttr( geo_grp + '.translateZ', -9 )
+    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
+    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
+
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    # place.setChannels( geo[0], [True, False], [True, False], [True, False], [False, False, False] )
+    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
+    dstnc = 155
+    sz = 3
+    # lid_2 #
+    Lid_2 = 'harness'
+    lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2Ct = lid_2.createController()
+    place.setRotOrder( Lid_2Ct[0], 2, True )
+    cmds.parent( Lid_2Ct[0], CONTROLS )
+    # cmds.setAttr( Lid_2Ct[0] + '.translateY', 0.75 )
+    cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
+    cmds.parentConstraint( Lid_2Ct[4], geo_grp, mo = True )
+
+    # lid_2 up #
+    Lid_2_u = 'tip'
+    lid_2_u = place.Controller( Lid_2_u, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_u_Ct = lid_2_u.createController()
+    place.setRotOrder( Lid_2_u_Ct[0], 2, True )
+    cmds.parent( Lid_2_u_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_u_Ct[0] + '.translateZ', dstnc / 2 )
+    cmds.parentConstraint( MasterCt[4], Lid_2_u_Ct[0], mo = True )
+
+    # lid_2 tip #
+    Lid_2_t = 'up'
+    lid_2_t = place.Controller( Lid_2_t, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_t_Ct = lid_2_t.createController()
+    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
+    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
+    cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    place.setChannels( Lid_2Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    #
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )
+
+
+def parasail():
+    '''
+    
+    '''
+    X = 20
+    # main rig groups/controllers
+    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 30 * X )
+    cmds.select( cl = True )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    #
+    geo_grp = 'Prop_Parasail_lod0_grp'
+    geo = [
+    'parasailBoat_body_geo_0001',
+    'parasailBoat_pole_geo_0001'
+    ]
+    #
+    clstrs = [
+    'cluster1Handle',
+    'cluster2Handle',
+    'cluster3Handle',
+    'cluster4Handle',
+    'cluster5Handle'
+    ]
+    clstr_grp = 'clstr_grp'
+    cmds.setAttr( clstr_grp + '.visibility', 0 )
+    #
+    ffd = [
+    'ffd1Lattice',
+    'ffd1Base'
+    ]
+    ffd_grp = 'ffd_grp'
+    cmds.setAttr( ffd_grp + '.visibility', 0 )
+    #
+    cmds.parent( geo_grp, GEO[0] )
+    cmds.parent( ffd_grp, WORLD_SPACE )
+    cmds.parent( clstr_grp, WORLD_SPACE )
+    # cmds.setAttr( geo_grp + '.translateY', -0.082 )
+    # cmds.setAttr( geo_grp + '.translateZ', -9 )
+    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
+    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
+
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    # place.setChannels( geo[0], [True, False], [True, False], [True, False], [False, False, False] )
+    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
+    dstnc = 155
+    sz = 3
+    clr = 12
+    # lid_2 #
+    Lid_2 = 'middle'
+    lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'diamond_ctrl', X * sz * 2, clr, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2Ct = lid_2.createController()
+    place.setRotOrder( Lid_2Ct[0], 2, True )
+    cmds.parent( Lid_2Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2Ct[0] + '.translateY', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
+    # cmds.parentConstraint( Lid_2Ct[4], geo_grp, mo = True )
+    cmds.parentConstraint( Lid_2Ct[4], clstr_grp, mo = True )
+
+    # lid_2 up #
+    Lid_2_lf = 'lower_front'
+    lid_2_lf = place.Controller( Lid_2_lf, MasterCt[0], False, 'diamond_ctrl', X * sz, clr, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_lf_Ct = lid_2_lf.createController()
+    place.setRotOrder( Lid_2_lf_Ct[0], 2, True )
+    cmds.parent( Lid_2_lf_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_lf_Ct[0] + '.translateZ', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2_lf_Ct[0], mo = True )
+
+    # lid_2 up #
+    Lid_2_uf = 'upper_front'
+    lid_2_uf = place.Controller( Lid_2_uf, MasterCt[0], False, 'diamond_ctrl', X * sz, clr, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_uf_Ct = lid_2_uf.createController()
+    place.setRotOrder( Lid_2_uf_Ct[0], 2, True )
+    cmds.parent( Lid_2_uf_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_uf_Ct[0] + '.translateY', dstnc )
+    cmds.setAttr( Lid_2_uf_Ct[0] + '.translateZ', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2_uf_Ct[0], mo = True )
+
+    # lid_2 tip #
+    Lid_2_tp = 'top'
+    lid_2_tp = place.Controller( Lid_2_tp, MasterCt[0], False, 'diamond_ctrl', X * sz * 10, clr, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_tp_Ct = lid_2_tp.createController()
+    place.setRotOrder( Lid_2_tp_Ct[0], 2, True )
+    cmds.parent( Lid_2_tp_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_tp_Ct[0] + '.translateY', dstnc * 8.5 )
+    cmds.parentConstraint( MasterCt[4], Lid_2_tp_Ct[0], mo = True )
+    # cmds.aimConstraint( Lid_2_tp_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    # place.setChannels( Lid_2Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
+
+    # lid_2 tip #
+    Lid_2_t = 'bottom'
+    lid_2_t = place.Controller( Lid_2_t, MasterCt[0], False, 'diamond_ctrl', X * sz * 2, clr, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_t_Ct = lid_2_t.createController()
+    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
+    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
+    # cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
+    cmds.aimConstraint( Lid_2Ct[4], Lid_2_t_Ct[2], wut = 'object', wuo = Lid_2_lf_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    # cmds.aimConstraint( Lid_2Ct[4], ffd_grp, wut = 'object', wuo = Lid_2_lf_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    place.setChannels( Lid_2_t_Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
+
+    cmds.aimConstraint( Lid_2_tp_Ct[4], Lid_2Ct[1], wut = 'object', wuo = Lid_2_uf_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    # place.setChannels( Lid_2_t_Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
+
+    #
+    i = 1
+    for c in clstrs:
+        Lid_2_tp = 'clstr_' + str( i )
+        lid_2_tp = place.Controller( Lid_2_tp, c, False, 'diamond_ctrl', X * sz * 5, 17, 8, 1, ( 0, 0, 1 ), True, True )
+        Lid_2_tp_Ct = lid_2_tp.createController()
+        place.setRotOrder( Lid_2_tp_Ct[0], 2, True )
+        cmds.parent( Lid_2_tp_Ct[0], CONTROLS )
+        # cmds.setAttr( Lid_2_tp_Ct[0] + '.translateY', dstnc * 8.5 )
+        cmds.parentConstraint( Lid_2Ct[4], Lid_2_tp_Ct[0], mo = True )
+        cmds.parentConstraint( Lid_2_tp_Ct[4], c, mo = True )
+        cmds.scaleConstraint( Lid_2_tp_Ct[4], c )
+        # lock geo - [lock, keyable], [visible, lock, keyable]
+        place.setChannels( Lid_2_tp_Ct[2], [False, True], [False, True], [False, True], [True, False, False] )
+        i = i + 1
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    #
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )
+
+
+def explosion():
+    '''
+    
+    '''
+    X = 10
+    # main rig groups/controllers
+    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 10 * X )
+    cmds.select( cl = True )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    #
+    geo_grp = 'explosion_grp'
+
+    #
+    cmds.parent( geo_grp, GEO[0] )
+
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    place.setChannels( geo_grp, [False, False], [False, False], [False, False], [True, False, False] )
+    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
+    cmds.parentConstraint( MasterCt[4], geo_grp, mo = True )
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 1000.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    #
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )
+
+    # explosion
+    mstr = 'master'
+    es = 'explosionAlembicOffset'
+    misc.addAttribute( [mstr], [es], -10000.0, 10000.0, True, 'float' )
+    alm = cmds.ls( type = 'AlembicNode' )[0]
+    cmds.connectAttr( mstr + '.' + es, alm + '.offset' )
+
+
+def digi():
+    '''
+    
+    '''
+    X = 20
+    # main rig groups/controllers
+    PreBuild = place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 10 * X )
+    cmds.select( cl = True )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    #
+    geo_grp = 'root'
+    cmds.setAttr( geo_grp + '.selectJnt', 1 )
+    jnts_grp = 'jnts_grp'
+    geo = [
+    'parasailBoat_body_geo_0001',
+    'parasailBoat_pole_geo_0001'
+    ]
+
+    jnts = [
+    'l_leg_foot_jnt',
+    'c_spine_chain_05_jnt',
+    'c_neck_head_jnt',
+    'l_leg_knee_jnt',
+    'l_arm_shoulder_jnt',
+    'r_leg_knee_jnt',
+    'r_arm_elbow_jnt',
+    'c_neck_chain_01_jnt',
+    'r_arm_hand_jnt',
+    'r_leg_hip_jnt',
+    'c_spine_chain_04_jnt',
+    'r_leg_foot_jnt',
+    'l_arm_elbow_jnt',
+    'l_arm_hand_jnt',
+    'r_arm_shoulder_jnt',
+    'c_spine_chest_jnt',
+    'c_spine_chain_03_jnt',
+    'l_leg_hip_jnt',
+    'c_root_jnt'
+    ]
+
+    #
+    cmds.parent( geo_grp, GEO[0] )
+    cmds.parent( jnts_grp, SKIN_JOINTS )
+    # cmds.setAttr( geo_grp + '.translateY', -0.082 )
+    # cmds.setAttr( geo_grp + '.translateZ', -9 )
+    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
+    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
+
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    place.setChannels( geo_grp, [False, False], [False, False], [False, False], [True, False, False] )
+    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
+    # cmds.parentConstraint( MasterCt[4], geo_grp, mo = True )
+    cmds.parentConstraint( MasterCt[4], jnts_grp, mo = True )
+    dstnc = 155
+    sz = 1.5
+
+    for j in jnts:
+        # lid_2 #
+        Lid_2 = j.replace( '_jnt', '_ct' )
+        if 'spine' in j:
+            lid_2 = place.Controller( Lid_2, j, True, 'facetYup_ctrl', X * sz * 2, 17, 8, 1, ( 0, 0, 1 ), True, True, True )
+        elif 'root' in j:
+            lid_2 = place.Controller( Lid_2, j, True, 'facetYup_ctrl', X * sz * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, True )
+        else:
+            lid_2 = place.Controller( Lid_2, j, True, 'facetYup_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True, True )
+        Lid_2Ct = lid_2.createController()
+        place.setRotOrder( Lid_2Ct[0], 2, True )
+        cmds.parent( Lid_2Ct[0], CONTROLS )
+        if 'root' not in j:
+            cmds.pointConstraint( j, Lid_2Ct[0], mo = True )
+            cmds.orientConstraint( Lid_2Ct[4], j, mo = True )
+            cmds.pickWalk( j, direction = 'up' )
+            p = cmds.ls( sl = 1 )[0]
+            print p, j
+            # return None
+            cmds.parentConstraint( p, Lid_2Ct[0], mo = True )
+        else:
+            cmds.parentConstraint( Lid_2Ct[4], j, mo = True )
+            cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
+    '''
+    # root
+        lid_2 = place.Controller( Lid_2, j, True, 'facetYup_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True, True )
+        Lid_2Ct = lid_2.createController()
+        place.setRotOrder( Lid_2Ct[0], 2, True )
+        cmds.parent( Lid_2Ct[0], CONTROLS )
+        cmds.pointConstraint( j, Lid_2Ct[0], mo = True )
+        cmds.orientConstraint( Lid_2Ct[4], j, mo = True )'''
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    #
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    '''
+    #
+    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )'''
+    #
+    misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
+
+
+def boat():
+    '''
+    
+    '''
+    X = 20
+    # main rig groups/controllers
+    PreBuild = place.rigPrebuild( Top = 2, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 80 * X )
+    cmds.select( cl = True )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    #
+    geo_grp = 'ParasailBoat_lod0_grp'
+    geo = [
+    'parasailBoat_body_geo_0001',
+    'parasailBoat_pole_geo_0001'
+    ]
+
+    #
+    cmds.parent( geo_grp, GEO[0] )
+    # cmds.setAttr( geo_grp + '.translateY', -0.082 )
+    # cmds.setAttr( geo_grp + '.translateZ', -9 )
+    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
+    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
+
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    # place.setChannels( geo[0], [True, False], [True, False], [True, False], [False, False, False] )
+    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
+    dstnc = 500
+    sz = 10
+    # lid_2 #
+    Lid_2 = 'boat'
+    lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2Ct = lid_2.createController()
+    place.setRotOrder( Lid_2Ct[0], 2, True )
+    cmds.parent( Lid_2Ct[0], CONTROLS )
+    # cmds.setAttr( Lid_2Ct[0] + '.translateY', 0.75 )
+    cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
+    cmds.parentConstraint( Lid_2Ct[4], geo_grp, mo = True )
+
+    # lid_2 up #
+    Lid_2_u = 'tip'
+    lid_2_u = place.Controller( Lid_2_u, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_u_Ct = lid_2_u.createController()
+    place.setRotOrder( Lid_2_u_Ct[0], 2, True )
+    cmds.parent( Lid_2_u_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_u_Ct[0] + '.translateZ', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2_u_Ct[0], mo = True )
+
+    # lid_2 tip #
+    Lid_2_t = 'up'
+    lid_2_t = place.Controller( Lid_2_t, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_t_Ct = lid_2_t.createController()
+    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
+    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', dstnc / 2 )
+    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
+    cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    place.setChannels( Lid_2Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    #
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )
+
+
 def amulet_string( segments = 9, joints_in_seg = 9 ):
     '''
     # segments = 13  # choose odd number
@@ -1088,159 +1668,3 @@ def fk_chain( segments = 9, joints_in_seg = 9 ):
         #
         i = i + 1
 
-
-def bottle():
-    '''
-    
-    '''
-    X = 5
-    # main rig groups/controllers
-    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 10 * X )
-    cmds.select( cl = True )
-    CHARACTER = PreBuild[0]
-    CONTROLS = PreBuild[1]
-    SKIN_JOINTS = PreBuild[2]
-    GEO = PreBuild[3]
-    WORLD_SPACE = PreBuild[4]
-    MasterCt = PreBuild[5]
-
-    #
-    geo_grp = 'sodaBottle'
-    geo = [
-    'parasailBoat_body_geo_0001',
-    'parasailBoat_pole_geo_0001'
-    ]
-
-    #
-    cmds.parent( geo_grp, GEO[0] )
-    cmds.setAttr( geo_grp + '.translateY', -11.3 )
-    # cmds.setAttr( geo_grp + '.translateZ', -9 )
-    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
-    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
-
-    # lock geo - [lock, keyable], [visible, lock, keyable]
-    # place.setChannels( geo[0], [True, False], [True, False], [True, False], [False, False, False] )
-    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
-    dstnc = 16
-    sz = 3
-    # lid_2 #
-    Lid_2 = 'bttl'
-    lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    Lid_2Ct = lid_2.createController()
-    place.setRotOrder( Lid_2Ct[0], 2, True )
-    cmds.parent( Lid_2Ct[0], CONTROLS )
-    # cmds.setAttr( Lid_2Ct[0] + '.translateY', 0.75 )
-    cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
-    cmds.parentConstraint( Lid_2Ct[4], geo_grp, mo = True )
-
-    # lid_2 up #
-    Lid_2_u = 'tip'
-    lid_2_u = place.Controller( Lid_2_u, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    Lid_2_u_Ct = lid_2_u.createController()
-    place.setRotOrder( Lid_2_u_Ct[0], 2, True )
-    cmds.parent( Lid_2_u_Ct[0], CONTROLS )
-    cmds.setAttr( Lid_2_u_Ct[0] + '.translateZ', dstnc / 2 )
-    cmds.parentConstraint( MasterCt[4], Lid_2_u_Ct[0], mo = True )
-
-    # lid_2 tip #
-    Lid_2_t = 'up'
-    lid_2_t = place.Controller( Lid_2_t, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    Lid_2_t_Ct = lid_2_t.createController()
-    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
-    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
-    cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', dstnc )
-    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
-    cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
-    place.setChannels( Lid_2Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
-
-    # scale
-    mstr = 'master'
-    uni = 'uniformScale'
-    scl = ['.scaleX', '.scaleY', '.scaleZ']
-    #
-    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
-    cmds.setAttr( mstr + '.' + uni, 1.0 )
-    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
-    #
-    for s in scl:
-        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
-    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
-    for s in scl:
-        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )
-
-
-def axe():
-    '''
-    
-    '''
-    X = 5
-    # main rig groups/controllers
-    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 10 * X )
-    cmds.select( cl = True )
-    CHARACTER = PreBuild[0]
-    CONTROLS = PreBuild[1]
-    SKIN_JOINTS = PreBuild[2]
-    GEO = PreBuild[3]
-    WORLD_SPACE = PreBuild[4]
-    MasterCt = PreBuild[5]
-
-    #
-    geo_grp = 'sodaBottle'
-    geo = 'axe'
-
-    #
-    cmds.parent( geo, GEO[0] )
-    # cmds.setAttr( geo_grp + '.translateY', -11.3 )
-    cmds.setAttr( geo + '.translateZ', 3.411 )
-    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
-    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
-
-    # lock geo - [lock, keyable], [visible, lock, keyable]
-    # place.setChannels( geo[0], [True, False], [True, False], [True, False], [False, False, False] )
-    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
-    dstnc = 35
-    sz = 3
-    # lid_2 #
-    Lid_2 = 'ax'
-    lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    Lid_2Ct = lid_2.createController()
-    place.setRotOrder( Lid_2Ct[0], 2, True )
-    cmds.parent( Lid_2Ct[0], CONTROLS )
-    # cmds.setAttr( Lid_2Ct[0] + '.translateY', 0.75 )
-    cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
-    cmds.parentConstraint( Lid_2Ct[4], geo, mo = True )
-
-    # lid_2 up #
-    Lid_2_u = 'tip'
-    lid_2_u = place.Controller( Lid_2_u, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    Lid_2_u_Ct = lid_2_u.createController()
-    place.setRotOrder( Lid_2_u_Ct[0], 2, True )
-    cmds.parent( Lid_2_u_Ct[0], CONTROLS )
-    cmds.setAttr( Lid_2_u_Ct[0] + '.translateZ', dstnc / 2 )
-    cmds.parentConstraint( MasterCt[4], Lid_2_u_Ct[0], mo = True )
-
-    # lid_2 tip #
-    Lid_2_t = 'up'
-    lid_2_t = place.Controller( Lid_2_t, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    Lid_2_t_Ct = lid_2_t.createController()
-    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
-    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
-    cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', dstnc )
-    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
-    cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
-    place.setChannels( Lid_2Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
-
-    # scale
-    mstr = 'master'
-    uni = 'uniformScale'
-    scl = ['.scaleX', '.scaleY', '.scaleZ']
-    #
-    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
-    cmds.setAttr( mstr + '.' + uni, 1.0 )
-    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
-    #
-    for s in scl:
-        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
-    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
-    for s in scl:
-        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )

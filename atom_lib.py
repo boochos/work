@@ -262,7 +262,7 @@ def win( *args ):
     atom_prefix_textField = cmds.textField( 'atom_prefix_textField', w = 175 )
 
     atom_gScale_text = cmds.text( 'atom_gScale_text', align = 'left', label = 'Global Scale:', width = 75 )
-    atom_gScale_floatField = cmds.floatField( 'atom_qrig_conScale', w = 45, v = 1.0, pre = 2 )
+    atom_gScale_floatField = cmds.floatField( 'atom_qrig_conScale', w = 45, v = 1.0, pre = 3 )
     atom_gEar_checkBox = cmds.checkBox( 'atom_gEar_check', l = 'Build Ear Rig', al = 'left', v = True )
     atom_gBfd_checkBox = cmds.checkBox( 'atom_gBfd_check', l = 'Build Face Dependencies', al = 'left' )
 

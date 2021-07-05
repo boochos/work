@@ -69,11 +69,18 @@ class SplineFK( object ):
         # Build
 
         # master groups
-        self.masterGp = cmds.group( em = True, n = 'splineFk_' + name + '_' + self.suffix )
-        self.ctGp = cmds.group( em = True, n = 'splineFK_Ct__' + name + '_' + self.suffix )  # scale plug group
-        self.utilGp = cmds.group( em = True, n = 'splineFK_Util__' + name + '_' + self.suffix )
-        self.hideGp = cmds.group( em = True, n = 'splineFK_Hide__' + name + '_' + self.suffix )
-        self.hideJntGp = cmds.group( em = True, n = 'splineFK_JntHide__' + name + '_' + self.suffix )
+        if self.suffix:
+            self.masterGp = cmds.group( em = True, n = 'splineFk_' + name + '_' + self.suffix )
+            self.ctGp = cmds.group( em = True, n = 'splineFK_Ct__' + name + '_' + self.suffix )  # scale plug group
+            self.utilGp = cmds.group( em = True, n = 'splineFK_Util__' + name + '_' + self.suffix )
+            self.hideGp = cmds.group( em = True, n = 'splineFK_Hide__' + name + '_' + self.suffix )
+            self.hideJntGp = cmds.group( em = True, n = 'splineFK_JntHide__' + name + '_' + self.suffix )
+        else:
+            self.masterGp = cmds.group( em = True, n = 'splineFk_' + name )
+            self.ctGp = cmds.group( em = True, n = 'splineFK_Ct__' + name )  # scale plug group
+            self.utilGp = cmds.group( em = True, n = 'splineFK_Util__' + name )
+            self.hideGp = cmds.group( em = True, n = 'splineFK_Hide__' + name )
+            self.hideJntGp = cmds.group( em = True, n = 'splineFK_JntHide__' + name )
         cmds.parent( self.ctGp, self.masterGp )
         cmds.parent( self.utilGp, self.masterGp )
         cmds.parent( self.hideGp, self.masterGp )
@@ -146,7 +153,9 @@ class SplineFK( object ):
             cmds.parent( self.ikJoints[0], self.hideJntGp )
 
             # hardcoding 'oj' value. Shouldn't be any different. Otherwise spline up vector breaks.
+            print 'here', self.ikJoints[0]
             cmds.joint( self.ikJoints[0], e = True, oj = 'xyz', sao = 'yup', ch = True )
+            print 'next'
             for item in self.ikJoints:
                 jnt.ZeroJointOrient( item )
 
@@ -266,7 +275,7 @@ class SplineFK( object ):
         for item in self.skinJoints[2:]:
             # controller gets placed on skin joint positions
             orntObj = str( ls( item )[0].getParent() )
-            cntCt = self.createController( self.name + '_upVctr_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), orntObj, item, color, ctrlType = ['special', ''] )
+            cntCt = self.createController( self.name + '_upVctr_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ), orntObj, item, color, ctrlType = ['special', ''] )
             # try and cleanup
             # place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
             cmds.parent( cntCt[0], self.ctGp )
@@ -366,13 +375,13 @@ class SplineFK( object ):
             cntCt = None
             # First iteration controller
             if i == 1:
-                cntCt = self.createController( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), self.skinJoints[i - 1], handle, color, ctrlType = ['special', 'first'] )
+                cntCt = self.createController( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ), self.skinJoints[i - 1], handle, color, ctrlType = ['special', 'first'] )
                 if self.parent2 == None:
                     self.firstCntCt = cntCt[4]
 
             # All other iteration for controller
             else:
-                cntCt = self.createController( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), self.skinJoints[i - 1], handle, color, ctrlType = ['', ''] )
+                cntCt = self.createController( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ), self.skinJoints[i - 1], handle, color, ctrlType = ['', ''] )
             # append controller to list
             self.ctrlList.append( cntCt )
             # constrain handle or joint. If joint is constrained, means spline was opted to not be built, joints were forwarded as handles
@@ -381,7 +390,7 @@ class SplineFK( object ):
                 print handle
                 print self.clusterList[0]
                 print self.skinJoints[0]
-                # cmds.parentConstraint( self.skinJoints[0], handle, mo = True )
+                cmds.parentConstraint( self.skinJoints[0], handle, mo = True )
             else:
                 # print '?'
                 cmds.parentConstraint( cntCt[4], handle, mo = True )
@@ -430,11 +439,11 @@ class SplineFK( object ):
                     # top group is the world in which the ct group gets constrained/driven
                     # ct group gets incoming constraints from its targets, object off/on via parenSwitch function, the rest of the controller hierarchy is under this group
 
-                    TopGrp1 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_TopGrp1' ), cntCt[0] )[0]
+                    TopGrp1 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_TopGrp1' ), cntCt[0] )[0]
                     self.topGrp1.append( TopGrp1 )
                     cmds.xform( TopGrp1, ws = True, ro = topRot )
 
-                    CtGrp1 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_CtGrp1' ), cntCt[0] )[0]
+                    CtGrp1 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_CtGrp1' ), cntCt[0] )[0]
                     cmds.xform( CtGrp1, ws = True, ro = topRot )
 
                     cmds.parent( CtGrp1, TopGrp1 )
@@ -446,7 +455,7 @@ class SplineFK( object ):
                     # account for ps1 being a joint type
                     self.ps1_Jnt = ps1
                     if cmds.objectType( ps1 ) == 'joint':
-                        JntIntmdt = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_Prnt1OnAssistGp' ), TopGrp1 )[0]
+                        JntIntmdt = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_Prnt1OnAssistGp' ), TopGrp1 )[0]
                         cmds.parent( JntIntmdt, TopGrp1 )
                         place.setRotOrderWithXform( JntIntmdt, 'zxy', False )
                         cmds.parentConstraint( ps1, JntIntmdt, mo = True )
@@ -459,7 +468,7 @@ class SplineFK( object ):
                     if ps2 == None:
                         # cmds.parentConstraint(self.firstCntCt, cntCt[0], mo=True)
                         # Dont need as of Nov 30th 2010
-                        place.parentSwitch( self.nameBuilder( self.name + '__' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp1, TopGrp1, self.ps1_Jnt, self.ctParent,
+                        place.parentSwitch( self.nameBuilder( self.name + '__' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp1, TopGrp1, self.ps1_Jnt, self.ctParent,
                                            False, False, True, True, 'FK_', w = self.FK )
                         # place.cleanUp(TopGrp1, Ctrl=True)
                         cmds.parent( TopGrp1, self.ctGp )
@@ -472,12 +481,12 @@ class SplineFK( object ):
                     topRot = cmds.xform( cntCt[0], query = True, ws = True, ro = True )
                     # top 2 is placed above top 1, therefore this parent is only used of ps1 is turned off
                     # top group is the world in which the ct group gets constrained/driven
-                    TopGrp2 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_TopGrp2' ), TopGrp1 )[0]
+                    TopGrp2 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_TopGrp2' ), TopGrp1 )[0]
                     self.topGrp2.append( TopGrp2 )
                     cmds.xform( TopGrp2, ws = True, ro = topRot )
 
                     # ct group gets incoming constraints from its targets, object off/on via parenSwitch function
-                    CtGrp2 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_CtGrp2' ), TopGrp1 )[0]
+                    CtGrp2 = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_CtGrp2' ), TopGrp1 )[0]
                     cmds.xform( CtGrp2, ws = True, ro = topRot )
 
                     # if groups dont match rotate orders the parent switches will fail.
@@ -490,16 +499,16 @@ class SplineFK( object ):
                     place.setRotOrderWithXform( CtGrp2, 'zxy', False )
                     place.setRotOrderWithXform( TopGrp2, 'zxy', False )
 
-                    place.parentSwitch( self.nameBuilder( self.name + '__' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp1, TopGrp1, CtGrp2, self.ctParent, False, False, True, True, 'FK_', w = self.FK )
+                    place.parentSwitch( self.nameBuilder( self.name + '__' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp1, TopGrp1, CtGrp2, self.ctParent, False, False, True, True, 'FK_', w = self.FK )
 
                     if cmds.objectType( ps2 ) == 'joint':
-                        JntIntmdt = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_Prnt2OnAssistGp' ), TopGrp1 )[0]
+                        JntIntmdt = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_Prnt2OnAssistGp' ), TopGrp1 )[0]
                         cmds.parent( JntIntmdt, TopGrp2 )
                         place.setRotOrderWithXform( JntIntmdt, 'zxy', False )
                         cmds.parentConstraint( ps2, JntIntmdt, mo = True )
-                        place.parentSwitch( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp2, TopGrp2, TopGrp2, JntIntmdt, False, False, True, False, 'Driver_', w = self.driven )
+                        place.parentSwitch( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp2, TopGrp2, TopGrp2, JntIntmdt, False, False, True, False, 'Driver_', w = self.driven )
                     else:
-                        place.parentSwitch( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp2, TopGrp2, TopGrp2, ps2, False, False, True, False, 'Driver_', w = self.driven )
+                        place.parentSwitch( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) ), cntCt[2], CtGrp2, TopGrp2, TopGrp2, ps2, False, False, True, False, 'Driver_', w = self.driven )
                     cmds.parent( TopGrp2, self.ctGp )
 
                 # forward group to be used as parent for next controller iteration
@@ -531,7 +540,7 @@ class SplineFK( object ):
                     # null is placed above this controller
                     # cmds.select(cntCt[2])
                     rot = cmds.xform( cntCt[1], query = True, ws = True, ro = True )
-                    blendNull = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_RotBlendGrp' ), cntCt[2] )[0]
+                    blendNull = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_RotBlendGrp' ), cntCt[2] )[0]
                     cmds.xform( blendNull, ws = True, ro = rot )
                     cmds.parent( blendNull, cntCt[1] )
                     cmds.parent( cntCt[2], blendNull )
@@ -569,14 +578,15 @@ class SplineFK( object ):
                 self.ps1_Jnt = ps1
                 if ps1:
                     if cmds.objectType( ps1 ) == 'joint':
-                        JntIntmdt = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_Prnt1OnAssistGp' ), cntCt[0] )[0]
+                        JntIntmdt = place.null2( self.nameBuilder( self.name + '_' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) + '_Prnt1OnAssistGp' ), cntCt[0] )[0]
                         cmds.parent( JntIntmdt, cntCt[0] )
                         place.setRotOrderWithXform( JntIntmdt, 'zxy', False )
                         cmds.parentConstraint( ps1, JntIntmdt, mo = True )
                         self.ps1_Jnt = JntIntmdt
-                    place.parentSwitch( self.nameBuilder( self.name + '__' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) ), cntCt[2],
+                    place.parentSwitch( self.nameBuilder( self.name + '__' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) ), cntCt[2],
                                        cntCt[1], cntCt[0], self.ps1_Jnt, rp, False, True, False, True, 'FK_', w = self.FK )
                 cmds.parentConstraint( self.rootParent, cntCt[0], mo = True )
+                print 'first cluster loop : parent  ', cntCt[0], self.ctGp
                 cmds.parent( cntCt[0], self.ctGp )
             #
             #
