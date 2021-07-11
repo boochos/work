@@ -565,7 +565,7 @@ def amulet_string( segments = 9, joints_in_seg = 9 ):
     # bind l
     for geo in geo_hinge_l:
         cmds.select( [geo, hingeL_jnt] )
-        print cmds.ls( sl = 1 )
+        print( cmds.ls( sl = 1 ) )
         mel.eval( 'SmoothBindSkin -tsb;' )
     # bind r
     for geo in geo_hinge_r:
@@ -1043,7 +1043,7 @@ def leafs():
 
 
 def createWrap( *args, **kwargs ):
-    print args
+    # print args
     influence = args[0]
     surface = args[1]
 
@@ -1138,8 +1138,8 @@ def offsets2rig( reverse = False ):
     #
     i = 0
     for i in range( len( actual ) ):
-        print actual[i]
-        print offsets[i]
+        print( actual[i] )
+        print( offsets[i] )
         if reverse:
             cmds.select( [actual[i], offsets[i]] )
         else:
@@ -1262,12 +1262,12 @@ def leafABC():
 
     # make geo caache directory
     geoCacheDir = dataDir + 'alembic/'
-    print geoCacheDir
+    print( geoCacheDir )
     if not os.path.exists( os.path.join( dataDir, 'alembic' ) ):
         os.mkdir( geoCacheDir )
     # make cache version directory
     versions = os.listdir( geoCacheDir )
-    print versions
+    print( versions )
     if versions:
         nextVersion = s_foldername
         cacheVersionDir = geoCacheDir + s_foldername.replace( 'anim', 'abc' )  # modified this line to use scene name as folder name
@@ -1276,23 +1276,23 @@ def leafABC():
     else:
         cacheVersionDir = geoCacheDir + s_foldername.replace( 'anim', 'abc' )  # modified this line to use scene name as folder name
         os.mkdir( cacheVersionDir )
-    print cacheVersionDir
-    print os.path.join( cacheVersionDir, s_filename.replace( 'anim', 'abc' ) )
+    print( cacheVersionDir )
+    print( os.path.join( cacheVersionDir, s_filename.replace( 'anim', 'abc' ) ) )
     # return None
     leafs = cmds.ls( sl = True )
-    print leafs
+    print( leafs )
     #
     i = 1
     for leaf in leafs:
         leaf_stripped = leaf.split( ':' )[1]
-        print s_filename.replace( 'anim', 'abc__' + leaf_stripped + '_' )
+        # print s_filename.replace( 'anim', 'abc__' + leaf_stripped + '_' )
         path = cacheVersionDir + '//' + s_filename.replace( 'anim', 'abc__' + leaf_stripped + '_' )
         path = path.replace( '.ma', '.abc' )
         if os.path.isfile( path ):
             path = path.replace( leaf_stripped, leaf_stripped + '_reuse' )
-        print path
+        print( path )
         m = 'AbcExport -j "-frameRange ' + str( int( start ) ) + ' ' + str( int( end ) ) + ' ' + '-attr vrayUserString_id -uvWrite -worldSpace -writeVisibility -writeUVSets -dataFormat ogawa -root ' + leaf + ' -file ' + path + '";'
-        print m
+        print( m )
         mel.eval( m )
         i = i + 1
 
@@ -1399,7 +1399,7 @@ def amulet_string2( segments = 9, joints_in_seg = 9 ):
     # bind l
     for geo in geo_hinge_l:
         cmds.select( [geo, hingeL_jnt] )
-        print cmds.ls( sl = 1 )
+        # print cmds.ls( sl = 1 )
         mel.eval( 'SmoothBindSkin -tsb;' )
     # bind r
     for geo in geo_hinge_r:
@@ -1659,7 +1659,7 @@ def snapAmuletString():
                 a_alt = am_alt[0] + str( j ) + am_alt[1]
             a = segfront + s + sb
 
-            print a, a_alt
+            # print a, a_alt
             #
             cmds.select( a_alt, a )
             cmds.pointConstraint( a, a_alt, mo = False )

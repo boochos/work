@@ -54,7 +54,7 @@ class SaveDialogue( key_ui_core.DirDialog_v01 ):
                     cmds.file( os.path.join( savePath, saveName ), exportSelected = True, type = 'mayaBinary' )
                     cmds.deleteUI( self.parent.intWinName, window = True )
                 else:
-                    from key_libs import key_sys_lib
+                    import key_sys_lib
                     key_sys_lib.printMayaWarning( 'Nothing is selected...' )
 
 
@@ -69,7 +69,7 @@ class SaveWin( key_ui_core.NameDialog_v01 ):
         cmds.button( self.button, l = self.cmdButtonLabel, c = self.saveFileDialog )
 
     def deleteChildren( self, *args ):
-        print self.SaveDialogue
+        print( self.SaveDialogue )
         if cmds.window( self.SaveDialogue, ex = True ):
             cmds.deleteUI( self.SaveDialogue )
 
@@ -106,10 +106,10 @@ class SaveWin( key_ui_core.NameDialog_v01 ):
 
         if path == None:
             if os.path.exists( self.scenepath ):
-                print 'Defaulting to workspace /scenes'
+                print( 'Defaulting to workspace /scenes' )
                 path = self.scenepath
             else:
-                print 'Folder does not exist for filename, defaulting to workspace.'
+                print( 'Folder does not exist for filename, defaulting to workspace.' )
                 path = cmds.workspace( q = True, rd = True )
 
         SaveWin = SaveDialogue( self.SaveDialogue, 'Browse To Directory', 'S A V E', path, self )
@@ -276,7 +276,7 @@ class Key_RenderLauncher( key_ui_core.NameDialog_v01 ):
         # -- End Def cubeRender
 
     def set_renderer( self, args ):
-        print args
+        print( args )
         self.renderer = args
 
     def addControls( self ):
@@ -452,7 +452,7 @@ class Key_GeoCache( key_ui_core.NameDialog_v01 ):
             else:
                 import maya.mel as mm
                 # create the output directory
-                os.mkdir( finalPath, 0777 )
+                os.mkdir( finalPath )
                 gPlayBackSlider = mm.eval( '$tmpVar = $gPlayBackSlider' )
                 minRange = cmds.playbackOptions( query = True, minTime = True ) - 1
                 maxRange = cmds.playbackOptions( query = True, maxTime = True ) + 1
@@ -469,7 +469,7 @@ class Key_GeoCache( key_ui_core.NameDialog_v01 ):
 
                 mm.eval( 'doCreateGeometryCache 4 { "0", "' + str( minRange ) + '", "' + str( maxRange ) + '", "OneFilePerFrame", "0", "' + finalPath + '","0","' + filename + '","0", "add", "1", "1", "1","0","1"}' )
         else:
-            print 'Select a valid mesh to Geometry Cache.'
+            print( 'Select a valid mesh to Geometry Cache.' )
 
     def setPathCMD( self ):
         setRenderPathWin = KeyCacheSetDirectoryDialogue( self.setPathWin, 'Browse To Directory', 'S E T  P A T H', self.cachePath, self )

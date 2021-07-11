@@ -17,7 +17,7 @@ if a:
         try:
             cmds.unknownPlugin( i, r = True )
         except:
-            print 'cant remove plugin ', i
+            print( 'cant remove plugin ', i )
 
 # import sys
 
@@ -126,7 +126,7 @@ def get_shots_assets( list_widget, project ):
         if epp not in skips and epp != 'assets':
             eps.append( epp )  # should catch assets
         if epp == 'assets':
-            print epp
+            print( epp )
             assets_only = get_assets( os.path.join( os.environ['PROJ_ROOT'], project, epp ) )
 
     for ep in eps:
@@ -149,7 +149,7 @@ def get_shots_assets( list_widget, project ):
 
 
 def get_assets( ep_path ):
-    print ep_path
+    print( ep_path )
     """Get assets in new structure."""
     typeskips = ['asset_old',
                  'lightkit',
@@ -474,7 +474,7 @@ def parseSceneFilePath( path ):
     # return_list = []
     # if path is empty, the scene hasn't not been saved yet
     if not len( path ):
-        print 'Save the scene first using the correct naming convention, name_#### ".ma" or ".mb"'
+        print( 'Save the scene first using the correct naming convention, name_#### ".ma" or ".mb"' )
         return False
     else:
         # look for the furthest '.' to make sure there is an extension
@@ -495,7 +495,7 @@ if __name__ == '__main__':
     main_window.show()
     app.exec_()
 else:
-    print 'nah'
+    print( 'nah' )
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
     main_window.show()

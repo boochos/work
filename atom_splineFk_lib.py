@@ -153,9 +153,9 @@ class SplineFK( object ):
             cmds.parent( self.ikJoints[0], self.hideJntGp )
 
             # hardcoding 'oj' value. Shouldn't be any different. Otherwise spline up vector breaks.
-            print 'here', self.ikJoints[0]
+            # print( 'here', self.ikJoints[0] )
             cmds.joint( self.ikJoints[0], e = True, oj = 'xyz', sao = 'yup', ch = True )
-            print 'next'
+            # print( 'next' )
             for item in self.ikJoints:
                 jnt.ZeroJointOrient( item )
 
@@ -246,7 +246,7 @@ class SplineFK( object ):
                 # connect blender attr of returned blend nodes
                 connectAttr( self.baseCtrl + '.' + attr, node + '.blender' )
         else:
-            print '________________ ' + str( self.ik ) + ' is not an ik variable option ________________'
+            print( '________________ ' + str( self.ik ) + ' is not an ik variable option ________________' )
 
     def vectors( self ):
         '''\n
@@ -386,10 +386,10 @@ class SplineFK( object ):
             self.ctrlList.append( cntCt )
             # constrain handle or joint. If joint is constrained, means spline was opted to not be built, joints were forwarded as handles
             if handle == self.clusterList[0]:
-                print 'handle/cluster'
-                print handle
-                print self.clusterList[0]
-                print self.skinJoints[0]
+                # print( 'handle/cluster')
+                # print handle
+                # print self.clusterList[0]
+                # print self.skinJoints[0]
                 cmds.parentConstraint( self.skinJoints[0], handle, mo = True )
             else:
                 # print '?'
@@ -566,7 +566,7 @@ class SplineFK( object ):
                 self.vcParent.append( cntCt[4] )
                 # sort out root parent, account for joint type
                 rp = self.rootParent
-                print self.rootParent
+                # print self.rootParent
                 if cmds.objectType( self.rootParent ) == 'joint':
                     JntIntmdt = place.null2( ( cntCt[2] + '_PrntOnAssistGp' ), cntCt[2] )[0]
                     cmds.parent( JntIntmdt, cntCt[0] )
@@ -586,7 +586,7 @@ class SplineFK( object ):
                     place.parentSwitch( self.nameBuilder( self.name + '__' + str( ( '%0' + str( 3 ) + 'd' ) % ( i ) ) ), cntCt[2],
                                        cntCt[1], cntCt[0], self.ps1_Jnt, rp, False, True, False, True, 'FK_', w = self.FK )
                 cmds.parentConstraint( self.rootParent, cntCt[0], mo = True )
-                print 'first cluster loop : parent  ', cntCt[0], self.ctGp
+                # print 'first cluster loop : parent  ', cntCt[0], self.ctGp
                 cmds.parent( cntCt[0], self.ctGp )
             #
             #

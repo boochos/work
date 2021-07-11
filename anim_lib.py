@@ -1,11 +1,12 @@
 import math
 import os
-import urllib2
+# import urllib2
 
 import maya.OpenMaya as OpenMaya
 import maya.OpenMayaAnim as OpenMayaAnim
 import maya.cmds as cmds
 import maya.mel as mel
+import urllib.request
 import webrImport as web
 
 #
@@ -47,8 +48,8 @@ def secondaryChain( offset = 0.5, lst = 'tailSecondary' ):
             cmds.select( addSel )
         # bake to world
         locs = sorted( cn.controllerToLocator( matchSet = True ) )
-        print locs
-        print range( len( locs ) )
+        print( locs )
+        print( range( len( locs ) ) )
         for i in range( len( locs ) ):
             animCurves = cmds.findKeyframe( locs[i], c = True )
             for crv in animCurves:
@@ -85,7 +86,7 @@ def mocapSkelAnim():
                         # paste/buildCurve
                         # crv.build()
     else:
-        print 'Select node from copy namespace, select node from paste namespace'
+        print( 'Select node from copy namespace, select node from paste namespace' )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -98,7 +99,7 @@ def message( what = '', maya = True, warning = False ):
         if maya:
             mel.eval( 'print \"' + what + '\";' )
         else:
-            print what
+            print( what )
 
 
 def toggleFrustum():
@@ -282,7 +283,7 @@ class SpaceSwitch():
         rooPut = cmds.getAttr( self.obj + '.rotateOrder' )
         if self.rooGet != rooPut:
             reOrder = True
-            print 'reorder'
+            print( 'reorder' )
         # type of restore
         if self.poseOnly:
             # find if obj is keyed, if keyed insert key otherwise setAttr
@@ -361,7 +362,7 @@ def getKeyedFrames( obj ):
                 for frame in framesTmp:
                     frames.append( frame )
             else:
-                print 'no keys'
+                print( 'no keys' )
         frames = list( set( frames ) )
         frames.sort()
         return frames
@@ -388,7 +389,7 @@ def changeRoMulti( ro = 'zxy' ):
 def keyHi( v = 0 ):
     cmds.select( hierarchy = True )
     h = cmds.ls( sl = True )
-    print h
+    print( h )
     for item in h:
         cmds.setKeyframe( item, attribute = 'visibility', v = v )
 
@@ -461,7 +462,7 @@ def matchObj():
             cmds.xform( put, t = t, ws = True )
             return None
         try:
-            print 'try'
+            print( 'try' )
             if cmds.nodeType( put ) == 'joint':
                 cmds.xform( put, ws = True, t = t )
                 cmds.xform( put, ws = True, ro = r )
@@ -488,7 +489,7 @@ def matchObj():
                         t_test = cmds.xform( get, q = True, ws = True, t = True )
                         cmds.xform( put, ws = True, t = t_test )
         except:
-            print 'except'
+            print( 'except' )
             # intermediate object
             loc = cmds.spaceLocator( name = 'getSpace_deleteMe' )[0]
             cmds.setAttr( loc + '.rotateOrder', rooGet )
@@ -576,7 +577,7 @@ def distributeKeys( count = 3.0, destructive = True ):
                     framesNew.append( f )
             frames = framesNew
         #
-        print frames
+        print( frames )
         lastFrame = frames[len( frames ) - 1]
         step = frames[0]
         i = frames[0]
@@ -626,8 +627,10 @@ def loadCurveShape( name = None, local = False, *args ):
         else:
             url = 'https://raw.githubusercontent.com/boochos/controlShapes/master/'
             url = url + name + '.txt'
-            req = urllib2.Request( url )
-            response = urllib2.urlopen( req )
+            # req = urllib2.Request( url )
+            req = urllib.request( urlPath )
+            # response = urllib2.urlopen( req )
+            response = urllib.request.urlopen( req )
             contents = response.read()
             contents = contents.split( "\n" )
             shape = []

@@ -211,7 +211,7 @@ def circle( name = '', obj = '', shape = '', size = 1.0, color = 17, sections = 
         if orient:
             cmds.xform( n, ro = rot )
         else:
-            print 'no orient'
+            print( 'no orient' )
         Circle.append( n )
         # import shape
         if shape:
@@ -714,7 +714,7 @@ def insert( what, where, name, order = None ):
                 result.append( obj )
                 return result
             else:
-                print ' NO OBJ______'
+                print( ' NO OBJ______' )
     else:
         mel.eval( 'warning \"' +
                  '////... select at least one object ...////' + '\";' )
@@ -1330,49 +1330,49 @@ def cleanUp( obj, Ctrl = False, SknJnts = False, Body = False, Accessory = False
             try:
                 cmds.parent( obj, Ctrl )
             except:
-                print obj, 'clean up to', Ctrl, 'failed.'
+                print( obj, 'clean up to', Ctrl, 'failed.' )
     if SknJnts == True:
         SknJnts = namePrebuild( SknJnts = True )
         if cmds.objExists( SknJnts ) == 1:
             try:
                 cmds.parent( obj, SknJnts )
             except:
-                print obj, 'clean up to', SknJnts, 'failed.'
+                print( obj, 'clean up to', SknJnts, 'failed.' )
     if Body == True:
         Body = namePrebuild( Geo = True )[3]
         if cmds.objExists( Body ) == 1:
             try:
                 cmds.parent( obj, Body )
             except:
-                print obj, 'clean up to', Body, 'failed.'
+                print( obj, 'clean up to', Body, 'failed.' )
     if Accessory == True:
         Accessory = namePrebuild( Geo = True )[2]
         if cmds.objExists( Accessory ) == 1:
             try:
                 cmds.parent( obj, Accessory )
             except:
-                print obj, 'clean up to', Accessory, 'failed.'
+                print( obj, 'clean up to', Accessory, 'failed.' )
     if Utility == True:
         Utility = namePrebuild( Geo = True )[1]
         if cmds.objExists( Utility ) == 1:
             try:
                 cmds.parent( obj, Utility )
             except:
-                print obj, 'clean up to', Utility, 'failed.'
+                print( obj, 'clean up to', Utility, 'failed.' )
     if World == True:
         World = namePrebuild( World = True )
         if cmds.objExists( World ):
             try:
                 cmds.parent( obj, World )
             except:
-                print obj, 'clean up to', World, 'failed.'
+                print( obj, 'clean up to', World, 'failed.' )
     if olSkool == True:
         olSkool = namePrebuild( olSkool = True )
         if cmds.objExists( olSkool ) == 1:
             try:
                 cmds.parent( obj, olSkool )
             except:
-                print obj, 'clean up to', olSkool, 'failed.'
+                print( obj, 'clean up to', olSkool, 'failed.' )
 
 
 def namePrebuild( Top = 0, Ctrl = False, SknJnts = False, Geo = False, World = False, Master = False, olSkool = False ):
@@ -1566,13 +1566,13 @@ def stripSufx( obj, string = False ):
             name = obj.replace( '_R', '' )
             return name
         else:
-            print 'nothing stripped'
+            print( 'nothing stripped' )
     else:
         if string in obj:
             name = obj.replace( string, '' )
             return name
         else:
-            print 'nothing stripped'
+            print( 'nothing stripped' )
 
 
 def shapeSize( obj = None, mltp = 1 ):

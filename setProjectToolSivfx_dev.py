@@ -19,7 +19,7 @@ if a:
         try:
             cmds.unknownPlugin( i, r = True )
         except:
-            print 'cant remove plugin ', i
+            print( 'cant remove plugin ', i )
 
 # import sys
 
@@ -145,7 +145,7 @@ def get_shots_assets( list_widget, project ):
         if epp not in skips and epp != 'assets':
             eps.append( epp )  # should catch assets
         if epp == 'assets':
-            print epp
+            print( epp )
             assets_only = get_assets( os.path.join( os.environ['PROJ_ROOT'], project, epp ) )
 
     for ep in eps:
@@ -543,7 +543,7 @@ def parseSceneFilePath( path ):
     # return_list = []
     # if path is empty, the scene hasn't not been saved yet
     if not len( path ):
-        print 'Save the scene first using the correct naming convention, name_#### ".ma" or ".mb"'
+        print( 'Save the scene first using the correct naming convention, name_#### ".ma" or ".mb"' )
         return False
     else:
         # look for the furthest '.' to make sure there is an extension
@@ -811,7 +811,7 @@ class Prefs():
             # print k
             # print v
             self.sync_roots[k] = v
-        print self.sync_roots
+        print( self.sync_roots )
 
 
 def frameRangeFromMaFile( project, entity, task, scene, handles = 0 ):
@@ -849,7 +849,7 @@ def frameRangeFromMaFile( project, entity, task, scene, handles = 0 ):
             for line in inFile.readlines():
                 cvLine = line.strip( '\n' )
                 if 'playbackOptions' in line:
-                    print line
+                    print( line )
                     line_parts = line.split( ' ' )
                     i = 0
                     for part in line_parts:
@@ -862,10 +862,10 @@ def frameRangeFromMaFile( project, entity, task, scene, handles = 0 ):
                         if part == '-aet':
                             all_end = int( line_parts[i + 1] )
                         i = i + 1
-                    print play_start
-                    print play_end
-                    print all_start
-                    print all_end
+                    print( play_start )
+                    print( play_end )
+                    print( all_start )
+                    print( all_end )
                     cmds.playbackOptions( animationStartTime = all_start )
                     cmds.playbackOptions( animationEndTime = all_end )
                     if handles:
@@ -918,11 +918,11 @@ def sync_file( project, entity, task, scene ):
                     sync_path = os.path.join( project_root, entity, task, 'maya', 'scenes', scene )
                     copyfile( working_path, sync_path )
                     # subprocess.Popen( r'explorer /open, ' + destination_path )
-                    print sync_path
+                    print( sync_path )
                 else:
-                    print 'Destination path doesnt exist'
+                    print( 'Destination path doesnt exist' )
             else:
-                print 'Project sync path not defined'
+                print( 'Project sync path not defined' )
     else:
         maya.mel.eval( 'print \" -- Cant build sync path, select more variables -- \";' )
 
@@ -936,7 +936,7 @@ if __name__ == '__main__':
     main_window.show()
     app.exec_()
 else:
-    print 'nah'
+    print( 'nah' )
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )

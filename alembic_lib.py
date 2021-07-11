@@ -10,8 +10,8 @@ al = '/VFX/projects/testing/_Sequences/_SeqTemplate/_ShotTemplate/3D/maya/scenes
 iarch = almb.Abc.IArchive( al )
 top = iarch.getTop()
 numChildren = top.getNumChildren()
-print numChildren
-print top.getChildHeader( 0 ).getFullName()
+print( numChildren )
+print( top.getChildHeader( 0 ).getFullName() )
 
 '''
 print name

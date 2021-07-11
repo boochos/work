@@ -1,6 +1,6 @@
 from __future__ import with_statement
 
-import cPickle
+# import cPickle
 import json
 import os
 
@@ -60,10 +60,10 @@ class CopySeam:
     # Print the current set vertex
     def printVtx( self, mode ):
         if mode == 1:
-            print self.copyVtx
+            print( self.copyVtx )
 
         elif mode == 2:
-            print self.pasteVtx
+            print( self.pasteVtx )
     # Return the current set vertex
 
     def getVtx( self, mode ):
@@ -96,7 +96,7 @@ class CopySeam:
             copyWeightFromSelVtx()
             cmds.select( pair[1] )
             pasteWeightsFromSelectedVtx( False )
-        print '===== copyPasteVtx process complete ====='
+        print( '===== copyPasteVtx process complete =====' )
 
 
 class WeightBroswer( key_ui_lib.FileDialog ):
@@ -204,14 +204,14 @@ def getSkinCluster( sel ):
     pm_node = cmds.ls( sl = 1 )
     if len( pm_node ) == 1:
         if cmds.nodeType( pm_node ) == 'transform':
-            print pm_node
+            print( pm_node )
             pm_shape = cmds.listRelatives( pm_node, shapes = True )
-            print pm_shape
+            print( pm_shape )
             cons = cmds.listHistory( pm_shape[0], pdo = True )
             if cons:
                 for con in cons:
                     if cmds.nodeType( con ) == 'skinCluster':
-                        print con
+                        print( con )
                         skinNode = con
     return skinNode
 
@@ -249,7 +249,7 @@ def storeSkinInfo( skinClusterName, skinInfo, update = False, increment = .2 ):
     infCount = _util.asUintPtr()
     timer = cmds.timerX()
 
-    print '==== Creating %s SkinPoints ====' % gIter.count()
+    print( '==== Creating %s SkinPoints ====' % gIter.count() )
     if update == True:
         gMainProgressBar = mm.eval( '$tmp = $gMainProgressBar' )
         cmds.progressBar( gMainProgressBar, edit = True, w = 200,
@@ -300,7 +300,7 @@ def storeSkinInfo( skinClusterName, skinInfo, update = False, increment = .2 ):
                 reorder.append( wgt[idx] )
             else:
                 tmp.append( wgt[idx] )
-        if tmp > 0:
+        if tmp:
             for item in tmp:
                 reorder.append( item )
         wgt = reorder
@@ -315,7 +315,7 @@ def storeSkinInfo( skinClusterName, skinInfo, update = False, increment = .2 ):
 
     if update:
         cmds.progressBar( gMainProgressBar, edit = True, endProgress = True )
-    print '==== SkinPoints created in: %s seconds ====' % cmds.timerX( st = timer )
+    print( '==== SkinPoints created in: %s seconds ====' % cmds.timerX( st = timer ) )
     return info
 
 
@@ -330,7 +330,7 @@ def reorderInf( inf ):
             reorder.append( item )
         else:
             tmp.append( item )
-    if tmp > 0:
+    if tmp:
         for item in tmp:
             reorder.append( item )
     # print reorder
@@ -375,14 +375,14 @@ def importWeights02( obj, path ):
     # _import = open(path, 'rb')
     _import = open( path, 'r' )
     importInfo = []
-    print '---- Loading file ----\n---- Path: %s ----' % path
+    print( '---- Loading file ----\n---- Path: %s ----' % path )
     # data = cPickle.load(_import)
     data = json.load( _import, object_hook = from_json )
-    print '---- File loaded in: %s seconds ----' % cmds.timerX( st = start )
+    print( '---- File loaded in: %s seconds ----' % cmds.timerX( st = start ) )
     start = cmds.timerX()
-    print '==== Setting weighting data on %s points ====' % str( len( data ) - 1 )
+    print( '==== Setting weighting data on %s points ====' % str( len( data ) - 1 ) )
     setSkinInfo( obj, data, update = True )
-    print '==== Skin point data loaded in: %s seconds ====' % cmds.timerX( st = start )
+    print( '==== Skin point data loaded in: %s seconds ====' % cmds.timerX( st = start ) )
     _import.close()
 
     #
@@ -408,16 +408,16 @@ def exportWeights02( path ):
             if len( storedSkinInfo ) > 0:
                 # export = open(path, 'wb')
                 timer = cmds.timerX()
-                print '++++ Dumping weighting information ++++\n++++ path: %s ++++' % path
+                print( '++++ Dumping weighting information ++++\n++++ path: %s ++++' % path )
                 '''
                 cPickle.dump(storedSkinInfo, export)
                 export.close()
                 '''
                 #
-                export = open( path, 'wb' )
+                export = open( path, 'wt' )  # wt = write text # wb = write bytes
                 json.dump( storedSkinInfo, export, default = to_json, indent = 1 )
                 export.close()
-                print '++++ Dump Complete in: %s seconds ++++' % cmds.timerX( st = timer )
+                print( '++++ Dump Complete in: %s seconds ++++' % cmds.timerX( st = timer ) )
             else:
                 OpenMaya.MGlobal.displayWarning( '' )
 
@@ -506,11 +506,12 @@ def batchNurbsWeightControl( func, *args ):
                         else:
                             funcDict[func][0]( filePath )
                     else:
-                        OpenMaya.MGlobal.displayError( 'File found, directory required.' )
+                        cmds.error( 'File found, directory required.' )
 
             # Set the default path to the HOME
             path = os.environ['HOME']
-            if not os.environ.has_key( 'key_last_saved_path' ):
+            # if not os.environ.has_key( 'key_last_saved_path' ):
+            if 'key_last_saved_path' not in os.environ:
                 os.environ['key_last_saved_path'] = 'none'
             else:
                 pass
@@ -524,9 +525,9 @@ def batchNurbsWeightControl( func, *args ):
                                      _filter = ['.txt', '.mb', '.ma', '*.*'] )
             skinExport.win()
         else:
-            OpenMaya.MGlobal.displayError( 'No skinCluster found, we\'re done here.' )
+            cmds.error( 'No skinCluster found, we\'re done here.' )
     else:
-        OpenMaya.MGlobal.displayError( 'Selection size incorrect, select ONE object.' )
+        cmds.error( 'Selection size incorrect, select ONE object.' )
 
 
 def weightTransferControl( func, path = None, *args ):
@@ -562,11 +563,12 @@ def weightTransferControl( func, path = None, *args ):
                         else:
                             funcDict[func][0]( sel[0], filePath )
                     else:
-                        OpenMaya.MGlobal.displayError( 'Directory given, file required.' )
+                        cmds.error( 'Directory given, file required.' )
 
             # Set the default path to the desktop
             path = os.environ['HOME']
-            if not os.environ.has_key( 'key_last_saved_path' ):
+            # if not os.environ.has_key( 'key_last_saved_path' ):
+            if 'key_last_saved_path'not in os.environ:
                 os.environ['key_last_saved_path'] = 'none'
             # Set the last saved path for the next time the window is opened
             lastpath = os.environ['key_last_saved_path']
@@ -577,9 +579,9 @@ def weightTransferControl( func, path = None, *args ):
                                      _filter = ['.txt', '.mb', '.ma', '*.*'] )
             skinExport.win()
         else:
-            OpenMaya.MGlobal.displayError( 'No skinCluster found, we\'re done here.' )
+            cmds.error( 'No skinCluster found, we\'re done here.' )
     else:
-        OpenMaya.MGlobal.displayError( 'Selection size incorrect, select ONE object.' )
+        cmds.error( 'Selection size incorrect, select ONE object.' )
 
 
 def createSkinCluster( obj, skinInfo ):
@@ -589,7 +591,7 @@ def createSkinCluster( obj, skinInfo ):
     skinCluster = None
     mesh = []
     for idx, inf in enumerate( skinInfo[0].influences ):
-        print inf
+        print( inf )
         if cmds.objExists( inf ):
             # When creating a skinCluster it's critical the first infleuence is a joint
             # otherwise Maya won't create the cluster
@@ -627,11 +629,11 @@ def createSkinCluster( obj, skinInfo ):
                 # If the loops get to here the first item in the exported list is probably not a joint.
                 else:
                     # try adding list object to account for mesh instead of joint as first influence
-                    OpenMaya.MGlobal.displayError( 'No skinCluster created, first object in exported skin not a joint\nOpperation aborted' )
+                    cmds.error( 'No skinCluster created, first object in exported skin not a joint\nOpperation aborted' )
                     # mesh.append([inf,idx])
-                    print mesh
+                    print( mesh )
         else:
-            OpenMaya.MGlobal.displayError( '%s, not found in scene skipping adding as influence' )
+            cmds.error( '%s, not found in scene skipping adding as influence' )
 
     return skinCluster
 
@@ -713,9 +715,9 @@ def rotateLocalJointAxis( *args ):
             # rotate the local rotational axis
             cmds.rotate( x, y, z, ( sel ), r = True, os = True )
         else:
-            print 'Select a joint.'
+            print( 'Select a joint.' )
     else:
-        print 'Selection count wrong, please have only one joint selected.'
+        print( 'Selection count wrong, please have only one joint selected.' )
 
 
 def toggleLocalAxisVis( *args ):
@@ -740,9 +742,9 @@ def toggleLocalAxisVis( *args ):
                 else:
                     cmds.setAttr( itm + '.displayLocalAxis', 1 )
             else:
-                print ( '%s, is not a joint, passing' ) % ( itm )
+                print( '%s, is not a joint, passing' ) % ( itm )
     else:
-        print 'Nothing is selected...'
+        print( 'Nothing is selected...' )
 
 
 def rotLocalAxisWin( *args ):
@@ -931,7 +933,7 @@ def exportMeshWeights( path, obj, updatebar = False ):
         if updatebar == True:
             cmds.progressBar( gMainProgressBar, edit = True, endProgress = True )
     else:
-        print 'skinCluster not found, no weights exported.'
+        print( 'skinCluster not found, no weights exported.' )
 
 
 def exportNurbsSurfaceWeights( path, obj ):
@@ -1027,9 +1029,9 @@ def importWeights( path, obj ):
             elif nodeType == 'nurbsCurve':
                 importMeshWeights( path, obj )
         except:
-            print 'something isn\'t working!'
+            print( 'something isn\'t working!' )
     else:
-        print( '%s does not exist in scene, skipping...' ) % ( obj )
+        print( ( '%s does not exist in scene, skipping...' ) % ( obj ) )
 
 
 def importNurbSurfaceWeights( path, obj ):
@@ -1234,7 +1236,7 @@ def importMeshWeights( path, obj, updatebar = False ):
                     try:
                         cmds.setAttr( skinCluster + '.weightList[' + str( infInfo[0] ) + '].weights[' + str( infInfo[i] ) + ']', infInfo[i + 1] )
                     except:
-                        print 'Something went wrong with vertx %s' % infInfo[0]
+                        print( 'Something went wrong with vertx %s' % infInfo[0] )
                 lineCnt += 1
     fileIn.close()
     cmds.setAttr( skinCluster + ".useComponents", 1 )
@@ -1277,12 +1279,12 @@ def copyWeightFromSelVtx( verbose = False ):
             # Pass the data to Maya
             for i in range( 0, len( wgtList[0] ) ):
                 if verbose == True:
-                    print ( 'INF IDX:%s, INFLUENCE:%s, WEIGHT: %s' ) % ( i, wgtList[1][i], wgtList[0][i] )
+                    print( ( 'INF IDX:%s, INFLUENCE:%s, WEIGHT: %s' ) % ( i, wgtList[1][i], wgtList[0][i] ) )
 
                 mm.eval( '$atom_copy_wgt_array[' + str( i ) + ']=' + str( wgtList[0][i] ) + ';' )
                 mm.eval( '$atom_copy_inf_array[' + str( i ) + ']="' + str( wgtList[1][i] ) + '";' )
         else:
-            print ( 'Selected object has no skinCluster.' )
+            print( 'Selected object has no skinCluster.' )
     else:
         print( 'Selection is wrong, select ONE vertex.' )
 
@@ -1558,7 +1560,7 @@ def batchImportNurbsWeightsBrowser( *args ):
 def batchExportNurbsWeightsBrowser( *args ):
     path = None
     root = os.path.dirname( pm.sceneName() )
-    print root, "WTF"
+    print( root, "WTF" )
 
     if root == '':
         # This is probably a new scene or unsaved scene file
@@ -1577,19 +1579,19 @@ def batchExportNurbsWeightsBrowser( *args ):
 
 
 def batchImportNurbsWeights( path ):
-    print path, '_   path'
+    print( path, '_   path' )
     if os.path.isdir( path ):
         obj = os.listdir( path )
-        print obj
+        print( obj )
         path = os.path.join( path, obj[0] )
-        print path
+        print( path )
         files = os.listdir( path )
-        print files
+        print( files )
         for f in files:
             # account for a .ds or anyother such nonsense
             if f[0] != '.':
                 # make sure this is a txt file
-                print f, '______file'
+                print( f, '______file' )
                 split = f.split( '.' )
 
                 if split[1] == 'txt':
@@ -1599,7 +1601,7 @@ def batchImportNurbsWeights( path ):
 
 def batchExportNurbsWeights( root, surface ):
     obj = pm.ls( surface )[0]
-    print obj, '++++++'
+    print( obj, '++++++' )
     basepath = os.path.join( root, 'WeightsNurbsBatch' )
     finalpath = os.path.join( basepath, surface )
 
@@ -1618,15 +1620,15 @@ def batchExportNurbsWeights( root, surface ):
         skin = pm.ls( tmp )[0]
         inf = skin.getInfluence()
     else:
-        print 'noooooooooooooo skin', tmp
+        print( 'noooooooooooooo skin', tmp )
     if len( inf ) > 0:
-        print inf
+        print( inf )
         for i in inf:
             # iterate through the nodes to find the transform, cmds is faster in this case
             # pymel can be slow, so only convert them to pyNodes when it needs to be done
-            print i.__dict__
+            print( i.__dict__ )
             if cmds.nodeType( i._name ) == 'transform':
-                print i.__dict__
+                print( i.__dict__ )
                 # Convert the nodes to pymel to get the shape and type
                 pyNode = pm.ls( i )[0]
                 if pyNode.getShape().type() == 'nurbsSurface':
@@ -1634,12 +1636,12 @@ def batchExportNurbsWeights( root, surface ):
                     exportPath = os.path.join( finalpath, '%s.txt' % obj )
                     exportNurbsSurfaceWeights( exportPath, obj )
                 else:
-                    print 'not nurbs'
+                    print( 'not nurbs' )
             else:
-                print 'not transform', i
-                print cmds.nodeType( i )
+                print( 'not transform', i )
+                print( cmds.nodeType( i ) )
     else:
-        print 'no inf   ', inf
+        print( 'no inf   ', inf )
 
 
 def weightingUtilWin( *args ):

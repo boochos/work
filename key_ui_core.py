@@ -1,3 +1,4 @@
+import imp
 import os
 import sys
 
@@ -6,7 +7,7 @@ import maya.mel as mm
 import project_variables as pv
 import webrImport as web
 
-reload( pv )
+imp.reload( pv )
 
 # web
 key_sys_lib = web.mod( 'key_sys_lib' )
@@ -52,7 +53,7 @@ class intSliderGrp( object ):
                 # convert the string to an int, if it fails, the string isn't an int
                 int( i )
             except:
-                print '%s, value is not an interger' % ( txt )
+                print( '%s, value is not an interger' % ( txt ) )
                 # Reset the field to what the slider currently is
                 self.sliderCC()
                 # fail the check
@@ -232,7 +233,7 @@ class DirDialog_v01( object ):
                 cmds.menuItem( self.intWinName + '_scenesMenuItem', l = os.path.join( root, 'scenes' ), c = lambda *args: self.gotoBookmark( os.path.join( root, 'scenes' ) ) )
                 cmds.menuItem( self.intWinName + '_dataMenuItem', l = os.path.join( root, 'data' ), c = lambda *args: self.gotoBookmark( os.path.join( root, 'data' ) ) )
         else:
-            print 'No file name found, save file...'
+            print( 'No file name found, save file...' )
 
     def buildCustomBookmarks( self ):
         '''Reads any custom paths that the user may have saved
@@ -394,7 +395,7 @@ class NameDialog_v01( object ):
         self.cmdButtonLabel = buttonLabel
         self.baseName = os.path.basename( cmds.file( query = True, sceneName = True ) ).split( '.' )[0]
         self.saveFilePath = os.path.join( os.getenv( 'HOME' ), 'key_saved_name.txt' )
-        print self.saveFilePath
+        print( self.saveFilePath )
         self.nameTxt = 'key_nameTxt'
 
         # Get the current maya project path
@@ -402,21 +403,21 @@ class NameDialog_v01( object ):
         name = cmds.file( query = True, sceneName = True )
         splt = ''
         for prj in pv.project:
-            print prj
+            print( prj )
             if pv.project[prj]['root'] in name:
                 splt = name.rfind( pv.project[prj]['seq'] )
-                print splt
-        print splt
+                print( splt )
+        print( splt )
         if os.path.exists( name[:splt + 3] ):
             self.basePath = name[:splt + 3]
-            print self.basePath
+            print( self.basePath )
 
         elif os.path.exists( os.getenv( 'MAYA_PROJECT_SEQ_PATH' ) ):
             self.basePath = os.getenv( 'MAYA_PROJECT_SEQ_PATH' )
-            print '//Warning: Scene name invalid, defaulting to MAYA_PROJECT_SEQ_PATH'
+            print( '//Warning: Scene name invalid, defaulting to MAYA_PROJECT_SEQ_PATH' )
         else:
             self.basePath = os.getenv( 'HOME' )
-            print '//Warning: MAYA_PROJECT_SEQ_PATH invalid, defaulting to HOME'
+            print( '//Warning: MAYA_PROJECT_SEQ_PATH invalid, defaulting to HOME' )
 
         self.seqDirs = self.getSequenceDirectories()
 

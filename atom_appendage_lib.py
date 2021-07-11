@@ -103,7 +103,7 @@ def createClavicleRig( obj, aimObj, upParent, suffix, aim, up ):
     upLoc.setTranslation( [0, 10, 0], space = 'object' )
     upLoc.setParent( upParent )
     upLoc.visibility.set( 0 )
-    print 'clav aim 0', aimObj, obj
+    print( 'clav aim 0', aimObj, obj )
     aimConstraint( aimObj, obj, mo = True, wuo = upLoc, wut = 'object', aim = aim, u = up )
 
 
@@ -412,7 +412,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
         aimAxis = 'Z'
         skipAxis.remove( rotOrder )
 
-    print aimAxis, '__________ aimAxis'
+    print( aimAxis, '__________ aimAxis' )
 
     # second axis in rotate order
     if up[0] != 0:
@@ -489,7 +489,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     cmds.parent( MstrUpGp, rig )
     # aimConstraint top to bottom group, up group as up space
     # place.null2(name + '______beforeAim_____', topGp)[0]
-    print aim, up, '___________ pv rig aim, up'
+    print( aim, up, '___________ pv rig aim, up' )
     cmds.aimConstraint( btmGp, topGp, worldUpType = 'object', worldUpObject = upObj, mo = False, w = 1, aim = aim, u = up )
     # place.null2(name + '______afterAim_____', topGp)[0]
     # place.null2(name + '______upObj_____', upObj)[0]
@@ -595,7 +595,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     pvPsGp = place.null2( name + '_PsGp', pv )[0]
     cmds.parent( pv, pvPsGp )
     cmds.parent( pvPsGp, pvWtCt )
-    print slider, pvWtCt
+    print( slider, pvWtCt )
     cmds.connectAttr( slider + '.KneeTwist', pvWtCt + '.ry' )
 
     if setChannels:
@@ -737,7 +737,7 @@ def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimC
 
     point_A = cmds.xform( stJnt, query = True, ws = True, rp = True )
     point_B = cmds.xform( midJnt, query = True, ws = True, rp = True )
-    print 'point B', midJnt, point_B
+    print( 'point B', midJnt, point_B )
     point_C = cmds.xform( endJnt, query = True, ws = True, rp = True )
 
     # solve the lengths
@@ -812,7 +812,7 @@ def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimC
     # over the total distance
 
     upList = ui.createListForTransform( upControl, disFactor )
-    print upControl, '______________________up______________________________', upList, disFactor
+    print( upControl, '______________________up______________________________', upList, disFactor )
     cmds.xform( tmpLoc, os = True, t = upList )
     # temp start
     # place.null2( 'step_7', tmpLoc, orient = True )
@@ -926,7 +926,7 @@ def createStandardDigit( base_digit, end_digit, prefix, suffix, limbName, rotAxi
             digitAim[i] = -1 * ( digitAim[i] )
             # digitUp[i] = -1 * (digitUp[i])
 
-    print '!!!!!!    ', upAxis, disFactor
+    print( '!!!!!!    ', upAxis, disFactor )
     xformDigitLoc( digit_up_loc, [0, 0, 0], upAxis, disFactor, scale )
     cmds.aimConstraint( digit_aim_loc, base_digit, wuo = digit_up_loc, wut = 'object', aim = digitAim, u = [0, 1, 0] )
     # clean up the locators
@@ -976,7 +976,7 @@ def createReverseAnkle( prefix, suffix, name, ankleJnt, paw_fk, aimAxisList, upA
     cmds.xform( ankle_up_grp, os = True, t = loc_pos )
     # place.null2( 'step_3', ankle_up_loc, orient = True )
     cmds.parent( ankle_up_grp, w = True )
-    print 922
+    # print( 922)
     # return None
 
     # Old moving the ankle_up_grp, didnt work, changed on Oct 13th 2010
@@ -994,7 +994,7 @@ def createReverseAnkle( prefix, suffix, name, ankleJnt, paw_fk, aimAxisList, upA
         if flipVal[i] == 1:
             revAnkleAimAxis[i] = -1 * ( revAnkleAimAxis[i] )
             revAnkleUpAxis[i] = -1 * ( revAnkleUpAxis[i] )
-    print 'aim', revAnkleAimAxis, 'up', revAnkleUpAxis
+    print( 'aim', revAnkleAimAxis, 'up', revAnkleUpAxis )
     # return None
     cmds.aimConstraint( ankle_aim_loc[0], ankleJnt, wuo = ankle_up_loc[0], wut = 'object', aim = revAnkleAimAxis, u = revAnkleUpAxis, mo = False )
     # return None
@@ -1027,7 +1027,7 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
     if len( sel ) != 0:
         if cmds.window( 'atom_win', ex = True ):
             hipJnt = sel[0]
-            print hipJnt, '   hip'
+            print( hipJnt, '   hip' )
             hip_ctrl = extractSebastionsControlSubgroup( sel[1] )
             limb_mainCtrl = sel[2]
             if cmds.xform( limb_mainCtrl, q = True, ws = True, t = True )[0] < 0:  # if world space is negative tx, right limb, flip certain controls
@@ -1047,9 +1047,9 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 # printMeta('ankle 1')
                 # find the placement joints
                 ankleChildren = cmds.listRelatives( ankleJnt, children = True )
-                print ankleJnt, ankleChildren
+                print( ankleJnt, ankleChildren )
                 for i in range( 0, len( ankleChildren ), 1 ):
-                    print 1, 'i'
+                    print( 1, 'i' )
                     # cull out the digit metacarpals, they have two children one joint down from the ankleJnt
                     if len( cmds.listRelatives( ankleChildren[i], ad = True ) ) == 4:
                         # test the chain to be either the placement chain or the pad volume chain
@@ -1107,7 +1107,7 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 toeShape = cmds.listRelatives( toeRollCtrl[0], typ = 'shape' )[0]
                 cmds.connectAttr( sel[2] + '.Pivot', toeShape + '.visibility' )
                 cmds.select( toeRollCtrl )
-                print 'color', color
+                print( 'color', color )
                 ui.importCurveShape( 'pawToeRoll_ctrl', None, X * 3, color )
                 cmds.xform( toeRollCtrl, ws = True, t = toePlacementPos )
                 cmds.parent( toeRollCtrl, limbCtrl_grp )
@@ -1119,7 +1119,7 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 toePos = cmds.xform( toeRollCtrlGrp, query = True, ws = True, rp = True )
                 toeOr = cmds.xform( toeRollCtrlGrp, query = True, ws = True, ro = True )
                 cmds.xform( toeRollCtrl, ws = True, ro = toeOr, t = toePos )
-                print right_side, toeRollCtrlGrp
+                print( right_side, toeRollCtrlGrp )
                 if right_side:
                     cmds.xform( toeRollCtrl, r = True, os = True, ro = [ 0, 180, 180 ] )
                 # return None
@@ -1175,7 +1175,7 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 # Ball Roll Control
                 ballRollCtrl = place.circle( place.buildName( prefix, suffix, 'ball_roll_ctrl' ), paw_fk, 'ballRoll_ctrl', X * 4, color, 8, 1, [0, 0, 1] )
                 # To accomodate how atom_placement.circle is working
-                print 1100, 'removed freeze transforms on ball roll'
+                print( 'removed freeze transforms on ball roll' )
                 # cmds.xform(ballRollCtrl[0], ws=True, ro=[0, 0, 0])
 
                 # expose this to a varaible
@@ -1446,7 +1446,7 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 ankleUpDis = 0.0
                 ankle_pos = cmds.floatFieldGrp( 'atom_qls_anklePvFlip_floatFieldGrp', query = True, v = True )
                 if ankle_pos[0] != 0:
-                    print 'hand'
+                    print( 'hand' )
                     if not right_side:
                         ankleUpAxis = [1, 0, 0]  # hand should be facing sideways tx
                     else:
@@ -1454,7 +1454,7 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                     ankleUpDis = ankle_pos[0]
                     ankleUpAxisList = [ankleUpDis, 0, 0]
                 else:
-                    print 'paw'
+                    print( 'paw' )
                     ankleUpAxis = [0, 1, 0]  # paw should be facing forward tz
                     ankleUpDis = ankle_pos[1]
                     ankleUpAxisList = [0, ankleUpDis, 0]
@@ -1493,9 +1493,9 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 # print 'line 1229'
                 # return None
                 goal = cmds.xform( hipJnt, query = True, ws = True, rp = True )
-                print 'goal world rp:', goal
-                print 'aim axis:', aimAxisList
-                print 'uiflip:', flipVal
+                print( 'goal world rp:', goal )
+                print( 'aim axis:', aimAxisList )
+                print( 'uiflip:', flipVal )
                 stepToGoal( goal = goal, sample = 0.001, obj = ankleFromToeRollGrp_aim_loc, operation = '<', goalAxis = 1, axis = aimAxisList, uiFlip = flipVal )
                 # return None
                 '''
@@ -1519,12 +1519,12 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 # print 'line 1245'
                 # return None
                 # introduces CYCLE
-                print '__CYCLE__HERE__'
+                # print '__CYCLE__HERE__'
 
                 ankleFromToeRollGrpAim = cmds.aimConstraint( ankleFromToeRollGrp_aim_loc, ankleFromToeRollGrp,
                                                             wuo = autoAnkleUp_loc[0], mo = True, wut = 'object', aim = ankleUpAxis, u = [0, 0, 1] )
 
-                print ankleFromToeRollGrp_aim_loc, ankleFromToeRollGrp, autoAnkleUp_loc[0]
+                print( ankleFromToeRollGrp_aim_loc, ankleFromToeRollGrp, autoAnkleUp_loc[0] )
                 # return None
                 # attempt to fix ankle position
                 '''
@@ -1613,7 +1613,7 @@ def createReverseLeg( setChannels = True, traversDepth = 2, ballRollOffset = 0.3
                 place.hijackScale( ankleScaleGp, limbCtrl_grp )
                 # '''
                 # return None
-                print limb_ctrl, ' --- ', limbCtrl_grp
+                print( limb_ctrl, ' --- ', limbCtrl_grp )
                 cmds.parentConstraint( limb_ctrl, limbCtrl_grp, mo = True )
 
                 # return None
@@ -1789,9 +1789,9 @@ def parentForarmRigJoints( parent, name, suffix ):
             if not cmds.listRelatives( jnt, parent = True ):
                 cmds.parent( jnt, parent )
             else:
-                print 'Nooooooooooooooooooooooooooooooooo'
+                print( 'Nooooooooooooooooooooooooooooooooo' )
         else:
-            print 'doesnt exist____________________', jnt
+            print( 'doesnt exist____________________', jnt )
 
 
 def createForarmTwistRig( suffixList, w = 0.5 ):

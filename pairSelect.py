@@ -10,7 +10,7 @@ def message( what = '', maya = False ):
     if maya:
         mel.eval( 'print \"' + what + '\";' )
     else:
-        print what
+        print( what )
 
 
 class Get():

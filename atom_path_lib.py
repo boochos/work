@@ -1,4 +1,5 @@
 import maya.cmds as cmds
+import maya.mel as mel
 # import atom_miscellaneous_lib as misc
 import webrImport as web
 # web
@@ -17,7 +18,7 @@ def message( what = '', maya = True, warning = False ):
         if maya:
             mel.eval( 'print \"' + what + '\";' )
         else:
-            print what
+            print( what )
 
 
 def attach( up = '', reverse = False, orientNode = '' ):
@@ -30,14 +31,14 @@ def attach( up = '', reverse = False, orientNode = '' ):
     cmds.undoInfo( openChunk = True )
     #
     sel = cmds.ls( sl = True )
-    print sel
+    # print sel
     path = sel[len( sel ) - 1]
     path = path.split( ':' )[0] + ':path'
     up = path.split( ':' )[0] + ':up'
-    print path
+    # print path
     # remove path from list
     sel.remove( sel[len( sel ) - 1] )
-    print sel
+    # print sel
     sel.sort()
     i = 0
     mlt = 1.0 / len( sel )
@@ -46,7 +47,7 @@ def attach( up = '', reverse = False, orientNode = '' ):
     e = 0.3
     locs = []
     for ct in sel:
-        print ct
+        # print ct
         cmds.select( ct )
         loc = cn.locatorOnSelection( constrain = False )
         locs.append( loc[0] )
@@ -102,7 +103,7 @@ def path( segments = 5, size = 0.05, length = 10, *args ):
     PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 150 * size )
     # PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 33 )
     # place.cleanUp(newSpine[0], Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-    print PreBuild
+    print( PreBuild )
 
     CHARACTER = PreBuild[0]
     CONTROLS = PreBuild[1]
@@ -125,7 +126,7 @@ def path( segments = 5, size = 0.05, length = 10, *args ):
     cmds.parentConstraint( 'master_Grp', upCntCt[0], mo = True )
     path = place.getUniqueName( 'path' )
     lengthSeg = length / 5
-    print lengthSeg
+    # print lengthSeg
     if segments == 1:
         points = segments
     else:

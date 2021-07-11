@@ -112,7 +112,7 @@ def transformRotationType( object = '', rooNew = 0 ):
     # Get the node's rotate order value:
     node = cmds.ls( sl = 1 )[0]
     rotOrder = cmds.getAttr( '%s.rotateOrder' % object )
-    print rotOrder
+    # print rotOrder
     # Get the world matrix as a list
     matrixList = cmds.getAttr( '%s.worldMatrix' % object )  # len(matrixList) = 16
     # Create an empty MMatrix:
@@ -130,7 +130,7 @@ def transformRotationType( object = '', rooNew = 0 ):
     eulerRot.reorderIt( rooNew )
     # Convert from radians to degrees:
     angles = [math.degrees( angle ) for angle in ( eulerRot.x, eulerRot.y, eulerRot.z )]
-    print angles, "MMatrix"
+    print( angles, "MMatrix" )
     return angles
 
 
@@ -144,7 +144,8 @@ def message( what = '', maya = True, warning = False ):
         if maya:
             mel.eval( 'print \"' + what + '\";' )
         else:
-            print wha
+            # print( what)
+            pass
 
 
 def uiEnable( controls = 'modelPanel' ):
@@ -781,7 +782,7 @@ class Clip( Layer ):
             # timer end
             # code that is being timed
             totalTime = cmds.timerX( startTime = start )
-            print "------------  Total time: ", totalTime
+            print( "------------  Total time: ", totalTime )
         else:
             message( 'Select some objects. Export aborted.', maya = True, warning = True )
 
@@ -816,7 +817,7 @@ class Clip( Layer ):
                         clp.get()
                         self.layers.append( clp )
                 else:
-                    print layer, '     no members'
+                    print( layer, '     no members' )
             self.setActiveLayer( l = self.rootLayer )
             # build root layer class
             clp = Layer( sel = self.sel, comment = self.comment, poseOnly = self.poseOnly, bakeRange = self.bakeRange )
@@ -1050,11 +1051,11 @@ def clipApply( path = '', ns = True, onCurrentFrame = True, mergeExistingLayers 
     # frame range
     s = None
     e = None
-    print start, clp.start
+    print( start, clp.start )
     if clp.start != start:
         s = start
     else:
-        print '____'
+        print( '____' )
     if clp.end != end:
         e = end
     # print s, start, end, e
@@ -1125,7 +1126,7 @@ def insertIntoRange( attr, rng = [0.0, 0.0], extendEnd = True ):
     # make another copy
     keys.append( copy.deepcopy( k ) )
     # set start, end frame
-    print rng, attr.name
+    print( rng, attr.name )
     keys[0].frame = rng[0]
     keys[1].frame = rng[1]
     # some more key attrs
@@ -1178,7 +1179,7 @@ def insertKeyValue( attr, frame = 0.0 ):
     while frame > attr.keys[i].frame:
         i = i + 1
         if len( attr.keys ) - 1 < i:
-            print 'done'
+            print( 'done' )
             return None  # needs an actual value to work
     else:
         preVal = attr.keys[i - 1].value

@@ -100,7 +100,7 @@ def sleigh():
     # main rig groups/controllers
     PreBuild = place.rigPrebuild( Top = 2, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 30 * X )
     # [u'___PROP___', u'___CONTROLS', u'___SKIN_JOINTS', [u'___GEO', u'___UTILITY', u'___ACCESSORY', u'___BODY'], u'___WORLD_SPACE', (u'master_TopGrp', u'master_CtGrp', u'master', u'master_Offset', u'master_Grp')]
-    print PreBuild
+    print( PreBuild )
     cmds.select( cl = True )
     CHARACTER = PreBuild[0]
     CONTROLS = PreBuild[1]

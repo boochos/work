@@ -1,12 +1,13 @@
 import os
 import subprocess
+# from cacheAbc import outDataExp
 
 
 def movToMp4( dir = '', fl = '' ):
     filein = os.path.join( dir, fl )
     fileout = os.path.join( dir, fl ).replace( '.mov', '.mp4' )
-    print filein
-    print fileout
+    print( filein )
+    print( fileout )
     # All
     # cmd = ['ffmpeg', '-i', filein, '-vcodec', 'png', fileout]
     cmd = ['ffmpeg', '-i', filein, '-c', 'copy', fileout]
@@ -15,17 +16,21 @@ def movToMp4( dir = '', fl = '' ):
     # -c:v libx264
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
-    print out
+    print( out )
 
 
-def renderFrames( *args ):
+def renderFrames( filein = '', fileout = '', pad = '4', format = 'png' ):
+    '''
     filein = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002.mp4'
-    fileout = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002.%05d.png'
+    fileout = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002'
+    '''
+    fileout = fileout + '.%0' + pad + 'd.' + format
     # All
     cmd = ['ffmpeg', '-i', filein, '-vcodec', 'png', fileout]
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
-    print out
+    print( out )
+    '''
     # Start/End
     # hh:mm:ss[.xxx]
     start = '00:00:05'
@@ -34,6 +39,7 @@ def renderFrames( *args ):
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
     print out
+    '''
 
 
 def imgToMp4( *args ):
@@ -47,7 +53,7 @@ def imgToMp4( *args ):
     cmd = ['ffmpeg', '-i', filein, '-vcodec', 'png', fileout]
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
-    print out
+    print( out )
     # Start/End
     # hh:mm:ss[.xxx]
     start = '00:00:05'
@@ -55,7 +61,7 @@ def imgToMp4( *args ):
     cmd = ['ffmpeg', '-ss', start, '-i', filein, '-to', end, '-vcodec', 'png', fileout]
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
-    print out
+    print( out )
 
 
 def img_To_img():
@@ -69,22 +75,85 @@ def img_To_img():
     cmd = ['ffmpeg', '-i', filein, '-start_number', '1001', fileout]
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
-    print out
+    print( out )
     #
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
-    print out
+    print( out )
 
 
 def go():
     dir = '/jobs/SITE/DOC/breakdowns/SARC/SpiderRef/new'
     for fl in os.listdir( dir ):
         if '.mov' in fl:
-            print fl
-            movToMp4( dir, fl )
+            print( fl )
         # break
 
 
+def burn_in( filein = '', task = '', startFrame = 1001, topRight = '', size = 15, wMargin = 20, hMargin = 20 ):
+    '''
+    bigger margin number pushes text to edges of screen
+    ffmpeg -i input -vf "drawtext=fontfile=Arial.ttf: text='%{frame_num}': start_number=1: x=(w-tw)/2: y=h-(2*lh): fontcolor=black: fontsize=20: box=1: boxcolor=white: boxborderw=5" -c:a copy output
+    '''
+    #
+    path_no_ext, ext = filein.split( '.' )
+    source = 'file\: '
+    path = ''
+    #
+    if not task:
+        file_name = path_no_ext.split( '\\' )[-1]
+        task = file_name
+        path = path_no_ext.replace( task, '' )
+        source = source + task
+        if '_r' in task:
+            task = task.split( '_r' )[0]  # split from revision
+        else:
+            task = task.split( '____' )[0]  # split from camera
+        # task = '' + task.replace( '_r0', '_v0' )
+    #
+    burn1 = '_tmp__burn_in_1'
+    burn2 = '_tmp__burn_in_2'
+    burn3 = '__burn_in'
+    #
+    path1 = path_no_ext + burn1 + '.' + ext
+    path2 = path_no_ext + burn2 + '.' + ext
+    path3 = path_no_ext + burn3 + '.' + ext
+    path_clientName = path_no_ext.replace( file_name, task + '.' + ext )
+    # margin
+    wm = "w/" + str( wMargin )  # divide image width to n number of pieces = margin
+    hm = "h/" + str( hMargin )  # line height * margin = margin
+    startFrame = str( startFrame )
+    size = str( size )
+    # print startFrame
+
+    # render frames
+    renderFrames( filein, os.path.join( path, task ) )
+    # return None
+
+    # task left upper corner
+    # drawtext='fontfile=FreeSans.ttf:text=%{localtime\:%a %b %d %Y}'
+    cmd = ["ffmpeg", "-i", filein, "-vf", "drawtext=fontfile=C\:\\Windows\\Fonts\\BAUHS93.ttf: text='" + task + "': x=(" + wm + " ): y=(" + hm + "): fontcolor=white: fontsize=" + size + ": box=1: boxcolor=black: boxborderw=5", "-y", path1]
+    p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
+    out, err = p.communicate()
+    print( err )
+
+    # frames right upper corner
+    cmd = ["ffmpeg", "-i", path1, "-vf", "drawtext=fontfile=C\:\\Windows\\Fonts\\Arial.ttf: text='%{frame_num}': start_number=" + startFrame + ": x=(w-tw - (" + wm + " )): y=(" + hm + "): fontcolor=white: fontsize=" + size + ": box=1: boxcolor=black: boxborderw=5", "-y", path2]
+    p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
+    out, err = p.communicate()
+    print( err )
+    os.remove( path1 )
+
+    # frames right upper corner
+    cmd = ["ffmpeg", "-i", path2, "-vf", "drawtext=fontfile=C\:\\Windows\\Fonts\\Arial.ttf: text='" + source + "': x=(" + wm + " ): y=(h-lh-" + hm + "): fontcolor=white: fontsize=" + size + ": box=1: boxcolor=black: boxborderw=5", "-y", path_clientName]
+    p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
+    out, err = p.communicate()
+    print( err )
+    os.remove( path2 )
+
+# burn_in()
+'''
 import ffMpg
 reload( ffMpg )
 ffMpg.img_To_img()
+'''

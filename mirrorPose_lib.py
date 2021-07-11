@@ -1,8 +1,10 @@
+import imp
+
 import clipPickle_lib as cp
-reload(cp)
+
+imp.reload( cp )
 
 # sort out namespaces
-
 
 # attr flip
 '''
@@ -26,27 +28,30 @@ sel = [
 'skelLady01:R_arm_shoulderIk_ctrl']
 ]
 
-def swapAnim(pair=[]):
+
+def swapAnim( pair = [] ):
     # Get
-    cmds.select(pair[0])
-    pr_A = cp.Clip(name='tmp')
+    cmds.select( pair[0] )
+    pr_A = cp.Clip( name = 'tmp' )
     pr_A.get()
     # Swap
-    cmds.select(pair[1])
-    pr_B = cp.Clip(name='tmp')
+    cmds.select( pair[1] )
+    pr_B = cp.Clip( name = 'tmp' )
     pr_B.get()
     #
-    pr_A = cp.updateObjName(pr_A, names=[pair[1]])
+    pr_A = cp.updateObjName( pr_A, names = [pair[1]] )
     pr_A.putLayers()
-    pr_B = cp.updateObjName(pr_B, names=[pair[0]])
+    pr_B = cp.updateObjName( pr_B, names = [pair[0]] )
     pr_B.putLayers()
 
-def flipAttr(obj='', attr=''):
+
+def flipAttr( obj = '', attr = '' ):
     pass
-    
 
-def swap(sel=[]):
+
+def swap( sel = [] ):
     for pair in sel:
-        swapAnim(pair=pair)
+        swapAnim( pair = pair )
 
-swap(sel=sel)
+
+swap( sel = sel )

@@ -10,6 +10,7 @@ misc = web.mod( 'atom_miscellaneous_lib' )
 stage = web.mod( 'atom_splineStage_lib' )
 splnFk = web.mod( 'atom_splineFk_lib' )
 abl = web.mod( 'atom_body_lib' )
+cn = web.mod( 'constraint_lib' )
 
 
 def preBuild( 
@@ -35,32 +36,14 @@ def preBuild(
         TAIL_jnt = 'tail_jnt_01',
         GEO_gp = 'girlGeo',
         SKIN_jnt = 'root_jnt' ):
-    '''\n
-        COG_jnt='spine_jnt_01', 
-        PELVIS_jnt='pelvis_jnt', 
-        CHEST_jnt='spine_jnt_06', 
-        NECK_jnt='neck_jnt_01', 
-        HEAD_jnt='neck_jnt_06',
-        HIP_L_jnt='leg_hip_jnt_L', 
-        HIP_R_jnt='leg_hip_jnt_R',
-        SHLDR_L_jnt='arm_shoulder_jnt_L', 
-        SHLDR_R_jnt='arm_shoulder_jnt_R',
-        BACK_L_jnt='leg_foot_ctrl_placement_jnt_L', 
-        BACK_R_jnt='leg_foot_ctrl_placement_jnt_R',
-        FRONT_L_jnt='arm_foot_ctrl_placement_jnt_L', 
-        FRONT_R_jnt='arm_foot_ctrl_placement_jnt_R',
-        TAIL_jnt='tail_jnt_01', 
-        TAILTIP_jnt='tail_jnt_011', 
-        GEO_gp='buddy_GP', 
-        SKIN_jnt='root_jnt'):
-    '''
+
     current_scale = cmds.floatField( 'atom_qrig_conScale', q = True, v = True )
-    cmds.floatField( 'atom_qrig_conScale', edit = True, v = 0.8 )
+    cmds.floatField( 'atom_qrig_conScale', edit = True, v = 1.0 )
 
     face = None
     check = cmds.checkBox( 'atom_qrig_faceCheck', query = True, v = True )
     X = cmds.floatField( 'atom_qrig_conScale', query = True, value = True )
-    print X
+    # print X
     if check == 0:
         face = False
     else:
@@ -68,8 +51,8 @@ def preBuild(
 
     # delta mush
     # cmds.deltaMush('Plane002',smoothingIterations=2, smoothingStep=0.5, pinBorderVertices=1, envelope=1)
-    cmds.deltaMush( 'Child_Body', smoothingIterations = 26, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
-    cmds.deltaMush( 'Socks', smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    cmds.deltaMush( 'chr_vance_bradyHepner_neutralA_noWig_20210623', smoothingIterations = 26, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    # cmds.deltaMush( 'Socks', smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
 
     PreBuild = place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 150 )
 
@@ -81,7 +64,7 @@ def preBuild(
     cmds.setAttr( mstr + '.' + uni, 1.0 )
     for s in scl:
         cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )
-        cmds.connectAttr( mstr + '.' + uni, 'deltaMush2' + s )
+        # cmds.connectAttr( mstr + '.' + uni, 'deltaMush2' + s )
     '''
     misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
     for s in scl:
@@ -103,7 +86,7 @@ def preBuild(
 
     # COG #
     Cog = 'cog'
-    cog = place.Controller( Cog, COG_jnt, False, 'facetYup_ctrl', X * 60, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    cog = place.Controller( Cog, COG_jnt, False, 'facetYup_ctrl', X * 75, 17, 8, 1, ( 0, 0, 1 ), True, True )
     CogCt = cog.createController()
     place.setRotOrder( CogCt[0], 2, True )
     cmds.parent( CogCt[0], CONTROLS )
@@ -112,7 +95,7 @@ def preBuild(
     # PELVIS/CHEST #
     # # PELVIS ##
     Pelvis = 'pelvis'
-    pelvis = place.Controller( Pelvis, PELVIS_jnt, False, 'biped_hip', X * 3, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    pelvis = place.Controller( Pelvis, PELVIS_jnt, False, 'biped_hip', X * 3.25, 17, 8, 1, ( 0, 0, 1 ), True, True )
     PelvisCt = pelvis.createController()
     place.setRotOrder( PelvisCt[0], 2, True )
     # # GROUP for hip joints, tail ##
@@ -135,7 +118,7 @@ def preBuild(
 
     # # CHEST ##
     Chest = 'chest'
-    chest = place.Controller( Chest, CHEST_jnt, False, 'GDchest_ctrl', X * 6, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    chest = place.Controller( Chest, CHEST_jnt, False, 'GDchest_ctrl', X * 7.0, 17, 8, 1, ( 0, 0, 1 ), True, True )
     ChestCt = chest.createController()
     place.setRotOrder( ChestCt[0], 2, True )
     # # GROUP for shoulder joints, neck ##
@@ -182,7 +165,7 @@ def preBuild(
 
     # HEAD #
     Head = 'head'
-    head = place.Controller( Head, HEAD_jnt, False, 'biped_head', X * 4, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    head = place.Controller( Head, HEAD_jnt, False, 'biped_head', X * 3.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
     HeadCt = head.createController()
     place.setRotOrder( HeadCt[0], 2, True )
     # parent switch
@@ -312,7 +295,7 @@ def preBuild(
 
         # BACK L  #
         PawBckL = 'foot_L'
-        pawBckL = place.Controller( PawBckL, BACK_L_jnt, False, 'pawMaster_ctrl', X * 35.0, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'blue' )
+        pawBckL = place.Controller( PawBckL, BACK_L_jnt, False, 'pawMaster_ctrl', X * 38.0, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'blue' )
         PawBckLCt = pawBckL.createController()
         cmds.parent( PawBckLCt[0], CONTROLS )
         # More parent group Options
@@ -341,7 +324,7 @@ def preBuild(
 
         # BACK R  #
         PawBckR = 'foot_R'
-        pawBckR = place.Controller( PawBckR, BACK_R_jnt, False, 'pawMaster_ctrl', X * 35.0, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'burgundy' )
+        pawBckR = place.Controller( PawBckR, BACK_R_jnt, False, 'pawMaster_ctrl', X * 38.0, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'burgundy' )
         PawBckRCt = pawBckR.createController()
         cmds.parent( PawBckRCt[0], CONTROLS )
         # More parent group Options
@@ -441,7 +424,7 @@ def buildAppendages( *args ):
     # print cmds.floatField('atom_qrig_conScale', q=True, v=True)
     # return None
     current_scale = cmds.floatField( 'atom_qrig_conScale', q = True, v = True )
-    cmds.floatField( 'atom_qrig_conScale', edit = True, v = 1.0 )
+    cmds.floatField( 'atom_qrig_conScale', edit = True, v = 2 )
 
     current_ldf_val = cmds.floatField( 'atom_qls_ldf_floatField', query = True, v = True )
     current_paw_ldf_val = cmds.floatField( 'atom_paw_qls_ldf_floatField', query = True, v = True )
@@ -468,7 +451,7 @@ def buildAppendages( *args ):
     place.cleanUp( 'Leg_limb_ctrl_grp_L', Ctrl = True )
     cmds.setAttr( 'Leg_leg_ankle_ctrl_L.AutoAnkle', 0 )
     cmds.setAttr( 'Leg_pv_ctrl_L_Twist.Pv_Vis', 1 )
-    print 4
+    # print 4
     # return None
 
     name = 'foot_pv_L'
@@ -682,7 +665,7 @@ def buildAppendages( *args ):
     aal.createDeltVolumeRig( ['L', 'R'], w = 0.5 )  # reduced pivot at joint
     # temp stop
 
-    print '===== Quadriped Leg Build Complete ====='
+    print( '===== Quadriped Leg Build Complete =====' )
     cmds.floatField( 'atom_qrig_conScale', edit = True, v = current_scale )
 
     quadLimits()
@@ -1387,3 +1370,20 @@ def quadLimits():
     # cmds.transformLimits( 'arm_mid_phal_jnt_03_R', rx = [-8.5, 360], erx = [1, 0] )
     # cmds.transformLimits( 'arm_mid_phal_jnt_02_R', rx = [-16, 360], erx = [1, 0] )
     # cmds.transformLimits( 'arm_mid_phal_jnt_01_R', rx = [-6.5, 360], erx = [1, 0] )
+
+
+def clearSetupConstraints():
+    '''
+    
+    '''
+    # clear setup Constraints
+    joints = cmds.select( 'root_jnt', hi = 1 )
+    joints = cmds.ls( sl = 1 )
+    for i in joints:
+        con = cmds.nodeType( i )
+        if 'Constraint' in con:
+            cmds.select( i )
+            cmds.pickWalk( d = 'up' )
+            obj = cmds.ls( sl = 1 )
+            cn.updateConstraintOffset( obj = obj )
+            cmds.delete( i )

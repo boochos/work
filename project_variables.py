@@ -17,4 +17,4 @@ class UW():
         'assets''P:/uw/',
         'seq''P:/uw/',
         '''
-        print 'pass'
+        print( 'pass' )

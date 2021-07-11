@@ -15,7 +15,7 @@ def message( what = '', maya = True, warning = False ):
         if maya:
             mel.eval( 'print \"' + what + '\";' )
         else:
-            print what
+            print ( what )
 
 
 def setProjectFromFilename( dirVar ):
@@ -29,7 +29,7 @@ def setProjectFromFilename( dirVar ):
                 setPath = path[:idx - 1]
             else:
                 setPath = path[:idx + len( dirVar )]
-            print setPath
+            print ( setPath )
             mel.eval( 'setProject "' + setPath + '";' )
             message( 'Project set to: %s' % ( setPath ) )
         else:
@@ -61,7 +61,7 @@ def parseSceneFilePath( path ):
     # return_list = []
     # if path is empty, the scene hasn't not been saved yet
     if not len( path ):
-        print 'Save the scene first using the correct naming convention, name_#### ".ma" or ".mb"'
+        print ( 'Save the scene first using the correct naming convention, name_#### ".ma" or ".mb"' )
         return False
     else:
         # look for the furthest '.' to make sure there is an extension
@@ -97,7 +97,7 @@ def incrementalSave( *args ):
                     if phile is not False:
                         file_info = splitEndNumFromString( phile[1] )
                         if string_info[0] == file_info[0]:
-                            if file_info[1] > num:
+                            if int( file_info[1] ) > int( num ):
                                 num = file_info[1]
         # increment the suffix
         version = '%03d' % ( int( num ) + 1 )
@@ -129,7 +129,7 @@ def openDirFromScenePath( inDir = 'maya', openDir = 'movies' ):
                 app = "nautilus"
                 call( [app, path] )
         else:
-            print '\n'
+            print ( '\n' )
             cmds.warning( inDir + '  --  not found in path' )
     else:
         cmds.warning( 'No file path found, operation aborted.' )

@@ -164,8 +164,8 @@ def getMeta( filename ):
         js = json.loads( out )
         # print js
         if err:
-            print "========= error ========"
-            print err
+            print( "========= error ========" )
+            print( err )
         try:
             p.kill()
         except:
@@ -173,7 +173,7 @@ def getMeta( filename ):
             # print 'couldnt kill ffprobe'
         return js
     except:
-        print 'Failed getMeta: ', filename
+        print( 'Failed getMeta: ', filename )
     return None
 
 
@@ -182,7 +182,7 @@ def getThumbSuffix():
 
 
 def getThumb( filein, fileout, delete = False, scale = 1.0 ):
-    print 'in thumb'
+    print( 'in thumb' )
     create = False
     outdate = None
     indate = None
@@ -210,20 +210,20 @@ def getThumb( filein, fileout, delete = False, scale = 1.0 ):
                 ff = locateffmpeg()
                 cmnd = [ff, '-loglevel', 'quiet', '-ss', '00:00:00', '-i', filein, '-y', '-frames:v', '1', fileout]
                 # subprocess.call( cmd )
-                print 'called'
+                # print 'called'
                 p = subprocess.Popen( cmnd, stdout = subprocess.PIPE, stderr = subprocess.PIPE )
                 # print filein
                 out, err = p.communicate()
-                print "==========output=========="
+                print( "==========output==========" )
                 # print out
                 if out:
                     js = json.loads( out )
                 # print js
                 if err:
-                    print "========= error ========"
-                    print err
+                    print( "========= error ========" )
+                    print( err )
             except:
-                print 'fail'
+                print( 'fail' )
                 pass
     return fileout
 
@@ -247,7 +247,7 @@ def getImageSize( path = '' ):
             return 0, 0
             '''
     else:
-        print '   nuthin========================='
+        print( '   nuthin=========================' )
         return 0, 0
 
 
@@ -294,7 +294,7 @@ def buildMov( content, path = '', createThumb = True ):
         clip.height = str( meta['streams'][0]['height'] )
         clip.width = str( meta['streams'][0]['width'] )
         if createThumb:
-            print 'thumb'
+            print( 'thumb' )
             path = clip.movPath
             f = getThumb( path, os.path.join( getDataPath(), clip.name + getThumbSuffix() + '.png' ), delete = False )
             clip.thumbnail = f
@@ -351,11 +351,11 @@ def makeMov( filein = '', fileout = '', quality = 15, scrub = True ):
                '-c:v', 'libx264', '-profile:v', 'main', '-vendor', 'ap10', '-pix_fmt', 'yuv420p', '-crf', qual, fileout]
     p1 = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE )
     out, err = p1.communicate()
-    print "==========output=========="
-    print out
+    print( "==========output==========" )
+    print( out )
     if err:
-        print "========= error ========"
-        print err, '))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))'
+        print( "========= error ========" )
+        print( err )  # '))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))'
     return filein
 
 
@@ -393,5 +393,5 @@ def getFiles( path = '', leaf = '' ):
         for nm, frm in itertools.groupby( data, lambda x: x.split( '.' )[len( x.split( '.' ) ) - 1] ):
             seqFrames.append( list( frm ) )  # Store group iterator as a list
             seqNames.append( nm )
-        print seqNames
-        print seqFrames
+        print( seqNames )
+        print( seqFrames )

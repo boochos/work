@@ -18,7 +18,7 @@ def message( what = '', maya = False ):
     if maya:
         mel.eval( 'print \"' + what + '\";' )
     else:
-        print what
+        print( what )
 
 
 def sceneName():
@@ -39,7 +39,7 @@ def shotPath():
     # print shotDir, '___________________________'
     if sceneName() != '':
         shotDir = shotDir[0:shotDir.rfind( '_' )] + '/'
-        print shotDir
+        print( shotDir )
     createDefaultPath()
     path = defaultPath() + shotDir
     if not os.path.isdir( path ):
@@ -83,7 +83,7 @@ def loadFile( path ):
 def printLines( path = '' ):
     loaded = loadFile( path )
     for line in loaded:
-        print line
+        print( line )
 
 
 def listAll():
@@ -134,10 +134,10 @@ def parentSet():
 
 def flush():
     all = listTop()
-    print 'top list'
+    # print 'top list'
     if all:
         deleteFlushed()
-        print 'deleted'
+        # print 'deleted'
         tmp = []
         for char in all:
             if cmds.reference( char, inr = True ) is False:
@@ -147,7 +147,7 @@ def flush():
             path = shotPath()
             for set in all:
                 exportFile( set, os.path.join( path + set ) )
-                print "-- flushed:   '" + set + "'  --"
+                print( "-- flushed:   '" + set + "'  --" )
             deleteAll()
         else:
             pass
@@ -161,7 +161,7 @@ def unflush():
         chars = os.listdir( path )
         for set in chars:
             importFile( path + set )
-            print "-- unflushed:   '" + set + "'  --"
+            print( "-- unflushed:   '" + set + "'  --" )
     else:
         message( 'Open a scene before proceeding' )
 
@@ -320,7 +320,7 @@ def importFile( path = '', prefix = '', ns = '', cs = ['old', 'new'], rp = {None
                     # top character
                     charName = prefix + line[2]
                     charName = cmds.character( name = charName, em = True )
-                    print charName,
+                    print( charName )
                     addNode = charName
                 else:
                     # sub-character set
@@ -377,7 +377,7 @@ def activateSet( setList ):
                 string = string + item
             i = i + 1
         else:
-            print item
+            print( item )
             message( 'nothing found to activate' )
     cmd = "setCurrentCharacters({" + string + "});"
     mel.eval( cmd )

@@ -60,7 +60,7 @@ def preBuild(
     face = None
     check = cmds.checkBox( 'atom_qrig_faceCheck', query = True, v = True )
     X = cmds.floatField( 'atom_qrig_conScale', query = True, value = True )
-    print X
+    # print X
     if check == 0:
         face = False
     else:
@@ -468,7 +468,7 @@ def buildAppendages( *args ):
     place.cleanUp( 'Leg_limb_ctrl_grp_L', Ctrl = True )
     cmds.setAttr( 'Leg_leg_ankle_ctrl_L.AutoAnkle', 0 )
     cmds.setAttr( 'Leg_pv_ctrl_L_Twist.Pv_Vis', 1 )
-    print 4
+    print( 4 )
     # return None
 
     name = 'foot_pv_L'
@@ -682,7 +682,7 @@ def buildAppendages( *args ):
     aal.createDeltVolumeRig( ['L', 'R'], w = 0.5 )  # reduced pivot at joint
     # temp stop
 
-    print '===== Quadriped Leg Build Complete ====='
+    print( '===== Quadriped Leg Build Complete =====' )
     cmds.floatField( 'atom_qrig_conScale', edit = True, v = current_scale )
 
     quadLimits()

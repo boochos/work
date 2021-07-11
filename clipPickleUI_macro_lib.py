@@ -32,7 +32,7 @@ def message( what = '', maya = True, warning = False ):
         if maya:
             mel.eval( 'print \"' + what + '\";' )
         else:
-            print wha
+            print( what )
 
 
 class CPUI( object ):
@@ -83,7 +83,7 @@ class CPUI( object ):
         cmds.button( self.control.button3, e = True, c = self.cmdImport, h = 40 )
         cmds.textScrollList( self.control.scroll1, e = True, sc = self.populateVersionList, ams = False, dcc = self.cmdSelectObjectsInClip )
         cmds.textScrollList( self.control.scroll2, e = True, sc = self.populatePreview, ams = False, dcc = self.cmdSelectObjectsInClip )  # edit in future
-        cmds.textScrollList( self.control.scroll3, e = True, sc = 'print "not setup"', dcc = self.cmdSelectObjectsInLayer )  # edit in future
+        cmds.textScrollList( self.control.scroll3, e = True, sc = 'print( "not setup")', dcc = self.cmdSelectObjectsInLayer )  # edit in future
         cmds.radioButtonGrp( self.control.typGrpIm, edit = True, cc1 = self.cmdPoseOnly, cc2 = self.cmdPoseOnly )
 
         self.cmdLoadingHintToggle( on = False )
@@ -105,7 +105,7 @@ class CPUI( object ):
             cmds.deleteUI( ofw )
         ofw = cmds.window( ofw )
         ofwc = cmds.columnLayout( ofwc, cal = 'center', cat = ['both', 1], adj = True, w = 350 )
-        print path
+        # print path
         if path:
             cmds.textField( tx = path + '\n', fn = font, ed = False )
             if os.path.isfile( path ):
@@ -534,7 +534,7 @@ class CPUI( object ):
             cmds.text( self.control.heading11, edit = True, label = str( self.clip.date ) )
         else:
             cmds.text( self.control.heading11, edit = True, label = '' )
-        print self.clip.length
+        # print self.clip.length
         if self.clip.length:
             cmds.text( self.control.heading13, edit = True, label = str( self.clip.length ) )
         else:

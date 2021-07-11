@@ -1,18 +1,19 @@
 import imp
 import os
-import urllib
-import urllib2
 
 import maya.cmds as cmds
 import maya.mel as mel
+import urllib.request
 
 
+# import urllib2
+# import urllib.request
 def mod( modulename = '', f = False ):
     '''
     Which source, build module, piggy back functions.
     code doubles up to keep variables hidden
     '''
-    # print '___start', modulename
+    print( '___import', modulename )
     #
     # vars
     # source file, net or local variable
@@ -33,9 +34,10 @@ def mod( modulename = '', f = False ):
     # check if mel, download, else build python in ram
     if '.mel' in modulename:
         # download to scripts directory
-        melF = urllib.URLopener()
+        # melF = urllib.URLopener() # doesnt like this in py 3
         if os.path.isdir( varPath ):
-            melF.retrieve( webPath + modulename, os.path.join( varPath, modulename ) )
+            # melF.retrieve( webPath + modulename, os.path.join( varPath, modulename ) )
+            urllib.request.urlretrieve( webPath + modulename, os.path.join( varPath, modulename ) )
             mel.eval( 'rehash' )
         else:
             pass
@@ -48,7 +50,7 @@ def mod( modulename = '', f = False ):
             local = frm.local
             # print frm.local , '____local'
         except:
-            print 'no local variable found'
+            print ( 'no local variable found' )
         # removed below, as its trying to find specific file and doesnt account for shared sys path
         # perform regular import instead
         # also need to find path to local file if in shared directory, check and parse sys path
@@ -98,8 +100,10 @@ def mod( modulename = '', f = False ):
                         infile = open( localPath, 'r' )
                         contents = infile.read()
         else:
-            req = urllib2.Request( urlPath )
-            response = urllib2.urlopen( req )
+            # req = urllib2.Request( urlPath )
+            # response = urllib2.urlopen( req )
+            req = urllib.request( urlPath )
+            response = urllib.request.urlopen( req )
             contents = response.read()
         # create module
         # must be exec mode
@@ -110,5 +114,5 @@ def mod( modulename = '', f = False ):
             # print '___end'
             return module
         else:
-            print "Couldn't find module"
+            print ( "Couldn't find module" )
             return None

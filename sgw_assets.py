@@ -15,7 +15,7 @@ anm = web.mod( "anim_lib" )
 
 
 def createWrap( *args, **kwargs ):
-    print args
+    # print args
     influence = args[0]
     surface = args[1]
 
@@ -541,7 +541,7 @@ def digi():
             cmds.orientConstraint( Lid_2Ct[4], j, mo = True )
             cmds.pickWalk( j, direction = 'up' )
             p = cmds.ls( sl = 1 )[0]
-            print p, j
+            print( p, j )
             # return None
             cmds.parentConstraint( p, Lid_2Ct[0], mo = True )
         else:
@@ -782,7 +782,7 @@ def amulet_string( segments = 9, joints_in_seg = 9 ):
     seg_length = full_length / segments
     length = seg_length / lengths_in_seg
     amount = segments * lengths_in_seg
-    print seg_length, length
+    print( seg_length, length )
     # correct length for connection to base
     over_length = seg_length - gap  # will need to shorten segment
     reduce_length = over_length / lengths_in_seg  # each joint needs to be this much shorter
@@ -901,7 +901,7 @@ def amulet_string( segments = 9, joints_in_seg = 9 ):
     i = 0
     iMax_letter = 'A'
     al = len( seg )
-    print seg
+    print( seg )
     for joint in seg:
         if cmds.objExists( joint ):
             if i == 0:
@@ -1167,7 +1167,7 @@ def amulet_string2( segments = 9, joints_in_seg = 9 ):
     # bind l
     for geo in geo_hinge_l:
         cmds.select( [geo, hingeL_jnt] )
-        print cmds.ls( sl = 1 )
+        print( cmds.ls( sl = 1 ) )
         mel.eval( 'SmoothBindSkin -tsb;' )
     # bind r
     for geo in geo_hinge_r:
@@ -1427,7 +1427,7 @@ def snapAmuletString():
                 a_alt = am_alt[0] + str( j ) + am_alt[1]
             a = segfront + s + sb
 
-            print a, a_alt
+            print( a, a_alt )
             #
             cmds.select( a_alt, a )
             cmds.pointConstraint( a, a_alt, mo = False )
@@ -1622,7 +1622,7 @@ def fk_chain( segments = 9, joints_in_seg = 9 ):
     tailRig = sfk.SplineFK( suffix_fk, rt_jnt, jnts[-1], None,
                               controllerSize = 3, rootParent = AmuletCt[4], parent1 = 'master_Grp', parentDefault = [1, 0], segIteration = joints_in_seg, stretch = 0, ik = 'splineIK' )
 
-    print 'tailRig', tailRig
+    print( 'tailRig', tailRig )
     # tailRig.placeIkJnts()
     for i in tailRig.topGrp2:
         place.cleanUp( i, World = True )

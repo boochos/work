@@ -19,7 +19,7 @@ def message( what = '', maya = True, warning = False ):
         if maya:
             mel.eval( 'print \"' + what + '\";' )
         else:
-            print wha
+            print( what )
 
 
 class Action( object ):
@@ -218,7 +218,7 @@ class Action( object ):
         cmds.setParent( '..' )
         # range
         self.col2 = cmds.columnLayout( self.col2, adjustableColumn = True )
-        print self.col2
+        # print( self.col2)
         self.row2 = cmds.rowLayout( self.row2, numberOfColumns = 5, adjustableColumn = 3, columnAlign = ( 1, 'left' ), columnAttach = [( 1, 'left', 0 ), ( 2, 'left', 0 ), ( 3, 'right', 0 ), ( 4, 'right', 0 ), ( 5, 'right', 0 )] )
         self.heading24 = cmds.text( self.heading24, l = 'Start:' )
         self.int1 = cmds.floatField( self.int1, en = False, pre = 2 )

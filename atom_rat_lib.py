@@ -12,7 +12,7 @@ splnFk = web.mod( 'atom_splineFk_lib' )
 adl = web.mod( 'atom_deformer_lib' )
 abl = web.mod( 'atom_body_lib' )
 
-print 'here'
+# print 'here'
 
 
 def preBuild( 
@@ -31,7 +31,7 @@ def preBuild(
     face = None
     check = cmds.checkBox( 'atom_qrig_faceCheck', query = True, v = True )
     X = cmds.floatField( 'atom_qrig_conScale', query = True, value = True )
-    print X
+    # print X
     if check == 0:
         face = False
     else:
@@ -465,7 +465,7 @@ def buildAppendages( *args ):
     # build the forarms
     aal.createForarmTwistRig( ['L', 'R'] )
 
-    print '===== Quadriped Leg Build Complete ====='
+    print( '===== Quadriped Leg Build Complete =====' )
     cmds.floatField( 'atom_qrig_conScale', edit = True, v = current_scale )
 
     quadLimits()

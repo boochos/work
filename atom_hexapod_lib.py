@@ -2,14 +2,14 @@ import maya.cmds as cmds
 #
 import webrImport as web
 # web
-place = web.mod('atom_place_lib')
+place = web.mod( 'atom_place_lib' )
 # misc = web.mod('atom_miscellaneous_lib')
-appendage = web.mod('atom_appendage_lib')
+appendage = web.mod( 'atom_appendage_lib' )
 
 
-def hexapod(*args):
+def hexapod( *args ):
     # creates groups and master controller from arguments specified as 'True'
-    place.rigPrebuild(Top=0, Ctrl=True, SknJnts=True, Geo=True, World=True, Master=True, OlSkool=True, Size=12)
+    place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = True, Size = 12 )
 
     # lists for joints and controllers
 
@@ -34,11 +34,11 @@ def hexapod(*args):
 
     # Create COG Controller and clean up
 
-    cnt = place.Controller('COG', 'root_jnt', orient=False, shape='facetZup_ctrl', size=5, color=17, sections=8, degree=1, normal=(0, 0, 1), setChannels = True, groups = True)
+    cnt = place.Controller( 'COG', 'root_jnt', orient = False, shape = 'facetZup_ctrl', size = 5, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
     cntCt = cnt.createController()
-    place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-    cmds.parentConstraint('master_Grp', cntCt[0], mo=True)
-    cmds.parentConstraint('COG', 'root_jnt', mo=True)
+    place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    cmds.parentConstraint( 'master_Grp', cntCt[0], mo = True )
+    cmds.parentConstraint( 'COG', 'root_jnt', mo = True )
 
     # LeftSide of Rig
 
@@ -47,33 +47,33 @@ def hexapod(*args):
     attrCstm = 'KneeTwist'
     baseGrpsL = []
     for jnt in endJntL:
-        cnt = place.Controller(btmCtrl_L[i], jnt, orient=False, shape='facetYup_ctrl', size=1, color=17, sections=8, degree=1, normal=(0, 0, 1), setChannels = True, groups = True)
+        cnt = place.Controller( btmCtrl_L[i], jnt, orient = False, shape = 'facetYup_ctrl', size = 1, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
         cntCt = cnt.createController()
         # parents 'obj' to arguments specified as 'True'
-        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-        cmds.parentConstraint('master_Grp', cntCt[0], mo=True)
+        place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+        cmds.parentConstraint( 'master_Grp', cntCt[0], mo = True )
         # add pv attributes
-        place.optEnum(cntCt[2], attr=assist, enum='OPTNS')
-        cmds.addAttr(cntCt[2], ln=attrCstm, at='float', h=False)
-        cmds.setAttr((cntCt[2] + '.' + attrCstm), cb=True)
-        cmds.setAttr((cntCt[2] + '.' + attrCstm), k=True)
-        baseGrpsL.append(cntCt[4])
+        place.optEnum( cntCt[2], attr = assist, enum = 'OPTNS' )
+        cmds.addAttr( cntCt[2], ln = attrCstm, at = 'float', h = False )
+        cmds.setAttr( ( cntCt[2] + '.' + attrCstm ), cb = True )
+        cmds.setAttr( ( cntCt[2] + '.' + attrCstm ), k = True )
+        baseGrpsL.append( cntCt[4] )
         i = i + 1
-    print 'catch baseGrpsL:'
-    print baseGrpsL
+    print( 'catch baseGrpsL:' )
+    print( baseGrpsL )
 
     i = 0
     scktGrpsL = []
     for jnt in legJntL:
-        cnt = place.Controller(topCtrl_L[i], jnt, orient=False, shape='diamond_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), setChannels = True, groups = True)
+        cnt = place.Controller( topCtrl_L[i], jnt, orient = False, shape = 'diamond_ctrl', size = 0.5, color = 12, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
         cntCt = cnt.createController()
         # parents 'obj' to arguments specified as 'True'
-        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-        cmds.parentConstraint('COG', cntCt[0], mo=True)
-        scktGrpsL.append(cntCt[4])
+        place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+        cmds.parentConstraint( 'COG', cntCt[0], mo = True )
+        scktGrpsL.append( cntCt[4] )
         i = i + 1
-    print 'catch scktGrpsL:'
-    print scktGrpsL
+    print( 'catch scktGrpsL:' )
+    print( scktGrpsL )
 
     # Rightside of rig
 
@@ -82,33 +82,33 @@ def hexapod(*args):
     attrCstm = 'KneeTwist'
     baseGrpsR = []
     for jnt in endJntR:
-        cnt = place.Controller(btmCtrl_R[i], jnt, orient=False, shape='facetYup_ctrl', size=1, color=17, sections=8, degree=1, normal=(0, 0, 1), setChannels = True, groups = True)
+        cnt = place.Controller( btmCtrl_R[i], jnt, orient = False, shape = 'facetYup_ctrl', size = 1, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
         cntCt = cnt.createController()
         # parents 'obj' to arguments specified as 'True'
-        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-        cmds.parentConstraint('master_Grp', cntCt[0], mo=True)
+        place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+        cmds.parentConstraint( 'master_Grp', cntCt[0], mo = True )
         # add pv attributes
-        place.optEnum(cntCt[2], attr=assist, enum='OPTNS')
-        cmds.addAttr(cntCt[2], ln=attrCstm, at='float', h=False)
-        cmds.setAttr((cntCt[2] + '.' + attrCstm), cb=True)
-        cmds.setAttr((cntCt[2] + '.' + attrCstm), k=True)
-        baseGrpsR.append(cntCt[4])
+        place.optEnum( cntCt[2], attr = assist, enum = 'OPTNS' )
+        cmds.addAttr( cntCt[2], ln = attrCstm, at = 'float', h = False )
+        cmds.setAttr( ( cntCt[2] + '.' + attrCstm ), cb = True )
+        cmds.setAttr( ( cntCt[2] + '.' + attrCstm ), k = True )
+        baseGrpsR.append( cntCt[4] )
         i = i + 1
-    print 'catch baseGrpsR:'
-    print baseGrpsR
+    print( 'catch baseGrpsR:' )
+    print( baseGrpsR )
 
     i = 0
     scktGrpsR = []
     for jnt in legJntR:
-        cnt = place.Controller(topCtrl_R[i], jnt, orient=False, shape='diamond_ctrl', size=0.5, color=12, sections=8, degree=1, normal=(0, 0, 1), setChannels = True, groups = True)
+        cnt = place.Controller( topCtrl_R[i], jnt, orient = False, shape = 'diamond_ctrl', size = 0.5, color = 12, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
         cntCt = cnt.createController()
         # parents 'obj' to arguments specified as 'True'
-        place.cleanUp(cntCt[0], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
-        cmds.parentConstraint('COG', cntCt[0], mo=True)
-        scktGrpsR.append(cntCt[4])
+        place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+        cmds.parentConstraint( 'COG', cntCt[0], mo = True )
+        scktGrpsR.append( cntCt[4] )
         i = i + 1
-    print 'catch scktGrpsR:'
-    print scktGrpsR
+    print( 'catch scktGrpsR:' )
+    print( scktGrpsR )
 
     # create PoleVectors, place and clean up into groups
 
@@ -119,26 +119,26 @@ def hexapod(*args):
     i = 0
     pvLocListL = []
     for jnt in legJntL:
-        pvLoc = appendage.create_3_joint_pv(jnt, endJntL[i], 'pv', 'L', 'leg', 'atom_bls_limbRot_radioButtonGrp', 'atom_bls_limbAim_radioButtonGrp',
-                                            'atom_bls_limbUp_radioButtonGrp', 1.5, 0.2, curveShapePath, True, flipVar=[0, 0, 0])
-        pvLocListL.append(pvLoc)
-        place.cleanUp(pvLocListL[i], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+        pvLoc = appendage.create_3_joint_pv( jnt, endJntL[i], 'pv', 'L', 'leg', 'atom_bls_limbRot_radioButtonGrp', 'atom_bls_limbAim_radioButtonGrp',
+                                            'atom_bls_limbUp_radioButtonGrp', 1.5, 0.2, curveShapePath, True, flipVar = [0, 0, 0] )
+        pvLocListL.append( pvLoc )
+        place.cleanUp( pvLocListL[i], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
         i = i + 1
-    print 'catch pvLocListL:'
-    print pvLocListL
+    print( 'catch pvLocListL:' )
+    print( pvLocListL )
 
     # RightSide of Rig
 
     i = 0
     pvLocListR = []
     for jnt in legJntR:
-        pvLoc = appendage.create_3_joint_pv(jnt, endJntR[i], 'pv', 'R', 'leg', 'atom_bls_limbRot_radioButtonGrp', 'atom_bls_limbAim_radioButtonGrp',
-                                            'atom_bls_limbUp_radioButtonGrp', -1.5, 0.2, curveShapePath, True, flipVar=[0, 1, 1])
-        pvLocListR.append(pvLoc)
-        place.cleanUp(pvLocListR[i], Ctrl=True, SknJnts=False, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+        pvLoc = appendage.create_3_joint_pv( jnt, endJntR[i], 'pv', 'R', 'leg', 'atom_bls_limbRot_radioButtonGrp', 'atom_bls_limbAim_radioButtonGrp',
+                                            'atom_bls_limbUp_radioButtonGrp', -1.5, 0.2, curveShapePath, True, flipVar = [0, 1, 1] )
+        pvLocListR.append( pvLoc )
+        place.cleanUp( pvLocListR[i], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
         i = i + 1
-    print 'catch pvLocListR:'
-    print pvLocListR
+    print( 'catch pvLocListR:' )
+    print( pvLocListR )
 
     # Creates poleVector Rig for appendages
     """
@@ -160,35 +160,35 @@ def hexapod(*args):
     """
     i = 0
     for cnt in btmCtrl_L:
-        appendage.pvRig(pvNamesL[i], 'master_Grp', scktGrpsL[i], baseGrpsL[i], baseGrpsL[i], pvLocListL[i], kneeJntL[i], .1, cnt, setChannels=True, up=[1, 0, 0], aim=[0, -1, 0], color=17)
+        appendage.pvRig( pvNamesL[i], 'master_Grp', scktGrpsL[i], baseGrpsL[i], baseGrpsL[i], pvLocListL[i], kneeJntL[i], .1, cnt, setChannels = True, up = [1, 0, 0], aim = [0, -1, 0], color = 17 )
         i = i + 1
 
     i = 0
     for cnt in btmCtrl_R:
-        appendage.pvRig(pvNamesR[i], 'master_Grp', scktGrpsR[i], baseGrpsR[i], baseGrpsR[i], pvLocListR[i], kneeJntR[i], .1, cnt, setChannels=True, up=[1, 0, 0], aim=[0, -1, 0], color=17)
+        appendage.pvRig( pvNamesR[i], 'master_Grp', scktGrpsR[i], baseGrpsR[i], baseGrpsR[i], pvLocListR[i], kneeJntR[i], .1, cnt, setChannels = True, up = [1, 0, 0], aim = [0, -1, 0], color = 17 )
         i = i + 1
 
-    place.cleanUp('GuideGp', Ctrl=False, SknJnts=False, Body=False, Accessory=False, Utility=False, World=True, olSkool=False)
+    place.cleanUp( 'GuideGp', Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
 
     # Create an ik handle from TopJoint to end effector
 
     i = 0
     for jnt in legJntL:
-        cmds.ikHandle(n=ikNamesL[i], sj=jnt, ee=endJntL[i], sol='ikRPsolver', p=2, w=.5, srp=True)
-        cmds.poleVectorConstraint(pvLocListL[i], ikNamesL[i])
-        cmds.setAttr(ikNamesL[i] + '.visibility', 0)
-        cmds.parent(ikNamesL[i], baseGrpsL[i])
+        cmds.ikHandle( n = ikNamesL[i], sj = jnt, ee = endJntL[i], sol = 'ikRPsolver', p = 2, w = .5, srp = True )
+        cmds.poleVectorConstraint( pvLocListL[i], ikNamesL[i] )
+        cmds.setAttr( ikNamesL[i] + '.visibility', 0 )
+        cmds.parent( ikNamesL[i], baseGrpsL[i] )
         i = i + 1
     i = 0
     for jnt in legJntR:
-        cmds.ikHandle(n=ikNamesR[i], sj=jnt, ee=endJntR[i], sol='ikRPsolver', p=2, w=.5, srp=True)
-        cmds.poleVectorConstraint(pvLocListR[i], ikNamesR[i])
-        cmds.setAttr(ikNamesR[i] + '.visibility', 0)
-        cmds.parent(ikNamesR[i], baseGrpsR[i])
+        cmds.ikHandle( n = ikNamesR[i], sj = jnt, ee = endJntR[i], sol = 'ikRPsolver', p = 2, w = .5, srp = True )
+        cmds.poleVectorConstraint( pvLocListR[i], ikNamesR[i] )
+        cmds.setAttr( ikNamesR[i] + '.visibility', 0 )
+        cmds.parent( ikNamesR[i], baseGrpsR[i] )
         i = i + 1
 
     # cleanup of root_jnt and body_Geo
 
-    place.cleanUp('root_jnt', Ctrl=False, SknJnts=True, Body=False, Accessory=False, Utility=False, World=False, olSkool=False)
+    place.cleanUp( 'root_jnt', Ctrl = False, SknJnts = True, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
 
-    place.cleanUp('body_Geo', Ctrl=False, SknJnts=False, Body=True, Accessory=False, Utility=False, World=False, olSkool=False)
+    place.cleanUp( 'body_Geo', Ctrl = False, SknJnts = False, Body = True, Accessory = False, Utility = False, World = False, olSkool = False )

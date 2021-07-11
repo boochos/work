@@ -2,12 +2,12 @@ import maya.cmds as cmds
 import maya.mel as mel
 
 
-def message(what='', maya=False):
+def message( what = '', maya = False ):
     what = '-- ' + what + ' --'
     if maya:
-        mel.eval('print \"' + what + '\";')
+        mel.eval( 'print \"' + what + '\";' )
     else:
-        print what
+        print( what )
 
 
 def getName():
@@ -16,38 +16,38 @@ def getName():
     # string replace...
     c = 'camera'
     # get current file
-    path = cmds.file(q=1, sn=1)
+    path = cmds.file( q = 1, sn = 1 )
     # replace
     if a in path:
-        path = path.replace(a, c)
-        print path
+        path = path.replace( a, c )
+        print( path )
         return path
 
 
-def camTag(tag='shotCam'):
-    sel = cmds.ls(sl=True)
-    if len(sel) == 1:
+def camTag( tag = 'shotCam' ):
+    sel = cmds.ls( sl = True )
+    if len( sel ) == 1:
         sel = sel[0]
         # conditions, try, exception, else(no exception)
         try:
             # select shape node
             try:
-                shape = cmds.listRelatives(shapes=True)[0]  # first item only
+                shape = cmds.listRelatives( shapes = True )[0]  # first item only
             except:
-                if cmds.nodeType(sel) == 'camera':
+                if cmds.nodeType( sel ) == 'camera':
                     shape = sel
         except:
             # if no shape node exists in selection
-            message('Selection is not of camera type')
+            message( 'Selection is not of camera type' )
         else:
             # is shape node a camera
-            if cmds.nodeType(shape) == 'camera':
-                cmds.addAttr(ln=tag, at='bool', )
+            if cmds.nodeType( shape ) == 'camera':
+                cmds.addAttr( ln = tag, at = 'bool', )
     else:
-        message('Select 1 camera.')
+        message( 'Select 1 camera.' )
 
 
 def camEx():
     path = getName()
     # get camera to export
-    cmds.file(path, force=True, options='v=0', es=True, type='mayaAscii')
+    cmds.file( path, force = True, options = 'v=0', es = True, type = 'mayaAscii' )

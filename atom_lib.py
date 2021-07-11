@@ -147,11 +147,11 @@ def bipedFrameLayout( *args ):
     atom_rrig_earBuild_checkBox = cmds.checkBox( 'atom_rat_earCheck', l = 'Build Ear Rig', al = 'left', v = True )
     cmds.separator()
 
-    atom_rrig_prerigBut = cmds.button( l = 'Build Biped Pre-Rig', c = 'import atom_biped_lib as atm\nreload(atm)\natm.preBuild()' )
-    atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Appendages', c = 'import atom_biped_lib as atm\nreload(atm)\natm.buildAppendages()' )
+    atom_rrig_prerigBut = cmds.button( l = 'Build Biped Pre-Rig', c = 'import atom_biped_lib as atm\nimport imp\nimp.reload(atm)\natm.preBuild()' )
+    atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Appendages', c = 'import atom_biped_lib as atm\nimport imp\nimp.reload(atm)\natm.buildAppendages()' )
     atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Splines', c = 'import atom_biped_lib as atm\natm.buildSplines()' )
     # atom_rrig_buildDeformBut = cmds.button(l='Build Rig Deformation', c='import atom_biped_lib as atm\natm.deform()')
-    atom_rrig_faceRig = cmds.button( l = 'Build Geo Inputs', c = 'import atom_face_lib as face\nreload(face)\nface.getGeoInputs()' )
+    atom_rrig_faceRig = cmds.button( l = 'Build Geo Inputs', c = 'import atom_face_lib as face\nimport imp\nimp.reload(face)\nface.getGeoInputs()' )
     atom_rrig_faceRig = cmds.button( l = 'Finalize Rig', c = createTagGroups )
 
     cmds.setParent( '..' )
@@ -383,7 +383,7 @@ def win( *args ):
     atom_bls_setChannel_checkBox = cmds.checkBox( 'atom_bls_setChannel_checkBox', label = '', v = 1 )
 
     atom_bls_createLimb_button = cmds.button( 'atom_bls_createLimb_button', c = 'import atom_appendage_lib\natom_appendage_lib.create3jointIK("' + atom_bls_setChannel_checkBox + '")', label = 'Create Limb', h = 25 )
-    atom_bls_createDigit_button = cmds.button( 'atom_bls_createDigit_button', c = 'import atom_appendage_lib as aal\nreload(aal)\naal.createDigitCMD("' + atom_bls_setChannel_checkBox + '")', label = 'Create Digit', h = 25 )
+    atom_bls_createDigit_button = cmds.button( 'atom_bls_createDigit_button', c = 'import atom_appendage_lib as aal\nimport imp\nimp.reload(aal)\naal.createDigitCMD("' + atom_bls_setChannel_checkBox + '")', label = 'Create Digit', h = 25 )
     atom_bls_spacerText = cmds.text( 'atom_bls_spacerText', label = ' ', h = 5 )
 
     cmds.formLayout( atom_bls_formLayout, edit = True,

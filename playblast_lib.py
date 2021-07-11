@@ -15,6 +15,7 @@ import webrImport as web
 #
 # web
 cl = web.mod( 'clips_lib' )
+fmp = web.mod( 'ffMpg' )
 
 # rgb gl color guide ## http://prideout.net/archive/colors.php
 # http://www.tweaksoftware.com/static/documentation/rv/current/html/rv_manual.html
@@ -30,7 +31,7 @@ def message( what = '', maya = False ):
     if maya:
         mel.eval( 'print \"' + what + '\";' )
     else:
-        print what
+        print( what )
 
 
 def getTempPath():
@@ -75,7 +76,7 @@ def getRange():
     min = int( cmds.playbackOptions( q = True, minTime = True ) )
     max = int( cmds.playbackOptions( q = True, maxTime = True ) )
     current = int( cmds.currentTime( q = True ) )
-    print min, max, current
+    # print( min, max, current)
     return min, max, current
 
 
@@ -152,9 +153,9 @@ def camName():
                     cam = cam.split( ':' )[1]
                 return cam
         else:
-            print 'no model returned', cam
+            print( 'no model returned', cam )
     else:
-        print 'not model panel', pnl
+        print( 'not model panel', pnl )
 
 
 def sceneName( full = False, suffix = None, bracket = False ):
@@ -175,7 +176,7 @@ def sceneName( full = False, suffix = None, bracket = False ):
     # print sceneName, '_______get name'
     if suffix:
         sceneName = sceneName + suffix
-    print sceneName
+    # print sceneName
     return sceneName
 
 
@@ -248,7 +249,7 @@ def blastDir( forceTemp = False, brackets = False ):
         return getPath()
 
 
-def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.264', offScreen = True, useGlobals = False, forceTemp = True ):
+def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.264', offScreen = True, useGlobals = False, forceTemp = True, burnIn = False, burnInSize = 30 ):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     '''
@@ -288,6 +289,11 @@ def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.
             cmds.currentTime( current )
     if cmds.window( 'PB_Man', q = True, ex = True ):
         blastWin()
+    # burn in
+    if burnIn:
+        # pass
+        # print '___________', blastFullPAth
+        fmp.burn_in( filein = blastFullPAth + '.mov', task = '', startFrame = min, size = 20, wMargin = 30, hMargin = 30 )
 
 
 def blastWin():
@@ -304,14 +310,14 @@ def blastWin():
         # field        = cmds.textField('defaultPath1', text=rootDir)
         # field = cmds.button('defaultPath1', label=rootDir, align='left', h=24, c="from subprocess import call\ncall(['nautilus',\'%s\'])" % (rootDir))
         field = cmds.button( 'defaultPath1', label = rootDir, align = 'left', h = 24,
-                            c = "import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % ( rootDir.replace( '\\', '\\\\' ) ) )
+                            c = "import imp\nimport webrImport as web\nimp.reload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" % ( rootDir.replace( '\\', '\\\\' ) ) )
         cmds.formLayout( f1, e = 1, af = ( field, 'top', 5 ) )
         cmds.formLayout( f1, e = 1, af = ( field, 'left', 5 ) )
         cmds.formLayout( f1, e = 1, af = ( field, 'right', 5 ) )
         cmds.refresh( f = 1 )
         # refresh button
         refBtn = cmds.button( 'refresh' + suf, l = 'REFRESH',
-                             c = "import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.blastWin()", h = 24 )
+                             c = "import imp\nimport webrImport as web\nimp.reload(web)\npb = web.mod('playblast_lib')\npb.blastWin()", h = 24 )
         attachForm = [( refBtn, 'top', 2, field )]
         cmds.formLayout( f1, edit = True, attachControl = attachForm )
         cmds.formLayout( f1, e = 1, af = ( refBtn, 'left', 5 ) )
@@ -356,7 +362,7 @@ def blastWin():
         width = col0 + col1 + col2 + col3
         wAdd = scrollBar + 10
         # status
-        print '__detect'
+        print( '__detect' )
         detectCompatibleStructure( rootDir )
         blastDirs = getBlastDirs( rootDir )
         # print blastDirs, '++++++++++++++++'
@@ -440,16 +446,16 @@ def buildRow_new( blastDir = '', height = 1, parent = '', col = [10, 10, 10, 10]
                        h = height, bgc = [0.2, 0.2, 0.2], ann = blastDir.path )
     # checkbox
     chkBx = cmds.checkBox( 'check__' + blastDir.name, l = '', w = col[0],
-                          onc = "import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.addChecked(%s)" % ( 
+                          onc = "import imp\nimport webrImport as web\nimp.reload(web)\npb = web.mod('playblast_lib')\npb.addChecked(%s)" % ( 
                               getString( strings = [path] ) ),
-                          ofc = "import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.removeChecked(%s)" % ( getString( strings = [path] ) ) )
+                          ofc = "import imp\nimport webrImport as web\nimp.reload(web)\npb = web.mod('playblast_lib')\npb.removeChecked(%s)" % ( getString( strings = [path] ) ) )
 
     # icon
     cmdI = 'partial( openSelected, path=blastDir.path, name=blastDir.name, ext=blastDir.ext, start=blastDir.start, end=blastDir.end)'
     if icon and blastDir.width:
         w = float( blastDir.width )
         h = float( blastDir.height )
-        print icon
+        print( icon )
         iconH = col[1] * ( h / w )
         iconW = col[1]
         if iconH > height:
@@ -478,7 +484,7 @@ def buildRow_new( blastDir = '', height = 1, parent = '', col = [10, 10, 10, 10]
     dt = blastDir.date
     label = pt + im + di + fr + le + dt
     #
-    metaBtn = cmds.iconTextButton( blastDir.name + '_Meta', st = 'textOnly', al = alignM, c = "import webrImport as web\nreload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" %
+    metaBtn = cmds.iconTextButton( blastDir.name + '_Meta', st = 'textOnly', al = alignM, c = "import imp\nimport webrImport as web\nimp.reload(web)\npb = web.mod('playblast_lib')\npb.cmdOpen(\'%s\')" %
                                   ( path.replace( '\\', '\\\\' ) ), l = label, h = height - padBtns, align = 'left', bgc = [0.23, 0.23, 0.23] )
 
     # delete
@@ -505,18 +511,18 @@ def addChecked( chk = '' ):
     front1 = c.split( rvFront() )[0]
     front2 = rvFront()
     front = front1 + front2
-    print front, '----'
+    # print( front, '----' )
     back = rvBack()
     # print back, '----'
     mid = c.split( rvFront() )[1].split( rvBack() )[0]
-    print mid, '----'
+    # print( mid, '----' )
     if mid == ',':  # none are have been added
         c = front, rvOpn(), chk, rvCls(), back
-        print c[0], c[1]
+        print( c[0], c[1] )
     else:
         pass  # parse
         current = mid.split( ',' )
-        print current, 'current'
+        print( current, 'current' )
     # print c
     # cmds.button(getWipe(), e=True, c=c)
 
@@ -524,11 +530,11 @@ def addChecked( chk = '' ):
 def removeChecked( chk = '' ):
     # try adding square brackets to both inputs
     c = cmds.button( getWipe(), q = True, c = True )
-    print c
+    print( c )
     front = c.split( '-wipe' )[0] + rvFront()
-    print '========='
-    print front, 'front'
-    print '========='
+    print( '=========' )
+    print( front, 'front' )
+    print( '=========' )
     '''
     mid   = c.split('[')[1].split(']')[0]
     mid   = mid.replace(chk, '')
@@ -721,10 +727,10 @@ def openSelected( path = '', name = '', ext = '', start = '', end = '' ):
     # audio
     # print '-- open'
     # print path
-    print name
+    # print( name )
     # print ext
-    print start
-    print end
+    # print( start )
+    # print( end )
     # print os.path.join(path, name)
     mov = ['mov', 'avi', 'mp4']
     if ext in mov:
@@ -745,22 +751,22 @@ def openSelected( path = '', name = '', ext = '', start = '', end = '' ):
             # print '  no path'
         # os
         if os.name is 'nt':
-            print 'here', str( start ) + '.' + ext
+            # print( 'here', str( start ) + '.' + ext )
             rvString = ['C:\\Program Files\\djv-1.1.0-Windows-64\\bin\\djv_view.exe',
                         os.path.join( path.replace( '\\', '\\' ), name + '.' + str( start ) + '.' + ext )]
-            print rvString
+            print( rvString )
             # subprocess.call(rvString)
             subprocess.Popen( rvString )
         elif os.name is 'posix':
             try:
                 if snd:
-                    print '-- with audio'
+                    print( '-- with audio' )
                     # with audio
                     rvString = 'rv ' + \
                         os.path.join( path, name ) + '.#.' + ext + ' -in ' + \
                         start + ' -out ' + end + ' ' + snd + ' &'
                 else:
-                    print '-- no audio'
+                    print( '-- no audio' )
                     rvString = 'rv ' + \
                         os.path.join( path, name ) + '.#.' + ext + ' -in ' + \
                         start + ' -out ' + end + ' &'  # escaped
@@ -770,7 +776,7 @@ def openSelected( path = '', name = '', ext = '', start = '', end = '' ):
             except:
                 # print rvString
                 message( 'Failed to play  ', maya = True )
-                print os.path.join( path, name )
+                print( os.path.join( path, name ) )
         else:
             message( 'OS: ' + os.name +
                     '  not configured to play image seq.', maya = True )

@@ -30,7 +30,7 @@ class Get():
         self.range = sel[1] - sel[0]
         # print range, '  range'
         if self.range > 1:
-            print self.range, '_____range'
+            # print self.range, '_____range'
             self.selStart = sel[0]
             self.selEnd = sel[1]
             self.keyStart = sel[0]
@@ -67,7 +67,7 @@ class Get():
                     # print 'no anim curves', sel
                     pass
         else:
-            print '-- Select an object. --'
+            print( '-- Select an object. --' )
 
 
 def frameRangeFromMaFile( path = '', handles = 0 ):
@@ -85,7 +85,7 @@ def frameRangeFromMaFile( path = '', handles = 0 ):
         for line in inFile.readlines():
             cvLine = line.strip( '\n' )
             if 'playbackOptions' in line:
-                print line
+                # print line
                 line_parts = line.split( ' ' )
                 i = 0
                 for part in line_parts:
@@ -98,10 +98,10 @@ def frameRangeFromMaFile( path = '', handles = 0 ):
                     if part == '-aet':
                         all_end = int( line_parts[i + 1] )
                     i = i + 1
-                print play_start
-                print play_end
-                print all_start
-                print all_end
+                # print play_start
+                # print play_end
+                # print all_start
+                # print all_end
                 cmds.playbackOptions( animationStartTime = all_start )
                 cmds.playbackOptions( animationEndTime = all_end )
                 if handles:
@@ -113,6 +113,6 @@ def frameRangeFromMaFile( path = '', handles = 0 ):
         inFile.close()
         return None
     else:
-        print 'Not a file:  ' + path
+        print( 'Not a file:  ' + path )
         # print 'not a directory'
 

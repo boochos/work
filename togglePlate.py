@@ -11,7 +11,7 @@ def message( what = '', maya = True ):
     if maya:
         mel.eval( 'print \"' + what + '\";' )
     else:
-        print what
+        print( what )
 
 
 def camName():
@@ -79,22 +79,22 @@ def plateRange( handles = 8 ):
         if connections:
             connections = list( set( connections ) )
             plates = platesOnly( connections )
-            print plates
+            print( plates )
             # check state of one plate
             st = plateState( plates[0] )
             for plate in plates:
                 if st:
                     # off
-                    print plate, '\n'
+                    # print plate, '\n'
                     path = cmds.getAttr( plate + '.imageName' )
-                    print path
+                    # print path
                     if os.path.isfile( path ):
-                        print 'file'
+                        # print 'file'
                         fl = path.split( '/' )[-1]
                         path = path[:-len( fl ) - 1]
-                        print path
+                        # print path
                         fls = os.listdir( path )
-                        print fls.sort()
+                        # print fls.sort()
                         frst = fls[0]
                         lst = fls[-1]
                         frst = int( frst.split( '.' )[1] )
@@ -105,8 +105,9 @@ def plateRange( handles = 8 ):
                         cmds.playbackOptions( maxTime = lst - handles )
                 else:
                     # on
-                    print plate, '\n'
+                    # print plate, '\n'
                     # plateState( plate, toggle = True )
+                    pass
         else:
             message( 'No plates' )
     else:

@@ -12,7 +12,7 @@ def message( what = '', maya = True ):
     if maya:
         mel.eval( 'print \"' + what + '\";' )
     else:
-        print what
+        print( what)
 
 
 def init_ui():
@@ -120,13 +120,13 @@ def getMembers_ui( warp_list_widget, members_list_widget ):
     timewarp = warp_list_widget.currentItem().text()
     members_list_widget.clear()
     if cmds.objExists( timewarp ):
-        print timewarp
+        print( timewarp)
         members = getTimeWarpMembers2( timewarp )
         if members:
             for m in members:
                 members_list_widget.addItem( m )
     else:
-        print 'objects doesnt exist'
+        print( 'objects doesnt exist')
         warp_list_widget.clear()
         members_list_widget.clear()
         # redraw
@@ -141,8 +141,8 @@ def createTimeWarp_ui( warp_list_widget, members_list_widget, suffix = '' ):
     #
     sel = cmds.ls( sl = 1 )
     timewarp = createTimeWarp( suffix )
-    print sel
-    print timewarp
+    print( sel)
+    print( timewarp)
     connectTimeWarp( sel, timewarp )
     # redraw
     getWarps_ui( warp_list_widget )
@@ -239,7 +239,7 @@ def createTimeWarp( suffix = '' ):
         cmds.setKeyframe( loc, at = attr, time = ( aet, aet ), value = aet, ott = 'spline', itt = 'spline' )
         return loc
     else:
-        print 'choose different prefix, object already exists', name
+        print( 'choose different prefix, object already exists', name)
 
 
 def connectTimeWarp( objects, timewarp, connect = True ):
@@ -256,7 +256,7 @@ def connectTimeWarp( objects, timewarp, connect = True ):
     warpCurve = cmds.listConnections( timewarp + '.' + warpAttrStr() )
     if warpCurve:
         warpCurve = warpCurve[0]
-        print warpCurve
+        print( warpCurve)
         for obj in objects:
             animCurves = cmds.findKeyframe( obj, c = True )
             for curve in animCurves:
@@ -269,7 +269,7 @@ def connectTimeWarp( objects, timewarp, connect = True ):
             # print animCurves
         # print allAnimCurves
     else:
-        print timewarp + '.' + warpAttrStr(), 'has no keys'
+        print( timewarp + '.' + warpAttrStr(), 'has no keys')
 
 
 def getTimeWarpMembers( timewarp, select = False, typ = 'transform' ):
@@ -281,9 +281,9 @@ def getTimeWarpMembers( timewarp, select = False, typ = 'transform' ):
     warpCurve = cmds.listConnections( timewarp + '.' + warpAttrStr() )
     if warpCurve:
         warpCurve = warpCurve[0]
-        print warpCurve
+        print( warpCurve)
         animCurves = cmds.listConnections( warpCurve, t = 'animCurve', scn = 1 )  # curves connected to timewarp
-        print animCurves
+        print( animCurves)
         if animCurves:
             for curve in animCurves:
                 # print 0, curve
@@ -294,15 +294,15 @@ def getTimeWarpMembers( timewarp, select = False, typ = 'transform' ):
                         if n not in objects:
                             objects.append( n )
                 else:
-                    print 'no transforms'
+                    print( 'no transforms')
             if select and objects:
                 cmds.select( objects )
         else:
-            print 'no members'
+            print( 'no members')
     else:
-        print timewarp + '.' + warpAttrStr(), 'has no keys'
+        print( timewarp + '.' + warpAttrStr(), 'has no keys')
     #
-    print objects
+    print( objects)
     return objects
 
     '''
@@ -374,7 +374,7 @@ def getTimeWarpMembers2( timewarp, select = False, typ = 'transform' ):
     '''
     skip = [timewarp ]
     found = getConnections( timewarp + '.' + warpAttrStr(), direction = 'in', find = 'animCurveTU', skip = skip )
-    print 'found', found
+    print( 'found', found)
     # return None
     if found:
         for f in found:
@@ -414,7 +414,7 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', skip = 
         charSet = False
         i = i + 1
         if i == max:
-            print '______________________________________________________FAIL'
+            print( '______________________________________________________FAIL')
             return []
         connections = cmds.listConnections( object, s = s, d = d, scn = True )
         # remove duplicates and skip objects
@@ -427,21 +427,21 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', skip = 
                     charSet = True
                     break
         # redo connections if character !!!!!!
-        print 'connections', connections
+        print( 'connections', connections)
         # check for proper type
         if connections:
             for c in connections:
                 if cmds.objectType( c ) == find:
                     result.append( c )
                     found = True
-                    print 'found', c, find
-                    print 'skip', skip
+                    print( 'found', c, find)
+                    print( 'skip', skip)
                 else:
                     pass
-                    print 'search:', object, direction, c
+                    print( 'search:', object, direction, c)
         #
         if not found and connections:
-            print 'not found'
+            print( 'not found')
             for c in connections:
                 rslt = getConnections( c, direction = direction, find = find, skip = skip )
                 if rslt:
@@ -504,15 +504,15 @@ def unWarpFrame( timeWarp, frame = 0 ):
                         f_minus = f_minus - increment
                         # temp precaution
                         if f_minus == -5000:
-                            print 'maxed out'
+                            print( 'maxed out')
                             return None
-                    print f_minus
+                    print( f_minus)
                     return f_minus
 
                 f_plus = f_plus + 1
                 # temp precaution
                 if f_plus == 5000:
-                    print 'maxed out'
+                    print( 'maxed out')
                     return None
         else:
             f_minus = frame  # frame iterator
@@ -527,18 +527,18 @@ def unWarpFrame( timeWarp, frame = 0 ):
                         f_plus = f_plus + increment
                         # temp precaution
                         if f_plus == 5000:
-                            print 'maxed out'
+                            print( 'maxed out')
                             return None
-                    print f_plus
+                    print( f_plus)
                     return f_plus
 
                 f_minus = f_minus - 1
                 # temp precaution
                 if f_minus == -5000:
-                    print 'maxed out'
+                    print( 'maxed out')
                     return None
     else:  # no warp
-        print 'no warp on frame', frame
+        print( 'no warp on frame', frame)
         return frame
 
 
@@ -575,7 +575,7 @@ def bakeInfinity( sparseKeys = True, smart = True, sim = False ):
         end = cmds.playbackOptions( q = True, maxTime = True )
         objs = cmds.listConnections( crvs, d = True, s = False, plugs = True )
         cmds.refresh( suspend = 1 )
-        print sim, '________'
+        print( sim, '________')
         cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, smart = smart, sac = sparseKeys, sampleBy = 1 )
         cmds.refresh( suspend = 0 )
         message( str( len( objs ) ) + ' curves baked --' + str( objs ), maya = 1 )
@@ -642,7 +642,7 @@ if __name__ == '__main__':
     main_window.show()
     app.exec_()
 else:
-    print 'nah'
+    print( 'nah')
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
