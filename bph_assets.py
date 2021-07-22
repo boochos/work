@@ -375,7 +375,7 @@ def amulet_string( segments = 9, joints_in_seg = 9 ):
         amuletSplines( iMax, end = end )
 
 
-def amuletSplines( iMax = 1, end = 01 ):
+def amuletSplines( iMax = 1, end = 1 ):
     '''\n
     Build splines for amulet\n
     iMax = number of iterations
@@ -1125,6 +1125,85 @@ def bottle():
     sz = 3
     # lid_2 #
     Lid_2 = 'bttl'
+    lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2Ct = lid_2.createController()
+    place.setRotOrder( Lid_2Ct[0], 2, True )
+    cmds.parent( Lid_2Ct[0], CONTROLS )
+    # cmds.setAttr( Lid_2Ct[0] + '.translateY', 0.75 )
+    cmds.parentConstraint( MasterCt[4], Lid_2Ct[0], mo = True )
+    cmds.parentConstraint( Lid_2Ct[4], geo_grp, mo = True )
+
+    # lid_2 up #
+    Lid_2_u = 'tip'
+    lid_2_u = place.Controller( Lid_2_u, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_u_Ct = lid_2_u.createController()
+    place.setRotOrder( Lid_2_u_Ct[0], 2, True )
+    cmds.parent( Lid_2_u_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_u_Ct[0] + '.translateZ', dstnc / 2 )
+    cmds.parentConstraint( MasterCt[4], Lid_2_u_Ct[0], mo = True )
+
+    # lid_2 tip #
+    Lid_2_t = 'up'
+    lid_2_t = place.Controller( Lid_2_t, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    Lid_2_t_Ct = lid_2_t.createController()
+    place.setRotOrder( Lid_2_t_Ct[0], 2, True )
+    cmds.parent( Lid_2_t_Ct[0], CONTROLS )
+    cmds.setAttr( Lid_2_t_Ct[0] + '.translateY', dstnc )
+    cmds.parentConstraint( MasterCt[4], Lid_2_t_Ct[0], mo = True )
+    cmds.aimConstraint( Lid_2_t_Ct[4], Lid_2Ct[2], wut = 'object', wuo = Lid_2_u_Ct[4], aim = [0, 1, 0], u = [0, 0, 1], mo = False )
+    place.setChannels( Lid_2Ct[2], [False, True], [True, False], [True, False], [True, False, False] )
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 20.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    #
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___GEO', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___GEO' + s )
+
+
+def baseball():
+    '''
+    
+    '''
+    X = 1
+    # main rig groups/controllers
+    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 4 * X )
+    cmds.select( cl = True )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    #
+    geo_grp = 'polySurface5'
+    geo = [
+    'polySurface5'
+    ]
+
+    #
+    cmds.parent( geo_grp, GEO[0] )
+    # cmds.setAttr( geo_grp + '.translateY', -11.3 )
+    # cmds.setAttr( geo_grp + '.translateZ', -9 )
+    # cmds.setAttr( geo_grp + '.rotateX', 0.735 )
+    # cmds.setAttr( geo_grp + '.rotateY', -2.965 )
+
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    # place.setChannels( geo[0], [True, False], [True, False], [True, False], [False, False, False] )
+    # place.setChannels( geo[1], [True, False], [True, False], [True, False], [True, False, False] )
+    dstnc = 1.5
+    sz = 1
+    # lid_2 #
+    Lid_2 = 'ball'
     lid_2 = place.Controller( Lid_2, MasterCt[0], False, 'loc_ctrl', X * sz, 17, 8, 1, ( 0, 0, 1 ), True, True )
     Lid_2Ct = lid_2.createController()
     place.setRotOrder( Lid_2Ct[0], 2, True )

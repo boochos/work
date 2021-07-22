@@ -19,7 +19,14 @@ krl = web.mod( "key_rig_lib" )
 
 def dragonfly( wingSplines = False ):
     # creates groups and master controller from arguments specified as 'True'
-    place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = True, Size = 22 )
+    PreBuild = place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = True, Size = 22 )
+
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
 
     # lists for joints and controllers
     endJntL = [
@@ -118,17 +125,18 @@ def dragonfly( wingSplines = False ):
 
     # Create COG Controller and clean up
     cog = 'Cog'
-    cnt = place.Controller( cog, 'root_thorax_jnt', orient = False, shape = 'facetZup_ctrl', size = 3.5, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
-    cntCt = cnt.createController()
-    place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-    cmds.parentConstraint( 'master_Grp', cntCt[0], mo = True )
-    cmds.parentConstraint( cntCt[4], 'root_thorax_jnt', mo = True )
+    cog = place.Controller( cog, 'root_thorax_jnt', orient = False, shape = 'facetZup_ctrl', size = 3.5, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
+    cogCt = cog.createController()
+    cogCt = cogCt
+    place.cleanUp( cogCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    cmds.parentConstraint( 'master_Grp', cogCt[0], mo = True )
+    cmds.parentConstraint( cogCt[4], 'root_thorax_jnt', mo = True )
 
     winga = 'WingA'
     wnga = place.Controller( winga, 'wingA_jnt', orient = False, shape = 'arrow_ctrl', size = 1.25, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
     wngaCt = wnga.createController()
     place.cleanUp( wngaCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-    cmds.parentConstraint( cntCt[4], wngaCt[0], mo = True )
+    cmds.parentConstraint( cogCt[4], wngaCt[0], mo = True )
     # lock geo - [lock, keyable], [visible, lock, keyable]
     place.setChannels( wngaCt[2], [False, False], [False, True], [True, False], [True, False, False] )
     place.setChannels( wngaCt[3], [False, False], [False, True], [True, False], [True, False, False] )
@@ -229,7 +237,7 @@ def dragonfly( wingSplines = False ):
     wngb = place.Controller( wingb, 'wingB_jnt', orient = False, shape = 'arrow_ctrl', size = 1.25, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
     wngbCt = wngb.createController()
     place.cleanUp( wngbCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-    cmds.parentConstraint( cntCt[4], wngbCt[0], mo = True )
+    cmds.parentConstraint( cogCt[4], wngbCt[0], mo = True )
     # lock geo - [lock, keyable], [visible, lock, keyable]
     place.setChannels( wngbCt[2], [False, False], [False, True], [True, False], [True, False, False] )
     place.setChannels( wngbCt[3], [False, False], [False, True], [True, False], [True, False, False] )
@@ -330,7 +338,7 @@ def dragonfly( wingSplines = False ):
     abdmn = place.Controller( abdomen, 'abdomen_01_jnt', orient = False, shape = 'facetZup_ctrl', size = 1.5, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
     abdmnCt = abdmn.createController()
     place.cleanUp( abdmnCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-    cmds.parentConstraint( cntCt[4], abdmnCt[0], mo = True )
+    cmds.parentConstraint( cogCt[4], abdmnCt[0], mo = True )
     # cmds.parentConstraint( cog, 'root_jnt', mo = True )
 
     # return None
@@ -338,7 +346,7 @@ def dragonfly( wingSplines = False ):
     abdmnEnd = place.Controller( abdomenEnd, 'abdomenEnd_01_jnt', orient = False, shape = 'facetZup_ctrl', size = 1.5, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
     abdmnEndCt = abdmnEnd.createController()
     place.cleanUp( abdmnEndCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-    cmds.parentConstraint( cntCt[4], abdmnEndCt[0], mo = True )
+    cmds.parentConstraint( cogCt[4], abdmnEndCt[0], mo = True )
     # cmds.parentConstraint( cog, 'root_jnt', mo = True )
 
     abdomenTip = 'AbdomenTip'
@@ -397,6 +405,9 @@ def dragonfly( wingSplines = False ):
         # parents 'obj' to arguments specified as 'True'
         place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
         cmds.parentConstraint( 'master_Grp', cntCt[0], mo = True )
+        # parent switches
+        cmds.select( cntCt[0] )
+        place.parentSwitch( 'PRNT_' + btmCtrl_L[i], cntCt[2], cntCt[1], cntCt[0], MasterCt[4], cogCt[4], False, False, True, True, 'Cog', 0.0 )
         # add pv attributes
         place.optEnum( cntCt[2], attr = assist, enum = 'OPTNS' )
         cmds.addAttr( cntCt[2], ln = attrCstm, at = 'float', h = False )
@@ -436,6 +447,9 @@ def dragonfly( wingSplines = False ):
         # parents 'obj' to arguments specified as 'True'
         place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
         cmds.parentConstraint( 'master_Grp', cntCt[0], mo = True )
+        # parent switches
+        cmds.select( cntCt[0] )
+        place.parentSwitch( 'PRNT_' + btmCtrl_R[i], cntCt[2], cntCt[1], cntCt[0], MasterCt[4], cogCt[4], False, False, True, True, 'Cog', 0.0 )
         # add pv attributes
         place.optEnum( cntCt[2], attr = assist, enum = 'OPTNS' )
         cmds.addAttr( cntCt[2], ln = attrCstm, at = 'float', h = False )

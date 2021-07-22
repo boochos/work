@@ -224,28 +224,34 @@ class reConnect():
                     'Failed Connection -- ' + self.pairs[key] + ' -- to -- ' + key )
 
 
-def updateConstraintOffset( obj = '' ):
+def updateConstraintOffset( objs ):
+    '''
+    objs = should be list
+    '''
     # currently assuming list is being fed with one object
-    obj = obj[0]
-    # find constraint
-    con = getConstraint( obj, nonKeyedRoute = True, keyedRoute = True, plugRoute = True )
-    if con:
-        con = con[0]
-        # print con
-        # find target
-        driver = []
-        # lists [constrained object, constraint, driving object] not in this order
-        drivers = getDrivers( con, typ = 'transform', plugs = False )
-        for item in drivers:
-            if item != con and item != obj:
-                # print item, obj, con
-                driver.append( item )
-        # print driver
-        # update
-        cmds.parentConstraint( driver[0], con, e = 1, maintainOffset = 1 )
-        message( 'Offset Updated -- ' + con, maya = 1 )
-    else:
-        message( 'No constraint detected' )
+    if not isinstance( objs, list ):
+        objs = [objs]
+    for obj in objs:
+        # find constraint
+        con = getConstraint( obj, nonKeyedRoute = True, keyedRoute = True, plugRoute = True )
+        # print( con )
+        if con:
+            con = con[0]
+            # print con
+            # find target
+            driver = []
+            # lists [constrained object, constraint, driving object] not in this order
+            drivers = getDrivers( con, typ = 'transform', plugs = False )
+            for item in drivers:
+                if item != con and item != obj:
+                    # print item, obj, con
+                    driver.append( item )
+            # print( driver )
+            # update
+            cmds.parentConstraint( driver[0], con, e = 1, maintainOffset = 1 )
+            message( 'Offset Updated -- ' + con, maya = 1 )
+        else:
+            message( 'No constraint detected' )
 
 
 def updateConstrainedCurves( obj = None, sim = False ):
@@ -812,7 +818,8 @@ def getControlSize( obj = '' ):
         high = ( ( mx - mn ) / 4.0 ) * 3
         return mn + high
     else:
-        return None
+        print( 'No shape node, defaulting "size" to 1.0' )
+        return 1.0
 
 
 def putControlSize( obj = '', sizeBB = 1.0 ):

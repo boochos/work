@@ -14,6 +14,7 @@ ui = web.mod( 'atom_ui_lib' )
 place = web.mod( 'atom_place_lib' )
 z = web.mod( 'zero' )
 anm = web.mod( 'anim_lib' )
+cn = web.mod( 'constraint_lib' )
 
 
 def extractSebastionsControlSubgroup( obj ):
@@ -359,7 +360,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     Note      = Master, Top, Twist should all have the same rotation order.
     ie.       = Twist axis should be main axis. If 'y'is main axis, rotate order = 'zxy' or 'xzy'
     """
-
+    # return None
     # import atom_placement_lib as place
     # place.loc('pv___1', pv)
     aimAxis = None
@@ -466,6 +467,9 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     cmds.parent( btmGp, rig )
     cmds.pointConstraint( Btm, btmGp, w = 1.0, mo = False )
 
+    # print( Top, Btm, '______', topGp, btmGp )
+    # return
+
     # up group
     # main groups
     MstrUpGp = place.null2( name + '_AimUpGp', Top )[0]
@@ -488,18 +492,20 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     cmds.setAttr( upObjGp + '.translate' + upAxis, 1 * upDir )
     cmds.parent( MstrUpGp, rig )
     # aimConstraint top to bottom group, up group as up space
-    # place.null2(name + '______beforeAim_____', topGp)[0]
-    print( aim, up, '___________ pv rig aim, up' )
+    # place.null2( name + '______beforeAim_____', topGp )[0]
+    # print( aim, up, '___________ pv rig aim, up', 'topGp_______', topGp )
+    # return None
     cmds.aimConstraint( btmGp, topGp, worldUpType = 'object', worldUpObject = upObj, mo = False, w = 1, aim = aim, u = up )
-    # place.null2(name + '______afterAim_____', topGp)[0]
-    # place.null2(name + '______upObj_____', upObj)[0]
-
+    # place.null2( name + '______afterAim_____', topGp )[0]
+    # place.null2( name + '______upObj_____', upObj )[0]
+    # return
     # pv weighted group
     pvWtGp = place.null2( name + '_pvWtGp', topGp )[0]
     # place.null2(name + '______what_____', topGp)[0]
     cmds.parent( pvWtGp, topGp )
-    pvWtCt = place.circle( name + '_Twist', topGp, 'facetXup_ctrl', X * 1, color, 8, 1, ( 0, 1, 0 ) )[0]
+    pvWtCt = place.circle( name + '_Twist', pvWtGp, 'facetXup_ctrl', X * 1, color, 8, 1, ( 0, 1, 0 ) )[0]
     cmds.parent( pvWtCt, pvWtGp )
+    # return
     cmds.setAttr( pv + '.visibility', False )
     place.addAttribute( pvWtCt, 'Pv_Vis', 0, 1, False, 'long' )
     cmds.connectAttr( pvWtCt + '.Pv_Vis', pv + '.visibility' )
@@ -507,6 +513,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     setRotOrderWithXform( pvWtGp, rotOrder )
     cmds.pointConstraint( topGp, pvWtGp, w = 0.5, mo = False )
     cmds.pointConstraint( btmGp, pvWtGp, w = 0.5, mo = False )
+    # return
     # correct upObj position
     upOffst = cmds.getAttr( pvWtGp + '.translate' + aimAxis )
     cmds.setAttr( upObjGp + '.translate' + upAxis, upDir * ( upOffst / 2 ) )
@@ -516,6 +523,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     # twist group
     twstGp = place.null2( name + '_TwistGp', Top )[0]
     cmds.parent( twstGp, rig )
+    # return
 
     # Top
     MstrTopGp = place.null2( name + '_MstrTopGp', Top )[0]
@@ -525,6 +533,7 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     cmds.parent( IsoTopGp, MstrTopGp )
     cmds.parent( MstrTopGp, twstGp )
     cmds.pointConstraint( Top, MstrTopGp, w = 1, mo = False )
+    # return
     # constraint maintain offset changed... #account for shoulder joint not being at zero world orient
     # cmds.orientConstraint(Master, MstrTopGp, w=1, mo=False)
     cmds.orientConstraint( Master, MstrTopGp, w = 1, mo = True )
@@ -532,7 +541,8 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     # Btm
     MstrBtmGp = place.null2( name + '_MstrBtmGp', Btm, orient = False )[0]
     IsoBtmGp = place.null2( name + '_IsoBtmGp', Btm, orient = False )[0]  # likely cause of elbow flipping. interpolated value can be a flipped one
-    # return None
+    # print( IsoTopGp, IsoBtmGp )
+    # return
     setRotOrderWithXform( MstrBtmGp, rotOrder )
     setRotOrderWithXform( IsoBtmGp, rotOrder )
     # return None
@@ -543,20 +553,30 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     # import zero as z
     cmds.select( IsoBtmGp )
     z.zero()
+    # return
     # import anim_lib as anm
     cmds.select( IsoBtmGp, Twist )
-    # anm.matchObj() # removing cuz breaks shit
+    # anm.matchObj()  # removing cuz breaks shit
     # ## seems to work more reliabley ####################################
 
     cmds.parent( MstrBtmGp, twstGp )
     cmds.pointConstraint( Btm, MstrBtmGp, w = 1, mo = False )
     # cmds.orientConstraint( Master, MstrBtmGp, w = 1, mo = False )
     cmds.orientConstraint( Master, MstrBtmGp, w = 1, mo = True )  # changed for hand
-    # return None
+    # return
     # new for biped setup, orient controls to joints, pole vectors break
     # cmds.orientConstraint(Twist, IsoBtmGp, w=1, mo=False)  # changed for hand
-    cmds.orientConstraint( Twist, IsoBtmGp, w = 1, mo = True )
-    # return None
+    # cmds.orientConstraint( Twist, IsoBtmGp, w = 1, mo = True )
+    # swapped orientConstraint for parentConstraint,
+    # orient was adding rotate values ie. 180 flips, should be rx 0 ry 0 rz 0
+    cmds.parentConstraint( Twist, IsoBtmGp, mo = True, st = ['x', 'y', 'z'] )
+    '''
+    # may be useful in future
+    cmds.select( IsoBtmGp )
+    z.zero()
+    cn.updateConstraintOffset( obj = IsoBtmGp )'''
+
+    # return
 
     # twistBlend
     # attrs on Twist
@@ -590,13 +610,18 @@ def pvRig( name, Master, Top, Btm, Twist, pv, midJnt, X, slider, setChannels = T
     cmds.connectAttr( pvWtCt + '.' + OnOff, TwstBlnd + '.blender' )
     cmds.connectAttr( Add + '.output', TwstBlnd + '.color1G' )
     cmds.connectAttr( TwstBlnd + '.outputG', IsoUpGp + '.rotate' + aimAxis )
+    # return
 
     # pv position group
     pvPsGp = place.null2( name + '_PsGp', pv )[0]
     cmds.parent( pv, pvPsGp )
     cmds.parent( pvPsGp, pvWtCt )
-    print( slider, pvWtCt )
-    cmds.connectAttr( slider + '.KneeTwist', pvWtCt + '.ry' )
+
+    # pvWtCt is/was positioned with non-zero ry value, pv snaps in next line
+    print( slider, pvWtCt )  # hand_L Arm_pv_ctrl_L_Twist # pvWtCt is positioned with non-zero ry value, pv snaps in next line
+    # return
+    cmds.connectAttr( slider + '.KneeTwist', pvWtCt + '.ry' )  # nudges
+    # return
 
     if setChannels:
         # place.setChannels(pvGds, [True, False], [True, False], [True, False], [False, False, False]) #object commented out of creation above
@@ -1887,6 +1912,26 @@ def createWristTwistRig( suffixList, w = -0.75 ):
         # make the connections
         cmds.connectAttr( 'arm_wrist_jnt_%s.rotateZ' % side, rootMd + '.input1Z' )
         cmds.connectAttr( rootMd + '.outputZ', 'arm_wrist_twist_jnt_%s.rotateZ' % side )
+
+
+def createTibiaTwistRig( suffixList, w = -0.75 ):
+    '''
+    driven twist joint
+    driver joint
+    final parent
+    single axis connection and reduction
+    '''
+    for side in suffixList:
+        # parentForarmRigJoints( 'front_shoulder_jnt_%s' % side, 'delt_twist', side )
+        cmds.parent( 'leg_tibia_twist_jnt_' + side, 'leg_tibia_jnt_' + side )
+
+        # front_twist_aim_loc_L
+        rootMd = cmds.createNode( 'multiplyDivide', name = 'leg_tibia_twist_MD_%s' % side )
+        cmds.setAttr( rootMd + '.input2Z', w )
+
+        # make the connections
+        cmds.connectAttr( 'leg_ankle_jnt_%s.rotateY' % side, rootMd + '.input1Z' )
+        cmds.connectAttr( rootMd + '.outputZ', 'leg_tibia_twist_jnt_%s.rotateZ' % side )
 
 
 def createButtVolumeRig( suffixList, w = 0.1 ):

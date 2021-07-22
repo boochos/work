@@ -1,9 +1,16 @@
 import os
-
+import platform
 import maya.OpenMaya as OpenMaya
 import maya.cmds as cmds
-import urllib.request
+# import urllib.request
 import webrImport as web
+
+ver = platform.python_version()
+# print( ver)
+if '2.' in ver:
+    import urllib2
+else:
+    import urllib.request
 
 # import urllib2
 #

@@ -234,7 +234,7 @@ def getImageSize( path = '' ):
         dim = subprocess.Popen( ["identify", "-format", "\"%w,%h\"", path], stdout = subprocess.PIPE, stderr = subprocess.PIPE )
         out, err = dim.communicate()
         if err:
-            print err
+            print( err )
         # print out
         # print dim
         s = dim.split( ',' )

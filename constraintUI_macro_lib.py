@@ -293,4 +293,4 @@ class CSUI( object ):
 
     def cmdUpdateConstraintOffset( self, *args ):
         cn = web.mod( 'constraint_lib' )
-        cn.updateConstraintOffset( obj = cmds.ls( sl = 1 ) )
+        cn.updateConstraintOffset( objs = cmds.ls( sl = 1 ) )

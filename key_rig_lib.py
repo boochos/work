@@ -977,7 +977,7 @@ def exportNurbsSurfaceWeights( path, obj ):
             vCv -= degreeV
 
         # open the fileOut path
-        fileOut = file( path, 'w' )
+        fileOut = open( path, 'w' )
 
         # write the file out
         fileOut.writelines( str( infList ) + '\n' )

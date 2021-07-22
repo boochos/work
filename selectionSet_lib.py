@@ -85,7 +85,7 @@ def exportFile( filePath, sel = None ):
         if '.sel' not in filePath:
             filePath = filePath + '.sel'
         # open
-        outFile = open( filePath, 'wb' )
+        outFile = open( filePath, 'wt' )
         if sel:
             # confirm type
             if type( sel ) != dict:
@@ -99,6 +99,7 @@ def exportFile( filePath, sel = None ):
 
 
 def loadDict( filePath ):
+    print( filePath )
     readFile = open( filePath, 'r' )
     dic = json.load( readFile )
     readFile.close()

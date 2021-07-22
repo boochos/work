@@ -200,13 +200,16 @@ def createPath( path ):
     return None
 
 
-def createBlastPath( suffix = None, forceTemp = False ):
+def createBlastPath( suffix = None, forceTemp = False, subDir = '' ):
     '''
     bla
     '''
     createPath( path = blastDir( forceTemp = forceTemp ) )
     path = os.path.join( blastDir( forceTemp = forceTemp ), sceneName() )
     path = createPath( path )
+    if subDir:
+        path = os.path.join( path, subDir )
+        path = createPath( path )
     if suffix:
         path = path + sceneName() + suffix
     return path
@@ -249,10 +252,12 @@ def blastDir( forceTemp = False, brackets = False ):
         return getPath()
 
 
-def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.264', offScreen = True, useGlobals = False, forceTemp = True, burnIn = False, burnInSize = 30 ):
+def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.264', offScreen = True, useGlobals = False, forceTemp = True, burnIn = False, burnInSize = 30, camStr = True, strp_r = False, subDir = '', play = True ):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
+    subDir = blastName + subDir string
     '''
+    result = []
     # camName()
     min, max = blastRange()
     if useGlobals:
@@ -264,18 +269,31 @@ def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.
     else:
         w = int( float( w ) * float( x ) )
         h = int( float( h ) * float( x ) )
-    # print ' here', w, h
-    blastName = sceneName( full = False, suffix = None,
-                          bracket = False ) + '____' + camName()
-    blastPath = createBlastPath( '', forceTemp = forceTemp )
+    # cam string with name
+    if camStr:
+        blastName = sceneName( full = False, suffix = None, bracket = False ) + '____' + camName()
+    else:
+        blastName = sceneName( full = False, suffix = None, bracket = False )
+    # revision string with name
+    if strp_r:
+        if "_r" in blastName:
+            blastName = blastName.split( "_r" )[0]  # split from revision
+    # use subDir, usually for image seq
+    if subDir:
+        blastPath = createBlastPath( '', forceTemp = forceTemp, subDir = blastName + '_' + subDir )
+        blastName = blastName + '_' + subDir
+    else:
+        blastPath = createBlastPath( '', forceTemp = forceTemp )
+    #
     blastFullPAth = os.path.join( blastPath, blastName )
     if not blastDir( forceTemp = forceTemp ):
         message( 'Set project', maya = True )
     else:
         if 'image' not in format:
-            path = cmds.playblast( format = format, filename = blastFullPAth, sound = sound( path = False ), showOrnaments = True, st = min, et = max,
+            path = cmds.playblast( format = format, filename = blastFullPAth, sound = sound( path = False ), showOrnaments = False, st = min, et = max,
                                   viewer = False, fp = 4, fo = True, qlt = qlt, offScreen = offScreen, percent = 100, compression = compression, width = w, height = h, quality = qlt )
-            openSelected( path = blastPath, name = blastName, ext = 'mov' )
+            if play:
+                openSelected( path = blastPath, name = blastName, ext = 'mov' )
         else:
             playLo, playHi, current = getRange()
             # sound
@@ -284,8 +302,9 @@ def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.
             path = cmds.playblast( format = 'image', filename = blastFullPAth, showOrnaments = False, st = min, et = max, viewer = False,
                                   fp = 4, fo = True, offScreen = offScreen, percent = 100, compression = compression, width = w, height = h, quality = qlt )
             # play
-            openSelected( path = blastPath, name = blastName,
-                         ext = compression, start = str( playLo ), end = str( playHi ) )
+            if play:
+                openSelected( path = blastPath, name = blastName,
+                             ext = compression, start = str( playLo ), end = str( playHi ) )
             cmds.currentTime( current )
     if cmds.window( 'PB_Man', q = True, ex = True ):
         blastWin()
@@ -293,7 +312,74 @@ def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.
     if burnIn:
         # pass
         # print '___________', blastFullPAth
-        fmp.burn_in( filein = blastFullPAth + '.mov', task = '', startFrame = min, size = 20, wMargin = 30, hMargin = 30 )
+        burninResult = fmp.burn_in( filein = blastFullPAth + '.mov', task = '', startFrame = min, size = 20, wMargin = 30, hMargin = 30 )
+
+    if burnIn:
+        for item in burninResult:
+            result.append( item )
+    else:
+        result.append( blastPath )
+        result.append( blastName )
+    #
+    return result
+
+
+def blastRenameSeq( result = [], splitStr = '_v', moveStr = '_dragonflyBty' ):
+    '''
+    result = [blastPath, blastName]
+    renames subdirectories from sequence playblasts
+    assumes move
+    '''
+    # print( result )
+    #
+    if len( result ) == 2:
+        #
+        # qualify string in Name
+        if moveStr in result[1]:
+            # change blastName
+            front, back = result[1].split( splitStr )
+            front = front + moveStr
+            back = back.replace( moveStr, '' )
+            blastNameNew = front + splitStr + back
+            # get files
+            blastFiles = os.listdir( result[0] )
+            # rename files
+            for file in blastFiles:
+                # print( file )
+                # qualify
+                if moveStr in file:
+                    filePathOld = os.path.join( result[0], file )
+                    filePathNew = file.replace( result[1], blastNameNew )
+                    filePathNew = os.path.join( result[0], filePathNew )
+                    # older renamed files exist with new unnamed files in same directory, filter out new name files
+                    if filePathOld != filePathNew:
+                        # print( 'old', filePathOld )
+                        # print( 'new', filePathNew )
+                        if os.path.isfile( filePathOld ):
+                            # delete file with new name if exists
+                            if os.path.isfile( filePathNew ):
+                                os.remove( filePathNew )
+                            os.rename( filePathOld, filePathNew )
+                        else:
+                            print( 'No such file: ', filePathOld )
+        #
+        # qualify string in Path
+        if moveStr in result[0]:
+            # print( result[0] )
+            # change blastPath
+            front, mid, back = result[0].split( splitStr )
+            front = front + splitStr + mid + moveStr
+            back = back.replace( moveStr, '' )
+            blastPathNew = front + splitStr + back
+            # print( blastPathNew )
+            if os.path.isdir( blastPathNew ):
+                # print( 'yes' )
+                shutil.rmtree( blastPathNew )
+                # os.remove( blastPathNew )
+            else:
+                # print( 'no' )
+                pass
+            os.rename( result[0], blastPathNew )
 
 
 def blastWin():

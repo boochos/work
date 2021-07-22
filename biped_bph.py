@@ -11,6 +11,8 @@ stage = web.mod( 'atom_splineStage_lib' )
 splnFk = web.mod( 'atom_splineFk_lib' )
 abl = web.mod( 'atom_body_lib' )
 cn = web.mod( 'constraint_lib' )
+anm = web.mod( 'anim_lib' )
+krl = web.mod( "key_rig_lib" )
 
 
 def preBuild( 
@@ -50,12 +52,21 @@ def preBuild(
         face = True
 
     # delta mush
-    # cmds.deltaMush('Plane002',smoothingIterations=2, smoothingStep=0.5, pinBorderVertices=1, envelope=1)
-    cmds.deltaMush( 'chr_vance_bradyHepner_neutralA_noWig_20210623', smoothingIterations = 26, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
-    # cmds.deltaMush( 'Socks', smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    # ## cmds.deltaMush('Plane002',smoothingIterations=2, smoothingStep=0.5, pinBorderVertices=1, envelope=1)
+    cmds.deltaMush( 'newBody', smoothingIterations = 12, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    # creates cycle for some reason === cmds.deltaMush( 'head', smoothingIterations = 12, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
 
     PreBuild = place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 150 )
-
+    # mds.setAttr( '___SKIN_JOINTS.visibility', 1 )
+    # cleanup
+    place.cleanUp( 'DigiVance', Body = True )
+    for geo in asset_baseGeo():
+        print( geo )
+        place.cleanUp( geo, Utility = True )
+    for geo in asset_nurbs():
+        print( geo )
+        place.cleanUp( geo, Utility = True )
+    # return
     # scale
     mstr = 'master'
     uni = 'uniformScale'
@@ -65,6 +76,7 @@ def preBuild(
     for s in scl:
         cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )
         # cmds.connectAttr( mstr + '.' + uni, 'deltaMush2' + s )
+        # pass
     '''
     misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
     for s in scl:
@@ -83,7 +95,7 @@ def preBuild(
 
     cmds.parent( SKIN_jnt, SKIN_JOINTS )
     # cmds.parent(GEO_gp, GEO)
-
+    # return
     # COG #
     Cog = 'cog'
     cog = place.Controller( Cog, COG_jnt, False, 'facetYup_ctrl', X * 75, 17, 8, 1, ( 0, 0, 1 ), True, True )
@@ -164,7 +176,7 @@ def preBuild(
     cmds.parent( NeckCt[0], CONTROLS )
 
     # HEAD #
-    Head = 'head'
+    Head = 'headc'
     head = place.Controller( Head, HEAD_jnt, False, 'biped_head', X * 3.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
     HeadCt = head.createController()
     place.setRotOrder( HeadCt[0], 2, True )
@@ -190,7 +202,7 @@ def preBuild(
     cmds.parent( HeadCt[0], CONTROLS )
     # add extra group to 'HeadCt'
     HeadCt += ( Head_CnstGp, )
-
+    # return
     # BasicFace
     jw = 'jaw_jnt'
     if cmds.objExists( jw ):
@@ -262,7 +274,7 @@ def preBuild(
 
         # SHOULDER R #
         shldrR = 'shldr_R'
-        shldrR = place.Controller( shldrR, SHLDR_R_jnt, False, 'loc_ctrl', X * 28, 17, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'burgundy' )
+        shldrR = place.Controller( shldrR, SHLDR_R_jnt, False, 'loc_ctrl', X * 28, 17, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' )
         ShldrRCt = shldrR.createController()
         place.setRotOrder( ShldrRCt[0], 2, True )
         cmds.parentConstraint( ChestAttch_CnstGp, ShldrRCt[0], mo = True )
@@ -324,7 +336,7 @@ def preBuild(
 
         # BACK R  #
         PawBckR = 'foot_R'
-        pawBckR = place.Controller( PawBckR, BACK_R_jnt, False, 'pawMaster_ctrl', X * 38.0, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'burgundy' )
+        pawBckR = place.Controller( PawBckR, BACK_R_jnt, False, 'pawMaster_ctrl', X * 38.0, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'red' )
         PawBckRCt = pawBckR.createController()
         cmds.parent( PawBckRCt[0], CONTROLS )
         # More parent group Options
@@ -355,6 +367,12 @@ def preBuild(
         PawFrntL = 'hand_L'
         pawFrntL = place.Controller( PawFrntL, FRONT_L_jnt, False, 'facetXup_ctrl', X * 19, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'blue' )
         PawFrntLCt = pawFrntL.createController()
+        # cmds.setAttr( PawFrntLCt[0] + '.rotateX', 90 )
+        # return
+        # fix wrist
+        cmds.select( PawFrntLCt[2], FRONT_L_jnt )
+        anm.matchObj()
+        # return
         cmds.parent( PawFrntLCt[0], CONTROLS )
         # More parent group Options
         cmds.select( PawFrntLCt[0] )
@@ -363,7 +381,8 @@ def preBuild(
         PawFrntL_TopGrp1 = place.insert( 'null', 1, PawFrntL + '_TopGrp1' )[0][0]
         PawFrntL_CtGrp1 = place.insert( 'null', 1, PawFrntL + '_CtGrp1' )[0][0]
         # set RotateOrders for new groups
-        place.setRotOrder( PawFrntL_TopGrp2, 2, True )
+        # place.setRotOrder( PawFrntL_TopGrp2, 2, True )
+        place.setRotOrderWithXform( PawFrntL_TopGrp2, rotOrder = 'zxy', hier = True )
         # attr
         place.optEnum( PawFrntLCt[2], attr = assist, enum = 'OPTNS' )
         for item in attrCstm:
@@ -382,8 +401,14 @@ def preBuild(
 
         # FRONT R  #
         PawFrntR = 'hand_R'
-        pawFrntR = place.Controller( PawFrntR, FRONT_R_jnt, False, 'facetXup_ctrl', X * 19, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'burgundy' )
+        pawFrntR = place.Controller( PawFrntR, FRONT_R_jnt, False, 'facetXup_ctrl', X * 19, 12, 8, 1, ( 0, 0, 1 ), True, True, False, colorName = 'red' )
         PawFrntRCt = pawFrntR.createController()
+        # cmds.setAttr( PawFrntRCt[0] + '.rotateX', -90 )
+        # return
+        # fix wrist
+        cmds.select( PawFrntRCt[2], FRONT_R_jnt )
+        anm.matchObj()
+        # return
         cmds.parent( PawFrntRCt[0], CONTROLS )
         # More parent group Options
         cmds.select( PawFrntRCt[0] )
@@ -392,7 +417,8 @@ def preBuild(
         PawFrntR_TopGrp1 = place.insert( 'null', 1, PawFrntR + '_TopGrp1' )[0][0]
         PawFrntR_CtGrp1 = place.insert( 'null', 1, PawFrntR + '_CtGrp1' )[0][0]
         # set RotateOrders for new groups
-        place.setRotOrder( PawFrntR_TopGrp2, 2, True )
+        # place.setRotOrder( PawFrntR_TopGrp2, 2, True )
+        place.setRotOrderWithXform( PawFrntR_TopGrp2, rotOrder = 'zxy', hier = True )
         # attr
         place.optEnum( PawFrntRCt[2], attr = assist, enum = 'OPTNS' )
         for item in attrCstm:
@@ -409,6 +435,9 @@ def preBuild(
         for item in attrVis:
             place.addAttribute( PawFrntRCt[2], item, 0, 1, False, 'long' )
     cmds.floatField( 'atom_qrig_conScale', edit = True, v = current_scale )
+
+    print( 'prebuild done' )
+    #
     if face == False:
         return MasterCt, CogCt, PelvisCt, ChestCt, NeckCt, HeadCt, HipLCt, HipRCt, ShldrLCt, ShldrRCt, PawBckLCt, PawBckRCt, PawFrntLCt, PawFrntRCt,
     else:
@@ -488,7 +517,7 @@ def buildAppendages( *args ):
     cmds.floatField( 'atom_qls_ldf_floatField', edit = True, v = -50.0 )  # knee pv distance
     cmds.floatField( 'atom_paw_qls_ldf_floatField', edit = True, v = -5 )  # digit pv distance
     # aal.createReverseLeg()
-    aal.createReverseLeg( traversDepth = 3, ballRollOffset = 0.85, colorName = 'burgundy' )
+    aal.createReverseLeg( traversDepth = 3, ballRollOffset = 0.85, colorName = 'red' )
     place.cleanUp( 'Leg_knee_pv_grp_R', Ctrl = True )
     place.cleanUp( 'Leg_auto_ankle_parent_grp_R', Ctrl = True )
     place.cleanUp( 'Leg_limb_ctrl_grp_R', Ctrl = True )
@@ -603,13 +632,15 @@ def buildAppendages( *args ):
     cmds.floatField( 'atom_qls_ldf_floatField', edit = True, v = 50.0 )
     cmds.floatField( 'atom_paw_qls_ldf_floatField', edit = True, v = -8.0 )
     # aal.createReverseLeg()
-    aal.createReverseLeg( traversDepth = 3, ballRollOffset = 0.3, colorName = 'burgundy' )
-    # return None
+    aal.createReverseLeg( traversDepth = 3, ballRollOffset = 0.3, colorName = 'red' )
+    # return
+
     # aal.createQuadScapulaRig('arm_shoulder_jnt_R', 'shldr_R_Grp', 'scapula_jnt_01_R', 'shldr_R', 'spine_jnt_06', '_R')
     aal.createVerticalScapRig( 'arm_shoulder_jnt_R', 'arm_shoulder_dbl_jnt_R', 'shldr_R_Grp', 'arm_scapula_jnt_01_R', 'shldr_R', 'spine_jnt_06', '_R', flip = True )
     aal.createClavicleRig( 'arm_clavicle_jnt_01_R', 'arm_shoulder_jnt_R', 'spine_jnt_07', '_R', [0, 0, 1], [0, 1, 0] )
     # SCALE -- MORE NODES ATTACH IN THE APPENDAGE LIB
     # scale upper arm
+    # return
 
     # temp stop
     if yes:
@@ -630,7 +661,7 @@ def buildAppendages( *args ):
     cmds.setAttr( 'Arm_leg_ankle_ctrl_R.AutoAnkle', 0 )
     cmds.setAttr( 'Arm_pv_ctrl_R_Twist.TwistOff_On', 0 )
     cmds.setAttr( 'Arm_pv_ctrl_R_Twist.Pv_Vis', 1 )
-
+    # return
     name = 'hand_pv_R'
     Ct = 'Arm_arm_elbow1_jnt_pv_loc_R'
     CtGp = Ct + '_CtGrp'
@@ -658,9 +689,10 @@ def buildAppendages( *args ):
     # if yes:
     # build volume retention rigs
     # ## aal.createForarmTwistRig( ['L', 'R'], w = 0.5 ) # ulna and radius bonne rig
-    aal.createWristTwistRig( ['L', 'R'], w = 0.75 )  # less twist on upper thigh
-    aal.createThighTwistRig( ['L', 'R'], w = -0.75 )  # less twist on upper thigh
-    aal.createDeltTwistRig( ['L', 'R'], w = -0.75 )  # less twist on upper arm
+    aal.createWristTwistRig( ['L', 'R'], w = 0.6 )  # less twist on forearm
+    aal.createTibiaTwistRig( ['L', 'R'], w = -0.9 )  # less twist on upper tibia
+    aal.createThighTwistRig( ['L', 'R'], w = -0.6 )  # less twist on upper thigh
+    aal.createDeltTwistRig( ['L', 'R'], w = 0.15 )  # less twist on upper arm
     aal.createButtVolumeRig( ['L', 'R'], w = 0.1 )  # reduced rotation at socket
     aal.createDeltVolumeRig( ['L', 'R'], w = 0.5 )  # reduced pivot at joint
     # temp stop
@@ -668,7 +700,7 @@ def buildAppendages( *args ):
     print( '===== Quadriped Leg Build Complete =====' )
     cmds.floatField( 'atom_qrig_conScale', edit = True, v = current_scale )
 
-    quadLimits()
+    # quadLimits()
 
 
 def SplineOpts( name, size, distance, falloff ):
@@ -775,7 +807,7 @@ def buildSplines( *args ):
     neckFalloff = 0
     neckPrnt = 'neck_Grp'
     neckStrt = 'neck_Grp'
-    neckEnd = 'head_CnstGp'
+    neckEnd = 'headc_CnstGp'
     neckAttr = 'neck'
     neck = ['neck_jnt_01', 'neck_jnt_05']
     # build spline
@@ -1387,3 +1419,356 @@ def clearSetupConstraints():
             obj = cmds.ls( sl = 1 )
             cn.updateConstraintOffset( obj = obj )
             cmds.delete( i )
+
+
+def asset_geo():
+    '''
+    geo names
+    '''
+    return [
+    'head',
+    'danglyBit04',
+    'newBody',
+    'danglyBit03',
+    'newVest',
+    'danglyBit02',
+    'eyeballs',
+    'danglyBit01',
+    'irises'
+    ]
+
+
+def asset_nurbs():
+    return [
+    'neck_geo',
+    'shoulder_geo_L',
+    'shoulder_geo_R',
+    'forearm_geo_L',
+    'forearm_geo_R',
+    'thigh_geo_L',
+    'thigh_geo_R',
+    'tibia_geo_L',
+    'tibia_geo_R'
+    ]
+
+
+def asset_baseGeo():
+    '''
+    geo created from adding nurbs object as influence to skin
+    '''
+    return [
+    'neck_geoBase',
+    'shoulder_geo_LBase',
+    'shoulder_geo_RBase',
+    'forearm_geo_LBase',
+    'tibia_geo_LBase',
+    'thigh_geo_LBase',
+    'shoulder_geo_LBase1',
+    'shoulder_geo_RBase1',
+    'forearm_geo_RBase',
+    'thigh_geo_RBase',
+    'tibia_geo_RBase'
+    ]
+
+
+def weights_path():
+    '''
+    make path if not present from current file
+    '''
+    # path
+    path = cmds.file( query = True, sceneName = True )
+    filename = cmds.file( query = True, sceneName = True , shortName = True )
+    # print( filename)
+    path = path.split( filename )[0]
+    path = os.path.join( path, 'weights' )
+    if not os.path.isdir( path ):
+        os.mkdir( path )
+    return path
+
+
+def weights_meshExport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = asset_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, g )
+        krl.exportMeshWeights( ex_path, geo, updatebar = True )
+
+
+def weights_nurbsExport():
+    '''
+    exportNurbsCurveWeights( path, obj )
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = asset_nurbs()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, g )
+        krl.exportNurbsSurfaceWeights( ex_path, geo )
+
+
+def weights_meshImport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = asset_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        im_path = os.path.join( path, g )
+        krl.importMeshWeights( im_path, geo, updatebar = True )
+
+
+def weights_nurbsImport():
+    '''
+    importNurbSurfaceWeights2( path, obj )
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = asset_nurbs()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        im_path = os.path.join( path, g )
+        krl.importNurbSurfaceWeights2( im_path, geo )
+
+
+def retainerShaper( sections = 3 ):
+    '''
+    nurbs cylinder rig
+    '''
+    X = 1
+    PreBuild = place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = 20 )
+    # mds.setAttr( '___SKIN_JOINTS.visibility', 1 )
+    # cleanup
+    '''
+    place.cleanUp( 'DigiVance', Body = True )
+    for geo in asset_baseGeo():
+        print( geo )
+        place.cleanUp( geo, Utility = True )
+    for geo in asset_nurbs():
+        print( geo )
+        place.cleanUp( geo, Utility = True )'''
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    misc.addAttribute( [mstr], [uni], 0.1, 10.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
+
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+
+    cmds.parent( 'section1_root_jnt', SKIN_JOINTS )
+    # cmds.parent(GEO_gp, GEO)
+
+    for i in range( 1, sections + 1 ):
+        # COG #
+        Cog = 'Section_' + str( i )
+        rjnt = 'section' + str( i ) + '_root_jnt'
+        cog = place.Controller( Cog, rjnt, False, 'facetYup_ctrl', X * 8, 12, 8, 1, ( 0, 0, 1 ), True, True )
+        CogCt = cog.createController()
+        place.setRotOrder( CogCt[0], 2, True )
+        cmds.parent( CogCt[0], CONTROLS )
+        cmds.parentConstraint( MasterCt[4], CogCt[0], mo = True )
+        cmds.parentConstraint( CogCt[4], rjnt, mo = True )
+        place.scaleUnlock( CogCt[2], sx = True, sy = False, sz = True )
+        place.hijackScale( rjnt, CogCt[2] )
+        # corners
+        corners = ['a', 'b', 'c', 'd']
+        for c in corners:
+            Corner = 'Section_' + str( i ) + '_' + c
+            cjnt = 'section' + str( i ) + '_' + c + '_jnt'  # section3_a_jnt
+            corner = place.Controller( Corner, cjnt, True, 'arrow_ctrl', X * 1.5, 12, 8, 1, ( 0, 0, 1 ), True, True )
+            CornerCt = corner.createController()
+            place.setRotOrder( CornerCt[0], 2, True )
+            cmds.parent( CornerCt[0], CONTROLS )
+            cmds.parentConstraint( CogCt[4], CornerCt[0], mo = True )
+            cmds.parentConstraint( CornerCt[4], cjnt, mo = True )
+            place.scaleUnlock( CornerCt[2], sx = True, sy = True, sz = True )
+            place.hijackScale( cjnt, CornerCt[2] )
+
+
+def weights_nurbs3ShaperExport():
+    '''
+    shaper with 3 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_3_sections'
+    ex_path = os.path.join( path, geo )
+    krl.exportNurbsSurfaceWeights( ex_path, geo )
+
+
+def weights_nurbs3ShaperImport():
+    '''
+    shaper with 3 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_3_sections'
+    im_path = os.path.join( path, geo )
+    krl.importNurbSurfaceWeights2( im_path, geo )
+
+
+def weights_nurbs4ShaperExport():
+    '''
+    shaper with 4 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_4_sections'
+    ex_path = os.path.join( path, geo )
+    krl.exportNurbsSurfaceWeights( ex_path, geo )
+
+
+def weights_nurbs4ShaperImport():
+    '''
+    shaper with 4 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_4_sections'
+    im_path = os.path.join( path, geo )
+    krl.importNurbSurfaceWeights2( im_path, geo )
+
+
+def weights_nurbs2ShaperExport():
+    '''
+    shaper with 2 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_2_sections'
+    ex_path = os.path.join( path, geo )
+    krl.exportNurbsSurfaceWeights( ex_path, geo )
+
+
+def weights_nurbs2ShaperImport():
+    '''
+    shaper with 2 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_2_sections'
+    im_path = os.path.join( path, geo )
+    krl.importNurbSurfaceWeights2( im_path, geo )
+
+
+def weights_nurbs5ShaperExport():
+    '''
+    shaper with 5 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_5_sections'
+    ex_path = os.path.join( path, geo )
+    krl.exportNurbsSurfaceWeights( ex_path, geo )
+
+
+def weights_nurbs5ShaperImport():
+    '''
+    shaper with 5 sections
+    '''
+    # path
+    path = weights_path()
+    # geo
+    geo = 'retainer_5_sections'
+    im_path = os.path.join( path, geo )
+    krl.importNurbSurfaceWeights2( im_path, geo )
+
+'''
+import imp
+imp.reload(web)
+import webrImport as web
+
+
+# constraints
+bd = web.mod('biped_bph')
+bd.clearSetupConstraints()
+# prebuild
+bd = web.mod('biped_bph')
+bd.preBuild()
+# appendage
+bd = web.mod('biped_bph')
+bd.buildAppendages()
+# splines
+bd = web.mod('biped_bph')
+bd.buildSplines()
+
+# import
+bd = web.mod('biped_bph')
+bd.weights_meshImport()
+bd = web.mod('biped_bph')
+bd.weights_nurbsImport()
+# export
+bd = web.mod('biped_bph')
+bd.weights_meshExport()
+bd = web.mod('biped_bph')
+bd.weights_nurbsExport()
+
+
+
+#
+cn = web.mod('constraint_lib')
+# clear setup Constraints
+joints = cmds.select('root_jnt', hi=1)
+joints = cmds.ls(sl=1)
+for i in joints:
+    con = cmds.nodeType(i)
+    if 'Constraint' in con:
+        cmds.select(i)
+        cmds.pickWalk(d='up')
+        obj = cmds.ls(sl=1)
+        cn.updateConstraintOffset(obj=obj)
+        cmds.delete(i)
+
+
+# splines
+bd = web.mod('biped_bph')
+bd.buildSplines()
+'''

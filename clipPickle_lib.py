@@ -933,7 +933,7 @@ def clipSave( name = 'clipTemp', comment = '', poseOnly = False, temp = False, b
     clp = Clip( name = name, comment = comment, poseOnly = poseOnly, bakeRange = bakeRange )
     clp.get()
     # print clp.name
-    fileObjectJSON = open( path, 'wb' )
+    fileObjectJSON = open( path, 'wt' )
     # pretty encoding
     json.dump( clp, fileObjectJSON, default = to_json, indent = 1 )
     # compact encoding
