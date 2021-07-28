@@ -559,13 +559,15 @@ class CPUI( object ):
 
     def populateRange( self ):
         # self.control.heading5
+        # print( 'clip range: ', self.clip.start, self.clip.end )
         if self.clip.start != None:
             if ( self.clip.end - self.clip.start ) > 0.0:
                 # sliders
+                # causing error when importing subframes, dragon fly anim wing cycle
                 cmds.intSlider( self.control.sl1, edit = True, min = self.clip.start, max = self.clip.end, value = self.clip.start, step = 1, dc = self.cmdRangeUpdateMin, en = True )
                 cmds.intSlider( self.control.sl2, edit = True, min = self.clip.start, max = self.clip.end, value = self.clip.end, step = 1, dc = self.cmdRangeUpdateMax, en = True )
                 # fields
-                cmds.floatField( self.control.int1, edit = True, min = self.clip.start, max = self.clip.end, value = self.clip.start, step = 0.1, en = False )
+                cmds.floatField( self.control.int1, edit = True, min = self.clip.start - 1, max = self.clip.end, value = self.clip.start, step = 0.1, en = False )
                 cmds.floatField( self.control.int2, edit = True, min = self.clip.start, max = self.clip.end, value = self.clip.end, step = 0.1, en = False )
             else:
                 # sliders

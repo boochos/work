@@ -1032,6 +1032,7 @@ def clipApply( path = '', ns = True, onCurrentFrame = True, mergeExistingLayers 
     # TODO: apply should only take name, path should be predetermined
     # TODO: fix pose only export to not take anim curves
     # update all other functions that use the behaviour
+    # print( 'incoming start: ', start, 'incoming end: ', end )
     sel = cmds.ls( sl = 1, fl = 1 )
     # set import attrs
     # print clp.name, '_____name'
@@ -1051,18 +1052,21 @@ def clipApply( path = '', ns = True, onCurrentFrame = True, mergeExistingLayers 
     # frame range
     s = None
     e = None
-    print( start, clp.start )
+    # print( start, clp.start, '$$$$' )
     if clp.start != start:
         s = start
     else:
         print( '____' )
     if clp.end != end:
         e = end
-    # print s, start, end, e
+    # print( 'reset start: ', start, 'reset end: ', end )
     if s or e:
+        # print( 'before cut keys', 'start: ', s, 'end: ', e )
         clp = cutKeysToRange( clp, s, e )
+        print( 'cut keys good' )
+    # print( 'before put layers' )
     clp.putLayers( mergeExistingLayers, applyLayerSettings, applyRootAsOverride )
-    # print clp.layers
+    # print( 'after put layers', clp.layers )
     if sel:
         cmds.select( sel )
 
@@ -1117,6 +1121,10 @@ def onCurrentFrameOffset( start = 0.0 ):
 
 
 def insertIntoRange( attr, rng = [0.0, 0.0], extendEnd = True ):
+    '''
+    
+    '''
+    print( 'insert into range' )
     keys = []
     if extendEnd:
         k = copy.deepcopy( attr.keys[len( attr.keys ) - 1] )
@@ -1137,24 +1145,33 @@ def insertIntoRange( attr, rng = [0.0, 0.0], extendEnd = True ):
     keys[0].weightedTangents = False
     keys[1].weightedTangents = False
     attr.keys = keys
+    print( 'end insert into range' )
     return attr
 
 
 def insertKey( clp, frame = 0.0, rng = [0.0, 0.0] ):
+    '''
+    
+    '''
+    print( 'start insert' )
     for layer in clp.layers:
         for obj in layer.objects:
             for attr in obj.attributes:
                 attrRng = []
                 if attr.crv:
+                    print( 00 )
                     start = attr.frames[0]
                     end = attr.frames[len( attr.frames ) - 1]
                     if end < rng[0]:
+                        print( 0 )
                         # keep last key in attr.keys, duplicate it and alter frame numbers to new range, make tangents flat
                         insertIntoRange( attr, rng = rng, extendEnd = True )
                     elif start > rng[1]:
+                        print( 1 )
                         # keep first key in attr.keys, duplicate it and alter frame numbers to new range, make tangents flat
                         insertIntoRange( attr, rng = rng, extendEnd = False )
                     elif frame > attr.frames[0] and frame < attr.frames[len( attr.frames ) - 1] and frame not in attr.frames:
+                        print( 2 )
                         k = insertKeyValue( attr, frame )
                         # print k.frame
                         attr.keys.append( k )
@@ -1166,10 +1183,15 @@ def insertKey( clp, frame = 0.0, rng = [0.0, 0.0] ):
                 else:
                     # print 'no crv exists, skipping insert'
                     pass
+    print( 'end insert' )
     return clp
 
 
 def insertKeyValue( attr, frame = 0.0 ):
+    '''
+    
+    '''
+    print( 'start insert key value' )
     # does not consider tangents, only key positions
     val = 0.0
     i = 0
@@ -1190,7 +1212,9 @@ def insertKeyValue( attr, frame = 0.0 ):
         p3 = [nexFrm, nexVal, attr.keys[i].inAngle]
         corX, corY = cpb.getControlPoints( p0, p3 )
         # print corX, corY
+        print( 'seeking' )
         degIn, hlengthIn, value, degOut, hlengthOut = cpb.seekPoint( corX, corY, frame )
+        print( 'seeked' )
         k = Key( attr.obj, attr.name, attr.crv, frame, weightedTangents = weighted, auto = False )
         # print degIn, value, degOut, crv
         k.value = value
@@ -1210,7 +1234,7 @@ def insertKeyValue( attr, frame = 0.0 ):
             front = ( frame - p0[0] )
             back = ( p3[0] - frame )
             #
-            # print time, p0[0], gap, '____________'
+            print( time, p0[0], gap, '____________' )
             front = ( frame - p0[0] ) / gap
             back = ( p3[0] - frame ) / gap
             #
@@ -1221,6 +1245,7 @@ def insertKeyValue( attr, frame = 0.0 ):
 
 def cutKeysToRange( clp, start = None, end = None ):
     # sort range
+    print( 'start cut' )
     s = None
     e = None
     if start != None:
@@ -1232,10 +1257,13 @@ def cutKeysToRange( clp, start = None, end = None ):
     else:
         e = clp.end
     # insert
+    print( 'end', end, s, e )
     if end != None:
         clp = insertKey( clp, end, rng = [s, e] )
+    print( 'start', start, s, e )
     if start != None:
         clp = insertKey( clp, start, rng = [s, e] )
+    print( 'key inserted' )
     # exclude keys out of range
     for layer in clp.layers:
         for obj in layer.objects:
@@ -1247,6 +1275,7 @@ def cutKeysToRange( clp, start = None, end = None ):
                             keys.append( key )
                     if keys:
                         attr.keys = keys
+    print( 'end cut' )
     return clp
 
 
