@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 # from cacheAbc import outDataExp
 
 
@@ -127,8 +128,10 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
     print( path2 )
     print( path_clientName )
     # margin
+
     wm = "w/" + str( wMargin )  # divide image width to n number of pieces = margin
     hm = "h/" + str( hMargin )  # line height * margin = margin
+
     startFrame = str( startFrame )
     size = str( size )
     # print startFrame
@@ -140,16 +143,17 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
         # print path
         os.mkdir( framesPath )
     renderFrames( filein, os.path.join( framesPath, framesName ), startFrame = startFrame )
-    # return None
-
+    # print( 'start burn-in 1 -----------' )
+    # print( 'filein', filein )
+    # print( 'path1', path1 )
     # task left upper corner
     # drawtext='fontfile=FreeSans.ttf:text=%{localtime\:%a %b %d %Y}'
     cmd = ["ffmpeg", "-i", filein, "-vf", "drawtext=fontfile=C\:\\Windows\\Fonts\\Arial.ttf: text='" + task + "': x=(" + wm + " ): y=(" + hm + "): fontcolor=white: fontsize=" + size + ": box=1: boxcolor=black: boxborderw=5", "-y", path1]
     cmd = ["ffmpeg", "-i", filein, "-vf", "drawtext=text='" + task + "': x=(" + wm + " ): y=(" + hm + "): fontcolor=white: fontsize=" + size + ": box=1: boxcolor=black: boxborderw=5", "-y", path1]
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
-    # print( err )
-    # print( out )
+    # print( 'err ---------', err )
+    # print( 'out ---------', out )
     # return
 
     # frames right upper corner

@@ -588,10 +588,12 @@ def parentRig( bake = True, worldOrient = True, *args ):
             cmds.parent( ornt, root )
             plc.setChannels( ornt, [True, False], [False, True], [True, False], [True, False, False] )
             parent = ornt
-            spin = cn.locator( obj = ornt, constrain = False, X = 0.75, color = color, suffix = '__SPIN__', matchSet = False )[0]
+            spin = cn.locator( obj = ornt, constrain = False, X = 0.75, color = color, suffix = '__ORIGIN__', matchSet = False )[0]
             cn.putControlSize( spin, cn.getControlSize( sel[1] ) )
         else:
-            spin = cn.locator( obj = sel[1], constrain = False, X = 1, color = color, suffix = '__SPIN__', matchSet = False )[0]
+            spin = cn.locator( obj = sel[1], constrain = False, X = 1, color = color, suffix = '__ORIGIN__', matchSet = False )[0]
+        # unlock scale, good for parenting to camera, controlling z-depth
+        plc.scaleUnlock( spin )
         # return None
         # heirarchy
         cmds.parent( offset, spin )
@@ -602,6 +604,7 @@ def parentRig( bake = True, worldOrient = True, *args ):
         cmds.parentConstraint( sel[1], root, mo = True )
         # bake anim to offset loc
         cmds.parentConstraint( sel[0], offset, mo = True )
+        cn.matchKeyedFrames( A = sel[0], B = spin, subtractive = True )
         cn.matchKeyedFrames( A = sel[0], B = offset, subtractive = True )
         if bake:
             cn.bakeConstrained( offset, removeConstraint = True, timeLine = False, sim = False )

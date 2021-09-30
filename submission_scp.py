@@ -6,12 +6,12 @@ import webrImport as web
 pb = web.mod( "playblast_lib" )
 
 
-def elos_daily():
+def scp_daily():
     '''
     create daily package and move to G folder
     '''
     #
-    project = 'ELOS'
+    project = 'SCP'
     groot = 'G:/Shared drives'
     pnl = cmds.getPanel( withFocus = True )
 
@@ -20,8 +20,9 @@ def elos_daily():
     cmds.setFocus( pnl )
     # result = [u'C:/Users/sebas/Documents/maya/__PLAYBLASTS__\\154-080_anim_v001_r018\\154-080_anim_v001_dragonflySimBty', u'154-080_anim_v001_dragonflySimBty']
     result = pb.blast( x = 0.50, format = "qt", qlt = 100, compression = "H.264", offScreen = True, useGlobals = True, forceTemp = True, burnIn = True, burnInSize = 30, play = False )
+    # return
     pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_precomp' )
-
+    # return
     # source
     result[0] = result[0].replace( '\\', '/' )
     src = result[0].split( result[1] )[0]
@@ -45,31 +46,7 @@ def elos_daily():
 
     # daily main hero render layer is exists
     go = True
-    subDir = 'dragonflyHeroBty'
-    try:
-        cmds.editRenderLayerGlobals( crl = subDir )
-    except:
-        go = False
-    if go:
-        cmds.setFocus( pnl )
-        result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = subDir, play = False )
-        pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_' + subDir )
-
-    # daily hero render layer is exists
-    go = True
-    subDir = 'dragonflyBty'
-    try:
-        cmds.editRenderLayerGlobals( crl = subDir )
-    except:
-        go = False
-    if go:
-        cmds.setFocus( pnl )
-        result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = subDir, play = False )
-        pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_' + subDir )
-
-    # daily sim render layer if exists
-    go = True
-    subDir = 'dragonflySimBty'
+    subDir = 'dynamiteStickBty'
     try:
         cmds.editRenderLayerGlobals( crl = subDir )
     except:
@@ -80,4 +57,4 @@ def elos_daily():
         pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_' + subDir )
 
     # move root directory to G drive
-    shutil.copytree( src, dest )
+    # shutil.copytree( src, dest )

@@ -40,6 +40,7 @@ def init_ui():
     lists_layout = QtWidgets.QHBoxLayout()
     warp_list_widget = QtWidgets.QListWidget()
     members_list_widget = QtWidgets.QListWidget()
+    members_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.NoSelection )
     #
     lists_layout.addWidget( warp_list_widget )
     lists_layout.addWidget( members_list_widget )
@@ -295,7 +296,7 @@ def connectTimeWarp( objects = [], timewarp = '', connect = True ):
             print( timewarp + '.' + warpAttrStr(), 'has no keys' )
             '''
     else:
-        print( 'Select some object to connect / disconnect' )
+        message( 'Select objects to connect / disconnect', warning = True )
 
 
 def getAnimCurves( object = '', max_recursion = 0 ):
@@ -434,6 +435,7 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', skip = 
     #
     i = 0
     max = 2
+    print( type( i ), type( max ) )
     while not found and i < max:
         charSet = False
         i = i + 1
@@ -601,7 +603,7 @@ def cleanConversionNodes( object = '' ):
     s = 0
     d = 1
     cons = cmds.listConnections( object, d = d, s = s, type = 'unitToTimeConversion' )
-    print cons
+    print( cons )
     #
     if cons:
         for c in cons:

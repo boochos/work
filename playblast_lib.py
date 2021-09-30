@@ -269,6 +269,16 @@ def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.
     else:
         w = int( float( w ) * float( x ) )
         h = int( float( h ) * float( x ) )
+    # if burnin, make sure resolution is divisible by half or error will occur
+    if burnIn:
+        if w % 2 != 0:
+            print( 'width change' )
+            w = w + 1
+        if h % 2 != 0:
+            print( 'height change' )
+            h = h + 1
+    # print( w, h )
+    # return
     # cam string with name
     if camStr:
         blastName = sceneName( full = False, suffix = None, bracket = False ) + '____' + camName()
@@ -313,7 +323,8 @@ def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.
         # pass
         # print '___________', blastFullPAth
         burninResult = fmp.burn_in( filein = blastFullPAth + '.mov', task = '', startFrame = min, size = 20, wMargin = 30, hMargin = 30 )
-
+    # print( 'burninResult: ', burninResult )
+    # return
     if burnIn:
         for item in burninResult:
             result.append( item )
