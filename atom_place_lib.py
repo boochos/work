@@ -275,6 +275,18 @@ def colorDict():
     return colors
 
 
+def vector( v = [] ):
+    '''
+    list to translate direction
+    '''
+    if v == [1, 0, 0]:
+        return '.translateX'
+    if v == [0, 1, 0]:
+        return '.translateY'
+    if v == [0, 0, 1]:
+        return '.translateZ'
+
+
 class Controller():
     # initialize
 
@@ -372,9 +384,119 @@ class Controller():
             cmds.setAttr( ctO + '.visibility', cb = False )
             i = cmds.getAttr( ctO + '.visibility', cb = True )
 
+        print( topgp, ctgp, ct, ctO, gp )
         if self.groups == True:
             return topgp, ctgp, ct, ctO, gp
         else:
+            return ct, ctO, gp
+
+
+class Controller2():
+    # initialize
+
+    def __init__( self, name, obj, orient = True, shape = 'diamond_ctrl',
+                 size = 1, color = 8, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True,
+                 groups = False, orientCt = False, colorName = None ):
+        #
+        self.name = name
+        self.obj = obj
+        self.orient = orient
+        self.shape = shape
+        self.size = size
+        self.color = color
+        self.colorName = colorName
+        self.sections = sections
+        self.degree = degree
+        self.normal = normal
+        self.setChannels = setChannels
+        self.groups = groups
+        self.orientCt = orientCt
+        self.result = None
+        #
+        self.colors = colorDict()
+        self.createController()
+
+    # conditions
+
+    def condition( self ):
+        if type( self.obj ) == list:
+            if len( self.obj ) == 1:
+                self.createController()
+            else:
+                mel.eval( 
+                    'warning \"' + '////... \'obj\' variable has to be only item in list ...////' + '\";' )
+        elif len( self.obj ) > 0:
+            self.createController()
+        else:
+            mel.eval( 
+                'warning \"' + '////... \'obj\' variable can only be one object...////' + '\";' )
+
+    def whatColor( self ):
+        if self.colorName:
+            self.color = self.colors[self.colorName]
+
+    # create
+    def createController( self ):
+        self.whatColor()
+        ct = circle( self.name, self.obj, self.shape, self.size * ( 0.3 ),
+                    self.color, self.sections, self.degree, self.normal )[0]
+        ctO = circle( self.name + '_Offset', self.obj, self.shape, self.size *
+                     ( 0.25 ), self.color, self.sections, self.degree, self.normal )[0]
+        gp = null2( self.name + '_Grp', self.obj )[0]
+        if self.groups:
+            ctgp = null2( self.name + '_CtGrp', self.obj )[0]
+            topgp = null2( self.name + '_TopGrp', self.obj )[0]
+            cmds.parent( ct, ctgp )
+            cmds.parent( ctgp, topgp )
+            if self.setChannels:
+                setChannels( ctgp, translate = [False, True], rotate = [False, True], scale = [
+                            True, False], visibility = [True, False, False], other = [False, True] )
+                setChannels( topgp, translate = [False, True], rotate = [False, True], scale = [
+                            True, False], visibility = [True, False, False], other = [False, True] )
+
+        # parent
+        cmds.parent( gp, ctO )
+        cmds.parent( ctO, ct )
+        # align orient query
+        if self.orient == False:
+            if self.groups == True:
+                cmds.setAttr( topgp + '.rotate', 0, 0, 0 )
+            else:
+                cmds.setAttr( ct + '.rotate', 0, 0, 0 )
+        elif self.orient != False and self.orient != True:
+            rot = cmds.xform( self.orient, query = True, ws = True, ro = True )
+            if self.groups == True:
+                cmds.setAttr( topgp + '.rotate', rot[0], rot[1], rot[2] )
+            else:
+                cmds.setAttr( ct + '.rotate', rot[0], rot[1], rot[2] )
+        # align control separately if requested
+        if self.orientCt:
+            rot = cmds.xform( self.obj, query = True, ws = True, ro = True )
+            cmds.xform( ct, ws = True, ro = rot )
+        # attrs
+        # ct
+        attr = 'Offset_Vis'
+        addAttribute( ct, 'Offset_Vis', 0, 1, False, 'long' )
+        # ctO
+        cmds.connectAttr( ct + '.' + attr, ctO + '.visibility' )
+        # gp
+        # Done
+        cmds.select( cl = True )
+        if self.setChannels == True:
+            setChannels( ct, translate = [False, True], rotate = [False, True], scale = [
+                        True, False], visibility = [True, False, False], other = [False, True] )
+            setChannels( ctO, translate = [False, True], rotate = [False, True], scale = [
+                        True, False], visibility = [False, False, False], other = [False, True] )
+            setChannels( gp, translate = [False, True], rotate = [False, True], scale = [
+                        True, False], visibility = [True, False, False], other = [False, True] )
+            cmds.setAttr( ctO + '.visibility', cb = False )
+            i = cmds.getAttr( ctO + '.visibility', cb = True )
+
+        if self.groups == True:
+            self.result = [ topgp, ctgp, ct, ctO, gp]
+            return topgp, ctgp, ct, ctO, gp
+        else:
+            self.result = [ ct, ctO, gp]
             return ct, ctO, gp
 
 
@@ -1263,6 +1385,90 @@ def scaleUnlock( obj, sx = True, sy = True, sz = True ):
             cmds.setAttr( obj + scaleString[i], cb = True )
             cmds.setAttr( obj + scaleString[i], k = True )
         i = i + 1
+
+
+def translationLock( obj, lock = False ):
+    '''
+    toggle state of translation
+    '''
+    tString = ['.tx', '.ty', '.tz']
+    for item in tString:
+        cmds.setAttr( obj + item, lock = lock )
+        cmds.setAttr( obj + item, k = not lock )
+        # cmds.setAttr( obj + item, cb = not lock )
+
+
+def translationX( obj, lock = False ):
+    '''
+    toggle state of rotation
+    '''
+    item = '.tx'
+    cmds.setAttr( obj + item, lock = lock )
+    cmds.setAttr( obj + item, k = not lock )
+    # cmds.setAttr( obj + item, cb = not lock )
+
+
+def translationY( obj, lock = False ):
+    '''
+    toggle state of rotation
+    '''
+    item = '.ty'
+    # cmds.setAttr( obj + item, cb = not lock )
+    cmds.setAttr( obj + item, lock = lock )
+    # cmds.setAttr( obj + item, cb = not lock )
+    cmds.setAttr( obj + item, k = not lock )
+    # cmds.setAttr( obj + item, cb = not lock )
+
+
+def translationZ( obj, lock = False ):
+    '''
+    toggle state of rotation
+    '''
+    item = '.tz'
+    cmds.setAttr( obj + item, lock = lock )
+    cmds.setAttr( obj + item, k = not lock )
+    # cmds.setAttr( obj + item, cb = not lock )
+
+
+def rotationLock( obj, lock = False ):
+    '''
+    toggle state of rotation
+    '''
+    tString = ['.rx', '.ry', '.rz']
+    for item in tString:
+        cmds.setAttr( obj + item, lock = lock )
+        cmds.setAttr( obj + item, k = not lock )
+        # cmds.setAttr( obj + item, cb = not lock )
+
+
+def rotationX( obj, lock = False ):
+    '''
+    toggle state of rotation
+    '''
+    item = '.rx'
+    cmds.setAttr( obj + item, lock = lock )
+    cmds.setAttr( obj + item, k = not lock )
+    # cmds.setAttr( obj + item, cb = not lock )
+
+
+def rotationY( obj, lock = False ):
+    '''
+    toggle state of rotation
+    '''
+    item = '.ry'
+    cmds.setAttr( obj + item, lock = lock )
+    cmds.setAttr( obj + item, k = not lock )
+    # cmds.setAttr( obj + item, cb = not lock )
+
+
+def rotationZ( obj, lock = False ):
+    '''
+    toggle state of rotation
+    '''
+    item = '.rz'
+    cmds.setAttr( obj + item, lock = lock )
+    cmds.setAttr( obj + item, k = not lock )
+    # cmds.setAttr( obj + item, cb = not lock )
 
 
 def hijack( obj1, obj2, translate = True, rotate = True, scale = True, visibility = True ):

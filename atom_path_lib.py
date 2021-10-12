@@ -181,7 +181,7 @@ def path( segments = 5, size = 0.05, length = 10, *args ):
             else:
                 v = 0
         # Controls on Clusters
-        cnt = place.Controller( 'Point' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), handle, orient = False, shape = 'splineEnd_ctrl', size = 60 * size, color = color, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
+        cnt = place.Controller( 'Point' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), handle, orient = False, shape = 'splineStart_ctrl', size = 60 * size, color = color, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
         cntCt = cnt.createController()
         segmentChld.append( cntCt[0] )
         cmds.setAttr( handle + '.visibility', 0 )
@@ -190,7 +190,7 @@ def path( segments = 5, size = 0.05, length = 10, *args ):
         place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
         # segment parents
         if len( segmentChld ) == 4:
-            sgmt = place.Controller( 'Segment' + str( ( '%0' + str( 2 ) + 'd' ) % ( k ) ), segmentChld[1], orient = False, shape = 'splineEnd_ctrl', size = 100 * size, color = colorP, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
+            sgmt = place.Controller( 'Segment' + str( ( '%0' + str( 2 ) + 'd' ) % ( k ) ), segmentChld[1], orient = False, shape = 'splineStart_ctrl', size = 100 * size, color = colorP, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
             sgmtCt = sgmt.createController()
             place.scaleUnlock( sgmtCt[2] )
             place.scaleUnlock( sgmtCt[3] )
