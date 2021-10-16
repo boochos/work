@@ -15,13 +15,20 @@ ui = web.mod( 'atom_ui_lib' )
 # suffix for cluster
 
 
+def pad_number( i = 1, pad = 2 ):
+    '''
+    given i and pad, return padded string
+    '''
+    return str( ( '%0' + str( pad ) + 'd' ) % ( i ) )
+
+
 def clstrOnCV( curve, clstrSuffix ):
     clstr = []
     i = 0
     num = cmds.getAttr( ( curve + '.cv[*]' ) )
     for item in num:
         c = cmds.cluster( 
-            ( curve + '.cv[' + str( i ) + ']' ), n = ( clstrSuffix + str( i ) ), envelope = True )[1]
+            ( curve + '.cv[' + str( i ) + ']' ), n = ( clstrSuffix + pad_number( i ) ), envelope = True )[1]
         i = i + 1
         clstr.append( c )
     return clstr
@@ -384,7 +391,7 @@ class Controller():
             cmds.setAttr( ctO + '.visibility', cb = False )
             i = cmds.getAttr( ctO + '.visibility', cb = True )
 
-        print( topgp, ctgp, ct, ctO, gp )
+        # print( topgp, ctgp, ct, ctO, gp )
         if self.groups == True:
             return topgp, ctgp, ct, ctO, gp
         else:
@@ -592,7 +599,11 @@ def controllerDownChain( root, name, pad = 2, base = None, parent = None, shape 
 
 
 def convertFlipValue( flipVar ):
-    flip = flipVar[:]
+    '''
+    
+    '''
+    flip = flipVar[:]  # duplicate list
+    # print( flip, flipVar )
     for i in range( 0, 3, 1 ):
         if flip[i] == 1:
             flip[i] = -1
@@ -739,7 +750,7 @@ def stripUnderscore( name ):
     return name
 
 
-def buildName( prefix, suffix, name ):
+def buildName( prefix = '', suffix = '', name = '' ):
     if prefix.find( ' ' ) > -1:
         prefix = ''
     if suffix.find( ' ' ) > -1:
@@ -1927,6 +1938,26 @@ def attrBlend( obj1, obj2, objOpt, pos = False, rot = False, scale = False, spec
         # connect out blend
         for attr in specific[0]:
             cmds.connectAttr( rotB + '.outputR', obj2 + '.' + attr )
+
+
+def hijackConstraints( master = '', attr = '', value = 0.5, constraint = '' ):
+    '''
+    assume weight = 0-1
+    master = object
+    attr = attr to create on master object, if doesnt exist
+    value = value to assign new attr
+    constraint = connect and connect reverse
+    '''
+    # add attr
+    # cmds.addAttr( master, ln = attr, attributeType = 'float', k = True, dv = value, min = 0.0, max = 1.0 )
+    # weight
+    weightAttr = cmds.listAttr( constraint, k = True, ud = True )
+    # direct connect
+    cmds.connectAttr( master + '.' + attr, constraint + '.' + weightAttr[0] )
+    # reverse node connect
+    revrsPos = cmds.shadingNode( 'reverse', au = True, n = ( constraint + '_' + attr + '_revrs' ) )
+    cmds.connectAttr( master + '.' + attr, revrsPos + '.inputX' )
+    cmds.connectAttr( revrsPos + '.outputX', constraint + '.' + weightAttr[1] )
 
 
 def sortObj( objs ):

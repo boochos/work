@@ -736,6 +736,37 @@ def create_ik( fstJnt, lstJnt, prefix, suffix, limbName, curveShapePath = None, 
     return returnList
 
 
+def create_ik___FIX( stJnt = '', endJnt = '', pv = '', parent = '', name = '', suffix = '', setChannels = True ):
+    '''
+    REMOVNG UI DEPENDANCY
+    
+    ik = returns
+    
+    stJnt            = proximal_phalanx
+    endJnt           = distal_phalanx
+    pv               = pv control
+    parent           = ik handle parent
+    name             = prefix
+    suffix           = suffix
+    setChannels      = setChannels
+    '''
+    #
+    ikName = name + '_' + suffix + '_ikh'
+    ikHandle = cmds.ikHandle( name = ikName, sj = stJnt, ee = endJnt, sol = 'ikRPsolver', w = 1, pw = 1, fs = 1, shf = 1, s = 0 )
+    print( ikHandle )
+    #
+    if pv:
+        cmds.poleVectorConstraint( pv, ikHandle[0] )
+    #
+    if parent:
+        cmds.parent( ikHandle[0], parent )
+    #
+    if setChannels:
+        place.setChannels( ikHandle[0], [False, False], [True, False], [True, False], [False, False, False], [True, True] )
+
+    return ikHandle
+
+
 def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimControl, upControl, disFactor, locScale, curveShapePath, useFlip = True, flipVar = [0, 0, 0], color = 17, X = 1, midJnt = '' ):
     '''
     stJnt HAS TO BE ORIENTED PROPERLY ALIGNED TO THE TRIANGLE, OBJECTS GET PARENT TO IT AND ASSUME PROPER ORIENTATION !!!!
@@ -859,6 +890,185 @@ def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimC
     cmds.delete( tmpLoc )
 
     return pvCtrl
+
+
+def create_3_joint_pv___FIX( stJnt = '', endJnt = '', prefix = '', suffix = '', distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = True, color = 'yellow', X = 1, midJnt = '' ):
+    '''
+    REMOVNG UI DEPENDANCY
+    stJnt HAS TO BE ORIENTED PROPERLY ALIGNED TO THE TRIANGLE, OBJECTS GET PARENT TO IT AND ASSUME PROPER ORIENTATION !!!!
+    
+    y rotation axis has to face out of the triangle
+    ankle_pv_loc    = returns
+    
+    stJnt           ='hipJnt'
+    endJnt          ='ankleJnt'
+    prefix          ='prefix'
+    suffix          ='suffix'
+    limbName        ='limbName'
+    rotControl      ='atom_qls_limbRot_radioButtonGrp', 'X',
+    aimControl      ='atom_qls_limbAim_radioButtonGrp', 'Z'
+    upControl       ='atom_qls_limbUp_radioButtonGrp',  'Y'
+    disFactor       ='ldf'
+    locScale        ='locScale'
+    curveShapePath  ='None'
+    useFlip         = True
+    flipVar         = flipVal
+    color           = 17
+    X               = 1
+    midJnt          = '' 
+
+    '''
+    rotControl = 'atom_qls_limbRot_radioButtonGrp'
+    aimControl = 'atom_qls_limbAim_radioButtonGrp'
+    upControl = 'atom_qls_limbUp_radioButtonGrp'
+    # make a copy of flipVar so the original varaible doesnt get changed
+    # X = cmds.floatField( 'atom_qrig_conScale', query = True, value = True )
+    flip = place.convertFlipValue( flipVar )  # converts any value of '1' to '-1'
+
+    #        A
+    #       /| b is the length from A to C.
+    #     c/ | GIVEN TRIANGLE, SOLVE BELOW
+    #     / _| D is the right angle, need to solve point_D (position)
+    #  B /_|_| d is the length from A to D. (not half of b), solve d
+    #    \   | e is the length from D to B, solve e
+    #     \  |
+    #     a\ |
+    #       \|
+    #        C
+    #
+    # A, B, C and D are angles, a, b, c, d, e are distances
+    #
+    # how is the triangle oriented, will help to choose flip variables
+    # A = start joint
+    # B = mid joint
+    # C = end joint
+    #
+    # algo creates loc at point_A (aimed at B, y up), rotates using angle A (should be at point_D), moves d distance (should be at point_D), move e distance (should be at point_B)
+
+    if not midJnt:
+        midJnt = joint.jointTravers( stJnt, 1 )
+    pvGuideJnt = midJnt
+    # print( 'joints', stJnt, midJnt, endJnt )
+
+    point_A = cmds.xform( stJnt, query = True, ws = True, rp = True )
+    point_B = cmds.xform( midJnt, query = True, ws = True, rp = True )
+    point_C = cmds.xform( endJnt, query = True, ws = True, rp = True )
+    point_D = None  # found lATER
+    # print( 'point A', point_A )
+    # print( 'point B', point_B )
+    # print( 'point C', point_C )
+
+    # solve the lengths
+    a = place.distance2Pts( point_B, point_C )
+    b = place.distance2Pts( point_A, point_C )
+    c = place.distance2Pts( point_A, point_B )
+    d = None  # place.distance2Pts( point_A, point_D )
+    e = None  # place.distance2Pts( point_D, point_B )
+
+    # print( 'lengths', a, b, c )
+
+    # solve the angle for A when all lengths are known
+    # cos_a is a radian and must be converted
+    cos_a = ( math.pow( c, 2 ) + math.pow( b, 2 ) - math.pow( a, 2 ) ) / ( 2 * b * c )  # KEY
+    # print( 'A radian', cos_a )
+    # convert cos_a to degrees from radians
+    A = flip[0] * ( math.degrees( math.acos( cos_a ) ) )
+    print( 'angle A', A )
+
+    # get the length to the right angle which is d
+    d = flip[1] * ( c * cos_a )  # KEY
+    print( 'length d', d )
+
+    # create the tmp grps
+    tmpGrp = cmds.group( n = 'tmpPosGrp', em = True, world = True )
+    cmds.xform( tmpGrp, ws = True, t = point_A )
+    # temp start
+    place.null2( 'step_1', tmpGrp, orient = True )
+    # temp end
+
+    cmds.parent( tmpGrp, stJnt )
+    cmds.makeIdentity( tmpGrp, apply = True, t = True, r = True, s = True, n = False )
+    # return
+
+    rotList = ui.createListForTransform( rotControl, A )
+    print( 'rotList', rotList, rotControl, A )
+    # return
+    aimList = ui.createListForTransform( aimControl, d )
+    print( 'aimList', aimList, aimControl, d )
+    # return
+
+    # test if the trianlge is pointing forward or back using the midJnt
+    rotAxis = ui.convertAxisNum( cmds.radioButtonGrp( rotControl, query = True, sl = True ) )
+    flipRot = ui.getCheckBoxSelectionAsList( 'atom_qls_pvFlip_checkBoxGrp' )
+    flipIt = [1, 1, 1]
+    if useFlip:
+        for i in range( 0, 3, 1 ):
+            if flipRot[i] == 1:
+                flipIt[i] = -1
+
+    if midJnt[len( midJnt ) - 2:] == '_L' or midJnt[len( midJnt ) - 2:] == '_R':
+        midJnt = midJnt[:-2]
+
+    tmpLoc = place.loc( 'tmpLoc' )
+    # temp start
+    place.null2( 'step_2', tmpLoc, orient = True )
+    # temp end
+
+    # place the locator at the first selection
+    cmds.xform( tmpLoc, ws = True, t = point_A )
+    # temp start
+    place.null2( 'step_3', tmpLoc, orient = True )
+    # temp end
+    cmds.parent( tmpLoc, tmpGrp )
+    cmds.makeIdentity( tmpLoc, apply = True, t = True, r = True, s = True, n = False )
+    cmds.xform( tmpGrp, os = True, ro = [rotList[0] * flipIt[0], rotList[1] * flipIt[1], rotList[2] * flipIt[2]] )
+    # temp start
+    place.null2( 'step_4', tmpGrp, orient = True )
+    # temp end
+    cmds.xform( tmpGrp, os = True, t = [aimList[0], aimList[1], aimList[2]] )
+    point_D = cmds.xform( tmpGrp, query = True, ws = True, rp = True )
+    e = place.distance2Pts( point_D, point_B )
+    # temp start
+    place.null2( 'step_5', tmpGrp, orient = True )
+    # temp end
+
+    # get the distance from point_B to the tmp_pv
+    pv_pos = cmds.xform( tmpLoc, query = True, ws = True, t = True )
+    # temp start
+    place.null2( 'step_6', tmpLoc, orient = True )
+    # temp end
+    # get the distance from d to b, then add the distance from  a to b
+    # a to b is also multiplied by the disFactor incase the user wants control
+    # over the total distance
+
+    upList = ui.createListForTransform( upControl, ( e * 2 ) + distance_multi )
+    print( upControl, '______________________up______________________________', upList, e, distance_multi )
+    cmds.xform( tmpLoc, os = True, t = upList )
+    # temp start
+    place.null2( 'step_7', tmpLoc, orient = True )
+    # temp end
+    cmds.parent( tmpLoc, w = True )
+    # cmds.makeIdentity(tmpLoc, apply=True, t=True, r=True,s=True,n=False)
+
+    cmds.delete( tmpGrp )
+
+    # control
+    Pv = prefix + '_pv'
+    if suffix:
+        Pv = Pv + '_' + suffix
+    PvCt = place.Controller2( Pv, tmpLoc, orient, 'diamond_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+
+    # guide
+    gd = place.guideLine( pvGuideJnt, PvCt[4], place.buildName( prefix, suffix, midJnt + '_pvGuide' ) )
+    guideGp = cmds.group( em = True, name = place.buildName( prefix, suffix, midJnt + '_pvGuideGp' ) )
+    place.setChannels( guideGp, [True, False], [True, False], [True, False], [True, False, False] )
+    cmds.parent( gd[0], guideGp )
+    cmds.parent( gd[1], guideGp )
+    place.cleanUp( guideGp, World = True )
+
+    cmds.delete( tmpLoc )
+
+    return PvCt
 
 
 def createLimb( name, stJnt, endJnt, disPoint, pvLocPos, buildPlane, suffix, scale, freeze = True, pv = True ):

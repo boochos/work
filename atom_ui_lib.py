@@ -282,8 +282,13 @@ def getRadioSelectionAsList( control ):
     return returnList
 
 
-def createListForTransform( control, value ):
-
+def createListForTransform( control = '', value = 0.0 ):
+    '''
+    control = ui name
+    value = float
+    what is this doing
+    '''
+    print( 'createListForTransform', control, value )
     valList = [value, value, value]
     axisList = getRadioSelectionAsList( control )
 

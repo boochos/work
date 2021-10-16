@@ -11,6 +11,22 @@ stage = web.mod( 'atom_splineStage_lib' )
 misc = web.mod( 'atom_miscellaneous_lib' )
 anm = web.mod( "anim_lib" )
 dsp = web.mod( "display_lib" )
+cn = web.mod( 'constraint_lib' )
+
+
+def message( what = '', maya = True ):
+    what = '-- ' + what + ' --'
+    if maya:
+        mel.eval( 'print \"' + what + '\";' )
+    else:
+        print( what )
+
+
+def pad_number( i = 1, pad = 2 ):
+    '''
+    given i and pad, return padded string
+    '''
+    return str( ( '%0' + str( pad ) + 'd' ) % ( i ) )
 
 
 def CONTROLS():
@@ -38,9 +54,9 @@ def vehicle_master( masterX = 10, moveX = 10 ):
 
     # root joint
     root = 'root_jnt'
-    cmds.parentConstraint( MasterCt[4], 'root_jnt', mo = True )
     cmds.parent( root, SKIN_JOINTS )
 
+    '''
     # vehicle on path, front of vehicle
     opf = 'pathAttach_front'
     opfCt = place.Controller2( opf, 'on_path_front_jnt', False, 'vctrArrow_ctrl', moveX * 4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
@@ -58,25 +74,31 @@ def vehicle_master( masterX = 10, moveX = 10 ):
     opuCt = place.Controller2( opu, 'on_path_back_jnt', False, 'loc_ctrl', moveX * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.parent( opuCt[0], CONTROLS )
     cmds.setAttr( opuCt[0] + '.ty', moveX * 5 )
-    cmds.parentConstraint( opbCt[4], opuCt[0], mo = True )
+    cmds.parentConstraint( opbCt[4], opuCt[0], mo = True )'''
 
     # move #
-    Move = 'Move'
+    Move = 'move'
     MoveCt = place.Controller2( Move, MasterCt[0], False, 'splineStart_ctrl', moveX * 6, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.parent( MoveCt[0], CONTROLS )
-    # cmds.parentConstraint( MasterCt[4], MoveCt[0], mo = True )
-    cmds.parentConstraint( opfCt[4], MoveCt[0], mo = True )
+    cmds.parentConstraint( MasterCt[4], MoveCt[0], mo = True )
+    cmds.parentConstraint( MoveCt[4], 'root_jnt', mo = True )
+    # cmds.parentConstraint( opfCt[4], MoveCt[0], mo = True )
 
     # steer #
-    Steer = 'Steer'
-    SteerCt = place.Controller2( Steer, MoveCt[0], False, 'facetZup_ctrl', moveX * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    Steer = 'steer'
+    SteerCt = place.Controller2( Steer, 'on_path_front_jnt', False, 'ballRoll_ctrl', moveX * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.parent( SteerCt[0], CONTROLS )
-    cmds.setAttr( SteerCt[0] + '.tz', moveX * 5 )
-    cmds.parentConstraint( MasterCt[4], SteerCt[0], mo = True )
+    # cmds.setAttr( SteerCt[0] + '.tz', moveX * 5 )
+    cmds.parentConstraint( MoveCt[4], SteerCt[0], mo = True )
+    place.translationLock( SteerCt[2], True )
+    place.rotationX( SteerCt[2], True )
+    place.rotationZ( SteerCt[2], True )
 
     # constrain Move to path front / back
     # cmds.parentConstraint( opfCt[4], MoveCt[1], mo = True )
+    '''
     cmds.aimConstraint( opbCt[4], opfCt[3], wut = 'object', wuo = opuCt[4], aim = [0, 0, -1], u = [0, 1, 0], mo = True )
+    '''
 
     # pivots for ground
     # pvts = four_point_pivot( name = 'vehicle', parent = MoveCt[3], center = MoveCt[4], front = 'on_path_front_jnt', frontL = 'wheel_front_bottom_L_jnt', frontR = 'wheel_front_bottom_R_jnt', back = 'on_path_back_jnt', backL = 'wheel_back_bottom_L_jnt', backR = 'wheel_back_bottom_R_jnt', up = 'up_jnt', X = 2 )
@@ -285,16 +307,81 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
     cmds.aimConstraint( name1_Ct[4], obj2, wut = 'object', wuo = nameUp_Ct[4], aim = aim2, u = up2, mo = True )
 
 
-def cable( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 = '', X = 1, color = 'yellow' ):
+def spline( name = '', root_jnt = '', tip_jnt = '', splinePrnt = '', splineStrt = '', splineEnd = '', splineAttr = '', startSkpR = False, endSkpR = False, X = 2 ):
+    '''\n
+    Build splines\n
+    name      = 'chainA'         - name of chain
+    root_jnt  = 'chainA_jnt_000' - provide first joint in chain
+    tip_jnt   = 'chainA_jnt_016' - provide last joint in chain
+    splinePrnt = 'master_Grp'     - parent of spline
+    splineStrt = 'root_Grp'       - parent for start of spline
+    splineEnd  = 'tip_Grp'        - parent for end of spline
+    splineAttr = 'master'         - control to receive option attrs
+    X         = 2                - controller scale
     '''
-    use splines
-    '''
-    pass
+
+    def SplineOpts( name, size, distance, falloff ):
+        '''\n
+        Changes options in Atom rig window\n
+        '''
+        cmds.textField( 'atom_prefix_textField', e = True, tx = name )
+        cmds.floatField( 'atom_spln_scaleFactor_floatField', e = True, v = size )
+        cmds.floatField( 'atom_spln_vectorDistance_floatField', e = True, v = distance )
+        cmds.floatField( 'atom_spln_falloff_floatField', e = True, v = falloff )
+
+    def OptAttr( obj, attr ):
+        '''\n
+        Creates separation attr to signify beginning of options for spline\n
+        '''
+        cmds.addAttr( obj, ln = attr, attributeType = 'enum', en = 'OPTNS' )
+        cmds.setAttr( obj + '.' + attr, cb = True )
+
+    # SPINE
+    splineName = name
+    splineSize = X * 1
+    splineDistance = X * 4
+    splineFalloff = 0
+
+    spline = [root_jnt, tip_jnt]
+    # build spline
+    SplineOpts( splineName, splineSize, splineDistance, splineFalloff )
+    cmds.select( spline )
+
+    stage.splineStage( 4 )
+    # assemble
+    OptAttr( splineAttr, name + 'Spline' )
+    cmds.parentConstraint( splinePrnt, splineName + '_IK_CtrlGrp', mo = True )
+    if startSkpR:
+        cmds.parentConstraint( splineStrt, splineName + '_S_IK_PrntGrp', mo = True, sr = ( 'x', 'y', 'z' ) )
+    else:
+        cmds.parentConstraint( splineStrt, splineName + '_S_IK_PrntGrp', mo = True )
+    if endSkpR:
+        cmds.parentConstraint( splineEnd, splineName + '_E_IK_PrntGrp', mo = True, sr = ( 'x', 'y', 'z' ) )
+    else:
+        cmds.parentConstraint( splineEnd, splineName + '_E_IK_PrntGrp', mo = True )
+    place.hijackCustomAttrs( splineName + '_IK_CtrlGrp', splineAttr )
+    # set options
+    cmds.setAttr( splineAttr + '.' + splineName + 'Vis', 0 )
+    cmds.setAttr( splineAttr + '.' + splineName + 'Root', 0 )
+    cmds.setAttr( splineAttr + '.' + splineName + 'Stretch', 1 )
+    cmds.setAttr( splineAttr + '.ClstrVis', 1 )
+    cmds.setAttr( splineAttr + '.ClstrMidIkBlend', 1.0 )
+    cmds.setAttr( splineAttr + '.ClstrMidIkSE_W', 0.5 )
+    cmds.setAttr( splineAttr + '.VctrVis', 0 )
+    cmds.setAttr( splineAttr + '.VctrMidIkBlend', 1.0 )
+    cmds.setAttr( splineAttr + '.VctrMidIkSE_W', 0.5 )
+    cmds.setAttr( splineAttr + '.VctrMidTwstCstrnt', 0 )
+    cmds.setAttr( splineAttr + '.VctrMidTwstCstrntSE_W', 0.5 )
+    cmds.setAttr( splineName + '_S_IK_Cntrl.LockOrientOffOn', 0 )
+    cmds.setAttr( splineName + '_E_IK_Cntrl.LockOrientOffOn', 0 )
+    # scale
+    cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_S_IK_curve_scale.input2Z' )
+    cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_E_IK_curve_scale.input2Z' )
 
 
-def connect_tire_body_pivot_ty():
+def fold_ik( name = '', strt_jnt = '', end_jnt = '', X = 1.0, color = 'yellow' ):
     '''
-    per pivot in vehicle, connect tire pressure and wheel ty translation to blend and blend to pivot ty
+    3 joint ik, for folding parts
     '''
     pass
 
@@ -456,7 +543,7 @@ def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', front
     return [namefl_Ct[2], namefr_Ct[2], namebl_Ct[2], namebr_Ct[2]]
 
 
-def rotate_part( name = '', suffix = '', obj = '', parent = '', rotations = [0, 0, 1], X = 1, color = 'yellow' ):
+def translate_part( name = '', suffix = '', obj = '', objConstrain = True, parent = '', translations = [0, 0, 1], X = 1, shape = 'facetYup_ctrl', color = 'yellow' ):
     '''
     doors and things
     rotations = [0, 0, 1] : ( x, y, z )
@@ -467,20 +554,53 @@ def rotate_part( name = '', suffix = '', obj = '', parent = '', rotations = [0, 
 
     # obj
     name = name + suffix
-    name_Ct = place.Controller2( name, obj, False, 'facetYup_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    name_Ct = place.Controller2( name, obj, True, shape, X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     cmds.parent( name_Ct[0], CONTROLS() )
-    cmds.parentConstraint( name_Ct[4], obj, mo = True )
-    cmds.parentConstraint( parent, name_Ct[0], mo = True )
+    if objConstrain:
+        cmds.parentConstraint( name_Ct[4], obj, mo = True )
+    if parent:
+        cmds.parentConstraint( parent, name_Ct[0], mo = True )
+    # lock translation
+    place.rotationLock( name_Ct[2], True )
+    if translations[0]:
+        place.translationX( name_Ct[2], False )
+    if translations[1]:
+        place.translationY( name_Ct[2], False )
+    if translations[2]:
+        place.translationZ( name_Ct[2], False )
+
+    return name_Ct
+
+
+def rotate_part( name = '', suffix = '', obj = '', objConstrain = True, parent = '', rotations = [0, 0, 1], X = 1, shape = 'facetYup_ctrl', color = 'yellow' ):
+    '''
+    doors and things
+    rotations = [0, 0, 1] : ( x, y, z )
+    '''
+    #
+    if suffix:
+        suffix = '_' + suffix
+
+    # obj
+    name = name + suffix
+    name_Ct = place.Controller2( name, obj, True, shape, X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    cmds.parent( name_Ct[0], CONTROLS() )
+    if objConstrain:
+        cmds.parentConstraint( name_Ct[4], obj, mo = True )
+    if parent:
+        cmds.parentConstraint( parent, name_Ct[0], mo = True )
     # lock translation
     place.translationLock( name_Ct[2], True )
     # lock all rotations, unlock one at a time
     place.rotationLock( name_Ct[2], True )
     if rotations[0]:
-        place.rotationX( name_Ct[2], True )
+        place.rotationX( name_Ct[2], False )
     if rotations[1]:
-        place.rotationY( name_Ct[2], True )
+        place.rotationY( name_Ct[2], False )
     if rotations[2]:
-        place.rotationZ( name_Ct[2], True )
+        place.rotationZ( name_Ct[2], False )
+
+    return name_Ct
 
 
 def dynamic_part():
@@ -694,30 +814,30 @@ def rear_end_path( X = 1.0 ):
     return null
 
 
-def path( segments = 5, size = 0.05, length = 10, *args ):
+def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     '''
     # creates groups and master controller from arguments specified as 'True'
     segment = 4 points
     
     '''
     #
-    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 150 * size )
+    if points < 4:
+        message( 'Points variable should be higher than 3.' )
+        return None
+    #
+    PreBuild = place.rigPrebuild( Top = 1, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 150 * X )
     #
     CHARACTER = PreBuild[0]
     CONTROLS = PreBuild[1]
     WORLD_SPACE = PreBuild[2]
     MasterCt = PreBuild[3]
     #
-    misc.addAttribute( [MasterCt[2]], ['frontTwist'], -360, 360, True, 'float' )
-    misc.addAttribute( [MasterCt[2]], ['upTwist'], -360, 360, True, 'float' )
-    misc.addAttribute( [MasterCt[2]], ['sideTwist'], -360, 360, True, 'float' )
-    misc.addAttribute( [MasterCt[2]], ['Spacing'], 0.0, 1.0, True, 'float' )
-    misc.addAttribute( [MasterCt[2]], ['frontDistance'], 0.0, 1.0, True, 'float' )
-    misc.addAttribute( [MasterCt[2]], ['steeringDistance'], 0.0, 1.0, True, 'float' )
-    misc.addAttribute( [MasterCt[2]], ['Travel'], 0.0, 10.0, True, 'float' )
+    misc.optEnum( MasterCt[2], attr = 'path', enum = 'OPTNS' )
+    misc.addAttribute( [MasterCt[2]], ['weightedPath'], 0, 1, True, 'float' )
+    cmds.setAttr( MasterCt[2] + '.weightedPath', 0.2 )
 
     # up
-    upCnt = place.Controller( place.getUniqueName( 'up' ), 'master', orient = True, shape = 'loc_ctrl', size = 60 * size, color = 17, setChannels = True, groups = True )
+    upCnt = place.Controller( place.getUniqueName( 'up' ), 'master', orient = True, shape = 'loc_ctrl', size = 60 * X, color = 17, setChannels = True, groups = True )
     upCntCt = upCnt.createController()
     place.cleanUp( upCntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
     cmds.setAttr( upCntCt[0] + '.ty', length / 2 )
@@ -725,85 +845,156 @@ def path( segments = 5, size = 0.05, length = 10, *args ):
 
     #
     path = place.getUniqueName( 'path' )
-    lengthSeg = length / 5  # 5 initial points ()
-    # print( lengthSeg )
-    if segments == 1:
-        points = segments
-    else:
-        points = ( ( segments - 1 ) * 4 ) + 1  # 2 -1
-    p = '[( 0, 0, -1.128 ), ( 0, 0,' + str( lengthSeg ) + '* 2 ), ( 0, 0,' + str( lengthSeg ) + '* 3 ), ( 0, 0,' + str( lengthSeg ) + '* 4 ), ( 0, 0,' + str( lengthSeg ) + '* 5 ) ]'
-    cmds.curve( n = path, d = 3, p = eval( p ) )
-    # cmds.curve( n = path, d = 3, p = [( 0, 0, -1.128 ), ( 0, 0, lengthSeg * 2 ), ( 0, 0, lengthSeg * 3 ), ( 0, 0, lengthSeg * 4 ), ( 0, 0, lengthSeg * 5 ), ] )
-    print( points )
-    # return
-    cmds.rebuildCurve( path, d = 3, rt = 0, s = points )
-    return
-    cmds.setAttr( path + '.template', 1 )
-    place.cleanUp( path, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
 
-    # place Clusters on CVs
-    cl = place.clstrOnCV( path, 'Clstr' )
+    # layers
+    cluster_layers = []
+    paths = []
+    layer = 0
+    while layer < layers:
+        # build curve
+        lengthSeg = length / ( points + layer - 1.0 )
+        i = 1
+        p = '[( 0, 0, -1.128 )'
+        while i < points + layer:
+            p = p + ',( 0, 0,' + str( lengthSeg * i ) + ')'
+            i = i + 1
+        p = p + ']'
+        # print( p )
+        pth = cmds.curve( n = path + '_layer_' + pad_number( i = layer ), d = 3, p = eval( p ) )
+        # cmds.setAttr( pth + '.visibility', 0 )
+        # print( pth )
+        paths.append( pth )
+        # return
+        cmds.setAttr( pth + '.template', 1 )
+        place.cleanUp( pth, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
+        cl = place.clstrOnCV( pth, 'layer' + pad_number( i = layer ) + '_Clstr' )
+        # cleanup clusters and controllers
+        cGrp = 'clstr_' + pad_number( i = layer ) + '_Grp'
+        cmds.group( cl, n = cGrp, w = True )
+        cmds.setAttr( cGrp + '.visibility', 0 )
+        place.cleanUp( cGrp, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
+        cluster_layers.append( cl )
+        layer = layer + 1
+    # print( paths )
+    for l in range( len( cluster_layers ) - 1 ):
+        # constrain start, end
+        c = 0
+        for c in range( len( cluster_layers[l + 1] ) - 0 ):
+            # print( '____', c )
+            # first
+            if c == 0:
+                cmds.parentConstraint( cluster_layers[l][c], cluster_layers[l + 1][c], mo = False )
+            # last
+            elif cluster_layers[l + 1][c] == cluster_layers[l + 1][-1]:
+                cmds.parentConstraint( cluster_layers[l][-1], cluster_layers[l + 1][c], mo = False )
+                break
+            else:
+                constraint = cmds.parentConstraint( cluster_layers[l][c - 1], cluster_layers[l + 1][c], mo = False )[0]
+                cmds.parentConstraint( cluster_layers[l][c], cluster_layers[l + 1][c], mo = False )
+                place.hijackConstraints( master = MasterCt[2], attr = 'weightedPath', value = 0.5, constraint = constraint )
+            c = c + 1
 
     # place Controls on Clusters and Constrain
     color = 12
     i = 1
     Ctrls = []
-    for handle in cl:
+    for handle in cluster_layers[0]:
         #
-        cnt = place.Controller( 'point' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), handle, orient = False, shape = 'splineStart_ctrl', size = 60 * size, color = color, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = 'brown' )
+        cnt = place.Controller( 'point' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), handle, orient = False, shape = 'splineStart_ctrl', size = 60 * X, color = color, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = 'brown' )
         cntCt = cnt.createController()
-        cmds.setAttr( handle + '.visibility', 0 )
+        # cmds.setAttr( handle + '.visibility', 0 )
         cmds.parentConstraint( MasterCt[4], cntCt[0], mo = True )
         cmds.parentConstraint( cntCt[4], handle, mo = True )
         Ctrls.append( cntCt[2] )
         place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
         i = i + 1
-    i = 0
 
-    # cleanup clusters and controllers
-    cGrp = 'path_clstr_Grp'
-    cmds.group( cl, n = cGrp, w = True )
-    place.cleanUp( cGrp, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
+    # path
+    s = 0.0
+    travel = 'travel'
+    spacing = 'spacing'
+    # vehicle on path, front of vehicle
+    opf = 'onPath_front'
+    opfCt = place.Controller2( opf, MasterCt[4], False, 'vctrArrow_ctrl', X * 60, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parent( opfCt[0], CONTROLS )
+    cmds.parentConstraint( MasterCt[4], opfCt[0], mo = True )
+    place.rotationLock( opfCt[2], True )
+    misc.optEnum( opfCt[2], attr = travel + 'Control', enum = 'OPTNS' )
+    misc.addAttribute( [opfCt[2]], [travel], 0.0, 10.0, True, 'float' )
+    misc.addAttribute( [opfCt[2]], [spacing], -10.0, 10.0, True, 'float' )
+    misc.addAttribute( [opfCt[2]], ['frontTwist'], -360, 360, True, 'float' )
+    misc.addAttribute( [opfCt[2]], ['upTwist'], -360, 360, True, 'float' )
+    misc.addAttribute( [opfCt[2]], ['sideTwist'], -360, 360, True, 'float' )
+    cmds.setAttr( opfCt[2] + '.' + spacing, -0.15 )
+    # vehicle on path, back of vehicle
+    opb = 'onPath_back'
+    opbCt = place.Controller2( opb, MasterCt[4], False, 'vctrArrowInv_ctrl', X * 60, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parent( opbCt[0], CONTROLS )
+    cmds.parentConstraint( MasterCt[4], opbCt[0], mo = True )
+    place.rotationLock( opbCt[2], True )
+    # misc.optEnum( opbCt[2], attr = travel + 'Control', enum = 'OPTNS' )
+    # misc.addAttribute( [opbCt[2]], [spacing], 0.0, 1.0, True, 'float' )
+    # vehicle on path, top of vehicle
+    opu = 'onPath_up'
+    opuCt = place.Controller2( opu, MasterCt[4], False, 'loc_ctrl', X * 50, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parent( opuCt[0], CONTROLS )
+    cmds.setAttr( opuCt[0] + '.ty', X * 100 )
+    cmds.setAttr( opuCt[0] + '.visibility', 0 )
+    cmds.parentConstraint( opbCt[4], opuCt[0], mo = True )
+    # aim
+    cmds.aimConstraint( opbCt[4], opfCt[3], wut = 'object', wuo = opuCt[4], aim = [0, 0, -1], u = [0, 1, 0], mo = True )
+    place.rotationLock( opfCt[3], True )
 
-    ###########################
+    # front - attach to path
+    motpth_f = cmds.pathAnimation( opfCt[1], c = paths[0], startU = s, follow = True, wut = 'object', wuo = upCntCt[4], fm = True )
+    cmds.connectAttr( opfCt[2] + '.frontTwist', motpth_f + '.frontTwist' )
+    cmds.connectAttr( opfCt[2] + '.upTwist', motpth_f + '.upTwist' )
+    cmds.connectAttr( opfCt[2] + '.sideTwist', motpth_f + '.sideTwist' )
+    cmds.setAttr( opfCt[2] + '.frontTwist', 180 )
+    cmds.setAttr( opfCt[2] + '.sideTwist', 90 )
+    # back - attach to path
+    motpth_b = cmds.pathAnimation( opbCt[1], c = paths[2], startU = s, follow = True, wut = 'object', wuo = upCntCt[4], fm = True )
+    cmds.connectAttr( opfCt[2] + '.frontTwist', motpth_b + '.frontTwist' )
+    cmds.connectAttr( opfCt[2] + '.upTwist', motpth_b + '.upTwist' )
+    cmds.connectAttr( opfCt[2] + '.sideTwist', motpth_b + '.sideTwist' )
+    # nodes
+    mltNode = cmds.shadingNode( 'multiplyDivide', au = True, n = ( travel + '_MltDv' ) )  # increase travel from (0.0-1.0 to 0.0-10.0)
+    cmds.setAttr( ( mltNode + '.operation' ), 1 )  # set operation: 2 = divide, 1 = multiply
+    cmds.setAttr( mltNode + '.input2Z', 0.1 )
+    dblLnrNode = cmds.createNode( 'addDoubleLinear', name = ( spacing + '_DblLnr' ) )
+    # travel
+    cmds.connectAttr( opfCt[2] + '.' + travel, mltNode + '.input1Z' )
+    cmds.connectAttr( mltNode + '.outputZ', motpth_f + '.uValue', f = True )
+    # spacing
+    cmds.connectAttr( mltNode + '.outputZ', dblLnrNode + '.input2' )
+    cmds.connectAttr( opfCt[2] + '.' + spacing, dblLnrNode + '.input1' )
+    cmds.connectAttr( dblLnrNode + '.output', motpth_b + '.uValue', f = True )
+
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
     #
-    name = 'onPath'
-    nameb = name + '_back'
-    namef = name + '_front'
-    names = name + '_steer'
+    misc.addAttribute( [mstr], [uni], 0.1, 100.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
     #
-    result = []
-    curveTmp = cmds.curve( d = 1, p = [( 0, 0, 0 ), ( 0, 0, 10 )], k = [0, 1] )
-    curve = cmds.rename( curveTmp, ( name ) )
-    place.cleanUp( curve, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
-    cmds.setAttr( curve + '.overrideEnabled', 1 )
-    cmds.setAttr( curve + '.overrideDisplayType', 1 )
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+
+
+def attach( up = '', reverse = False, orientNode = '' ):
+    '''
+    select controls first and path object with namespace last
+    assumes controls are sorted in proper order
+    orientNode should be last selection
+    '''
     #
-    clstr = []
-    i = 0
-    position = curve + '.cv[0]'
-    num = cmds.getAttr( ( curve + '.cv[*]' ) )
-    for item in num:
-        #
-        c = cmds.cluster( ( curve + '.cv[' + str( i ) + ']' ), n = ( nameb + '_Clstr' + str( i ) ), envelope = True )[1]
-        cmds.parent( c, cGrp )
-        cmds.setAttr( c + '.visibility', 0 )
-        #
-        name_Ct = place.Controller2( nameb + str( i ), position, False, 'facetYup_ctrl', size * ( 10 + i ), 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-        cmds.parent( name_Ct[0], CONTROLS )
-        cmds.parentConstraint( name_Ct[4], c, mo = False )
-        cmds.parentConstraint( MasterCt[4], name_Ct[0], mo = True )
-        #
-        i = i + 1
-        clstr.append( c )
-    # front
-    name_Ct = place.Controller2( namef, position, False, 'facetYup_ctrl', size * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    cmds.parent( name_Ct[0], CONTROLS )
-    cmds.parentConstraint( MasterCt[4], name_Ct, mo = True )
-    # steer
-    name_Ct = place.Controller2( names, position, False, 'facetYup_ctrl', size * 13, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    cmds.parent( name_Ct[0], CONTROLS )
-    cmds.parentConstraint( MasterCt[4], name_Ct, mo = True )
+    cmds.undoInfo( openChunk = True )
+
+    #
+    cmds.undoInfo( closeChunk = True )
 
 
 def car_sandbox( name = 'car', X = 1 ):
@@ -817,7 +1008,7 @@ def car_sandbox( name = 'car', X = 1 ):
     ctrls = vehicle_master( masterX = X * 10, moveX = X * 10 )
 
     # [frontl, frontr, backl, backr]
-    bdy = four_point_pivot( name = 'body', parent = 'Move_Grp', center = center, front = 'front_jnt', frontL = 'front_L_jnt', frontR = 'front_R_jnt', back = 'back_jnt', backL = 'back_L_jnt', backR = 'back_R_jnt', up = 'up_jnt', X = X * 2 )
+    bdy = four_point_pivot( name = 'body', parent = 'move_Grp', center = center, front = 'front_jnt', frontL = 'front_L_jnt', frontR = 'front_R_jnt', back = 'back_jnt', backL = 'back_L_jnt', backR = 'back_R_jnt', up = 'up_jnt', X = X * 2 )
     print( '_____body' )
     print( bdy )
     # wheels
