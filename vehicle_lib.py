@@ -37,7 +37,7 @@ def WORLD_SPACE():
     return '___WORLD_SPACE'
 
 
-def vehicle_master( masterX = 10, moveX = 10 ):
+def vehicle_master( masterX = 10, moveX = 10, steerParent = '' ):
     '''
     default group structure
     master and move controls
@@ -89,7 +89,10 @@ def vehicle_master( masterX = 10, moveX = 10 ):
     SteerCt = place.Controller2( Steer, 'on_path_front_jnt', False, 'ballRoll_ctrl', moveX * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.parent( SteerCt[0], CONTROLS )
     # cmds.setAttr( SteerCt[0] + '.tz', moveX * 5 )
-    cmds.parentConstraint( MoveCt[4], SteerCt[0], mo = True )
+    if steerParent:
+        cmds.parentConstraint( steerParent, SteerCt[0], mo = True )
+    else:
+        cmds.parentConstraint( MoveCt[4], SteerCt[0], mo = True )
     place.translationLock( SteerCt[2], True )
     place.rotationX( SteerCt[2], True )
     place.rotationZ( SteerCt[2], True )
@@ -103,17 +106,22 @@ def vehicle_master( masterX = 10, moveX = 10 ):
     # pivots for ground
     # pvts = four_point_pivot( name = 'vehicle', parent = MoveCt[3], center = MoveCt[4], front = 'on_path_front_jnt', frontL = 'wheel_front_bottom_L_jnt', frontR = 'wheel_front_bottom_R_jnt', back = 'on_path_back_jnt', backL = 'wheel_back_bottom_L_jnt', backR = 'wheel_back_bottom_R_jnt', up = 'up_jnt', X = 2 )
 
-    return [MasterCt[4], MoveCt[4], SteerCt[4]]
+    if steerParent:
+        return [MasterCt[4], steerParent, SteerCt[4]]
+    else:
+        return [MasterCt[4], MoveCt[4], SteerCt[4]]
 
 
-def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom = '', top = '', spin = '', tire_geo = [], rim_geo = [], caliper_geo = [], name = '', suffix = '', X = 1.0 ):
+def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom = '', top = '', spin = '', tire_geo = [], rim_geo = [], caliper_geo = [], name = '', suffix = '', X = 1.0, exp = True ):
     '''
     create wheel rig
     - translation based rotation
     - inflattion / deflation
     - steering
     inputs
-    - 2 pre-existing controls = master_move_controls -- vehicle_master()
+    - 2 pre-existing controls = master_move_controls -- vehicle_master(), list may have more, but only need the first 2
+    - master                  = 'WHEEL_SPACE' group is constrained to this object, 'contact' control lives inside 
+    - move                    = axle joint and steering controls get constrained to this object
     - jnts                    = axle, steer, center, bottom, top, spin
     - geo                     = tire_geo, rim_geo, caliper_geo
     - naming strings          = name, suffix
@@ -129,17 +137,26 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     elif 'R' in suffix:
         colorName = 'red'
         ctrlShp = 'shldrR_ctrl'
+    else:
+        colorName = 'yellow'
+        ctrlShp = 'shldrL_ctrl'
+
+    if suffix:
+        sffx = '_' + suffix
+    else:
+        sffx = suffix
 
     CONTROLS = '___CONTROLS'
     master = master_move_controls[0]
     move = master_move_controls[1]
     #
-    WHEEL_GRP = cmds.group( name = name + '_' + suffix + '_AllGrp', em = True )
+    WHEEL_GRP = cmds.group( name = name + sffx + '_AllGrp', em = True )
+    # cmds.parentConstraint( move, WHEEL_GRP, mo = True )
     cmds.parent( WHEEL_GRP, CONTROLS )
-
+    # return
     # tire has to be facing forward in Z
     clstr = tire_pressure( obj = tire_geo, center = center, name = name, suffix = suffix )
-
+    # return
     # geo cleanup
     cmds.parent( tire_geo, '___WORLD_SPACE' )
     if tire_geo:
@@ -162,15 +179,15 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     # root
     cmds.parentConstraint( move, axle, mo = True )
 
-    # wheels shouldnt sping when master is moved, use drive / move control
+    # wheels shouldnt spin when master is moved, use drive / move control
     WHEEL_SPACE = 'WHEEL_SPACE'
     if not cmds.objExists( WHEEL_SPACE ):
         WHEEL_SPACE = cmds.group( name = WHEEL_SPACE, em = True )
         cmds.parent( WHEEL_SPACE, CONTROLS )
         cmds.parentConstraint( master, WHEEL_SPACE, mo = True )
 
-    # contact #
-    Contact_F_L = name + '_contact_' + suffix
+    # contact # wheel spin derived from top group node of this control
+    Contact_F_L = name + '_contact' + sffx
     contact_F_L = place.Controller( Contact_F_L, bottom, False, 'pawMaster_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
     Contact_F_LCt = contact_F_L.createController()
     cmds.parent( Contact_F_LCt[0], WHEEL_SPACE )
@@ -193,16 +210,16 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     cmds.setAttr( ( Contact_F_LCt[0] + '.Drive' ), keyable = True )
 
     # live radius
-    g = cmds.group( name = name + '_Radius_' + suffix + '_Grp', em = True )
+    g = cmds.group( name = name + '_Radius' + sffx + '_Grp', em = True )
     cmds.parent( g, WHEEL_GRP )
     cmds.setAttr( g + '.visibility', 0 )
     #
-    r1 = place.loc( name + '_radius1_' + suffix )[0]
+    r1 = place.loc( name + '_radius1' + sffx )[0]
     cmds.select( r1, spin )
     anm.matchObj()
     cmds.parent( r1, g )
     #
-    r2 = place.loc( name + '_radius2_' + suffix )[0]
+    r2 = place.loc( name + '_radius2' + sffx )[0]
     cmds.select( r2, top )
     anm.matchObj()
     cmds.parent( r2, g )
@@ -211,7 +228,7 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     cmds.connectAttr( r1 + '.distance', Contact_F_LCt[0] + '.Radius' )
 
     # center
-    Center_front_L = name + '_pressure_' + suffix
+    Center_front_L = name + '_pressure' + sffx
     center_front_L = place.Controller( Center_front_L, center, False, 'diamond_ctrl', X * 8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
     Center_front_LCt = center_front_L.createController()
     cmds.parent( Center_front_LCt[0], WHEEL_GRP )
@@ -230,7 +247,7 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     cmds.connectAttr( Center_front_LCt[2] + '.sidewallFlex', clstr + '.translateX' )
 
     # spin
-    Spin_front_L = name + '_spin_' + suffix
+    Spin_front_L = name + '_spin' + sffx
     spin_front_L = place.Controller( Spin_front_L, spin, False, ctrlShp, X * 7, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
     Spin_front_LCt = spin_front_L.createController()
     cmds.parent( Spin_front_LCt[0], WHEEL_GRP )
@@ -239,35 +256,38 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     #
     cmds.connectAttr( Contact_F_LCt[0] + '.Drive', Spin_front_LCt[1] + '.rotateX' )
     #
-    wheel_exp( ctrl = Contact_F_LCt[0] )
-
+    if exp:
+        wheel_exp( ctrl = Contact_F_LCt[0] )
+    '''
     # steer #
-    Steer_F_L = name + '_steer_' + suffix
+    Steer_F_L = name + '_steer' + sffx
     steer_F_L = place.Controller( Steer_F_L, steer, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
     Steer_F_LCt = steer_F_L.createController()
     cmds.setAttr( Steer_F_LCt[0] + '.visibility', 0 )
     cmds.parent( Steer_F_LCt[0], WHEEL_GRP )
     cmds.xform( Steer_F_LCt[0], relative = True, t = ( 0, 0, 20 ) )
-    cmds.parentConstraint( move, Steer_F_LCt[0], mo = True )
+    cmds.parentConstraint( axle, Steer_F_LCt[0], mo = True )
     # lock geo - [lock, keyable], [visible, lock, keyable]
     place.setChannels( Steer_F_LCt[2], [True, False], [True, False], [True, False], [True, False, False] )
     cmds.setAttr( Steer_F_LCt[2] + '.translateX', keyable = True, lock = False )
     # steer up
-    SteerUp_F_L = name + '_steerUp_' + suffix
+    SteerUp_F_L = name + '_steerUp' + sffx
     steerUp_F_L = place.Controller( SteerUp_F_L, steer, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
     SteerUp_F_LCt = steerUp_F_L.createController()
     cmds.parent( SteerUp_F_LCt[0], WHEEL_GRP )
     cmds.xform( SteerUp_F_LCt[0], relative = True, t = ( 0, 10, 0 ) )
-    cmds.parentConstraint( move, SteerUp_F_LCt[0], mo = True )
+    cmds.parentConstraint( axle, SteerUp_F_LCt[0], mo = True )
     cmds.setAttr( SteerUp_F_LCt[0] + '.visibility', 0 )
 
     cmds.aimConstraint( Steer_F_LCt[4], steer, wut = 'object', wuo = SteerUp_F_LCt[4], aim = [0, 0, 1], u = [0, 1, 0], mo = True )
     # cmds.aimConstraint( locAim, obj, wut = 'object', wuo = locUp, aim = aim, u = u, mo = mo )
 
     return [Steer_F_LCt[1], Contact_F_LCt[2], Center_front_LCt[2], Center_front_LCt[1]]
+    '''
+    return [steer, Contact_F_LCt[2], Center_front_LCt[2], Center_front_LCt[1]]
 
 
-def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 = '', aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, 1], up2 = [0, 1, 0], X = 1, color = 'yellow' ):
+def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 = '', parentUp1 = '', parentUp2 = '', aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, 1], up2 = [0, 1, 0], X = 1, color = 'yellow' ):
     '''
     obj objects should have proper pivot point for objects to place and constrain correctly
     '''
@@ -277,34 +297,52 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
         suffix = '_' + suffix
 
     # add rig group for cleanliness
+    piston_grp = cmds.group( name = name + '_' + suffix + '_AllGrp', em = True )
+    cmds.parent( piston_grp, CONTROLS() )
 
     # obj1
     name1 = name + '_aim1' + suffix
-    name1_Ct = place.Controller2( name1, obj1, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
-    cmds.parent( name1_Ct[0], CONTROLS() )
+    name1_Ct = place.Controller2( name1, obj1, True, 'facetZup_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    cmds.parent( name1_Ct[0], piston_grp )
     cmds.pointConstraint( name1_Ct[4], obj1, mo = True )
-    cmds.parentConstraint( parent1, name1_Ct[0], mo = True )
+    if parent1:
+        cmds.parentConstraint( parent1, name1_Ct[0], mo = True )
     place.rotationLock( name1_Ct[2], True )
 
     # obj2
     name2 = name + '_aim2' + suffix
-    name2_Ct = place.Controller2( name2, obj2, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
-    cmds.parent( name2_Ct[0], CONTROLS() )
+    name2_Ct = place.Controller2( name2, obj2, True, 'facetZup_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    cmds.parent( name2_Ct[0], piston_grp )
+    rot = cmds.xform( name2_Ct[0], q = True, os = True, ro = True )
+    cmds.xform( name2_Ct[0], ws = True, ro = ( rot[0] + 180, 0, 0 ) )
     cmds.pointConstraint( name2_Ct[4], obj2, mo = True )
-    cmds.parentConstraint( parent2, name2_Ct[0], mo = True )
+    if parent2:
+        cmds.parentConstraint( parent2, name2_Ct[0], mo = True )
     place.rotationLock( name2_Ct[2], True )
 
-    # obj up
-    nameUp = name + '_up' + suffix
-    nameUp_Ct = place.Controller2( nameUp, obj1, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
-    cmds.parent( nameUp_Ct[0], CONTROLS() )
-    cmds.setAttr( nameUp_Ct[1] + place.vector( up1 ), distance )
-    cmds.parentConstraint( parent1, nameUp_Ct[0], mo = True )
-    place.rotationLock( nameUp_Ct[2], True )
+    # obj1 up
+    nameUp1 = name + '_up1' + suffix
+    nameUp1_Ct = place.Controller2( nameUp1, obj1, True, 'loc_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    cmds.parent( nameUp1_Ct[0], piston_grp )
+    cmds.setAttr( nameUp1_Ct[1] + place.vector( up1 ), distance )
+    if parentUp1:
+        cmds.parentConstraint( parentUp1, nameUp1_Ct[0], mo = True )
+    place.rotationLock( nameUp1_Ct[2], True )
+
+    # obj2 up
+    nameUp2 = name + '_up2' + suffix
+    nameUp2_Ct = place.Controller2( nameUp2, obj2, True, 'loc_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    cmds.parent( nameUp2_Ct[0], piston_grp )
+    cmds.setAttr( nameUp2_Ct[1] + place.vector( up2 ), distance )
+    if parentUp2:
+        cmds.parentConstraint( parentUp2, nameUp2_Ct[0], mo = True )
+    place.rotationLock( nameUp2_Ct[2], True )
 
     # aim
-    cmds.aimConstraint( name2_Ct[4], obj1, wut = 'object', wuo = nameUp_Ct[4], aim = aim1, u = up1, mo = True )
-    cmds.aimConstraint( name1_Ct[4], obj2, wut = 'object', wuo = nameUp_Ct[4], aim = aim2, u = up2, mo = True )
+    cmds.aimConstraint( name2_Ct[4], obj1, wut = 'object', wuo = nameUp1_Ct[4], aim = aim1, u = up1, mo = True )
+    cmds.aimConstraint( name1_Ct[4], obj2, wut = 'object', wuo = nameUp2_Ct[4], aim = aim2, u = up2, mo = True )
+
+    return [name1_Ct, name2_Ct, nameUp1_Ct, nameUp2_Ct]
 
 
 def spline( name = '', root_jnt = '', tip_jnt = '', splinePrnt = '', splineStrt = '', splineEnd = '', splineAttr = '', startSkpR = False, endSkpR = False, X = 2 ):
@@ -417,7 +455,7 @@ def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', front
     # ##########
     # front
     namef = name + 'front_' + pvt
-    namef_Ct = place.Controller2( namef, front, False, 'ballRoll_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorc ).result
+    namef_Ct = place.Controller2( namef, front, False, 'pawToeRoll_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorc ).result
     cmds.parent( namef_Ct[0], BODY_GRP )
     cmds.parentConstraint( namef_Ct[4], center, mo = True )
     cmds.parentConstraint( body_Ct[4], namef_Ct[0], mo = True )
@@ -427,7 +465,7 @@ def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', front
 
     # back
     nameb = name + 'back_' + pvt
-    nameb_Ct = place.Controller2( nameb, back, False, 'ballRollInv_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorc ).result
+    nameb_Ct = place.Controller2( nameb, back, False, 'pawHeelRoll_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorc ).result
     cmds.parent( nameb_Ct[0], BODY_GRP )
     cmds.parentConstraint( body_Ct[4], nameb_Ct[0], mo = True )
     place.rotationLock( nameb_Ct[2], True )
@@ -619,14 +657,17 @@ def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2,
     g = cmds.group( name = name + '_clusterGrp_' + suffix, em = True )
     cmds.parent( g, '___WORLD_SPACE' )
     cmds.setAttr( g + '.visibility', 0 )
-
+    # return
     # store selection
     sel = cmds.ls( sl = 1 )
     # lattice
     cmds.select( obj )
     # [u'wheel_front_lattice_L_', u'wheel_front_lattice_L_Lattice', u'wheel_front_lattice_L_Base']
     result = cmds.lattice( name = name + '_ltc_' + suffix + '_', dv = lattice, oc = True, outsideLattice = 1 )
-    cmds.parent( result, '___WORLD_SPACE' )
+    # result[0] is a component apparently, cant be parented
+    cmds.parent( result[1], '___WORLD_SPACE' )
+    cmds.parent( result[2], '___WORLD_SPACE' )
+    # return
     cmds.setAttr( result[1] + '.visibility', 0 )
     cmds.setAttr( result[2] + '.visibility', 0 )
     # print( result )
@@ -651,7 +692,7 @@ def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2,
     cmds.select( sl )
     c = cmds.cluster( name = name + '_clstrTop_' + suffix + '_' )[1]
     # clusters.append( c )
-
+    # return
     # parent clusters
     cmds.parent( clusters, g )
     cmds.parent( c, g )
