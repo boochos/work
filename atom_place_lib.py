@@ -1848,6 +1848,75 @@ def addText( obj, t = 'A', f = 'Arial-Bold', c = 12, rotOffset = [0, 0, 0], posO
     cmds.delete( text )
 
 
+def breakConnection( obj = '', attr = '' ):
+    '''
+    break connection whatever is driving given attr on given object
+    '''
+    con = cmds.listConnections( obj + '.' + attr, s = 1, d = 0, skipConversionNodes = True, plugs = True )
+    if con:
+        cmds.disconnectAttr( con[0], obj + '.' + attr )
+
+
+def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False ):
+    '''\n
+    hijacks attribute with weight effect\n
+    obj1   = master
+    obj2   = slave
+    objOpt = object to recieve blend attribute(typically parent of object 2 if using controller hierarchy)
+    specific = ['slave attribiute', 'master attribute'], pre-existing
+    #
+    slave queried if existing connection, add addDoubleLin if true, break existing connection, pipe through addDoubleLin
+    new master gets multDoubleLin for weight and reverse after if needed
+    
+        '''
+    #
+    name = 'smartBlend'
+    rev = None
+    addDL = None
+
+    # reverse node
+    if reverse:
+        # rev = cmds.shadingNode( 'reverse', name = master + '_' + name + '_rvrs', asUtility = True )
+        # cmds.connectAttr( master + '.' + masterAttr, rev + '.inputX' )
+        # mltp node instead
+        rev = cmds.shadingNode( 'multDoubleLinear', name = master + '_' + name + '_mltpNeg', asUtility = True )
+        cmds.setAttr( rev + '.input2', -1 )
+        cmds.connectAttr( master + '.' + masterAttr, rev + '.input1' )
+
+    # weight node
+    blendN = cmds.shadingNode( 'multDoubleLinear', name = master + '_' + name + '_mltp', asUtility = True )
+
+    # connect master/rev attr to weight node
+    if reverse:
+        cmds.connectAttr( rev + '.output', blendN + '.input1' )
+    else:
+        cmds.connectAttr( master + '.' + masterAttr, blendN + '.input1' )
+
+    # create user weight attr
+    # hijackAttrs( obj1, obj2, attrOrig, attrNew, set = False, default = None, force = True )
+    if blendAttrObj:
+        optEnum( blendAttrObj, 'additive' )
+        hijackAttrs( blendN, blendAttrObj, 'input2', blendAttrString + 'Weight', set = True, default = blendWeight )
+    else:
+        cmds.setAttr( blendN + '.input2', blendWeight )
+
+    # find existing incoming masterAttr connections, if any
+    existingMaster = None
+    con = cmds.listConnections( slave + '.' + slaveAttr, s = 1, d = 0, skipConversionNodes = True, plugs = True )
+    # print( con )
+    if con:
+        # add addition node
+        existingMaster = con[0]
+        addDL = cmds.shadingNode( 'addDoubleLinear', name = master + '_' + name + '_add', asUtility = True )
+        cmds.connectAttr( existingMaster, addDL + '.input1' )
+        cmds.connectAttr( blendN + '.output', addDL + '.input2' )
+        # connect out blend
+        cmds.connectAttr( addDL + '.output', slave + '.' + slaveAttr, force = True )  # force
+    else:
+        # connect out blend
+        cmds.connectAttr( blendN + '.output', slave + '.' + slaveAttr )
+
+
 def attrBlend( obj1, obj2, objOpt, pos = False, rot = False, scale = False, specific = [[None], None], skip = 2, default = 1 ):
     '''\n
     hijacks attribute with weight effect\n

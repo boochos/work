@@ -86,7 +86,7 @@ def vehicle_master( masterX = 10, moveX = 10, steerParent = '' ):
 
     # steer #
     Steer = 'steer'
-    SteerCt = place.Controller2( Steer, 'on_path_front_jnt', False, 'ballRoll_ctrl', moveX * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    SteerCt = place.Controller2( Steer, 'front_jnt', False, 'ballRoll_ctrl', moveX * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.parent( SteerCt[0], CONTROLS )
     # cmds.setAttr( SteerCt[0] + '.tz', moveX * 5 )
     if steerParent:
@@ -187,27 +187,27 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
         cmds.parentConstraint( master, WHEEL_SPACE, mo = True )
 
     # contact # wheel spin derived from top group node of this control
-    Contact_F_L = name + '_contact' + sffx
-    contact_F_L = place.Controller( Contact_F_L, bottom, False, 'pawMaster_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
-    Contact_F_LCt = contact_F_L.createController()
-    cmds.parent( Contact_F_LCt[0], WHEEL_SPACE )
-    cmds.parentConstraint( steer, Contact_F_LCt[0], mo = True )
+    Contact = name + '_contact' + sffx
+    contact = place.Controller( Contact, bottom, False, 'pawMaster_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
+    ContactCt = contact.createController()
+    cmds.parent( ContactCt[0], WHEEL_SPACE )
+    cmds.parentConstraint( steer, ContactCt[0], mo = True )
     # lock geo - [lock, keyable], [visible, lock, keyable]
-    place.setChannels( Contact_F_LCt[2], [True, False], [True, False], [True, False], [True, False, False] )
-    cmds.setAttr( Contact_F_LCt[2] + '.translateY', keyable = True, lock = False )
+    place.setChannels( ContactCt[2], [True, False], [True, False], [True, False], [True, False, False] )
+    cmds.setAttr( ContactCt[2] + '.translateY', keyable = True, lock = False )
     #
-    place.optEnum( Contact_F_LCt[2], attr = 'Wheel', enum = 'OPTNS' )
-    place.addAttribute( [Contact_F_LCt[2]], ['autoRoll'], 0, 1, True, attrType = 'float' )
+    place.optEnum( ContactCt[2], attr = 'Wheel', enum = 'OPTNS' )
+    place.addAttribute( [ContactCt[2]], ['autoRoll'], 0, 1, True, attrType = 'float' )
     #
-    place.optEnum( Contact_F_LCt[0], attr = 'Roll', enum = 'INPUTS' )
+    place.optEnum( ContactCt[0], attr = 'Roll', enum = 'INPUTS' )
     #
-    cmds.addAttr( Contact_F_LCt[0], ln = 'Radius' )
-    cmds.setAttr( ( Contact_F_LCt[0] + '.Radius' ), cb = True )
-    cmds.setAttr( ( Contact_F_LCt[0] + '.Radius' ), keyable = True )
+    cmds.addAttr( ContactCt[0], ln = 'Radius' )
+    cmds.setAttr( ( ContactCt[0] + '.Radius' ), cb = True )
+    cmds.setAttr( ( ContactCt[0] + '.Radius' ), keyable = True )
     #
-    cmds.addAttr( Contact_F_LCt[0], ln = 'Drive' )
-    cmds.setAttr( ( Contact_F_LCt[0] + '.Drive' ), cb = True )
-    cmds.setAttr( ( Contact_F_LCt[0] + '.Drive' ), keyable = True )
+    cmds.addAttr( ContactCt[0], ln = 'Drive' )
+    cmds.setAttr( ( ContactCt[0] + '.Drive' ), cb = True )
+    cmds.setAttr( ( ContactCt[0] + '.Drive' ), keyable = True )
 
     # live radius
     g = cmds.group( name = name + '_Radius' + sffx + '_Grp', em = True )
@@ -225,39 +225,39 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     cmds.parent( r2, g )
     #
     dsp.distance( obj1 = r1, obj2 = r2 )
-    cmds.connectAttr( r1 + '.distance', Contact_F_LCt[0] + '.Radius' )
+    cmds.connectAttr( r1 + '.distance', ContactCt[0] + '.Radius' )
 
-    # center
-    Center_front_L = name + '_pressure' + sffx
-    center_front_L = place.Controller( Center_front_L, center, False, 'diamond_ctrl', X * 8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
-    Center_front_LCt = center_front_L.createController()
-    cmds.parent( Center_front_LCt[0], WHEEL_GRP )
-    cmds.parentConstraint( Center_front_LCt[4], center, mo = True )
-    cmds.parentConstraint( Contact_F_LCt[4], Center_front_LCt[0], mo = True )
+    # center / pressure
+    Pressure = name + '_pressure' + sffx
+    pressure = place.Controller( Pressure, center, False, 'diamond_ctrl', X * 8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
+    PressureCt = pressure.createController()
+    cmds.parent( PressureCt[0], WHEEL_GRP )
+    cmds.parentConstraint( PressureCt[4], center, mo = True )
+    cmds.parentConstraint( ContactCt[4], PressureCt[0], mo = True )
     # math node
-    mltp = cmds.shadingNode( 'multiplyDivide', au = True, n = Center_front_LCt[2] + '_mltp_ty' )
+    mltp = cmds.shadingNode( 'multiplyDivide', au = True, n = PressureCt[2] + '_mltp_ty' )
     cmds.setAttr( mltp + '.operation', 1 )  # multiply
     cmds.setAttr( mltp + '.input2Y', -1 )
     # connect
-    cmds.connectAttr( Center_front_LCt[2] + '.translateY', mltp + '.input1Y' )
+    cmds.connectAttr( PressureCt[2] + '.translateY', mltp + '.input1Y' )
     cmds.connectAttr( mltp + '.outputY', clstr + '.translateY' )
     # sidewall
-    place.optEnum( Center_front_LCt[2], attr = 'Tire', enum = 'OPTNS' )
-    place.addAttribute( [Center_front_LCt[2]], ['sidewallFlex'], -1, 1, True, attrType = 'float' )
-    cmds.connectAttr( Center_front_LCt[2] + '.sidewallFlex', clstr + '.translateX' )
+    place.optEnum( PressureCt[2], attr = 'Tire', enum = 'OPTNS' )
+    place.addAttribute( [PressureCt[2]], ['sidewallFlex'], -1, 1, True, attrType = 'float' )
+    cmds.connectAttr( PressureCt[2] + '.sidewallFlex', clstr + '.translateX' )
 
     # spin
-    Spin_front_L = name + '_spin' + sffx
-    spin_front_L = place.Controller( Spin_front_L, spin, False, ctrlShp, X * 7, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
-    Spin_front_LCt = spin_front_L.createController()
-    cmds.parent( Spin_front_LCt[0], WHEEL_GRP )
-    cmds.parentConstraint( Spin_front_LCt[4], spin, mo = True )
-    cmds.parentConstraint( Center_front_LCt[4], Spin_front_LCt[0], mo = True )
+    Spin = name + '_spin' + sffx
+    spinct = place.Controller( Spin, spin, False, ctrlShp, X * 7, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
+    SpinCt = spinct.createController()
+    cmds.parent( SpinCt[0], WHEEL_GRP )
+    cmds.parentConstraint( SpinCt[4], spin, mo = True )
+    cmds.parentConstraint( PressureCt[4], SpinCt[0], mo = True )
     #
-    cmds.connectAttr( Contact_F_LCt[0] + '.Drive', Spin_front_LCt[1] + '.rotateX' )
+    cmds.connectAttr( ContactCt[0] + '.Drive', SpinCt[1] + '.rotateX' )
     #
     if exp:
-        wheel_exp( ctrl = Contact_F_LCt[0] )
+        wheel_exp( ctrl = ContactCt[0] )
     '''
     # steer #
     Steer_F_L = name + '_steer' + sffx
@@ -282,9 +282,9 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     cmds.aimConstraint( Steer_F_LCt[4], steer, wut = 'object', wuo = SteerUp_F_LCt[4], aim = [0, 0, 1], u = [0, 1, 0], mo = True )
     # cmds.aimConstraint( locAim, obj, wut = 'object', wuo = locUp, aim = aim, u = u, mo = mo )
 
-    return [Steer_F_LCt[1], Contact_F_LCt[2], Center_front_LCt[2], Center_front_LCt[1]]
+    return [Steer_F_LCt[1], ContactCt[2], PressureCt[2], PressureCt[1]]
     '''
-    return [steer, Contact_F_LCt[2], Center_front_LCt[2], Center_front_LCt[1]]
+    return [steer, ContactCt, PressureCt]
 
 
 def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 = '', parentUp1 = '', parentUp2 = '', aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, 1], up2 = [0, 1, 0], X = 1, color = 'yellow' ):
@@ -301,7 +301,7 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
     cmds.parent( piston_grp, CONTROLS() )
 
     # obj1
-    name1 = name + '_aim1' + suffix
+    name1 = name + '_top' + suffix
     name1_Ct = place.Controller2( name1, obj1, True, 'facetZup_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     cmds.parent( name1_Ct[0], piston_grp )
     cmds.pointConstraint( name1_Ct[4], obj1, mo = True )
@@ -310,18 +310,20 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
     place.rotationLock( name1_Ct[2], True )
 
     # obj2
-    name2 = name + '_aim2' + suffix
+    name2 = name + '_bottom' + suffix
     name2_Ct = place.Controller2( name2, obj2, True, 'facetZup_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    # return
     cmds.parent( name2_Ct[0], piston_grp )
-    rot = cmds.xform( name2_Ct[0], q = True, os = True, ro = True )
-    cmds.xform( name2_Ct[0], ws = True, ro = ( rot[0] + 180, 0, 0 ) )
+    # rot = cmds.xform( name2_Ct[0], q = True, os = True, ro = True )
+    # cmds.xform( name2_Ct[0], ws = True, ro = ( rot[0] + 180, 0, 0 ) )
     cmds.pointConstraint( name2_Ct[4], obj2, mo = True )
     if parent2:
         cmds.parentConstraint( parent2, name2_Ct[0], mo = True )
     place.rotationLock( name2_Ct[2], True )
+    # return
 
     # obj1 up
-    nameUp1 = name + '_up1' + suffix
+    nameUp1 = name + '_topUp' + suffix
     nameUp1_Ct = place.Controller2( nameUp1, obj1, True, 'loc_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     cmds.parent( nameUp1_Ct[0], piston_grp )
     cmds.setAttr( nameUp1_Ct[1] + place.vector( up1 ), distance )
@@ -330,7 +332,7 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
     place.rotationLock( nameUp1_Ct[2], True )
 
     # obj2 up
-    nameUp2 = name + '_up2' + suffix
+    nameUp2 = name + '_bottomUp' + suffix
     nameUp2_Ct = place.Controller2( nameUp2, obj2, True, 'loc_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     cmds.parent( nameUp2_Ct[0], piston_grp )
     cmds.setAttr( nameUp2_Ct[1] + place.vector( up2 ), distance )
@@ -424,10 +426,11 @@ def fold_ik( name = '', strt_jnt = '', end_jnt = '', X = 1.0, color = 'yellow' )
     pass
 
 
-def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', frontL = '', frontR = '', back = '', backL = '', backR = '', up = '', X = 1 ):
+def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', frontL = '', frontR = '', back = '', backL = '', backR = '', up = '', X = 1, hide = False ):
     '''
-    main control, with 4 point pivot control and up vector
-    assume translateZ is forward
+    - main control, with 4 point pivot control and up vector
+    - will assume single pivot if either left or right not given
+    - assume translateZ is forward
     '''
     pvt = 'pivot'
     #
@@ -438,6 +441,9 @@ def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', front
     colorc = 'brown'
     colorL = 'blue'
     colorR = 'red'
+    #
+    single_front_pivot = False
+    single_back_pivot = False
 
     # body grp
     BODY_GRP = cmds.group( name = name + 'Pvt_AllGrp', em = True )
@@ -476,52 +482,90 @@ def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', front
     nameu = name + 'up_' + pvt
     nameu_Ct = place.Controller2( nameu, up, False, 'diamond_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorc ).result
     cmds.parent( nameu_Ct[0], BODY_GRP )
-    cmds.setAttr( nameu_Ct[0] + '.visibility', 0 )
+    if hide:
+        cmds.setAttr( nameu_Ct[0] + '.visibility', 0 )
     cmds.parentConstraint( nameu_Ct[4], up, mo = True )
     cmds.parentConstraint( body_Ct[4], nameu_Ct[0], mo = True )
     place.rotationLock( nameu_Ct[2], True )
     place.translationZ( nameu_Ct[2], True )
 
     # ##########
-    # frontL
-    namefl = name + 'front_L_' + pvt
-    namefl_Ct = place.Controller2( namefl, frontL, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorL ).result
-    cmds.parent( namefl_Ct[0], BODY_GRP )
-    cmds.setAttr( namefl_Ct[0] + '.visibility', 0 )
-    cmds.parentConstraint( body_Ct[4], namefl_Ct[0], mo = True )
-    place.rotationLock( namefl_Ct[2], True )
-    place.translationZ( namefl_Ct[2], True )
-    place.translationX( namefl_Ct[2], True )
+    namefl_Ct = None
+    namefr_Ct = None
+    namefc_Ct = None  # center
+    if frontL and frontR:  # dual front pivot
+        # frontL
+        namefl = name + 'front_L_' + pvt
+        namefl_Ct = place.Controller2( namefl, frontL, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorL ).result
+        cmds.parent( namefl_Ct[0], BODY_GRP )
+        if hide:
+            cmds.setAttr( namefl_Ct[0] + '.visibility', 0 )
+        cmds.parentConstraint( body_Ct[4], namefl_Ct[0], mo = True )
+        place.rotationLock( namefl_Ct[2], True )
+        place.translationZ( namefl_Ct[2], True )
+        place.translationX( namefl_Ct[2], True )
 
-    # frontR
-    namefr = name + 'front_R_' + pvt
-    namefr_Ct = place.Controller2( namefr, frontR, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorR ).result
-    cmds.parent( namefr_Ct[0], BODY_GRP )
-    cmds.setAttr( namefr_Ct[0] + '.visibility', 0 )
-    cmds.parentConstraint( body_Ct[4], namefr_Ct[0], mo = True )
-    place.rotationLock( namefr_Ct[2], True )
-    place.translationZ( namefr_Ct[2], True )
-    place.translationX( namefr_Ct[2], True )
+        # frontR
+        namefr = name + 'front_R_' + pvt
+        namefr_Ct = place.Controller2( namefr, frontR, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorR ).result
+        cmds.parent( namefr_Ct[0], BODY_GRP )
+        if hide:
+            cmds.setAttr( namefr_Ct[0] + '.visibility', 0 )
+        cmds.parentConstraint( body_Ct[4], namefr_Ct[0], mo = True )
+        place.rotationLock( namefr_Ct[2], True )
+        place.translationZ( namefr_Ct[2], True )
+        place.translationX( namefr_Ct[2], True )
+    else:  # single front pivot
+        single_front_pivot = True
+        # front center
+        namefc = name + 'front_C_' + pvt
+        namefc_Ct = place.Controller2( namefc, front, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorL ).result
+        cmds.parent( namefc_Ct[0], BODY_GRP )
+        if hide:
+            cmds.setAttr( namefc_Ct[0] + '.visibility', 0 )
+        cmds.parentConstraint( body_Ct[4], namefc_Ct[0], mo = True )
+        place.rotationLock( namefc_Ct[2], True )
+        place.translationZ( namefc_Ct[2], True )
+        place.translationX( namefc_Ct[2], True )
 
-    # backL
-    namebl = name + 'back_L_' + pvt
-    namebl_Ct = place.Controller2( namebl, backL, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorL ).result
-    cmds.parent( namebl_Ct[0], BODY_GRP )
-    cmds.setAttr( namebl_Ct[0] + '.visibility', 0 )
-    cmds.parentConstraint( body_Ct[4], namebl_Ct[0], mo = True )
-    place.rotationLock( namebl_Ct[2], True )
-    place.translationZ( namebl_Ct[2], True )
-    place.translationX( namebl_Ct[2], True )
+    # ##########
+    namebl_Ct = None
+    namebr_Ct = None
+    namebc_Ct = None  # center
+    if backL and backR:  # dual back pivot
+        # backL
+        namebl = name + 'back_L_' + pvt
+        namebl_Ct = place.Controller2( namebl, backL, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorL ).result
+        cmds.parent( namebl_Ct[0], BODY_GRP )
+        if hide:
+            cmds.setAttr( namebl_Ct[0] + '.visibility', 0 )
+        cmds.parentConstraint( body_Ct[4], namebl_Ct[0], mo = True )
+        place.rotationLock( namebl_Ct[2], True )
+        place.translationZ( namebl_Ct[2], True )
+        place.translationX( namebl_Ct[2], True )
 
-    # backR
-    namebr = name + 'back_R_' + pvt
-    namebr_Ct = place.Controller2( namebr, backR, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorR ).result
-    cmds.parent( namebr_Ct[0], BODY_GRP )
-    cmds.setAttr( namebr_Ct[0] + '.visibility', 0 )
-    cmds.parentConstraint( body_Ct[4], namebr_Ct[0], mo = True )
-    place.rotationLock( namebr_Ct[2], True )
-    place.translationZ( namebr_Ct[2], True )
-    place.translationX( namebr_Ct[2], True )
+        # backR
+        namebr = name + 'back_R_' + pvt
+        namebr_Ct = place.Controller2( namebr, backR, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorR ).result
+        cmds.parent( namebr_Ct[0], BODY_GRP )
+        if hide:
+            cmds.setAttr( namebr_Ct[0] + '.visibility', 0 )
+        cmds.parentConstraint( body_Ct[4], namebr_Ct[0], mo = True )
+        place.rotationLock( namebr_Ct[2], True )
+        place.translationZ( namebr_Ct[2], True )
+        place.translationX( namebr_Ct[2], True )
+    else:  # single back pivot
+        # back center
+        single_back_pivot = True
+        namebc = name + 'back_C_' + pvt
+        namebc_Ct = place.Controller2( namebc, back, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorL ).result
+        cmds.parent( namebl_Ct[0], BODY_GRP )
+        if hide:
+            cmds.setAttr( namebc_Ct[0] + '.visibility', 0 )
+        cmds.parentConstraint( body_Ct[4], namebc_Ct[0], mo = True )
+        place.rotationLock( namebc_Ct[2], True )
+        place.translationZ( namebc_Ct[2], True )
+        place.translationX( namebc_Ct[2], True )
 
     # ##########
     # aim
@@ -534,51 +578,114 @@ def four_point_pivot( name = 'vhcl', parent = '', center = '', front = '', front
     # 2 multdiv nodes
 
     # front pivots ( left/ right ) ty blend
-    frontBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'front_Blend' )
-    cmds.setAttr( frontBlend + '.attributesBlender', 0.5 )
-    cmds.connectAttr( namefl_Ct[2] + '.translateY', frontBlend + '.input[0]' )
-    cmds.connectAttr( namefr_Ct[2] + '.translateY', frontBlend + '.input[1]' )
-    cmds.connectAttr( frontBlend + '.output', namef_Ct[1] + '.translateY' )
+    if not single_front_pivot:
+        frontBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'front_Blend' )
+        cmds.setAttr( frontBlend + '.attributesBlender', 0.5 )
+        # front left
+        place.smartAttrBlend( master = namefl_Ct[2], slave = frontBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # make first weighted connection
+        place.smartAttrBlend( master = namefl_Ct[4], slave = frontBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # insert second weighted connection
+        # cmds.connectAttr( namefl_Ct[2] + '.translateY', frontBlend + '.input[0]' ) # front left
+        # front right
+        place.smartAttrBlend( master = namefr_Ct[2], slave = frontBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # make first weighted connection
+        place.smartAttrBlend( master = namefr_Ct[4], slave = frontBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # insert second weighted connection
+        # cmds.connectAttr( namefr_Ct[2] + '.translateY', frontBlend + '.input[1]' ) # front right
+        cmds.connectAttr( frontBlend + '.output', namef_Ct[1] + '.translateY' )
+    else:
+        place.smartAttrBlend( master = namefc_Ct[2], slave = namef_Ct[1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
+        place.smartAttrBlend( master = namefc_Ct[4], slave = namef_Ct[4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
+        # cmds.connectAttr( namefc_Ct[2] + '.translateY', namef_Ct[1] + '.translateY' )
 
     # back pivots ( left/ right ) ty blend
-    backBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'back_Blend' )
-    cmds.setAttr( backBlend + '.attributesBlender', 0.5 )
-    cmds.connectAttr( namebl_Ct[2] + '.translateY', backBlend + '.input[0]' )
-    cmds.connectAttr( namebr_Ct[2] + '.translateY', backBlend + '.input[1]' )
-    cmds.connectAttr( backBlend + '.output', nameb_Ct[1] + '.translateY' )
+    if not single_back_pivot:
+        backBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'back_Blend' )
+        cmds.setAttr( backBlend + '.attributesBlender', 0.5 )
+        # back left
+        place.smartAttrBlend( master = namebl_Ct[2], slave = backBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # make first weighted connection
+        place.smartAttrBlend( master = namebl_Ct[4], slave = backBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # insert second weighted connection
+        # cmds.connectAttr( namebl_Ct[2] + '.translateY', backBlend + '.input[0]' )
+        # back right
+        place.smartAttrBlend( master = namebr_Ct[2], slave = backBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # make first weighted connection
+        place.smartAttrBlend( master = namebr_Ct[4], slave = backBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # insert second weighted connection
+        # cmds.connectAttr( namebr_Ct[2] + '.translateY', backBlend + '.input[1]' )
+        cmds.connectAttr( backBlend + '.output', nameb_Ct[1] + '.translateY' )
+    else:
+        place.smartAttrBlend( master = namebc_Ct[2], slave = nameb_Ct[1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
+        place.smartAttrBlend( master = namebc_Ct[4], slave = nameb_Ct[4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
+        cmds.connectAttr( namebc_Ct[2] + '.translateY', nameb_Ct[1] + '.translateY' )
 
-    # blend front up vector pivots (l/r)
-    frontUpBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'front_up_Blend' )
-    cmds.setAttr( frontUpBlend + '.attributesBlender', 0.5 )
-    # mltp only for left side, invert value
-    frontlmlt = cmds.shadingNode( 'multiplyDivide', au = True, n = name + '_front_l_mlt' )
-    cmds.setAttr( frontlmlt + '.operation', 1 )  # multiply
-    cmds.setAttr( frontlmlt + '.input2Y', -1 )
-    #
-    cmds.connectAttr( namefr_Ct[2] + '.translateY', frontUpBlend + '.input[0]' )
-    cmds.connectAttr( namefl_Ct[2] + '.translateY', frontlmlt + '.input1Y' )
-    cmds.connectAttr( frontlmlt + '.outputY', frontUpBlend + '.input[1]' )
+    # ###########
+    # blend front up vector pivots (l/r) - prep nodes, ty to blend into tx of up vector control, left side converted to negative for neg tx
+    frontUpBlend = None
+    if not single_front_pivot:
+        frontUpBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'front_up_Blend' )  # recieves 2 ty inputs, one converted to negative
+        cmds.setAttr( frontUpBlend + '.attributesBlender', 0.5 )  # each gets a weights of half
+        # mltp only for left side, invert value
+        # frontlmlt = cmds.shadingNode( 'multiplyDivide', au = True, n = name + '_front_l_mlt' )
+        # cmds.setAttr( frontlmlt + '.operation', 1 )  # multiply
+        # cmds.setAttr( frontlmlt + '.input2Y', -1 )
+        # new
+        place.smartAttrBlend( master = namefl_Ct[2], slave = frontUpBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )  # make first weighted connection
+        place.smartAttrBlend( master = namefl_Ct[4], slave = frontUpBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )  # insert second weighted connection
+        #
+        place.smartAttrBlend( master = namefr_Ct[2], slave = frontUpBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # make first weighted connection
+        place.smartAttrBlend( master = namefr_Ct[4], slave = frontUpBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # insert second weighted connection
 
-    # blend back up vector pivots (l/r)
-    backUpBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'back_up_Blend' )
-    cmds.setAttr( backUpBlend + '.attributesBlender', 0.5 )
-    # mltp only for left side, invert value
-    backlmlt = cmds.shadingNode( 'multiplyDivide', au = True, n = name + '_back_l_mlt' )
-    cmds.setAttr( backlmlt + '.operation', 1 )  # multiply
-    cmds.setAttr( backlmlt + '.input2Y', -1 )
-    #
-    cmds.connectAttr( namebr_Ct[2] + '.translateY', backUpBlend + '.input[0]' )
-    cmds.connectAttr( namebl_Ct[2] + '.translateY', backlmlt + '.input1Y' )
-    cmds.connectAttr( backlmlt + '.outputY', backUpBlend + '.input[1]' )
+        # old
+        # cmds.connectAttr( namefr_Ct[2] + '.translateY', frontUpBlend + '.input[0]' )  # right to blend
+        # cmds.connectAttr( namefl_Ct[2] + '.translateY', frontlmlt + '.input1Y' )  # left to negative node
+        # cmds.connectAttr( frontlmlt + '.outputY', frontUpBlend + '.input[1]' )  # negative node to blend
+    else:
+        pass
+
+    # blend back up vector pivots (l/r) - prep nodes, ty to blend into tx of up vector control, left side converted to negative for neg tx
+    backUpBlend = None
+    if not single_back_pivot:
+        backUpBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'back_up_Blend' )  # recieves 2 ty inputs, one converted to negative
+        cmds.setAttr( backUpBlend + '.attributesBlender', 0.5 )  # each gets a weights of half
+        # mltp only for left side, invert value
+        # backlmlt = cmds.shadingNode( 'multiplyDivide', au = True, n = name + '_back_l_mlt' )
+        # cmds.setAttr( backlmlt + '.operation', 1 )  # multiply
+        # cmds.setAttr( backlmlt + '.input2Y', -1 )
+        # new
+        place.smartAttrBlend( master = namebl_Ct[2], slave = backUpBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )  # make first weighted connection
+        place.smartAttrBlend( master = namebl_Ct[4], slave = backUpBlend, masterAttr = 'translateY', slaveAttr = 'input[0]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )  # insert second weighted connection
+        # back right
+        place.smartAttrBlend( master = namebr_Ct[2], slave = backUpBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # make first weighted connection
+        place.smartAttrBlend( master = namebr_Ct[4], slave = backUpBlend, masterAttr = 'translateY', slaveAttr = 'input[1]', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )  # insert second weighted connection
+
+        # old
+        # cmds.connectAttr( namebr_Ct[2] + '.translateY', backUpBlend + '.input[0]' )  # right to blend
+        # cmds.connectAttr( namebl_Ct[2] + '.translateY', backlmlt + '.input1Y' )  # left to negative node
+        # cmds.connectAttr( backlmlt + '.outputY', backUpBlend + '.input[1]' )  # negative node to blend
+    else:
+        pass
 
     # blend result of front/back translateY values to up translateX
-    upBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'up_Blend' )
-    cmds.setAttr( upBlend + '.attributesBlender', 0.5 )
-    cmds.connectAttr( frontUpBlend + '.output', upBlend + '.input[0]' )
-    cmds.connectAttr( backUpBlend + '.output', upBlend + '.input[1]' )
-    cmds.connectAttr( upBlend + '.output', nameu_Ct[1] + '.translateX' )
+    result = []
+    if not single_front_pivot  or not single_back_pivot:  # make sure at least one pivot is dual
+        upBlend = cmds.shadingNode( 'blendTwoAttr' , au = True, n = name + 'up_Blend' )
+        cmds.setAttr( upBlend + '.attributesBlender', 0.5 )
+        #
+        if not single_front_pivot:
+            cmds.connectAttr( frontUpBlend + '.output', upBlend + '.input[0]' )
+            result.append( namefl_Ct )
+            result.append( namefr_Ct )
+        else:
+            result.append( namefc_Ct )
+        #
+        if not single_back_pivot:
+            cmds.connectAttr( backUpBlend + '.output', upBlend + '.input[1]' )
+            result.append( namebl_Ct )
+            result.append( namebr_Ct )
+        else:
+            result.append( namebc_Ct )
+        #
+        cmds.connectAttr( upBlend + '.output', nameu_Ct[1] + '.translateX' )
+    else:
+        return [namefc_Ct, namebc_Ct]
 
-    return [namefl_Ct[2], namefr_Ct[2], namebl_Ct[2], namebr_Ct[2]]
+    return result
+    # return [namefl_Ct[2], namefr_Ct[2], namebl_Ct[2], namebr_Ct[2]]
 
 
 def translate_part( name = '', suffix = '', obj = '', objConstrain = True, parent = '', translations = [0, 0, 1], X = 1, shape = 'facetYup_ctrl', color = 'yellow' ):

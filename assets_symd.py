@@ -1,8 +1,10 @@
+import imp
 import os
 
 from atom_face_lib import skn
 import maya.cmds as cmds
 import maya.mel as mel
+import webrImport as web
 import webrImport as web
 
 #
@@ -56,11 +58,10 @@ def mirror_jnts():
     ]
     # jnts - new joints for pivots
     mirrorj = [
-    'front_L_jnt',
     'back_L_jnt',
+    'front_L_jnt',
     'body_L_jnt',
-    'axle_back_L_jnt',
-    'landing_doorA_00_L_jnt'
+    'axle_back_L_jnt'
     ]
     # mirror
     for j in mirrorj:
@@ -77,12 +78,274 @@ def king_air( name = 'vehicle', X = 16 ):
     bodyj = 'body_jnt'
     # [MasterCt[4], MoveCt[4], SteerCt[4]]
     ctrls = vhl.vehicle_master( masterX = X * 10, moveX = X * 10, steerParent = 'landingGear_retract_jnt' )
-    # ctrls = vhl.vehicle_master( masterX = X * 1, moveX = X * 1 )
+    # ctrls = vhl.vehicle_master( masterX = X * 10, moveX = X * 10 )
     cmds.setAttr( '___SKIN_JOINTS.visibility', 1 )
 
-    # [frontl, frontr, backl, backr]
-    bdy = vhl.four_point_pivot( name = 'body', parent = 'move_Grp', center = bodyj, front = 'front_jnt', frontL = 'front_L_jnt', frontR = 'front_R_jnt', back = 'back_jnt', backL = 'back_L_jnt', backR = 'back_R_jnt', up = 'up_jnt', X = X * 2 )
+    # bdy = [frontl, frontr, backl, backr] use to be control[2] is now returning entire structure[0-4]
+    bdy = vhl.four_point_pivot( name = 'body', parent = 'move_Grp', center = bodyj, front = 'wheel_front_bottom_L_jnt', frontL = '', frontR = '', back = 'back_jnt', backL = 'back_L_jnt', backR = 'back_R_jnt', up = 'up_jnt', X = X * 2 )
+    # return
+    '''
+    # FRONT LANDING GEAR
+    # main
+    nm = 'landingGear_front'
+    vhl.rotate_part( name = nm, suffix = '', obj = 'landingGear_retract_jnt', objConstrain = True, parent = bodyj, rotations = [1, 0, 0], X = X * 8, shape = 'facetXup_ctrl', color = 'yellow' )
+    # ctrls  = [MasterCt[4], MoveCt[4], SteerCt[4]]
+    # piston = [name1_Ct, name2_Ct, nameUp1_Ct, nameUp2_Ct]
+    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
+                            aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = 'yellow' )
+    # ( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
+    place.parentSwitch( 'contactLock', pstnCtrls[1][2], pstnCtrls[1][1], pstnCtrls[1][0], pstnCtrls[0][4], bdy[0][4], True, False, False, False, 'lockToPivot', 0.0 )
+    place.breakConnection( pstnCtrls[1][1], 'tx' )
+    place.breakConnection( pstnCtrls[1][1], 'tz' )
+    # return
+    # retract landing gear ik
+    name = 'front_A_retract_arm'
+    CtA = place.Controller2( name, 'landing_arm_00_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( bodyj, CtA[0], mo = True )
+    cmds.pointConstraint( CtA[4], 'landing_arm_00_jnt', mo = True )
+    place.cleanUp( CtA[0], Ctrl = True )
+    #
+    name = 'front_B_retract_arm'
+    CtB = place.Controller2( name, 'landing_arm_02_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( 'landingGear_retract_jnt', CtB[0], mo = True )
+    place.cleanUp( CtB[0], Ctrl = True )
+    #
+    PvCt = app.create_3_joint_pv___FIX( stJnt = 'landing_arm_00_jnt', endJnt = 'landing_arm_02_jnt', prefix = 'front_retract', suffix = '', distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = 'yellow', X = X * 0.5, midJnt = '' )
+    cmds.parentConstraint( 'landingGear_retract_jnt', PvCt[0], mo = True )
+    place.cleanUp( PvCt[0], Ctrl = True )
+    #
+    ik = app.create_ik___FIX( stJnt = 'landing_arm_00_jnt', endJnt = 'landing_arm_02_jnt', pv = PvCt[4], parent = CtB[4], name = 'front_retract', suffix = '', setChannels = True )
+    # landing gear / suspension link node (position from upper suspension, rotation from lower suspension)
+    name = 'front_suspension_steer_link'
+    LinkCt = place.Controller2( name, 'suspension_piston_00_jnt', True, 'facetZup_ctrl', X, 6, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( 'landingGear_retract_jnt', LinkCt[0], mo = True )
+    cmds.orientConstraint( 'suspension_piston_01_jnt', LinkCt[1], mo = True )
+    place.cleanUp( LinkCt[0], Ctrl = True )
+    # steering piston
+    vhl.piston( name = 'steer_piston', suffix = '', obj1 = 'steering_piston_00_jnt', obj2 = 'steering_piston_01_jnt', parent1 = 'suspension_piston_00_jnt', parent2 = LinkCt[4], parentUp1 = 'suspension_piston_00_jnt', parentUp2 = LinkCt[4], aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, -1], up2 = [0, 1, 0], X = X * 0.5, color = 'yellow' )
+    # ik pv
+    # return
+    # suspension ik
+    name = 'front_A_suspension_arm'
+    CtA = place.Controller2( name, 'suspension_arm_00_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( LinkCt[4], CtA[0], mo = True )
+    cmds.pointConstraint( CtA[4], 'suspension_arm_00_jnt', mo = True )
+    place.cleanUp( CtA[0], Ctrl = True )
+    #
+    name = 'front_B_suspension_arm'
+    CtB = place.Controller2( name, 'suspension_arm_02_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( 'suspension_piston_01_jnt', CtB[0], mo = True )
+    place.cleanUp( CtB[0], Ctrl = True )
+    #
+    PvCt = app.create_3_joint_pv___FIX( stJnt = 'suspension_arm_00_jnt', endJnt = 'suspension_arm_02_jnt', prefix = 'front_suspension', suffix = '', distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = 'yellow', X = X * 0.5, midJnt = '' )
+    cmds.parentConstraint( 'suspension_piston_01_jnt', PvCt[0], mo = True )
+    place.cleanUp( PvCt[0], Ctrl = True )
+    #
+    ik = app.create_ik___FIX( stJnt = 'suspension_arm_00_jnt', endJnt = 'suspension_arm_02_jnt', pv = PvCt[4], parent = CtB[4], name = 'front_suspension', suffix = '', setChannels = True )
+    # return
 
+    # wheels
+    # front
+
+    sel = [
+    'axle_front_jnt',
+    'wheel_front_steer_L_jnt',
+    'wheel_front_center_L_jnt',
+    'wheel_front_bottom_L_jnt',
+    'wheel_front_top_L_jnt',
+    'wheel_front_spin_L_jnt'
+    ]
+    # whl   = [steer, ContactCt, CenterCt] # old = [steer, contact[2], center[2], center[1]]
+    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
+    whl = vhl.wheel( master_move_controls = [ctrls[0], 'suspension_piston_01_jnt'], axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
+                     tire_geo = ['tire_front_L_geo'], rim_geo = ['rim_front_L_geo'], caliper_geo = [], name = 'wheel_front', suffix = '', X = X * 0.5, exp = False )
+    # whl   = [steer, ContactCt, CenterCt]
+    # bdy   = [frontl, frontr, backl, backr]
+    place.smartAttrBlend( master = whl[2][2], slave = bdy[0][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = 'bodyUp', blendWeight = 1.0, reverse = False )
+    place.smartAttrBlend( master = whl[2][2], slave = whl[1][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = 'contactDown', blendWeight = 1.0, reverse = True )
+    # return
+    print( 'done wheel' )
+
+    # BACK L LANDING GEAR
+    # main
+    clr = 'blue'
+    suffix = 'L'
+    nm = 'landingGear_back'
+    vhl.rotate_part( name = nm, suffix = suffix, obj = 'landingGear_retract_L_jnt', objConstrain = True, parent = bodyj, rotations = [1, 0, 0], X = X * 8, shape = 'facetXup_ctrl', color = clr )
+    # suspension piston
+    # pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
+    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = 'suspension_piston_00_L_jnt', obj2 = 'suspension_piston_01_L_jnt', parent1 = 'landingGear_retract_L_jnt', parent2 = 'landingGear_retract_L_jnt', parentUp1 = 'landingGear_retract_L_jnt', parentUp2 = 'landingGear_retract_L_jnt',
+                            aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = clr )
+    # ( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
+    # bdy = [frontl, frontr, backl, backr]
+    place.parentSwitch( 'contactLock_' + suffix, pstnCtrls[1][2], pstnCtrls[1][1], pstnCtrls[1][0], pstnCtrls[0][4], bdy[1][4], True, False, False, False, 'lockToPivot', 0.0 )
+    place.breakConnection( pstnCtrls[1][1], 'tx' )
+    place.breakConnection( pstnCtrls[1][1], 'tz' )
+    # retract landing gear ik
+    name = 'back_A_retract_arm' + '_' + suffix
+    CtA = place.Controller2( name, 'landing_arm_00_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( bodyj, CtA[0], mo = True )
+    cmds.pointConstraint( CtA[4], 'landing_arm_00_L_jnt', mo = True )
+    place.cleanUp( CtA[0], Ctrl = True )
+    #
+    name = 'back_B_retract_arm' + '_' + suffix
+    CtB = place.Controller2( name, 'landing_arm_02_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( 'landingGear_retract_L_jnt', CtB[0], mo = True )
+    place.cleanUp( CtB[0], Ctrl = True )
+    #
+    PvCt = app.create_3_joint_pv___FIX( stJnt = 'landing_arm_00_L_jnt', endJnt = 'landing_arm_02_L_jnt', prefix = 'back_retract', suffix = suffix, distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = clr, X = X * 0.5, midJnt = '' )
+    cmds.parentConstraint( 'landingGear_retract_L_jnt', PvCt[0], mo = True )
+    place.cleanUp( PvCt[0], Ctrl = True )
+    #
+    ik = app.create_ik___FIX( stJnt = 'landing_arm_00_L_jnt', endJnt = 'landing_arm_02_L_jnt', pv = PvCt[4], parent = CtB[4], name = 'back_retract', suffix = suffix, setChannels = True )
+
+    # ik pv
+    # suspension ik
+    name = 'back_A_suspension_arm' + '_' + suffix
+    CtA = place.Controller2( name, 'suspension_arm_00_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( 'suspension_piston_00_L_jnt', CtA[0], mo = True )
+    cmds.pointConstraint( CtA[4], 'suspension_arm_00_L_jnt', mo = True )
+    place.cleanUp( CtA[0], Ctrl = True )
+    #
+    name = 'back_B_suspension_arm' + '_' + suffix
+    CtB = place.Controller2( name, 'suspension_arm_02_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( 'suspension_piston_01_L_jnt', CtB[0], mo = True )
+    place.cleanUp( CtB[0], Ctrl = True )
+    #
+    PvCt = app.create_3_joint_pv___FIX( stJnt = 'suspension_arm_00_L_jnt', endJnt = 'suspension_arm_02_L_jnt', prefix = 'back_suspension', suffix = suffix, distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = clr, X = X * 0.5, midJnt = '' )
+    cmds.parentConstraint( 'suspension_piston_01_L_jnt', PvCt[0], mo = True )
+    place.cleanUp( PvCt[0], Ctrl = True )
+    # return
+    #
+    ik = app.create_ik___FIX( stJnt = 'suspension_arm_00_L_jnt', endJnt = 'suspension_arm_02_L_jnt', pv = PvCt[4], parent = CtB[4], name = 'back_suspension', suffix = suffix, setChannels = True )
+
+    # back A
+    sel = [
+    'axle_back_L_jnt',
+    'wheelA_back_steer_L_jnt',
+    'wheelA_back_center_L_jnt',
+    'wheelA_back_bottom_L_jnt',
+    'wheelA_back_top_L_jnt',
+    'wheelA_back_spin_L_jnt'
+    ]
+    # [steer[1], contact[2], center[2], center[1]]
+    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
+    new_ctrls = [ctrls[0], 'suspension_piston_01_L_jnt']
+    whl = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
+                     tire_geo = ['tireA_back_L_geo'], rim_geo = ['rimA_back_L_geo'], caliper_geo = [], name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False )
+    # whl   = [steer, ContactCt, CenterCt]
+    # bdy   = [frontl, frontr, backl, backr]
+    place.smartAttrBlend( master = whl[2][2], slave = bdy[1][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = '', blendWeight = 1.0, reverse = False )
+    place.smartAttrBlend( master = whl[2][2], slave = whl[1][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = '', blendWeight = 1.0, reverse = True )
+    # return
+    # back B
+    sel = [
+    'axle_back_L_jnt',
+    'wheelB_back_steer_L_jnt',
+    'wheelB_back_center_L_jnt',
+    'wheelB_back_bottom_L_jnt',
+    'wheelB_back_top_L_jnt',
+    'wheelB_back_spin_L_jnt'
+    ]
+    # [steer[1], contact[2], center[2], center[1]]
+    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
+    new_ctrls = [ctrls[0], 'suspension_piston_01_L_jnt']
+    whl = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
+                     tire_geo = ['tireB_back_L_geo'], rim_geo = ['rimB_back_L_geo'], caliper_geo = [], name = 'wheelB_back', suffix = suffix, X = X * 0.5, exp = False )
+    place.smartAttrBlend( master = whl[2][2], slave = whl[1][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = '', blendWeight = 1.0, reverse = True )
+
+    # return
+    '''
+    # BACK R LANDING GEAR
+    # main
+    clr = 'red'
+    suffix = 'R'
+    nm = 'landingGear_back'
+    vhl.rotate_part( name = nm, suffix = suffix, obj = 'landingGear_retract_R_jnt', objConstrain = True, parent = bodyj, rotations = [1, 0, 0], X = X * 8, shape = 'facetXup_ctrl', color = clr )
+    # suspension piston
+    # pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
+    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = 'suspension_piston_00_R_jnt', obj2 = 'suspension_piston_01_R_jnt', parent1 = 'landingGear_retract_R_jnt', parent2 = 'landingGear_retract_R_jnt', parentUp1 = 'landingGear_retract_R_jnt', parentUp2 = 'landingGear_retract_R_jnt',
+                            aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = clr )
+    # ( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
+    # bdy = [frontl, frontr, backl, backr]
+    place.parentSwitch( 'contactLock_' + suffix, pstnCtrls[1][2], pstnCtrls[1][1], pstnCtrls[1][0], pstnCtrls[0][4], bdy[2][4], True, False, False, False, 'lockToPivot', 0.0 )
+    place.breakConnection( pstnCtrls[1][1], 'tx' )
+    place.breakConnection( pstnCtrls[1][1], 'tz' )
+    # retract landing gear ik
+    name = 'back_A_retract_arm' + '_' + suffix
+    CtA = place.Controller2( name, 'landing_arm_00_R_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( bodyj, CtA[0], mo = True )
+    cmds.pointConstraint( CtA[4], 'landing_arm_00_R_jnt', mo = True )
+    place.cleanUp( CtA[0], Ctrl = True )
+    #
+    name = 'back_B_retract_arm' + '_' + suffix
+    CtB = place.Controller2( name, 'landing_arm_02_R_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( 'landingGear_retract_R_jnt', CtB[0], mo = True )
+    place.cleanUp( CtB[0], Ctrl = True )
+    #
+    PvCt = app.create_3_joint_pv___FIX( stJnt = 'landing_arm_00_R_jnt', endJnt = 'landing_arm_02_R_jnt', prefix = 'back_retract', suffix = suffix, distance_multi = 1.0, useFlip = True, flipVar = [0, 1, 0], orient = False, color = clr, X = X * 0.5, midJnt = '' )
+    cmds.parentConstraint( 'landingGear_retract_R_jnt', PvCt[0], mo = True )
+    place.cleanUp( PvCt[0], Ctrl = True )
+    #
+    ik = app.create_ik___FIX( stJnt = 'landing_arm_00_R_jnt', endJnt = 'landing_arm_02_R_jnt', pv = PvCt[4], parent = CtB[4], name = 'back_retract', suffix = suffix, setChannels = True )
+
+    # ik pv
+    # suspension ik
+    name = 'back_A_suspension_arm' + '_' + suffix
+    CtA = place.Controller2( name, 'suspension_arm_00_R_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( 'suspension_piston_00_R_jnt', CtA[0], mo = True )
+    cmds.pointConstraint( CtA[4], 'suspension_arm_00_R_jnt', mo = True )
+    place.cleanUp( CtA[0], Ctrl = True )
+    #
+    name = 'back_B_suspension_arm' + '_' + suffix
+    CtB = place.Controller2( name, 'suspension_arm_02_R_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( 'suspension_piston_01_R_jnt', CtB[0], mo = True )
+    place.cleanUp( CtB[0], Ctrl = True )
+    #
+    PvCt = app.create_3_joint_pv___FIX( stJnt = 'suspension_arm_00_R_jnt', endJnt = 'suspension_arm_02_R_jnt', prefix = 'back_suspension', suffix = suffix, distance_multi = 1.0, useFlip = True, flipVar = [0, 1, 0], orient = False, color = clr, X = X * 0.5, midJnt = '' )
+    cmds.parentConstraint( 'suspension_piston_01_R_jnt', PvCt[0], mo = True )
+    place.cleanUp( PvCt[0], Ctrl = True )
+    # return
+    #
+    ik = app.create_ik___FIX( stJnt = 'suspension_arm_00_R_jnt', endJnt = 'suspension_arm_02_R_jnt', pv = PvCt[4], parent = CtB[4], name = 'back_suspension', suffix = suffix, setChannels = True )
+
+    # back A
+    sel = [
+    'axle_back_R_jnt',
+    'wheelA_back_steer_R_jnt',
+    'wheelA_back_center_R_jnt',
+    'wheelA_back_bottom_R_jnt',
+    'wheelA_back_top_R_jnt',
+    'wheelA_back_spin_R_jnt'
+    ]
+    # [steer[1], contact[2], center[2], center[1]]
+    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
+    new_ctrls = [ctrls[0], 'suspension_piston_01_R_jnt']
+    whl = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
+                     tire_geo = ['tireA_back_R_geo'], rim_geo = ['rimA_back_R_geo'], caliper_geo = [], name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False )
+    # whl   = [steer, ContactCt, CenterCt]
+    # bdy   = [frontl, frontr, backl, backr]
+    place.smartAttrBlend( master = whl[2][2], slave = bdy[2][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = '', blendWeight = 1.0, reverse = False )
+    place.smartAttrBlend( master = whl[2][2], slave = whl[2][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = '', blendWeight = 1.0, reverse = True )
+    # return
+    # back B
+    sel = [
+    'axle_back_R_jnt',
+    'wheelB_back_steer_R_jnt',
+    'wheelB_back_center_R_jnt',
+    'wheelB_back_bottom_R_jnt',
+    'wheelB_back_top_R_jnt',
+    'wheelB_back_spin_R_jnt'
+    ]
+    # [steer[1], contact[2], center[2], center[1]]
+    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
+    new_ctrls = [ctrls[0], 'suspension_piston_01_R_jnt']
+    whl = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
+                     tire_geo = ['tireB_back_R_geo'], rim_geo = ['rimB_back_R_geo'], caliper_geo = [], name = 'wheelB_back', suffix = suffix, X = X * 0.5, exp = False )
+    place.smartAttrBlend( master = whl[2][2], slave = whl[1][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = whl[2][2], blendAttrString = '', blendWeight = 1.0, reverse = True )
+
+    return
+    # wing things
     j = 'rudder_00_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
@@ -173,187 +436,11 @@ def king_air( name = 'vehicle', X = 16 ):
     vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'body_R_jnt', rotations = [0, 0, 1], X = X * 5, shape = 'shldrR_ctrl', color = clr )
     # return
 
-    # FRONT LANDING GEAR
-    # main
-    nm = 'landingGear_front'
-    vhl.rotate_part( name = nm, suffix = '', obj = 'landingGear_retract_jnt', objConstrain = True, parent = bodyj, rotations = [1, 0, 0], X = X * 8, shape = 'facetXup_ctrl', color = 'yellow' )
-    # suspension piston - ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2], aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, -1], up2 = [0, 1, 0], X = X * 7, color = 'yellow' )
-    # return
-    # retract landing gear ik
-    name = 'front_A_retract_arm'
-    CtA = place.Controller2( name, 'landing_arm_00_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( bodyj, CtA[0], mo = True )
-    cmds.pointConstraint( CtA[4], 'landing_arm_00_jnt', mo = True )
-    place.cleanUp( CtA[0], Ctrl = True )
-    #
-    name = 'front_B_retract_arm'
-    CtB = place.Controller2( name, 'landing_arm_02_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( 'landingGear_retract_jnt', CtB[0], mo = True )
-    place.cleanUp( CtB[0], Ctrl = True )
-    #
-    PvCt = app.create_3_joint_pv___FIX( stJnt = 'landing_arm_00_jnt', endJnt = 'landing_arm_02_jnt', prefix = 'front_retract', suffix = '', distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = 'yellow', X = X * 0.5, midJnt = '' )
-    cmds.parentConstraint( 'landingGear_retract_jnt', PvCt[0], mo = True )
-    place.cleanUp( PvCt[0], Ctrl = True )
-    #
-    ik = app.create_ik___FIX( stJnt = 'landing_arm_00_jnt', endJnt = 'landing_arm_02_jnt', pv = PvCt[4], parent = CtB[4], name = 'front_retract', suffix = '', setChannels = True )
-    # landing gear / suspension link node (position from upper suspension, rotation from lower suspension)
-    name = 'front_suspension_steer_link'
-    LinkCt = place.Controller2( name, 'suspension_piston_00_jnt', True, 'facetZup_ctrl', X, 6, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( 'landingGear_retract_jnt', LinkCt[0], mo = True )
-    cmds.orientConstraint( 'suspension_piston_01_jnt', LinkCt[1], mo = True )
-    place.cleanUp( LinkCt[0], Ctrl = True )
-    # steering piston
-    vhl.piston( name = 'steer_piston', suffix = '', obj1 = 'steering_piston_00_jnt', obj2 = 'steering_piston_01_jnt', parent1 = 'suspension_piston_00_jnt', parent2 = LinkCt[4], parentUp1 = 'suspension_piston_00_jnt', parentUp2 = LinkCt[4], aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, -1], up2 = [0, 1, 0], X = X * 0.5, color = 'yellow' )
-    # ik pv
-    # return
-    # suspension ik
-    name = 'front_A_suspension_arm'
-    CtA = place.Controller2( name, 'suspension_arm_00_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( LinkCt[4], CtA[0], mo = True )
-    cmds.pointConstraint( CtA[4], 'suspension_arm_00_jnt', mo = True )
-    place.cleanUp( CtA[0], Ctrl = True )
-    #
-    name = 'front_B_suspension_arm'
-    CtB = place.Controller2( name, 'suspension_arm_02_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( 'suspension_piston_01_jnt', CtB[0], mo = True )
-    place.cleanUp( CtB[0], Ctrl = True )
-    #
-    PvCt = app.create_3_joint_pv___FIX( stJnt = 'suspension_arm_00_jnt', endJnt = 'suspension_arm_02_jnt', prefix = 'front_suspension', suffix = '', distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = 'yellow', X = X * 0.5, midJnt = '' )
-    cmds.parentConstraint( 'suspension_piston_01_jnt', PvCt[0], mo = True )
-    place.cleanUp( PvCt[0], Ctrl = True )
-    #
-    ik = app.create_ik___FIX( stJnt = 'suspension_arm_00_jnt', endJnt = 'suspension_arm_02_jnt', pv = PvCt[4], parent = CtB[4], name = 'front_suspension', suffix = '', setChannels = True )
-    # return
-
-    # wheels
-    # front
-
-    sel = [
-    'axle_front_jnt',
-    'wheel_front_steer_L_jnt',
-    'wheel_front_center_L_jnt',
-    'wheel_front_bottom_L_jnt',
-    'wheel_front_top_L_jnt',
-    'wheel_front_spin_L_jnt'
-    ]
-    # whl   = [steer[1], contact[2], center[2], center[1]]
-    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    whl = vhl.wheel( master_move_controls = [ctrls[0], 'suspension_piston_01_jnt'], axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5], tire_geo = ['tire_front_L_geo'], rim_geo = ['rim_front_L_geo'], caliper_geo = [], name = 'wheel_front', suffix = '', X = X * 0.5, exp = False )
-    # return
-    print( 'done wheel' )
-    # cmds.parentConstraint( ctrls[2], whl[0], mo = True )  # steering
-    cmds.orientConstraint( ctrls[2], whl[0], mo = True )  # steering, no aim constraint
-    cmds.orientConstraint( bodyj, whl[3], skip = ( 'x', 'y' ) )  # tire tilt with body, will likely remove
-    # pivots
-    addfl = cmds.createNode( 'addDoubleLinear', name = 'body' + '_add_fl_ty' )
-    cmds.connectAttr( pstnCtrls[1][2] + '.tz', addfl + '.input1' )
-    cmds.connectAttr( whl[2] + '.ty', addfl + '.input2' )
-    # [frontl, frontr, backl, backr]
-    cmds.connectAttr( addfl + '.output', bdy[0] + '.ty' )
-    cmds.connectAttr( addfl + '.output', bdy[1] + '.ty' )  # single front wheel, connecting right side as well
-
-    return
-
-    # BACK L LANDING GEAR
-    # main
-    clr = 'blue'
-    suffix = 'L'
-    nm = 'landingGear_back'
-    vhl.rotate_part( name = nm, suffix = 'L', obj = 'landingGear_retract_L_jnt', objConstrain = True, parent = bodyj, rotations = [1, 0, 0], X = X * 8, shape = 'facetXup_ctrl', color = clr )
-    # ik pv
-    # suspension ik
-    name = 'back_A_suspension_arm' + '_' + suffix
-    CtA = place.Controller2( name, 'suspension_arm_00_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( 'wheelA_back_steer_L_jnt', CtA[0], mo = True )
-    cmds.pointConstraint( CtA[4], 'suspension_arm_00_L_jnt', mo = True )
-    place.cleanUp( CtA[0], Ctrl = True )
-    #
-    name = 'back_B_suspension_arm' + '_' + suffix
-    CtB = place.Controller2( name, 'suspension_arm_02_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( 'wheelA_back_center_L_jnt', CtB[0], mo = True )
-    place.cleanUp( CtB[0], Ctrl = True )
-    #
-    PvCt = app.create_3_joint_pv___FIX( stJnt = 'suspension_arm_00_L_jnt', endJnt = 'suspension_arm_02_L_jnt', prefix = 'back_suspension', suffix = suffix, distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = clr, X = X * 0.5, midJnt = '' )
-    cmds.parentConstraint( 'wheelA_back_steer_L_jnt', PvCt[0], mo = True )
-    place.cleanUp( PvCt[0], Ctrl = True )
-    # return
-    #
-    ik = app.create_ik___FIX( stJnt = 'suspension_arm_00_L_jnt', endJnt = 'suspension_arm_02_L_jnt', pv = PvCt[4], parent = CtB[4], name = 'back_suspension', suffix = suffix, setChannels = True )
-    # suspension piston
-    vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = 'suspension_piston_00_L_jnt', obj2 = 'suspension_piston_01_L_jnt', parent1 = 'landingGear_retract_L_jnt', parent2 = 'wheelA_back_steer_L_jnt', aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, -1], up2 = [0, 1, 0], X = X * 1, color = clr )
-    # retract landing gear ik
-    name = 'back_A_retract_arm' + '_' + suffix
-    CtA = place.Controller2( name, 'landing_arm_00_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( bodyj, CtA[0], mo = True )
-    cmds.pointConstraint( CtA[4], 'landing_arm_00_L_jnt', mo = True )
-    place.cleanUp( CtA[0], Ctrl = True )
-    #
-    name = 'back_B_retract_arm' + '_' + suffix
-    CtB = place.Controller2( name, 'landing_arm_02_L_jnt', False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( 'landingGear_retract_L_jnt', CtB[0], mo = True )
-    place.cleanUp( CtB[0], Ctrl = True )
-    #
-    PvCt = app.create_3_joint_pv___FIX( stJnt = 'landing_arm_00_L_jnt', endJnt = 'landing_arm_02_L_jnt', prefix = 'back_retract', suffix = suffix, distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = False, color = clr, X = X * 0.5, midJnt = '' )
-    cmds.parentConstraint( 'landingGear_retract_L_jnt', PvCt[0], mo = True )
-    place.cleanUp( PvCt[0], Ctrl = True )
-    #
-    ik = app.create_ik___FIX( stJnt = 'landing_arm_00_L_jnt', endJnt = 'landing_arm_02_L_jnt', pv = PvCt[4], parent = CtB[4], name = 'back_retract', suffix = suffix, setChannels = True )
-    return
-    '''
-    # back A
-    sel = [
-    'axle_back_L_jnt',
-    'wheelA_back_steer_L_jnt',
-    'wheelA_back_center_L_jnt',
-    'wheelA_back_bottom_L_jnt',
-    'wheelA_back_top_L_jnt',
-    'wheelA_back_spin_L_jnt'
-    ]
-    # [steer[1], contact[2], center[2], center[1]]
-    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    new_ctrls = [ctrls[0], 'landingGear_retract_L_jnt', ctrls[2]]
-    whl = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5], tire_geo = ['tireA_back_L_geo'], rim_geo = ['rimA_back_L_geo'], caliper_geo = [], name = 'wheelA_back', suffix = suffix, X = X * 0.5 )
-    cmds.orientConstraint( bodyj, whl[3], skip = ( 'x', 'y' ) )
-    # body pivots connection from wheel contact
-    addfl = cmds.createNode( 'addDoubleLinear', name = 'body' + '_add_bl_ty' )
-    cmds.connectAttr( whl[1] + '.ty', addfl + '.input1' )
-    cmds.connectAttr( whl[2] + '.ty', addfl + '.input2' )
-    cmds.connectAttr( addfl + '.output', bdy[2] + '.ty' )
-    # back B
-    sel = [
-    'axle_back_L_jnt',
-    'wheelB_back_steer_L_jnt',
-    'wheelB_back_center_L_jnt',
-    'wheelB_back_bottom_L_jnt',
-    'wheelB_back_top_L_jnt',
-    'wheelB_back_spin_L_jnt'
-    ]
-    # [steer[1], contact[2], center[2], center[1]]
-    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    new_ctrls = [ctrls[0], 'landingGear_retract_L_jnt', ctrls[2]]
-    whl = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5], tire_geo = ['tireB_back_L_geo'], rim_geo = ['rimB_back_L_geo'], caliper_geo = [], name = 'wheelB_back', suffix = suffix, X = X * 0.5 )
-    cmds.orientConstraint( bodyj, whl[3], skip = ( 'x', 'y' ) )
-    '''
-    return
-
-    #
-    sel = [
-    'axle_back_jnt',
-    'wheel_back_steer_R_jnt',
-    'wheel_back_center_R_jnt',
-    'wheel_back_bottom_R_jnt',
-    'wheel_back_top_R_jnt',
-    'wheel_back_spin_R_jnt'
-    ]
-    # [steer[1], contact[2], center[2], center[1]]
-    whl = vhl.wheel( master_move_controls = ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5], tire_geo = ['tire_back_R_geo'], rim_geo = ['rim_back_R_geo'], caliper_geo = [], name = 'wheel_back', suffix = 'R', X = X * 1.0 )
-    cmds.orientConstraint( bodyj, whl[3], skip = ( 'x', 'y' ) )
-    # pivots
-    addfl = cmds.createNode( 'addDoubleLinear', name = name + '_add_br_ty' )
-    cmds.connectAttr( whl[1] + '.ty', addfl + '.input1' )
-    cmds.connectAttr( whl[2] + '.ty', addfl + '.input2' )
-    cmds.connectAttr( addfl + '.output', bdy[3] + '.ty' )
-
-    # bug, contact group in wheels dont update
-    cmds.dgdirty( allPlugs = True )
+#
+#
+'''
+imp.reload( web )
+symd = web.mod( "assets_symd" )
+symd.king_air()
+'''
+#

@@ -892,7 +892,7 @@ def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimC
     return pvCtrl
 
 
-def create_3_joint_pv___FIX( stJnt = '', endJnt = '', prefix = '', suffix = '', distance_multi = 1.0, useFlip = True, flipVar = [0, 0, 0], orient = True, color = 'yellow', X = 1, midJnt = '' ):
+def create_3_joint_pv___FIX( stJnt = '', endJnt = '', prefix = '', suffix = '', distance_offset = 0.0, useFlip = True, flipVar = [0, 0, 0], orient = True, color = 'yellow', X = 1, midJnt = '', posYZ_direction = 1 ):
     '''
     REMOVNG UI DEPENDANCY
     stJnt HAS TO BE ORIENTED PROPERLY ALIGNED TO THE TRIANGLE, OBJECTS GET PARENT TO IT AND ASSUME PROPER ORIENTATION !!!!
@@ -917,20 +917,45 @@ def create_3_joint_pv___FIX( stJnt = '', endJnt = '', prefix = '', suffix = '', 
     X               = 1
     midJnt          = '' 
 
+    # making changes
+    assume:
+    x = always rotation
+    y = always up
+    z = always points down chain
+    add array for flipping variables
+    rotateX direction    = 1 or -1
+    translateZ direction = 1 or -1
+    pv translate direction = pos or neg
+    # 
     '''
+    # inputs required
+    flipVar = flipVar  # [1, 0, 1]
+    flip = None  # [1, 0, 1] ==> [-1, 1, -1]
+    rotList = None  #               [-A ,0 ,0]
+    aimList = None  #               [0, 0, -d]
+    flipRot = None  # [1,0,0]
+    flipIt = None  #        [-1, 1, 1]
+    upList = None
+
+    #
     rotControl = 'atom_qls_limbRot_radioButtonGrp'
     aimControl = 'atom_qls_limbAim_radioButtonGrp'
     upControl = 'atom_qls_limbUp_radioButtonGrp'
     # make a copy of flipVar so the original varaible doesnt get changed
+    #
     # X = cmds.floatField( 'atom_qrig_conScale', query = True, value = True )
-    flip = place.convertFlipValue( flipVar )  # converts any value of '1' to '-1'
+    #
+    # flipVar = [0, 0, 0] # usage: regular, left side, tz points down chain, y is up vector, pv points forward or backward
+    # flipVar = [0, 1, 0] # usage: mirrored from left to right, negative tz points down chain, negative y is up vector
+    # converts any value of '0' to '1' and '1' to '-1' ie. [0, 1, 0] ==> [1, -1, 1]
+    flip = place.convertFlipValue( flipVar )  # used to be mapped to ui: 'atom_qls_flip_checkBoxGrp'
 
     #        A
     #       /| b is the length from A to C.
     #     c/ | GIVEN TRIANGLE, SOLVE BELOW
     #     / _| D is the right angle, need to solve point_D (position)
-    #  B /_|_| d is the length from A to D. (not half of b), solve d
-    #    \   | e is the length from D to B, solve e
+    #  B /_|_| d is the length from A to D. (not half of b), solve d (object space translateZ move)
+    #    \   | e is the length from D to B, solve e (object space translateY move)
     #     \  |
     #     a\ |
     #       \|
@@ -943,10 +968,15 @@ def create_3_joint_pv___FIX( stJnt = '', endJnt = '', prefix = '', suffix = '', 
     # B = mid joint
     # C = end joint
     #
-    # algo creates loc at point_A (aimed at B, y up), rotates using angle A (should be at point_D), moves d distance (should be at point_D), move e distance (should be at point_B)
-
+    # algo creates loc at point_A (aimed at B, y up), rotates using angle A (should point at point_D), moves d distance (should be at point_D), move e distance (should be at point_B)
+    #
     if not midJnt:
         midJnt = joint.jointTravers( stJnt, 1 )
+    # assume joint is mirrored if mid joint has negative tz value
+    posYZ_direction = 1
+    if cmds.getAttr( midJnt + '.tz' ) < 0:
+        posYZ_direction = -1
+
     pvGuideJnt = midJnt
     # print( 'joints', stJnt, midJnt, endJnt )
 
@@ -972,80 +1002,94 @@ def create_3_joint_pv___FIX( stJnt = '', endJnt = '', prefix = '', suffix = '', 
     cos_a = ( math.pow( c, 2 ) + math.pow( b, 2 ) - math.pow( a, 2 ) ) / ( 2 * b * c )  # KEY
     # print( 'A radian', cos_a )
     # convert cos_a to degrees from radians
-    A = flip[0] * ( math.degrees( math.acos( cos_a ) ) )
+    # A = flip[0] * ( math.degrees( math.acos( cos_a ) ) )  # assumes X
+    A = ( math.degrees( math.acos( cos_a ) ) )  # assumes X trying correction
     print( 'angle A', A )
 
     # get the length to the right angle which is d
-    d = flip[1] * ( c * cos_a )  # KEY
+    # d = flip[2] * ( c * cos_a )  # assumes Z # KEY
+    d = posYZ_direction * ( c * cos_a )  # assumes Z # KEY
     print( 'length d', d )
 
     # create the tmp grps
     tmpGrp = cmds.group( n = 'tmpPosGrp', em = True, world = True )
     cmds.xform( tmpGrp, ws = True, t = point_A )
     # temp start
-    place.null2( 'step_1', tmpGrp, orient = True )
+    place.null2( prefix + '____step_1_' + suffix, tmpGrp, orient = True )
     # temp end
 
     cmds.parent( tmpGrp, stJnt )
     cmds.makeIdentity( tmpGrp, apply = True, t = True, r = True, s = True, n = False )
     # return
 
-    rotList = ui.createListForTransform( rotControl, A )
+    rotList = ui.createListForTransform( rotControl, A )  # based off ui, function creates 3 value list. selected axis in ui receives a value, the rest are 0   ie. 'Rotate Axis X:' =  [A,0,0] should always be X
+    rotList = [A, 0, 0]
     print( 'rotList', rotList, rotControl, A )
     # return
-    aimList = ui.createListForTransform( aimControl, d )
+    aimList = ui.createListForTransform( aimControl, d )  # based off ui, function creates 3 value list. selected axis in ui receives a value, the rest are 0   ie. 'Aim Axis X:' =  [0,0,d] should always be Z
+    aimList = [0, 0, d]
     print( 'aimList', aimList, aimControl, d )
     # return
 
-    # test if the trianlge is pointing forward or back using the midJnt
-    rotAxis = ui.convertAxisNum( cmds.radioButtonGrp( rotControl, query = True, sl = True ) )
-    flipRot = ui.getCheckBoxSelectionAsList( 'atom_qls_pvFlip_checkBoxGrp' )
+    # test if the triangle is pointing forward or back using the midJnt
+    # rotAxis = ui.convertAxisNum( cmds.radioButtonGrp( rotControl, query = True, sl = True ) )  # DOESNT LOOK USED # convert selected radio button (rotControl group) from number to axis ie. 1=X, 2=Y, 3=Z
+    flipRot = ui.getCheckBoxSelectionAsList( 'atom_qls_pvFlip_checkBoxGrp' )  # returns list [False,False,False], selected axis in ui are returned as 1s ie. [True,False,False]
+    print( flipRot )
     flipIt = [1, 1, 1]
     if useFlip:
         for i in range( 0, 3, 1 ):
-            if flipRot[i] == 1:
+            if flipRot[i] == 1:  # index returns True / False
                 flipIt[i] = -1
 
+    # strip suffix string, assuming its the last 2 letters in string
     if midJnt[len( midJnt ) - 2:] == '_L' or midJnt[len( midJnt ) - 2:] == '_R':
         midJnt = midJnt[:-2]
 
     tmpLoc = place.loc( 'tmpLoc' )
     # temp start
-    place.null2( 'step_2', tmpLoc, orient = True )
+    place.null2( prefix + '____step_2_' + suffix, tmpLoc, orient = True )
     # temp end
 
     # place the locator at the first selection
     cmds.xform( tmpLoc, ws = True, t = point_A )
     # temp start
-    place.null2( 'step_3', tmpLoc, orient = True )
+    place.null2( prefix + '____step_3_' + suffix, tmpLoc, orient = True )
     # temp end
     cmds.parent( tmpLoc, tmpGrp )
     cmds.makeIdentity( tmpLoc, apply = True, t = True, r = True, s = True, n = False )
     cmds.xform( tmpGrp, os = True, ro = [rotList[0] * flipIt[0], rotList[1] * flipIt[1], rotList[2] * flipIt[2]] )
+    cmds.xform( tmpGrp, os = True, ro = [rotList[0], rotList[1], rotList[2]] )
     # temp start
-    place.null2( 'step_4', tmpGrp, orient = True )
+    place.null2( prefix + '____step_4_' + suffix, tmpGrp, orient = True )
     # temp end
     cmds.xform( tmpGrp, os = True, t = [aimList[0], aimList[1], aimList[2]] )
     point_D = cmds.xform( tmpGrp, query = True, ws = True, rp = True )
     e = place.distance2Pts( point_D, point_B )
     # temp start
-    place.null2( 'step_5', tmpGrp, orient = True )
+    place.null2( prefix + '____step_5_' + suffix, tmpGrp, orient = True )
     # temp end
 
     # get the distance from point_B to the tmp_pv
     pv_pos = cmds.xform( tmpLoc, query = True, ws = True, t = True )
     # temp start
-    place.null2( 'step_6', tmpLoc, orient = True )
+    place.null2( prefix + '____step_6_' + suffix, tmpLoc, orient = True )
     # temp end
     # get the distance from d to b, then add the distance from  a to b
     # a to b is also multiplied by the disFactor incase the user wants control
     # over the total distance
 
-    upList = ui.createListForTransform( upControl, ( e * 2 ) + distance_multi )
-    print( upControl, '______________________up______________________________', upList, e, distance_multi )
+    upList = ui.createListForTransform( upControl, ( e * 2 * posYZ_direction ) + distance_offset )
+    print( upControl, '______________________up______________________________', upList, e, distance_offset )
     cmds.xform( tmpLoc, os = True, t = upList )
     # temp start
-    place.null2( 'step_7', tmpLoc, orient = True )
+    place.null2( prefix + '____step_7__' + suffix, tmpLoc, orient = True )
+    print( 'flipVar:  ', flipVar )
+    print( 'flip:     ', flip )
+    print( 'rotList:  ', rotList )
+    print( 'aimList:  ', aimList )
+    print( 'flipRot:  ', flipRot )
+    print( 'flipIt:   ', flipIt )
+    print( 'upList:   ', upList )
     # temp end
     cmds.parent( tmpLoc, w = True )
     # cmds.makeIdentity(tmpLoc, apply=True, t=True, r=True,s=True,n=False)

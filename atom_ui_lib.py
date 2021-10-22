@@ -294,6 +294,7 @@ def createListForTransform( control = '', value = 0.0 ):
 
     for i in range( 0, len( valList ), 1 ):
         valList[i] = valList[i] * axisList[i]
+    print( 'input: ', value, 'output: ', valList )
     return valList
 
 
@@ -302,7 +303,7 @@ def getCheckBoxSelectionAsList( control ):
     Name        :getCheckBoxSelectionAsList
     Arguements  :<control>: checkBoxGro
     Description :Queries the checkBoxGrp for which buttons are on returns a 3 element array
-    #            :0 is not selected, 1 is selected
+    #            :False is not selected, True is selected
     Notes       :For some reason maya doesn't want to return this, all though it seems to be
     #             available in the docs
     '''
@@ -310,6 +311,7 @@ def getCheckBoxSelectionAsList( control ):
     checked.append( cmds.checkBoxGrp( control, query = True, v1 = True ) )
     checked.append( cmds.checkBoxGrp( control, query = True, v2 = True ) )
     checked.append( cmds.checkBoxGrp( control, query = True, v3 = True ) )
+    print( checked )
 
     return checked
 
