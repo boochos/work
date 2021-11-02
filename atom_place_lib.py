@@ -36,20 +36,20 @@ def clstrOnCV( curve, clstrSuffix ):
 # places curve on points derived from selection
 
 
-def curve( name, points, d = 2 ):
+def curve( name = '', points = [], d = 2 ):
     '''\n
     name = name...
     points = list of objects from which xfrom can be derived
     '''
     pos = []
-    if len( points ) > 2:
+    if len( points ) >= 2:
         for item in points:
             x = cmds.xform( item, q = True, t = True, ws = True )
             pos.append( x )
         curve = cmds.curve( p = pos, name = ( name ), d = d )
         return curve
     else:
-        mel.eval( 'warning \"' + '////... select 3 objects ...////' + '\";' )
+        mel.eval( 'warning \"' + '////... provide at least 3 points ...////' + '\";' )
         return None
 
 # place joints on positions derived from selection
@@ -276,7 +276,7 @@ def null2( nllSuffix, obj, orient = True ):
 
 
 def colorDict():
-    colors = {'darkRed': 4, 'blue': 6, 'brown': 10, 'red': 13, 'yellow': 17,
+    colors = {'darkRed': 4, 'blue': 6, 'brown': 10, 'hotPink': 9, 'red': 13, 'yellow': 17,
               'lightBlue': 18, 'pink': 20, 'lightYellow': 22, 'green': 23,
               'lightBrown': 24, 'purple': 30, 'burgundy': 31}
     return colors
@@ -727,6 +727,35 @@ def distance2Pts( p1, p2 ):
         from math import sqrt
         distance = sqrt( distance )
         return distance
+    else:
+        return None
+
+
+def positionBetween2Pts( p1, p2, position = 0.5 ):
+    '''
+    p1       = [0,0,0]
+    p2       = [0,0,0]
+    position = 0.0 - 1.0
+    '''
+    error = 0
+    if len( p1 ) != 3:
+        OpenMaya.MGlobal.displayError( 'First argument list needs to have three elements...' )
+        error = 1
+    if len( p2 ) != 3:
+        OpenMaya.MGlobal.displayError( 'Second argument list needs to have three elements...' )
+        error = 1
+
+    if error != 1:
+        d = [0, 0, 0]  # distance
+        d[0] = p2[0] - p1[0]
+        d[1] = p2[1] - p1[1]
+        d[2] = p2[2] - p1[2]
+        #
+        p3 = [0, 0, 0]  # new position
+        p3[0] = p1[0] + ( d[0] * position )
+        p3[1] = p1[1] + ( d[1] * position )
+        p3[2] = p1[2] + ( d[2] * position )
+        return p3
     else:
         return None
 
@@ -1398,6 +1427,17 @@ def scaleUnlock( obj, sx = True, sy = True, sz = True ):
         i = i + 1
 
 
+def scaleLock( obj, lock = False ):
+    '''
+    toggle state of scale
+    '''
+    tString = ['.sx', '.sy', '.sz']
+    for item in tString:
+        cmds.setAttr( obj + item, lock = lock )
+        cmds.setAttr( obj + item, k = not lock )
+        # cmds.setAttr( obj + item, cb = not lock )
+
+
 def translationLock( obj, lock = False ):
     '''
     toggle state of translation
@@ -1409,7 +1449,7 @@ def translationLock( obj, lock = False ):
         # cmds.setAttr( obj + item, cb = not lock )
 
 
-def translationX( obj, lock = False ):
+def translationXLock( obj, lock = False ):
     '''
     toggle state of rotation
     '''
@@ -1419,7 +1459,7 @@ def translationX( obj, lock = False ):
     # cmds.setAttr( obj + item, cb = not lock )
 
 
-def translationY( obj, lock = False ):
+def translationYLock( obj, lock = False ):
     '''
     toggle state of rotation
     '''
@@ -1431,7 +1471,7 @@ def translationY( obj, lock = False ):
     # cmds.setAttr( obj + item, cb = not lock )
 
 
-def translationZ( obj, lock = False ):
+def translationZLock( obj, lock = False ):
     '''
     toggle state of rotation
     '''
@@ -1452,7 +1492,7 @@ def rotationLock( obj, lock = False ):
         # cmds.setAttr( obj + item, cb = not lock )
 
 
-def rotationX( obj, lock = False ):
+def rotationXLock( obj, lock = False ):
     '''
     toggle state of rotation
     '''
@@ -1462,7 +1502,7 @@ def rotationX( obj, lock = False ):
     # cmds.setAttr( obj + item, cb = not lock )
 
 
-def rotationY( obj, lock = False ):
+def rotationYLock( obj, lock = False ):
     '''
     toggle state of rotation
     '''
@@ -1472,7 +1512,7 @@ def rotationY( obj, lock = False ):
     # cmds.setAttr( obj + item, cb = not lock )
 
 
-def rotationZ( obj, lock = False ):
+def rotationZLock( obj, lock = False ):
     '''
     toggle state of rotation
     '''
@@ -1879,12 +1919,12 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
         # rev = cmds.shadingNode( 'reverse', name = master + '_' + name + '_rvrs', asUtility = True )
         # cmds.connectAttr( master + '.' + masterAttr, rev + '.inputX' )
         # mltp node instead
-        rev = cmds.shadingNode( 'multDoubleLinear', name = master + '_' + name + '_mltpNeg', asUtility = True )
+        rev = cmds.shadingNode( 'multDoubleLinear', name = master + '___' + slave + '___' + name + '_mltpNeg', asUtility = True )
         cmds.setAttr( rev + '.input2', -1 )
         cmds.connectAttr( master + '.' + masterAttr, rev + '.input1' )
 
     # weight node
-    blendN = cmds.shadingNode( 'multDoubleLinear', name = master + '_' + name + '_mltp', asUtility = True )
+    blendN = cmds.shadingNode( 'multDoubleLinear', name = master + '___' + slave + '___' + name + '_mltp', asUtility = True )
 
     # connect master/rev attr to weight node
     if reverse:
@@ -1897,6 +1937,8 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
     if blendAttrObj:
         optEnum( blendAttrObj, 'additive' )
         hijackAttrs( blendN, blendAttrObj, 'input2', blendAttrString + 'Weight', set = True, default = blendWeight )
+        cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, min = 0 )
+        cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, max = 1 )
     else:
         cmds.setAttr( blendN + '.input2', blendWeight )
 
@@ -1907,7 +1949,7 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
     if con:
         # add addition node
         existingMaster = con[0]
-        addDL = cmds.shadingNode( 'addDoubleLinear', name = master + '_' + name + '_add', asUtility = True )
+        addDL = cmds.shadingNode( 'addDoubleLinear', name = master + '___' + slave + '___' + name + '_add', asUtility = True )
         cmds.connectAttr( existingMaster, addDL + '.input1' )
         cmds.connectAttr( blendN + '.output', addDL + '.input2' )
         # connect out blend

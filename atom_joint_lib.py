@@ -162,14 +162,14 @@ def root( joint ):
                 parent = newParent
 
 
-def mirror( jnt = '' ):
+def mirror( jnt = '', mirrorBehavior = True ):
     '''
     
     mirrorJoint -mirrorYZ -mirrorBehavior -searchReplace "_L" "_R";
     '''
     sel = cmds.ls( sl = True )
     cmds.select( jnt )
-    cmds.mirrorJoint( mirrorYZ = True, mirrorBehavior = True, searchReplace = ( '_L', '_R' ) )
+    cmds.mirrorJoint( mirrorYZ = True, mirrorBehavior = mirrorBehavior, searchReplace = ( '_L', '_R' ) )
     cmds.select( sel )
 
 
