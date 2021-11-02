@@ -122,7 +122,7 @@ def ratFrameLayout( *args ):
     cmds.separator()
     atom_rrig_earBuild_checkBox = cmds.checkBox( 'atom_rat_earCheck', l = 'Build Ear Rig', al = 'left', v = True )
     cmds.separator()
-    # 'import webrImport as web\natm = web.mod("atom_raptor_lib")\natm.preBuild()'
+    # 'import webrImport as web\natm = web.mod("asset_raptor_lib")\natm.preBuild()'
     atom_rrig_prerigBut = cmds.button( l = 'Build Rat Pre-Rig', c = 'import webrImport as web\natm = web.mod("atom_rat_lib")\natm.preBuild()' )
     atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Appendages', c = 'import webrImport as web\natm = web.mod("atom_rat_lib")\natm.buildAppendages()' )
     atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Splines', c = 'import webrImport as web\natm = web.mod("atom_rat_lib")\natm.buildSplines()' )
@@ -193,8 +193,8 @@ def raptorFrameLayout( *args ):
     atom_rrig_columnLayout = cmds.columnLayout( 'atom_Raptor_main_columnLayout', adj = True, rs = 5 )
     cmds.separator()
 
-    atom_rrig_prerigBut = cmds.button( l = 'Build Raptor Pre-Rig', c = 'import webrImport as web\natm = web.mod("atom_raptor_lib")\natm.preBuild()' )
-    atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Splines', c = 'import webrImport as web\natm = web.mod("atom_raptor_lib")\natm.buildSplines()' )
+    atom_rrig_prerigBut = cmds.button( l = 'Build Raptor Pre-Rig', c = 'import webrImport as web\natm = web.mod("asset_raptor_lib")\natm.preBuild()' )
+    atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Splines', c = 'import webrImport as web\natm = web.mod("asset_raptor_lib")\natm.buildSplines()' )
 
     cmds.setParent( '..' )
     cmds.setParent( '..' )
@@ -210,8 +210,8 @@ def mosFrameLayout( *args ):
     atom_rrig_columnLayout = cmds.columnLayout( 'atom_mos_main_columnLayout', adj = True, rs = 5 )
     cmds.separator()
 
-    atom_rrig_prerigBut = cmds.button( l = 'Build Mosasaurus Pre-Rig', c = 'import webrImport as web\natm = web.mod("atom_mosasaurus_lib")\natm.preBuild()' )
-    atom_rrig_buildSpineBut = cmds.button( l = 'Build Mosasaurus Splines', c = 'import webrImport as web\natm = web.mod("atom_mosasaurus_lib")\natm.buildSplines()' )
+    atom_rrig_prerigBut = cmds.button( l = 'Build Mosasaurus Pre-Rig', c = 'import webrImport as web\natm = web.mod("asset_mosasaurus_lib")\natm.preBuild()' )
+    atom_rrig_buildSpineBut = cmds.button( l = 'Build Mosasaurus Splines', c = 'import webrImport as web\natm = web.mod("asset_mosasaurus_lib")\natm.buildSplines()' )
 
     cmds.setParent( '..' )
     cmds.setParent( '..' )
@@ -227,8 +227,8 @@ def pteranodonFrameLayout( *args ):
     atom_rrig_columnLayout = cmds.columnLayout( 'atom_Pteranodon_main_columnLayout', adj = True, rs = 5 )
     cmds.separator()
 
-    atom_rrig_prerigBut = cmds.button( l = 'Build Pteranodon Pre-Rig', c = 'import webrImport as web\natm = web.mod("atom_pteranodon_lib")\natm.preBuild()' )
-    atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Splines', c = 'import webrImport as web\natm = web.mod("atom_pteranodon_lib")\natm.buildSplines()' )
+    atom_rrig_prerigBut = cmds.button( l = 'Build Pteranodon Pre-Rig', c = 'import webrImport as web\natm = web.mod("asset_pteranodon_lib")\natm.preBuild()' )
+    atom_rrig_buildSpineBut = cmds.button( l = 'Build Rig Splines', c = 'import webrImport as web\natm = web.mod("asset_pteranodon_lib")\natm.buildSplines()' )
 
     cmds.setParent( '..' )
     cmds.setParent( '..' )

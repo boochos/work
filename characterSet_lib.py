@@ -41,7 +41,8 @@ def shotPath():
         shotDir = shotDir[0:shotDir.rfind( '_' )] + '/'
         print( shotDir )
     createDefaultPath()
-    path = defaultPath() + shotDir
+    # path = defaultPath() + shotDir
+    path = os.path.join( defaultPath(), shotDir )
     if not os.path.isdir( path ):
         os.mkdir( path )
         message( "path:   '" + path + "'   created" )
@@ -146,7 +147,7 @@ def flush():
         if len( all ) > 0:
             path = shotPath()
             for set in all:
-                exportFile( set, os.path.join( path + set ) )
+                exportFile( set, os.path.join( path , set ) )
                 print( "-- flushed:   '" + set + "'  --" )
             deleteAll()
         else:
@@ -160,7 +161,8 @@ def unflush():
     if path != defaultPath():
         chars = os.listdir( path )
         for set in chars:
-            importFile( path + set )
+            # importFile( path + set )
+            importFile( os.path.join( path, set ) )
             print( "-- unflushed:   '" + set + "'  --" )
     else:
         message( 'Open a scene before proceeding' )

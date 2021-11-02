@@ -13,6 +13,7 @@ cn = web.mod( 'constraint_lib' )
 app = web.mod( "atom_appendage_lib" )
 jnt = web.mod( 'atom_joint_lib' )
 dnm = web.mod( 'atom_dynamicSpline_lib' )
+ss = web.mod( "selectionSet_lib" )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -113,26 +114,6 @@ def vehicle_master( masterX = 10, moveX = 10, steerParent = '' ):
     root = 'root_jnt'
     cmds.parent( root, SKIN_JOINTS )
 
-    '''
-    # vehicle on path, front of vehicle
-    opf = 'pathAttach_front'
-    opfCt = place.Controller2( opf, 'on_path_front_jnt', False, 'vctrArrow_ctrl', moveX * 4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parent( opfCt[0], CONTROLS )
-    cmds.parentConstraint( MasterCt[4], opfCt[0], mo = True )
-
-    # vehicle on path, back of vehicle
-    opb = 'pathAttach_back'
-    opbCt = place.Controller2( opb, 'on_path_back_jnt', False, 'vctrArrowInv_ctrl', moveX * 4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parent( opbCt[0], CONTROLS )
-    cmds.parentConstraint( MasterCt[4], opbCt[0], mo = True )
-
-    # vehicle on path, top of vehicle
-    opu = 'pathAttach_up'
-    opuCt = place.Controller2( opu, 'on_path_back_jnt', False, 'loc_ctrl', moveX * 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parent( opuCt[0], CONTROLS )
-    cmds.setAttr( opuCt[0] + '.ty', moveX * 5 )
-    cmds.parentConstraint( opbCt[4], opuCt[0], mo = True )'''
-
     # move #
     Move = 'move'
     MoveCt = place.Controller2( Move, MasterCt[0], False, 'splineStart_ctrl', moveX * 8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
@@ -153,15 +134,6 @@ def vehicle_master( masterX = 10, moveX = 10, steerParent = '' ):
     place.translationLock( SteerCt[2], True )
     place.rotationXLock( SteerCt[2], True )
     place.rotationZLock( SteerCt[2], True )
-
-    # constrain Move to path front / back
-    # cmds.parentConstraint( opfCt[4], MoveCt[1], mo = True )
-    '''
-    cmds.aimConstraint( opbCt[4], opfCt[3], wut = 'object', wuo = opuCt[4], aim = [0, 0, -1], u = [0, 1, 0], mo = True )
-    '''
-
-    # pivots for ground
-    # pvts = four_point_pivot( name = 'vehicle', parent = MoveCt[3], center = MoveCt[4], front = 'on_path_front_jnt', frontL = 'wheel_front_bottom_L_jnt', frontR = 'wheel_front_bottom_R_jnt', back = 'on_path_back_jnt', backL = 'wheel_back_bottom_L_jnt', backR = 'wheel_back_bottom_R_jnt', up = 'up_jnt', X = 2 )
 
     if steerParent:
         return [MasterCt[4], steerParent, SteerCt[4]]
@@ -316,32 +288,7 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     #
     if exp:
         wheel_exp( ctrl = ContactCt[0] )
-    '''
-    # steer #
-    Steer_F_L = name + '_steer' + sffx
-    steer_F_L = place.Controller( Steer_F_L, steer, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
-    Steer_F_LCt = steer_F_L.createController()
-    cmds.setAttr( Steer_F_LCt[0] + '.visibility', 0 )
-    cmds.parent( Steer_F_LCt[0], WHEEL_GRP )
-    cmds.xform( Steer_F_LCt[0], relative = True, t = ( 0, 0, 20 ) )
-    cmds.parentConstraint( axle, Steer_F_LCt[0], mo = True )
-    # lock geo - [lock, keyable], [visible, lock, keyable]
-    place.setChannels( Steer_F_LCt[2], [True, False], [True, False], [True, False], [True, False, False] )
-    cmds.setAttr( Steer_F_LCt[2] + '.translateX', keyable = True, lock = False )
-    # steer up
-    SteerUp_F_L = name + '_steerUp' + sffx
-    steerUp_F_L = place.Controller( SteerUp_F_L, steer, False, 'loc_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
-    SteerUp_F_LCt = steerUp_F_L.createController()
-    cmds.parent( SteerUp_F_LCt[0], WHEEL_GRP )
-    cmds.xform( SteerUp_F_LCt[0], relative = True, t = ( 0, 10, 0 ) )
-    cmds.parentConstraint( axle, SteerUp_F_LCt[0], mo = True )
-    cmds.setAttr( SteerUp_F_LCt[0] + '.visibility', 0 )
 
-    cmds.aimConstraint( Steer_F_LCt[4], steer, wut = 'object', wuo = SteerUp_F_LCt[4], aim = [0, 0, 1], u = [0, 1, 0], mo = True )
-    # cmds.aimConstraint( locAim, obj, wut = 'object', wuo = locUp, aim = aim, u = u, mo = mo )
-
-    return [Steer_F_LCt[1], ContactCt[2], PressureCt[2], PressureCt[1]]
-    '''
     return [steer, ContactCt, PressureCt]
 
 
