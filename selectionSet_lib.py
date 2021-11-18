@@ -99,11 +99,16 @@ def exportFile( filePath, sel = None ):
 
 
 def loadDict( filePath ):
-    print( filePath )
-    readFile = open( filePath, 'r' )
-    dic = json.load( readFile )
-    readFile.close()
-    return dic
+    # print( filePath )
+    # readFile = open( filePath, 'r' )
+    # print( readFile )
+    try:
+        readFile = open( filePath, 'r' )
+        dic = json.load( readFile )
+        readFile.close()
+        return dic
+    except:
+        return None
 
 
 def outputDict( sel = [] ):
@@ -238,14 +243,15 @@ def findSet():
                 # load dict
                 setDict = loadDict( os.path.join( path, f ) )
                 #
-                if obj in setDict.values():
-                    # print f
-                    # convert set to list of objects
-                    remapped = remapSet( sel, setDict )
-                    # print remapped
-                    for con in remapped:
-                        if con not in selection:
-                            addSel.append( con )
+                if setDict:
+                    if obj in setDict.values():
+                        # print f
+                        # convert set to list of objects
+                        remapped = remapSet( sel, setDict )
+                        # print remapped
+                        for con in remapped:
+                            if con not in selection:
+                                addSel.append( con )
     return addSel
 
 

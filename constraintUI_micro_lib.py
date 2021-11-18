@@ -254,18 +254,18 @@ class Action( object ):
         self.s3 = cmds.separator( height = self.sepH, style = self.sepStl )
         #
         # match things
-        # self.actionButton4 = cmds.button(self.actionButton4, label='Match Keys', c=self.cmdAction, bgc=green,
-        #                                ann='Select 2 objects.\nSecond object will be keyed on same frames as the first.\nNo animation is added, the object is just keyed.')
-        # self.actionButton6 = cmds.button(self.actionButton6, label='Match Transforms', c=self.cmdAction, bgc=green,
-        #                                 ann='Match the position of first object to second object.')
-        # self.s6 = cmds.separator(height=self.sepH, style=self.sepStl)
+        # self.actionButton4 = cmds.button( self.actionButton4, label = 'Match Keys', c = self.cmdAction, bgc = self.green,
+        #                                ann = 'Select 2 objects.\nSecond object will be keyed on same frames as the first.\nNo animation is added, the object is just keyed.' )
+        # self.actionButton6 = cmds.button( self.actionButton6, label = 'Match Transforms', c = self.cmdAction, bgc = self.green,
+        #                                 ann = 'Match the position of first object to second object.' )
+        # self.s6 = cmds.separator( height = self.sepH, style = self.sepStl )
         # stick
-        self.actionButton10 = cmds.button( self.actionButton10, label = 'Stick', c = self.cmdAction, bgc = self.teal,
-                                          ann = '1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.' )
-        self.actionButton11 = cmds.button( self.actionButton11, label = 'UnStick', c = self.cmdAction, bgc = self.teal,
-                                          ann = 'Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.' )
-        self.c1 = cmds.checkBox( label = 'On All Frames', v = False, ann = existing )
-        self.s4 = cmds.separator( height = self.sepH, style = self.sepStl )
+        # self.actionButton10 = cmds.button( self.actionButton10, label = 'Stick', c = self.cmdAction, bgc = self.teal,
+        #                                  ann = '1 object selected:\nA locator is created and the object is constrained to it on that position.\n\n2 objects selected:\nThe first is constrained to second with an offset.' )
+        # self.actionButton11 = cmds.button( self.actionButton11, label = 'UnStick', c = self.cmdAction, bgc = self.teal,
+        #                                  ann = 'Selected object is baked.\nhighlight a frame range to use it instead of the full animation.\nExtra objects are deleted.' )
+        # self.c1 = cmds.checkBox( label = 'On All Frames', v = False, ann = existing )
+        # self.s4 = cmds.separator( height = self.sepH, style = self.sepStl )
         #
         #
         # parent rig

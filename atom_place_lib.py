@@ -214,6 +214,9 @@ def circle( name = '', obj = '', shape = '', size = 1.0, color = 17, sections = 
         rot = cmds.xform( obj, q = True, ro = True, ws = True )
         n = cmds.circle( name = name, center = ( 0, 0, 0 ), normal = normal, sweep = 360,
                         radius = radius, degree = degree, sections = sections, constructionHistory = 1 )[0]
+        if colorName:
+            cmds.setAttr( n + '.overrideEnabled', 1 )
+            cmds.setAttr( n + '.overrideColor', color )
         cmds.xform( n, t = pos )
         if orient:
             cmds.xform( n, ro = rot )
@@ -231,6 +234,9 @@ def circle( name = '', obj = '', shape = '', size = 1.0, color = 17, sections = 
             rot = cmds.xform( item, q = True, ro = True, ws = True )
             n = cmds.circle( name = name, center = ( 0, 0, 0 ), normal = normal, sweep = 360,
                             radius = radius, degree = degree, sections = sections, constructionHistory = 1 )[0]
+            if colorName:
+                cmds.setAttr( n + '.overrideEnabled', 1 )
+                cmds.setAttr( n + '.overrideColor', color )
             cmds.xform( n, t = pos, ro = rot )
             Circle.append( n )
             if shape:
@@ -1651,6 +1657,8 @@ def namePrebuild( Top = 0, Ctrl = False, SknJnts = False, Geo = False, World = F
         result = '___VEHICLE___'
     elif Top == 3:
         result = '___ACCSS___'
+    elif Top == 4:
+        result = '___UTIL___'
     if Ctrl == True:
         result = '___CONTROLS'
     if SknJnts == True:
@@ -1668,7 +1676,7 @@ def namePrebuild( Top = 0, Ctrl = False, SknJnts = False, Geo = False, World = F
 
 def rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = True, Size = 110 ):
     '''\n
-    Top  = (0 creates ___CHARACTER___ group) (1 creates ___PROP___ group) (2 creates ___VEHICLE___ group)\n
+    Top  = (0 creates ___CHARACTER___ group) (1 creates ___PROP___ group) (2 creates ___VEHICLE___ group)  (3 creates ___ACCSS___ group) (4 creates ___UTIL___ group)\n
     '''
     TOP = None
     CONTROLS = None
@@ -1699,6 +1707,12 @@ def rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True,
         result.append( TOP )
     elif Top == 3:
         Top = namePrebuild( Top = 3 )
+        TOP = cmds.group( em = True, n = Top )
+        setChannels( TOP, [True, False], [True, False], [
+                    True, False], [True, False, False] )
+        result.append( TOP )
+    elif Top == 4:
+        Top = namePrebuild( Top = 4 )
         TOP = cmds.group( em = True, n = Top )
         setChannels( TOP, [True, False], [True, False], [
                     True, False], [True, False, False] )
@@ -1888,13 +1902,15 @@ def addText( obj, t = 'A', f = 'Arial-Bold', c = 12, rotOffset = [0, 0, 0], posO
     cmds.delete( text )
 
 
-def breakConnection( obj = '', attr = '' ):
+def breakConnection( obj = '', attr = '', lock = False ):
     '''
     break connection whatever is driving given attr on given object
     '''
     con = cmds.listConnections( obj + '.' + attr, s = 1, d = 0, skipConversionNodes = True, plugs = True )
     if con:
         cmds.disconnectAttr( con[0], obj + '.' + attr )
+    if lock:
+        cmds.setAttr( obj + '.' + attr, l = True )
 
 
 def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False ):

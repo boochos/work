@@ -2,8 +2,13 @@ import maya.cmds as cmds
 
 
 def createWrap( *args, **kwargs ):
-    print( args )
+    '''
+    
+    '''
+    # print( args )
+    # driver
     influence = args[0]
+    # driven
     surface = args[1]
 
     shapes = cmds.listRelatives( influence, shapes = True )
@@ -63,3 +68,12 @@ def createWrap( *args, **kwargs ):
 
     cmds.connectAttr( influence + '.dropoff', wrapNode + '.dropoff[0]' )
     return wrapNode
+
+
+def wrapDeformer( master = '', slave = '' ):
+    '''
+    run createWrap()
+    '''
+    #
+    node = createWrap( master, slave )
+    return node

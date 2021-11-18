@@ -26,9 +26,10 @@ def attachObj( obj = '', upObj = '', crv = '', position = 1.0 ):
         mp = cmds.pathAnimation( obj, name = obj + '_motionPath' , c = crv, startU = position, follow = True, wut = 'object', wuo = upObj, fm = True )
     else:
         mp = cmds.pathAnimation( obj, name = obj + '_motionPath' , c = crv, startU = position, follow = True, fm = True )
-    print( mp )
+    # print( mp )
     anmCrv = cmds.listConnections( mp + '.uValue' )[0]
     cmds.delete( anmCrv )
+    # print( mp, position )
     cmds.setAttr( mp + '.uValue', position )
     # delete anim curve included by default
     return mp
@@ -63,12 +64,12 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
     dup = duplicate( mstrCrv, name = mstrCrv + '_dynamicCurve' )[0]
 
     select( dup )
-    stuff = Mel.eval( 'makeCurvesDynamicHairs 0 0 1;' )
-    print( stuff )
+    Mel.eval( 'makeCurvesDynamicHairs 0 0 1;' )
+    # print( stuff )
     hairSys = None
     dynCurve = None
     follicle = dup.getParent()
-    print( follicle )
+    # print( follicle )
 
     for i in follicle.getShape().connections( d = True, s = False ):
         if i.getShape().type() == 'nurbsCurve':
@@ -77,7 +78,7 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
 
         elif i.getShape().type() == 'hairSystem':
             hairSys = i
-    blendNode = blendShape( dynCurve, mstrCrv, n = mstrCrv + '_dynamicCrv_blendshape' )[0]
+    blendNode = blendShape( dynCurve, mstrCrv, n = mstrCrv + '_toDynamic_blendshape' )[0]
     cmds.setAttr( str( blendNode ) + '.' + str( dynCurve ), 1 )
     # print( blendNode )
     hairSys.getShape().iterations.set( 5 )
@@ -113,10 +114,11 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
     if not cmds.objExists( sharedDynGrp ):
         sharedDynGrp = cmds.group( name = sharedDynGrp, em = True )
         cmds.setAttr( sharedDynGrp + '.visibility', 0 )
-    # cleanup to shared group
+    # clean to shared group
     cmds.parent( str( hairSys ), sharedDynGrp )
     cmds.parent( 'hairSystem1OutputCurves', sharedDynGrp )
     cmds.parent( 'nucleus1', sharedDynGrp )
+    cmds.parent( dynGrp, sharedDynGrp )
 
     return [str( follicle.getParent() ), dynGrp, sharedDynGrp ]
 

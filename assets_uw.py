@@ -290,6 +290,7 @@ def amulet():
     mstr = 'master'
     uni = 'uniformScale'
     scl = ['.scaleX', '.scaleY', '.scaleZ']
+    geo_grp = '___GEO'
     #
     misc.addAttribute( [mstr], [uni], 0.1, 10.0, True, 'float' )
     cmds.setAttr( mstr + '.' + uni, 1.0 )

@@ -311,7 +311,9 @@ def importFile( path = '', prefix = '', ns = '', cs = ['old', 'new'], rp = {None
             prefix = prefix + '_'
         addNode = ''
         for line in open( path ).readlines():
-            if rp.keys() != [None]:
+            if rp != {None: None}:
+                # print( '___', rp.keys() )
+                # print( rp )
                 line = replaceInString( line, rp )
             # character and sub-character set line
             if 'ParentInfo=' in line:

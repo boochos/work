@@ -475,22 +475,23 @@ class CSUI( object ):
         liveNs = ss.listLiveNs()
         for s in sets:
             dic = ss.loadDict( os.path.join( ss.defaultPath(), s + self.ext ) )
-            foundNs = []
-            for obj in dic.keys():
-                if ':' in obj:
-                    obj = obj.split( ':' )[1]
-                    objNs = obj.split( ':' )[0]
-                    if objNs not in foundNs:
-                        for ns in liveNs:
-                            if cmds.objExists( ns + ':' + obj ):
-                                if s not in contextualSets:
-                                    contextualSets.append( s )
-                                    foundNs.append( objNs )
-                                    break
-                else:
-                    if cmds.objExists( obj ):
-                        if s not in contextualSets:
-                            contextualSets.append( s )
+            if dic:
+                foundNs = []
+                for obj in dic.keys():
+                    if ':' in obj:
+                        obj = obj.split( ':' )[1]
+                        objNs = obj.split( ':' )[0]
+                        if objNs not in foundNs:
+                            for ns in liveNs:
+                                if cmds.objExists( ns + ':' + obj ):
+                                    if s not in contextualSets:
+                                        contextualSets.append( s )
+                                        foundNs.append( objNs )
+                                        break
+                    else:
+                        if cmds.objExists( obj ):
+                            if s not in contextualSets:
+                                contextualSets.append( s )
         #
         if self.contextualList:
             return contextualSets
