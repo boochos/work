@@ -244,6 +244,60 @@ def process_geo_list( name = '' ):
     # print( s )
     return s
 
+
+def passengers( X = 1 ):
+    '''
+    master with individual controls for each passenger
+    add scale
+    '''
+    #
+    PreBuild = place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = X )
+    CHARACTER = PreBuild[0]
+    CONTROLS = PreBuild[1]
+    SKIN_JOINTS = PreBuild[2]
+    GEO = PreBuild[3]
+    WORLD_SPACE = PreBuild[4]
+    MasterCt = PreBuild[5]
+    #
+    root = 'root_jnt'
+    place.cleanUp( root, SknJnts = True )
+    cmds.parentConstraint( MasterCt[4], root, mo = True )
+    #
+    color = 'yellow'
+    shape = 'facetYup_ctrl'
+    shapeH = 'facetZup_ctrl'
+    #
+    jnts = [
+    'Peter_root_jnt',
+    'Paula_root_jnt',
+    'Vojta_root_jnt',
+    'Filip_root_jnt'
+    ]
+    names = [
+    'Peter',
+    'Paula',
+    'Vojta',
+    'Filip'
+    ]
+    # loop
+    for i in range( len( jnts ) ):
+        name = names[i]
+        jnt = jnts[i]
+        # butt
+        name_Ct = place.Controller2( name, jnt, True, shape, X * 0.8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+        place.cleanUp( name_Ct[0], Ctrl = True )
+        cmds.parentConstraint( name_Ct[4], jnt, mo = True )
+        cmds.parentConstraint( MasterCt[4], name_Ct[0], mo = False )
+        # head
+        head_Ct = place.Controller2( name + '_head', name + '_3_jnt', True, shapeH, X * 0.4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+        place.cleanUp( head_Ct[0], Ctrl = True )
+        cmds.orientConstraint( head_Ct[4], name + '_3_jnt', mo = True )
+        cmds.pointConstraint( name + '_3_jnt', head_Ct[0], mo = True )
+        # pose
+        place.hijackAttrs( name + '_1_jnt', name_Ct[2], 'rotateX', 'kneeBend', set = False, default = 60, force = True )
+        place.hijackScaleMerge( name + '_root_jnt', name_Ct[2], mergeAttr = 'Scale' )
+        cmds.setAttr( name_Ct[2] + '.Scale', 0.83 )
+
 #
 #
 '''

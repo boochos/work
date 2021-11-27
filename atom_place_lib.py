@@ -284,7 +284,7 @@ def null2( nllSuffix, obj, orient = True ):
 def colorDict():
     colors = {'darkRed': 4, 'blue': 6, 'brown': 10, 'hotPink': 9, 'red': 13, 'yellow': 17,
               'lightBlue': 18, 'pink': 20, 'lightYellow': 22, 'green': 23,
-              'lightBrown': 24, 'purple': 30, 'burgundy': 31}
+              'lightBrown': 24, 'purple': 30, 'burgundy': 31, 'forestGreen':26}
     return colors
 
 
@@ -1050,7 +1050,9 @@ def hijackCustomAttrs( obj1, obj2 ):
     obj2 = master\n
     format = list [object] [attr, keyable, type, min, max, lock, channelBox, [enums]]\n
     """
+    print( obj1 )
     UsrAttr = cmds.listAttr( obj1, ud = True )
+    print( UsrAttr )
     hAttrs = []
     ENM = []
     # collect custom attrs from obj1
@@ -1092,6 +1094,8 @@ def hijackCustomAttrs( obj1, obj2 ):
 
     for attr in UsrAttr:
         cmds.connectAttr( obj2 + '.' + attr, obj1 + '.' + attr )
+
+    return UsrAttr
 
 
 def hijackForceAttr( name = '', objAttr1 = '', objAttr2 = '', objAttr3 = '' ):
@@ -2117,6 +2121,9 @@ def flatten( obj ):
 
 
 def getUniqueName( name = '' ):
+    # print( name )
+    if '|' in name:
+        name = name.split( '|' )[-1]
     if not cmds.objExists( name ):
         return name
     else:

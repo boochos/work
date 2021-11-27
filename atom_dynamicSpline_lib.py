@@ -68,6 +68,7 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
     # print( stuff )
     hairSys = None
     dynCurve = None
+    nuc = 'nucleus1'
     follicle = dup.getParent()
     # print( follicle )
 
@@ -93,10 +94,24 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
 
     # attrs
     misc.optEnum( attrObj, attr = 'Dynamic', enum = 'CONTROL' )
-    #
-    # misc.addAttribute( [attrObj], ['weight'], 0.0, 1.0, True, 'float' )
-    # cmds.connectAttr( attrObj + '.weight', str( blendNode ) + '.' + str( dynCurve ), force = True )
-    # cmds.setAttr( attrObj + '.weight', 1 )
+    # dynamic enable attr connection
+    en_attr = 'enable'
+    # nucleus
+    place.hijackAttrs( nuc, attrObj, en_attr, en_attr, set = False, default = 0, force = True )
+    cmds.setAttr( attrObj + '.' + en_attr, cb = True )
+    # dynamic enable hairSystem
+    cndtn = cmds.shadingNode( 'condition', au = True, n = attrObj + '_cndtn_dynmc' )
+    cmds.setAttr( cndtn + '.colorIfFalseR', 3 )
+    cmds.connectAttr( attrObj + '.' + en_attr, cndtn + '.firstTerm' )
+    cmds.connectAttr( cndtn + '.outColorR', str( hairSys.getShape() ) + '.simulationMethod' )
+
+    s_attr = 'startFrame'
+    cmds.addAttr( attrObj, ln = s_attr, at = 'long', h = False )
+    cmds.setAttr( attrObj + '.' + s_attr, cb = True )
+    cmds.setAttr( attrObj + '.' + s_attr, k = False )
+    cmds.setAttr( attrObj + '.' + s_attr, 1 )
+    # misc.addAttribute( [attrObj], ['startFrame'], -1000.0, 10000.0, True, 'float' )
+    cmds.connectAttr( attrObj + '.' + s_attr, nuc + '.' + s_attr, force = True )
     #
     misc.addAttribute( [attrObj], ['startCurveAttract', 'attractionDamp'], 0.0, 100.0, True, 'float' )
     cmds.connectAttr( attrObj + '.startCurveAttract', str( hairSys.getShape() ) + '.startCurveAttract', force = True )
@@ -117,7 +132,7 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
     # clean to shared group
     cmds.parent( str( hairSys ), sharedDynGrp )
     cmds.parent( 'hairSystem1OutputCurves', sharedDynGrp )
-    cmds.parent( 'nucleus1', sharedDynGrp )
+    cmds.parent( nuc, sharedDynGrp )
     cmds.parent( dynGrp, sharedDynGrp )
 
     return [str( follicle.getParent() ), dynGrp, sharedDynGrp ]

@@ -417,6 +417,10 @@ class CSUI( object ):
     def cmdGetAllSets( self ):
         files = []
         contents = os.listdir( str( self.path ) )
+        '''
+        for f in contents:
+            if 'king' in f:
+                print( f.split( '.' )[0].split( 'kingAir_' )[1] + ' = False,' )'''
         if contents:
             # Sort the contents list based on the names in lowercase
             # Will error if 'u' objects are fed into a list

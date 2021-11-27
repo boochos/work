@@ -349,7 +349,7 @@ def four_point_pivot( name = 'vhcl', parent = '', skipParentUp = False, center =
     - assume translateZ is forward
     '''
     pvt = 'pivot'
-    vis_attr = 'pivot_Vis'
+    vis_attr = 'pivots'
     #
     if name:
         name = name + '_'
@@ -378,6 +378,7 @@ def four_point_pivot( name = 'vhcl', parent = '', skipParentUp = False, center =
     cmds.parentConstraint( parent, body_Ct[0], mo = True )
     place.translationLock( body_Ct[2], True )
     place.translationYLock( body_Ct[2], False )
+    place.optEnum( body_Ct[2], attr = 'allPivots', enum = 'VIS' )
     place.addAttribute( body_Ct[2], vis_attr, 0, 1, False, 'long' )
 
     # ##########
@@ -716,13 +717,73 @@ def blend_part( obj = '' ):
     return dup
 
 
-def passengers():
+def passengers( visObj = '', positions = [], X = 1.0 ):
     '''
     add 6 controls, 3 front, 3 back
     top group to chassis jnt
     add parent switch to each position
     '''
-    pass
+    place.optEnum( visObj, attr = 'passengerControls', enum = 'VIS' )
+    #
+    if not positions:
+        positions = [
+        'passenger_front_C_jnt',
+        'passenger_back_C_jnt',
+        'passenger_front_L_jnt',
+        'passenger_back_L_jnt',
+        'passenger_front_R_jnt',
+        'passenger_back_R_jnt'
+        ]
+    # fix mirror, otherwise controller is upside down
+    for p in positions:
+        if '_R_' in p:
+            cmds.setAttr( p + '.jointOrientX', 0 )
+    # needs to be same order as positions
+    attrsNew = [
+    'front_C',
+    'back_C',
+    'front_L',
+    'back_L',
+    'front_R',
+    'back_R'
+    ]
+    #
+    sizeplus = 0.01
+    j = 0
+    for p in positions:
+        if cmds.objExists( p ):
+            color = 'yellow'
+            if '_L' in p:
+                color = 'blue'
+            if '_R' in p:
+                color = 'red'
+            #
+            name = p.replace( '_jnt', '' )
+            p_Ct = place.Controller2( name, p, True, 'ballRoll_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+            place.cleanUp( p_Ct[0], Ctrl = True )
+            place.hijackVis( p_Ct[0], visObj, name = attrsNew[j], suffix = False, default = None, mode = 'visibility' )
+            # position switches
+            place.optEnum( p_Ct[2], attr = 'positions', enum = 'CONTROL' )
+            for jnt in positions:
+                cmds.parentConstraint( jnt, p_Ct[0], mo = False )
+            con = cn.getConstraint( p_Ct[0], nonKeyedRoute = False, keyedRoute = False, plugRoute = True )[0]
+            attrs = cmds.listAttr( con, ud = True )
+            i = 0
+            for attr in attrs:
+                attrNew = attrsNew[i]
+                if j == i:
+                    place.hijackAttrs( con, p_Ct[2], attr, attrNew, set = True, default = 1, force = True )
+                else:
+                    place.hijackAttrs( con, p_Ct[2], attr, attrNew, set = True, default = 0, force = True )
+                cmds.addAttr( p_Ct[2] + '.' + attrNew, e = True, max = 1 )
+                cmds.addAttr( p_Ct[2] + '.' + attrNew, e = True, min = 0 )
+                i = i + 1
+            # attrs = place.hijackCustomAttrs( con, p_Ct[2] )
+            # place.addAttribute( p_Ct[2], vis_attr, 0, 1, False, 'long' )
+            X = X + ( X * sizeplus )
+        else:
+            message( 'position doesnt exist: ' + p, warning = True )
+        j = j + 1
 
 
 def __________________WHEEL():
@@ -782,43 +843,14 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     place.cleanUp( WHEEL_GRP, Ctrl = True )
     # return
     # tire has to be facing forward in Z
-    # clusters[0]
-    # dup tire and wrap
-    '''
-    tire_result = tire_proxy( position = position, side = suffix, tire_geo = tire_geo )  # [tire[0], base, wraps]
-    tire_p = tire_result[0]
-    wrap_base = tire_result[1]
-    wrap_nodes = tire_result[2]
-    '''
     tire_p = tire_geo[0]  # test
     clstr = tire_pressure( obj = tire_p, center = center, name = name, suffix = suffix, pressureMult = pressureMult )
     # geo cleanup
     place.cleanUp( tire_p, World = True )
-    '''
-    for b in wrap_base:
-        place.cleanUp( b, World = True )'''
+
     if tire_p:
         cmds.connectAttr( spin + '.rotateX', tire_p + '.rotateX' )
-    # return
-    '''
-    tire_dup_geo = blend_part( tire_geo[0] )  # geo comes in as list from selection list
-    clstr = tire_pressure( obj = tire_dup_geo, center = center, name = name, suffix = suffix, pressureMult = pressureMult )
-    # return
-    # geo cleanup
-    cmds.parent( tire_dup_geo, '___WORLD_SPACE' )
-    if tire_dup_geo:
-        cmds.connectAttr( spin + '.rotateX', tire_dup_geo + '.rotateX' )
-        cmds.connectAttr( spin + '.rotateX', tire_geo[0] + '.rotateX' )
-    # cant handle multi geo tire list, commented out for now
-    if tire_dup_geo:
-        for i in tire_dup_geo:
-            # print( i )
-            cmds.connectAttr( spin + '.rotateX', i + '.rotateX' )
-    else:
-        # print( 'no' )
-        pass
-        '''
-    # return
+
     # rim, change to skin
     if rim_geo:
         skin( spin, rim_geo )
@@ -1445,10 +1477,12 @@ def __________________PATH():
     pass
 
 
-def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
+def path( points = 5, X = 0.05, length = 10.0, deviationLayers = 2, layers = 3 ):
     '''
     # creates groups and master controller from arguments specified as 'True'
     segment = 4 points
+    deviationLayers = deviating curve layers, for back wheels, n layers == n curves
+    layers = control layers
     
     '''
     #
@@ -1465,7 +1499,7 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     #
     pathDeviate = 'pathDeviate'
     misc.optEnum( MasterCt[2], attr = 'path', enum = 'OPTNS' )
-    misc.addAttribute( [MasterCt[2]], [pathDeviate], 0, 1, False, 'float' )
+    misc.addAttribute( [MasterCt[2]], [pathDeviate], 0, 0.5, False, 'float' )
     cmds.setAttr( MasterCt[2] + '.' + pathDeviate , cb = False )
     # cmds.setAttr( MasterCt[2] + '.' + pathDeviate, 0.2 )
     # cmds.setAttr( MasterCt[2] + '.overrideColor', 23 )
@@ -1486,7 +1520,7 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     paths = []
     crvInfo = None
     layer = 0
-    while layer < layers:
+    while layer < deviationLayers:
         # build curve
         lengthSeg = length / ( points + layer - 1.0 )
         i = 1
@@ -1517,6 +1551,8 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
         place.cleanUp( cGrp, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
         cluster_layers.append( cl )
         layer = layer + 1
+        if layer != deviationLayers and layer != 1:
+            cmds.setAttr( pth + '.visibility', 0 )
     # print( paths )
     for l in range( len( cluster_layers ) - 1 ):
         # constrain start, end
@@ -1535,12 +1571,12 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
                 cmds.parentConstraint( cluster_layers[l][c], cluster_layers[l + 1][c], mo = False )
                 place.hijackConstraints( master = MasterCt[2], attr = pathDeviate, value = 0.5, constraint = constraint )
             c = c + 1
-
+    '''
     # place Controls on Clusters and Constrain
     color = 9
     i = 1
     Ctrls = []
-    # CtrlCtGrps = []
+    CtrlsFull = []
     CtrlGrps = []
     for handle in cluster_layers[0]:
         #
@@ -1549,8 +1585,8 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
         # cmds.setAttr( handle + '.visibility', 0 )
         cmds.parentConstraint( MasterCt[4], cntCt[0], mo = True )
         cmds.parentConstraint( cntCt[4], handle, mo = True )
+        CtrlsFull.append( cntCt )
         Ctrls.append( cntCt[2] )
-        # CtrlCtGrps.append( cntCt[1] )
         CtrlGrps.append( cntCt[4] )
         place.cleanUp( cntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
         i = i + 1
@@ -1562,7 +1598,10 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
         place.setChannels( guideGp, [True, False], [True, False], [True, False], [True, False, False] )
         cmds.parent( gd[0], guideGp )
         cmds.parent( gd[1], guideGp )
-        place.cleanUp( guideGp, World = True )
+        place.cleanUp( guideGp, World = True )'''
+
+    Ctrls = path_control_layers( clusters = cluster_layers[0], layers = layers, parent = MasterCt, X = X )
+    # return
 
     # path
     s = 0.0
@@ -1581,8 +1620,8 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     msgMp = 'motionPath'
     # vehicle on path, front of vehicle
     opf = 'onPath_front'
-    opfCt = place.Controller2( opf, MasterCt[4], False, 'squareOriginZup_ctrl', X * 60, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    cmds.parent( opfCt[0], CONTROLS )
+    opfCt = place.Controller2( opf, MasterCt[4], False, 'squareOriginZup_ctrl', X * 60, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'lightBlue' ).result
+    place.cleanUp( opfCt[0], World = True )
     # cmds.parentConstraint( MasterCt[4], opfCt[0], mo = True ) # causes double transform
     place.rotationLock( opfCt[2], True )
     place.translationLock( opfCt[2], True )
@@ -1614,22 +1653,22 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     # cmds.setAttr( opfCt[2] + '.' + spacing, -0.15 )
     # vehicle on path, back of vehicle
     opb = 'onPath_back'
-    opbCt = place.Controller2( opb, MasterCt[4], False, 'squareOriginZup_ctrl', X * 60, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    opbCt = place.Controller2( opb, MasterCt[4], False, 'squareOriginZup_ctrl', X * 60, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'lightBlue' ).result
+    place.cleanUp( opbCt[0], World = True )
     cmds.addAttr( opbCt[2], ln = msgPths, at = 'message' )
     cmds.addAttr( opbCt[2], ln = msgMp, at = 'message' )
-    cmds.parent( opbCt[0], CONTROLS )
     # cmds.parentConstraint( MasterCt[4], opbCt[0], mo = True )  # causes double transform
     place.rotationLock( opbCt[2], True )
     misc.optEnum( opbCt[2], attr = travel + 'Control', enum = 'OPTNS' )
-    misc.addAttribute( [opbCt[2]], [pathDeviate], 0, 1, True, 'float' )
+    misc.addAttribute( [opbCt[2]], [pathDeviate], 0, 0.5, True, 'float' )
     cmds.connectAttr( opbCt[2] + '.' + pathDeviate, MasterCt[2] + '.' + pathDeviate, f = True )
     misc.addAttribute( [opbCt[2]], [wheelBase], 0, 1000, True, 'float' )
     misc.addAttribute( [opbCt[2]], [spacing], -100.0, 100.0, True, 'float' )
     cmds.setAttr( opbCt[2] + '.' + wheelBase, 10 )
     # vehicle on path, top of vehicle
     opu = 'onPath_up'
-    opuCt = place.Controller2( opu, MasterCt[4], False, 'loc_ctrl', X * 50, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    cmds.parent( opuCt[0], CONTROLS )
+    opuCt = place.Controller2( opu, MasterCt[4], False, 'loc_ctrl', X * 50, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'lightBlue' ).result
+    place.cleanUp( opuCt[0], World = True )
     cmds.setAttr( opuCt[0] + '.ty', X * 100 )
     cmds.setAttr( opuCt[0] + '.visibility', 0 )
     cmds.parentConstraint( opbCt[4], opuCt[0], mo = True )
@@ -1645,7 +1684,7 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     cmds.setAttr( opfCt[2] + '.' + frontTwist, 180 )
     cmds.setAttr( opfCt[2] + '.' + sideTwist, 90 )
     # back - attach to path
-    motpth_b = cmds.pathAnimation( opbCt[1], name = 'back_motionPath' , c = paths[1], startU = s, follow = True, wut = 'object', wuo = upCntCt[4], fm = True )
+    motpth_b = cmds.pathAnimation( opbCt[1], name = 'back_motionPath' , c = paths[-1], startU = s, follow = True, wut = 'object', wuo = upCntCt[4], fm = True )
     cmds.addAttr( motpth_b, ln = msgMp, at = 'message' )
     cmds.connectAttr( opbCt[2] + '.' + msgMp, motpth_b + '.' + msgMp )
     cmds.connectAttr( opfCt[2] + '.' + frontTwist, motpth_b + '.' + frontTwist )
@@ -1709,6 +1748,7 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     msg = 'control'
     cmds.addAttr( MasterCt[2], ln = msg, at = 'message' )
     for g in Ctrls:
+        print( g )
         cmds.addAttr( g, ln = msg, at = 'message' )
         cmds.connectAttr( MasterCt[2] + '.' + msg, g + '.' + msg )
 
@@ -1722,8 +1762,190 @@ def path( points = 5, X = 0.05, length = 10.0, layers = 3 ):
     #
     scl = ['.scaleX', '.scaleY', '.scaleZ']
     misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    misc.scaleUnlock( opfCt[1], sx = True, sy = True, sz = True )
+    misc.scaleUnlock( opbCt[1], sx = True, sy = True, sz = True )
+    misc.scaleUnlock( opuCt[1], sx = True, sy = True, sz = True )
     for s in scl:
         cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+        cmds.connectAttr( mstr + '.' + uni, opfCt[1] + s )
+        cmds.connectAttr( mstr + '.' + uni, opbCt[1] + s )
+        cmds.connectAttr( mstr + '.' + uni, opuCt[1] + s )
+
+
+def path_control_layers( clusters = [], layers = 2, parent = '', X = 1 ):
+    '''
+    clusters = cluster list to start
+    layers = amount of layers in controls, 0 based, ie 2 == 3 layers, [0,1,2]
+    segment = amount of controls between each higher layer control ie [6, 3, 2] , every 6 controls on (1st) layer adds a control on parent (2nd) layer 
+    parent = top layer parent
+    '''
+    resultCtrls = []
+    # scale
+    X = X * 100
+    scale_range = 0.25  # 1.0 being final top layer scale, 'X', layer 0 scale = 1.0 - scale_range
+    scale_0 = 1.0 - scale_range
+    scale_mlt = scale_range / layers
+    colors = [ 'lightYellow', 'lightBlue', 'pink', 'hotPink', 'purple']
+    # group
+    layerGp = cmds.group( em = True, name = 'layer_0_ctrlGrp' )
+    place.cleanUp( layerGp, Ctrl = True )
+    place.setChannels( layerGp, [True, False], [True, False], [True, False], [True, False, False] )
+    # vis
+    place.hijackVis( layerGp, parent[2], name = 'ctrlLayer0', suffix = False, default = 0, mode = 'visibility' )
+    # layer 0
+    layer = 0
+    # CtrlsFull_this = []
+    # CtrlsFull_next = []
+    Ctrls = []
+    CtrlGrps = []
+    CtrlTopGrps = []
+    i = 0
+    for handle in clusters:
+        #
+        name = 'layer_' + str( layer ) + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) )
+        cnt = place.Controller( name, handle, orient = False, shape = 'splineStart_ctrl', size = X * 0.25, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = colors[0] )
+        cntCt = cnt.createController()
+        cmds.parent( cntCt[0], layerGp )
+        cmds.parentConstraint( cntCt[4], handle, mo = True )
+        #
+        # CtrlsFull_this.append( cntCt )
+        Ctrls.append( cntCt[2] )
+        CtrlGrps.append( cntCt[4] )
+        CtrlTopGrps.append( cntCt[0] )
+        resultCtrls.append( cntCt[2] )
+        #
+        i = i + 1
+    clusters = CtrlTopGrps
+
+    # layer 0 guides
+    guideGp = cmds.group( em = True, name = 'layer_' + str( layer ) + '_path_guideGrp' )
+    place.cleanUp( guideGp, World = True )
+    place.setChannels( guideGp, [True, False], [True, False], [True, False], [True, False, False] )
+    place.hijackVis( guideGp, parent[2], name = 'ctrlLayer0', suffix = False, default = 1, mode = 'visibility' )
+    for i in range( len( CtrlGrps ) - 1 ):
+        gd = place.guideLine( CtrlGrps[i], CtrlGrps[i + 1], CtrlGrps[i] + '_guide' )
+        #
+        cmds.parent( gd[0], guideGp )
+        cmds.parent( gd[1], guideGp )
+    print( 'result amount, layer 0 ', len( resultCtrls ) )
+
+    # prep for layer loop
+    layer = layer + 1
+    color = colors[1]
+    clr = 1
+    shapes = ['splineStart_ctrl', 'splineStart_ctrl']  # ['splineStart_ctrl', 'splineEnd_ctrl']
+    shape = shapes[0]
+    # add layers
+    while layer <= layers:
+        # group
+        layerGp = cmds.group( em = True, name = 'layer_' + str( layer ) + '_ctrlGrp' )
+        place.cleanUp( layerGp, Ctrl = True )
+        place.setChannels( layerGp, [True, False], [True, False], [True, False], [True, False, False] )
+        place.hijackVis( layerGp, parent[2], name = 'ctrlLayer' + str( layer ), suffix = False, default = 1, mode = 'visibility' )
+        #
+        scale_layer = scale_0 + ( scale_mlt * layer )
+        # CtrlsFull_this = []
+        # CtrlsFull_next = []
+        CtrlGrps = []
+        CtrlTopGrps = []
+        w = 1.0
+        n = 1
+        j = 1
+        i = 0
+
+        #
+        for handle in clusters:
+            # next layer start control
+            if j == 1:
+                name = 'layer_' + str( layer ) + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( n ) )
+                cnt = place.Controller( name, handle, orient = False, shape = shape, size = X * scale_layer, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = color )
+                s_cntCt = cnt.createController()
+                cmds.parent( s_cntCt[0], layerGp )
+                #
+                # CtrlsFull_next.append( s_cntCt )
+                CtrlTopGrps.append( s_cntCt[0] )
+                CtrlGrps.append( s_cntCt[4] )
+                resultCtrls.append( s_cntCt[2] )
+                #
+                cmds.parentConstraint( s_cntCt[4], handle, mo = True )  # this handle
+                if i == 0:
+                    cmds.parentConstraint( s_cntCt[4], clusters[i + 1], w = w, mo = True )  # next handle, weight as well be 1.0 : weight is normalized to 1.0 between 2 wights
+                else:
+                    cmds.parentConstraint( s_cntCt[4], clusters[i + 1], w = w, mo = True )  # next handle
+                j = j + 1
+                n = n + 1
+            # next layer end control
+            elif j == 3:
+                name = 'layer_' + str( layer ) + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( n ) )
+                cnt = place.Controller( name, handle, orient = False, shape = shape, size = X * scale_layer, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = color )
+                e_cntCt = cnt.createController()
+                cmds.parent( e_cntCt[0], layerGp )
+                #
+                # CtrlsFull_next.append( e_cntCt )
+                CtrlTopGrps.append( e_cntCt[0] )
+                CtrlGrps.append( e_cntCt[4] )
+                resultCtrls.append( e_cntCt[2] )
+                # previous layer constrain
+                cmds.parentConstraint( e_cntCt[4], handle, mo = True )  # this handle
+                cmds.parentConstraint( e_cntCt[4], clusters[i - 1], w = w, mo = True )  # last handle
+                if i != len( clusters ) - 1:
+                    cmds.parentConstraint( e_cntCt[4], clusters[i + 1], w = w, mo = True )  # next handle
+                #
+                j = j + 1
+                n = n + 1
+                # return
+            # next layer end control
+            elif j == 5:
+                name = 'layer_' + str( layer ) + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( n ) )
+                cnt = place.Controller( name, handle, orient = False, shape = shape, size = X * scale_layer, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = color )
+                e_cntCt = cnt.createController()
+                cmds.parent( e_cntCt[0], layerGp )
+                #
+                # CtrlsFull_next.append( e_cntCt )
+                CtrlTopGrps.append( e_cntCt[0] )
+                CtrlGrps.append( e_cntCt[4] )
+                resultCtrls.append( e_cntCt[2] )
+                # previous layer constrain
+                cmds.parentConstraint( e_cntCt[4], handle, mo = True )  # this handle
+                cmds.parentConstraint( e_cntCt[4], clusters[i - 1], w = w, mo = True )  # last handle
+                if i != len( clusters ) - 1:
+                    cmds.parentConstraint( e_cntCt[4], clusters[i + 1], w = w, mo = True )  # next handle
+                #
+                j = 2
+                n = n + 1
+            else:
+                j = j + 1
+            # constrain top layer controls to parent
+            if layer == layers:
+                cmds.parentConstraint( parent[4], CtrlTopGrps[-1], mo = True )
+            i = i + 1
+
+        #
+        clusters = CtrlTopGrps
+        # guides
+        guideGp = cmds.group( em = True, name = 'layer_' + str( layer ) + '_path_guideGrp' )
+        place.cleanUp( guideGp, World = True )
+        place.setChannels( guideGp, [True, False], [True, False], [True, False], [True, False, False] )
+        cmds.setAttr( guideGp + '.visibility', 0 )
+        # place.hijackVis( guideGp, parent[2], name = 'layer' + str( layer ), suffix = True, default = 1, mode = 'visibility' )
+        for i in range( len( CtrlGrps ) - 1 ):
+            gd = place.guideLine( CtrlGrps[i], CtrlGrps[i + 1], CtrlGrps[i] + '_guide' )
+            cmds.parent( gd[0], guideGp )
+            cmds.parent( gd[1], guideGp )
+        # prep for next loop
+        layer = layer + 1
+        if color == colors[-1]:
+            color = colors[0]
+            clr = 0
+        else:
+            color = colors[clr + 1]
+            clr = clr + 1
+        if shape == shapes[0]:
+            shape = shapes[1]
+        else:
+            shape = shapes[0]
+    #
+    return resultCtrls
 
 
 def path_shape( curve = '' ):
@@ -1931,6 +2153,12 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
     # return
     # place.cleanUp( 'Jeep_Wrangler', Body = True )
 
+    # move
+    move = 'move'
+
+    # passenger positions
+    passengers( visObj = move, X = X * 18 )
+
     # transport trucks have chassis / rear axle locked together, apart from vertical movement, ie ty
     skipParentUp = False
     if chassisAxleLock:
@@ -1945,7 +2173,7 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
     cmds.parentConstraint( pivot_controls[4][4], Ct[2][0], mo = True )  # front vector for dynamic rig
     cmds.parentConstraint( pivot_controls[4][4], Ct[3], mo = True )  # follicle_Grp
     # ( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
-    place.parentSwitch( 'dynamic', Ct[1][2], Ct[1][1], Ct[1][0], pivot_controls[4][4], Ct[1][0], False, False, True, False, 'dynamic', 1.0 )
+    place.parentSwitch( 'dynamic', Ct[1][2], Ct[1][1], Ct[1][0], pivot_controls[4][4], Ct[1][0], False, False, True, False, 'dynamic', 0.0 )
 
     # axle
     if frontSolidAxle:
@@ -1974,7 +2202,7 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
     crv_lists = [crvs_f_l, crvs_b_l, crvs_f_r, crvs_b_r]
     for lst in crv_lists:
         grp = cmds.listRelatives( lst[0], parent = True )[0]
-        print( grp )
+        # print( grp )
         cmds.setAttr( grp + '.visibility', 0 )
         con = cn.getConstraint( grp, nonKeyedRoute = False, keyedRoute = False, plugRoute = True )
         cmds.delete( con )
@@ -1982,14 +2210,15 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
     # proxy tires
     prxy_f_l = tire_proxy2( position = 'front', side = 'L', crvs = crvs_f_l )  # [tire_proxy, lofted[0]]
     prxy_f_r = tire_proxy2( position = 'front', side = 'R', crvs = crvs_f_r )
-    # return
     prxy_b_l = tire_proxy2( position = 'back', side = 'L', crvs = crvs_b_l )
     prxy_b_r = tire_proxy2( position = 'back', side = 'R', crvs = crvs_b_r )
+    tires_proxy = [prxy_f_l[0], prxy_f_r[0], prxy_b_l[0], prxy_b_r[0]]
     # tire geo
     tire_geo_f_l = get_geo_list( name = name, ns = ns, tire_front_l = True )
     tire_geo_f_r = get_geo_list( name = name, ns = ns, tire_front_r = True )
     tire_geo_b_l = get_geo_list( name = name, ns = ns, tire_back_l = True )
     tire_geo_b_r = get_geo_list( name = name, ns = ns, tire_back_r = True )
+    tires_geo = [tire_geo_f_l, tire_geo_f_r, tire_geo_b_l, tire_geo_b_r]
 
     # wrap
     tire_wrap( master = prxy_f_l[0], slaves = tire_geo_f_l )
@@ -1998,6 +2227,14 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
     tire_wrap( master = prxy_b_r[0], slaves = tire_geo_b_r )
 
     # add tire vis switch (tire geo / proxy geo)
+
+    place.optEnum( move, attr = 'tires', enum = 'VIS' )
+    for geos in tires_geo:
+        for g in geos:
+            place.hijackVis( g, move, name = 'tireGeo', suffix = False, default = None, mode = 'visibility' )
+    for g in tires_proxy:
+        place.hijackVis( g, move, name = 'tireProxy', suffix = False, default = None, mode = 'visibility' )
+    cmds.setAttr( move + '.tireGeo', 1 )
 
     # master move controls
     if frontSolidAxle:
@@ -2076,9 +2313,12 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
                 cmds.connectAttr( mstr + '.' + uni, geo + s )
 
     fix_normals( name = name , ns = ns, tires = True, del_history = False )
+    #
+    if cmds.objExists( 'locator1' ):
+        cmds.delete( 'locator1' )
 
 
-def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\maya\\scenes\\path_rig_v005.ma' ):
+def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\maya\\scenes\\path_rig_v006.ma', ppl_path = 'P:\\MDLN\\assets\\util\\driver\\rig\\maya\\scenes\\driver_rig_v003.ma' ):
     '''
     new scene
     get project path
@@ -2111,12 +2351,14 @@ def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\may
     if not path:
         pass
 
-    if car and path:
+    if car and path and ppl_path:
         # ref
         ns_p = 'pth'
         ns_v = 'vhcl'
+        ns_ppl = 'ppl'
         cmds.file( path, reference = True, namespace = ns_p )
         cmds.file( car, reference = True, namespace = ns_v )
+        cmds.file( ppl_path, reference = True, namespace = ns_ppl )
 
         # attach
         cmds.select( [ns_v + ':master', ns_p + ':master'] )
@@ -2130,6 +2372,63 @@ def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\may
         cmds.select( sel )
         cmds.group( name = '___AllGrp___' )
 
+        # people
+        cmds.parentConstraint( ns_v + ':chassis_jnt', ns_ppl + ':master', mo = True )
+        cmds.parentConstraint( ns_v + ':passenger_front_L_Grp', ns_ppl + ':Peter_CtGrp', mo = False )
+        cmds.parentConstraint( ns_v + ':passenger_front_R_Grp', ns_ppl + ':Paula_CtGrp', mo = False )
+        cmds.parentConstraint( ns_v + ':passenger_back_L_Grp', ns_ppl + ':Vojta_CtGrp', mo = False )
+        cmds.parentConstraint( ns_v + ':passenger_back_R_Grp', ns_ppl + ':Filip_CtGrp', mo = False )
+        # pose passengers
+        if 'Corolla' in prjct:
+            # lean back
+            cmds.setAttr( ns_ppl + ':Peter.rx', -8 )
+            cmds.setAttr( ns_ppl + ':Paula.rx', -8 )
+            cmds.setAttr( ns_ppl + ':Vojta.rx', -8 )
+            cmds.setAttr( ns_ppl + ':Filip.rx', -8 )
+            # scale
+            cmds.setAttr( ns_ppl + ':Peter.Scale', 0.8 )
+            cmds.setAttr( ns_ppl + ':Paula.Scale', 0.8 )
+            cmds.setAttr( ns_ppl + ':Vojta.Scale', 0.8 )
+            cmds.setAttr( ns_ppl + ':Filip.Scale', 0.8 )
+            # knee bend
+            cmds.setAttr( ns_ppl + ':Peter.kneeBend', 70 )
+            cmds.setAttr( ns_ppl + ':Paula.kneeBend', 70 )
+            cmds.setAttr( ns_ppl + ':Vojta.kneeBend', 70 )
+            cmds.setAttr( ns_ppl + ':Filip.kneeBend', 70 )
+        elif 'Mazda3' in prjct:
+            # lean back
+            cmds.setAttr( ns_ppl + ':Peter.rx', -20 )
+            cmds.setAttr( ns_ppl + ':Paula.rx', -20 )
+            cmds.setAttr( ns_ppl + ':Vojta.rx', -20 )
+            cmds.setAttr( ns_ppl + ':Filip.rx', -20 )
+            # raise
+            cmds.setAttr( ns_ppl + ':Vojta.ty', 6 )
+            cmds.setAttr( ns_ppl + ':Filip.ty', 6 )
+        elif 'C63' in prjct:
+            # lean back
+            cmds.setAttr( ns_ppl + ':Peter.rx', -23 )
+            cmds.setAttr( ns_ppl + ':Paula.rx', -23 )
+            cmds.setAttr( ns_ppl + ':Vojta.rx', -23 )
+            cmds.setAttr( ns_ppl + ':Filip.rx', -23 )
+        elif '2019' in prjct:
+            # lean back
+            cmds.setAttr( ns_ppl + ':Peter.rx', -24.5 )
+            cmds.setAttr( ns_ppl + ':Paula.rx', -24.5 )
+            cmds.setAttr( ns_ppl + ':Vojta.rx', -24.5 )
+            cmds.setAttr( ns_ppl + ':Filip.rx', -24.5 )
+        elif 'Mdx' in prjct:
+            # lean back
+            cmds.setAttr( ns_ppl + ':Peter.rx', -21 )
+            cmds.setAttr( ns_ppl + ':Paula.rx', -21 )
+            cmds.setAttr( ns_ppl + ':Vojta.rx', -21 )
+            cmds.setAttr( ns_ppl + ':Filip.rx', -21 )
+        else:
+            # lean back
+            cmds.setAttr( ns_ppl + ':Peter.rx', -17 )
+            cmds.setAttr( ns_ppl + ':Paula.rx', -17 )
+            cmds.setAttr( ns_ppl + ':Vojta.rx', -17 )
+            cmds.setAttr( ns_ppl + ':Filip.rx', -17 )
+
         # save
         name = latest_file.replace( '_rig_', '_rigCombined_' )
         name = name.replace( '\\', '/' )
@@ -2141,7 +2440,6 @@ def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\may
         # save it
         # cmds.file( save = True, typ = fileType[0] )
         cmds.file( save = True )
-        return
     else:
         message( 'directory variables empty: car, path', warning = True )
         print( car )
@@ -2549,7 +2847,7 @@ def create_geo_set_files( name = '' ):
         filePath = os.path.join( path, name + '_' + f + '.sel' )
         ss.exportFile( filePath, sel = ['persp'] )
 
-
+'''
 sel = cmds.ls( sl = 1 )
 for s in sel:
     try:
@@ -2558,47 +2856,48 @@ for s in sel:
         cmds.setAttr( s + '.normalY', 0 )
         print( shp )
     except:
-        print( 'fail' )
+        print( 'fail' )'''
 
 '''
-#
-
 import imp
 import webrImport as web
 imp.reload(web)
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'Corolla', geo_grp='setCorolla_grp', X = 6.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setCorolla\\model\\maya\\scenes\\setCorolla_model_v004.ma' )
+vhl.car( name = 'Corolla', geo_grp='setCorolla_grp', X = 8.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setCorolla\\model\\maya\\scenes\\setCorolla_model_v004.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'HyundaiTucson', geo_grp='setHyundaiTuscon_grp', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setHyundaiTucson\\\model\\maya\\scenes\\setHundaiTuscon_model_v011.ma' )
+vhl.car( name = 'HyundaiTucson', geo_grp='setHyundaiTuscon_grp', X = 9.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setHyundaiTucson\\\model\\maya\\scenes\\setHundaiTuscon_model_v012.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'Mazda3', geo_grp='mazda3_grp', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setMazda3\\model\\maya\\scenes\\setMazda3_model_v008.ma' )
+vhl.car( name = 'Mazda3', geo_grp='mazda3_grp', X = 8.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setMazda3\\model\\maya\\scenes\\setMazda3_model_v008.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'MazdaCX7', geo_grp='mazda_cx_7_grp', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setMazdaCX7\\model\\maya\\scenes\\setMazdaCX7_model_v007.ma' )
+vhl.car( name = 'MazdaCX7', geo_grp='mazda_cx_7_grp', X = 8.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setMazdaCX7\\model\\maya\\scenes\\setMazdaCX7_model_v007.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'MercedesC63', geo_grp='merc_grp', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setMercedesC63\\model\\maya\\scenes\\setMercedesC63_model_v008.ma' )
+vhl.car( name = 'MercedesC63', geo_grp='merc_grp', X = 8.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setMercedesC63\\model\\maya\\scenes\\setMercedesC63_model_v008.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'VolkswagenPassat', geo_grp='setVolkswagenPassat_grp', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setVolkswagenPassat\\model\\maya\scenes\\setVolkswagenPassat_model_v010.ma' )
+vhl.car( name = 'Rav4', geo_grp='toyotaRav4_grp', X = 10.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setToyotaRav4\\model\\maya\\scenes\\setToyotaRav4_model_v003.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'Rav4_2019', geo_grp='Toyota_RAV4', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\2019ToyotaRav4\\model\\maya\\scenes\\2019ToyotaRav4_model_v003.ma' )
+vhl.car( name = 'VolkswagenPassat', geo_grp='setVolkswagenPassat_grp', X = 8.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\set\\setVolkswagenPassat\\model\\maya\scenes\\setVolkswagenPassat_model_v010.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'AcuraMDX', geo_grp='acuraMdx_grp', X = 8.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\AcuraMdx\\model\\maya\\scenes\\AcuraMdx_model_v005.ma' )
+vhl.car( name = 'Rav4_2019', geo_grp='Toyota_RAV4', X = 9.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\2019ToyotaRav4\\model\\maya\\scenes\\2019ToyotaRav4_model_v004.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'MazdaCX5', geo_grp='mazdaCx5_grp', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\MazdaCx5\\model\\maya\\scenes\\MazdaCx5_model_v002.ma' )
+vhl.car( name = 'AcuraMDX', geo_grp='acuraMdx_grp', X = 10.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\AcuraMdx\\model\\maya\\scenes\\AcuraMdx_model_v005.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'MercedesSprinter', geo_grp='mercedesSprinter_grp', X = 9.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\MercedesSprinter\\model\\maya\\scenes\\MercedesSprinter_model_v004.ma' )
+vhl.car( name = 'MazdaCX5', geo_grp='mazdaCx5_grp', X = 9.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\MazdaCx5\\model\\maya\\scenes\\MazdaCx5_model_v002.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
-vhl.car( name = 'Toyota4Runner', geo_grp='Toyota4Runner_grp', X = 7.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\Toyota4runner\\model\\maya\\scenes\\Toyota4runner_model_v002.ma' )
+vhl.car( name = 'MercedesSprinter', geo_grp='mercedesSprinter_grp', X = 10.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\MercedesSprinter\\model\\maya\\scenes\\MercedesSprinter_model_v004.ma' )
+# vehicle rig
+vhl = web.mod('vehicle_lib')
+vhl.car( name = 'Toyota4Runner', geo_grp='Toyota4Runner_grp', X = 8.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\Toyota4runner\\model\\maya\\scenes\\Toyota4runner_model_v002.ma' )
 # vehicle rig
 vhl = web.mod('vehicle_lib')
 vhl.car( name = 'Truck', geo_grp='Truck_grp', frontSolidAxle = False, backSolidAxle = True, chassisAxleLock=True, X = 15.0, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\Truck\\model\\maya\\scenes\\Truck_model_v004.ma' )
@@ -2617,11 +2916,27 @@ vhl.path_switch()
 
 # set files
 vhl = web.mod('vehicle_lib')
-vhl.create_geo_set_files(name='MercedesSprinter')
+vhl.create_geo_set_files(name='Rav4')
 
 # vehicle path
 vhl = web.mod('vehicle_lib')
 vhl.path(  points = 10, X = 7, length = 20000, layers = 2 )
 
-#
+# vehicle path
+vhl = web.mod('vehicle_lib')
+vhl.path(  points = 100, X = 10, length = 200000, layers = 2 )
+
+# TEST vehicle path
+cmds.file( newFile = True, force = True )
+vhl = web.mod('vehicle_lib')
+multiple = 1
+length = 50000*multiple # use multiples of 50k
+pointGap = 500
+points = length / pointGap
+vhl.path(  points = points+1, X = 10, length = length, deviationLayers = 10, layers = 5 )
+
+
+# combine car, path
+vhl = web.mod('vehicle_lib')
+vhl.car_combined_asset()
 '''

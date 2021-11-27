@@ -145,7 +145,7 @@ def get_shots_assets( list_widget, project ):
         if epp not in skips and epp != 'assets':
             eps.append( epp )  # should catch assets
         if epp == 'assets':
-            print( epp )
+            # print( epp )
             assets_only = get_assets( os.path.join( os.environ['PROJ_ROOT'], project, epp ) )
 
     for ep in eps:
@@ -157,7 +157,8 @@ def get_shots_assets( list_widget, project ):
             if '.' not in sht:
                 shots_all.append( os.path.join( ep, sht ) )
             else:
-                print( sht )
+                # print( sht )
+                pass
     shots_all.sort()
     assets_only.extend( shots_all )
     shots_n_assets = assets_only
@@ -796,7 +797,7 @@ class Prefs():
             try:
                 fileObjectJSON = open( self.prefPath(), 'r' )
                 self.prefs = json.load( fileObjectJSON )
-                print( 'prefs    ', self.prefs )
+                # print( 'prefs    ', self.prefs )
                 fileObjectJSON.close()
             except:
                 # os.remove( self.prefPath() )
@@ -811,7 +812,7 @@ class Prefs():
             # print k
             # print v
             self.sync_roots[k] = v
-        print( self.sync_roots )
+        # print( self.sync_roots )
 
 
 def frameRangeFromMaFile( project, entity, task, scene, handles = 0 ):

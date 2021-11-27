@@ -790,6 +790,7 @@ def objColorHijack( obj = '' ):
 
 def locatorOnSelection( ro = 'zxy', X = 1.0, constrain = True, toSelection = False, color = 30, matchSet = False ):
     sel = cmds.ls( sl = True )
+    # print( sel )
     locs = []
     if len( sel ) != 0:
         for item in sel:

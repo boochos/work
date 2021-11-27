@@ -15,6 +15,8 @@ jnt = web.mod( 'atom_joint_lib' )
 anm = web.mod( "anim_lib" )
 vhl = web.mod( 'vehicle_lib' )
 app = web.mod( "atom_appendage_lib" )
+ss = web.mod( "selectionSet_lib" )
+cn = web.mod( 'constraint_lib' )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -52,7 +54,7 @@ def mirror_jnts():
     mirrorj = [
     'back_L_jnt',
     'front_L_jnt',
-    'body_L_jnt',
+    'chassis_L_jnt',
     'axle_back_L_jnt',
     'landing_doorA_00_L_jnt'
     ]
@@ -61,26 +63,31 @@ def mirror_jnts():
         jnt.mirror( j , mirrorBehavior = True )
 
 
-def king_air( name = 'vehicle', X = 16 ):
+def king_air( X = 16, ns = 'geo', ref_geo = 'P:\\SYMD\\assets\\veh\\kingAirB200\\model\\maya\\scenes\\kingAirB200_model_v003.ma' ):
     '''
     build plane
     '''
+    # ref geo
+    if ns and ref_geo:
+        vhl.reference_geo( ns = ns, path = ref_geo )
     #
     mirror_jnts()
 
     # [MasterCt[4], MoveCt[4], SteerCt[4]]
     ctrls = vhl.vehicle_master( masterX = X * 10, moveX = X * 10, steerParent = 'landingGear_retract_jnt' )
-    # mass to pivot, body
-    chassis_joint = 'body_jnt'
+    # mass to pivot, chassis
+    chassis_joint = 'chassis_jnt'
+    chassis_geo = get_geo_list( chassis = True )
+    vhl.skin( chassis_joint, chassis_geo )
     # pivot_controls = [frontl, frontr, backl, backr] use to be control[2] is now returning entire structure[0-4]
-    pivot_controls = vhl.four_point_pivot( name = 'body', parent = 'move_Grp', center = chassis_joint, front = 'wheel_front_bottom_L_jnt', frontL = '', frontR = '', back = 'back_jnt', backL = 'back_L_jnt', backR = 'back_R_jnt', up = 'up_jnt', X = X * 2 )
+    pivot_controls = vhl.four_point_pivot( name = 'chassis', parent = 'move_Grp', center = chassis_joint, front = 'wheel_front_bottom_L_jnt', frontL = '', frontR = '', back = 'back_jnt', backL = 'back_L_jnt', backR = 'back_R_jnt', up = 'up_jnt', X = X * 2 )
 
     #
     landing_gear_front( ctrls, chassis_joint, pivot_controls, X )
     landing_gear_left( ctrls, chassis_joint, pivot_controls, X )
     landing_gear_right( ctrls, chassis_joint, pivot_controls, X )
     wings( X )
-    hoses( X )
+    # hoses( X )
 
 
 def landing_gear_front( ctrls = [], chassis_joint = '', pivot_controls = [], X = 1.0 ):
@@ -94,7 +101,8 @@ def landing_gear_front( ctrls = [], chassis_joint = '', pivot_controls = [], X =
     vhl.rotate_part( name = nm, suffix = '', obj = 'landingGear_retract_jnt', objConstrain = True, parent = chassis_joint, rotations = [1, 0, 0], X = X * 8, shape = 'squareXup_ctrl', color = 'yellow' )
     # ctrls  = [MasterCt[4], MoveCt[4], SteerCt[4]]
     # piston = [name1_Ct, name2_Ct, nameUp1_Ct, nameUp2_Ct]
-    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
+    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt',
+                            parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
                             aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = 'yellow' )
     hide.append( pstnCtrls[0][0] )
     place.translationXLock( pstnCtrls[1][2], True )
@@ -132,7 +140,9 @@ def landing_gear_front( ctrls = [], chassis_joint = '', pivot_controls = [], X =
     place.cleanUp( LinkCt[0], Ctrl = True )
     hide.append( LinkCt[0] )
     # steering piston
-    pstnCtrls = vhl.piston( name = 'steer_piston', suffix = '', obj1 = 'steering_piston_00_jnt', obj2 = 'steering_piston_01_jnt', parent1 = 'suspension_piston_00_jnt', parent2 = LinkCt[4], parentUp1 = 'suspension_piston_00_jnt', parentUp2 = LinkCt[4], aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, -1], up2 = [0, 1, 0], X = X * 0.5, color = 'yellow' )
+    pstnCtrls = vhl.piston( name = 'steer_piston', suffix = '', obj1 = 'steering_piston_00_jnt', obj2 = 'steering_piston_01_jnt',
+                            parent1 = 'suspension_piston_00_jnt', parent2 = LinkCt[4], parentUp1 = 'suspension_piston_00_jnt', parentUp2 = LinkCt[4],
+                            aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, -1], up2 = [0, 1, 0], X = X * 0.5, color = 'yellow' )
     hide.append( pstnCtrls[0][0] )
     hide.append( pstnCtrls[1][0] )
     # ik pv
@@ -194,7 +204,8 @@ def landing_gear_left( ctrls = [], chassis_joint = '', pivot_controls = [], X = 
     vhl.rotate_part( name = nm, suffix = suffix, obj = 'landingGear_retract_L_jnt', objConstrain = True, parent = chassis_joint, rotations = [1, 0, 0], X = X * 8, shape = 'squareXup_ctrl', color = clr )
     # suspension piston
     # pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
-    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = 'suspension_piston_00_L_jnt', obj2 = 'suspension_piston_01_L_jnt', parent1 = 'landingGear_retract_L_jnt', parent2 = 'landingGear_retract_L_jnt', parentUp1 = 'landingGear_retract_L_jnt', parentUp2 = 'landingGear_retract_L_jnt',
+    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = 'suspension_piston_00_L_jnt', obj2 = 'suspension_piston_01_L_jnt',
+                            parent1 = 'landingGear_retract_L_jnt', parent2 = 'landingGear_retract_L_jnt', parentUp1 = 'landingGear_retract_L_jnt', parentUp2 = 'landingGear_retract_L_jnt',
                             aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = clr )
     hide.append( pstnCtrls[0][0] )
     place.translationXLock( pstnCtrls[1][2], True )
@@ -288,7 +299,7 @@ def landing_gear_left( ctrls = [], chassis_joint = '', pivot_controls = [], X = 
     j = 'landing_doorA_00_L_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = 'body_jnt', rotations = [0, 0, 1], X = X * 2.3, shape = 'squareZup_ctrl', color = 'yellow' )
+    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = 'chassis_jnt', rotations = [0, 0, 1], X = X * 2.3, shape = 'squareZup_ctrl', color = 'yellow' )
 
     # hide unnecessary
     for i in hide:
@@ -308,7 +319,8 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], X =
     vhl.rotate_part( name = nm, suffix = suffix, obj = 'landingGear_retract_R_jnt', objConstrain = True, parent = chassis_joint, rotations = [1, 0, 0], X = X * 8, shape = 'squareXup_ctrl', color = clr )
     # suspension piston
     # pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
-    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = 'suspension_piston_00_R_jnt', obj2 = 'suspension_piston_01_R_jnt', parent1 = 'landingGear_retract_R_jnt', parent2 = 'landingGear_retract_R_jnt', parentUp1 = 'landingGear_retract_R_jnt', parentUp2 = 'landingGear_retract_R_jnt',
+    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = 'suspension_piston_00_R_jnt', obj2 = 'suspension_piston_01_R_jnt',
+                            parent1 = 'landingGear_retract_R_jnt', parent2 = 'landingGear_retract_R_jnt', parentUp1 = 'landingGear_retract_R_jnt', parentUp2 = 'landingGear_retract_R_jnt',
                             aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = clr )
     hide.append( pstnCtrls[0][0] )
     place.translationXLock( pstnCtrls[1][2], True )
@@ -404,7 +416,7 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], X =
     j = 'landing_doorA_00_R_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'body_jnt', rotations = [0, 0, 1], X = X * 2.3, shape = 'squareZup_ctrl', color = 'yellow' )
+    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'chassis_jnt', rotations = [0, 0, 1], X = X * 2.3, shape = 'squareZup_ctrl', color = 'yellow' )
 
     # hide unnecessary
     for i in hide:
@@ -419,9 +431,11 @@ def wings( X = 1.0 ):
     hide = []
     #
     j = 'rudder_00_jnt'
+    geo = get_geo_list( rudder_c = True )
+    vhl.skin( j, geo )
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    vhl.rotate_part( name = nm, suffix = '', obj = j, objConstrain = True, parent = 'body_jnt', rotations = [0, 0, 1], X = X * 6, shape = 'rectangleTallYup_ctrl', color = 'yellow' )
+    vhl.rotate_part( name = nm, suffix = '', obj = j, objConstrain = True, parent = 'chassis_jnt', rotations = [0, 0, 1], X = X * 6, shape = 'rectangleTallYup_ctrl', color = 'yellow' )
 
     size = X
     # wings left
@@ -436,6 +450,15 @@ def wings( X = 1.0 ):
     'mufflerA_L_jnt',
     'mufflerB_L_jnt'
     ]
+    # REMOVED MUFFLERS
+    wing_L_jnts = [
+    'flaps_00_L_jnt',
+    'flaps_02_L_jnt',
+    'aileron_00_L_jnt',
+    'elevator_00_L_jnt',
+    'landing_doorB_00_L_jnt',
+    'landing_doorC_00_L_jnt'
+    ]
     Ct = []
     shape = 'rectangleWideXup_ctrl'
     for j in wing_L_jnts:
@@ -449,22 +472,33 @@ def wings( X = 1.0 ):
         else:
             n = j.split( '_' )
             nm = n[0] + '_' + n[1]
-        ct = vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = 'body_L_jnt', rotations = [0, 0, 1], X = size, shape = shape, color = clr )
+        ct = vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = 'chassis_L_jnt', rotations = [0, 0, 1], X = size, shape = shape, color = clr )
         Ct.append( ct )
-    place.translationLock( Ct[6][2], False )
-    place.translationLock( Ct[7][2], False )
+    # place.translationLock( Ct[6][2], False ) # muffler
+    # place.translationLock( Ct[7][2], False ) # muffler
     #
+    parent = 'aileron_00_L_jnt'
+    geo = get_geo_list( aileron_l = True )
+    vhl.skin( parent, geo )
     j = 'aileron_02_L_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = 'aileron_00_L_jnt', rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    #
+    parent = 'elevator_00_L_jnt'
+    geo = get_geo_list( elevator_l = True )
+    vhl.skin( parent, geo )
     j = 'elevator_02_L_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = 'elevator_00_L_jnt', rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    #
+    parent = 'chassis_L_jnt'
     j = 'propeller_L_jnt'
     nm = j.split( '_' )[0]
-    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = 'body_L_jnt', rotations = [0, 0, 1], X = X * 7, shape = 'shldrR_ctrl', color = clr )
+    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrR_ctrl', color = clr )
+    geo = get_geo_list( prop_l = True )
+    vhl.skin( j, geo )
 
     size = X * 1
     # wings right
@@ -487,24 +521,36 @@ def wings( X = 1.0 ):
         else:
             n = j.split( '_' )
             nm = n[0] + '_' + n[1]
-        ct = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'body_R_jnt', rotations = [0, 0, 1], X = size, shape = shape, color = clr )
+        ct = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'chassis_R_jnt', rotations = [0, 0, 1], X = size, shape = shape, color = clr )
         Ct.append( ct )
-    place.translationLock( Ct[6][2], False )
-    place.translationLock( Ct[7][2], False )
+    # place.translationLock( Ct[6][2], False ) # muffler
+    # place.translationLock( Ct[7][2], False ) # muffler
     #
+    parent = 'aileron_00_R_jnt'
+    geo = get_geo_list( aileron_r = True )
+    vhl.skin( parent, geo )
     j = 'aileron_02_R_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'aileron_00_R_jnt', rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    #
+    parent = 'elevator_00_R_jnt'
+    geo = get_geo_list( elevator_r = True )
+    vhl.skin( parent, geo )
     j = 'elevator_02_R_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'elevator_00_R_jnt', rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 3, shape = 'rectangleWideXup_ctrl', color = clr )
+    #
+    parent = 'chassis_R_jnt'
     j = 'propeller_R_jnt'
     nm = j.split( '_' )[0]
-    PrpCt = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = 'body_R_jnt', rotations = [0, 0, 1], X = X * 7, shape = 'shldrR_ctrl', color = clr )
+    PrpCt = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrR_ctrl', color = clr )
     ro = cmds.xform( PrpCt[0], query = True, os = True, ro = True )
     cmds.xform( PrpCt[0], os = True, ro = [ro[0], ro[1] + 180, ro[2] + 180] )
+    cn.updateConstraintOffset( PrpCt[0] )
+    geo = get_geo_list( prop_r = True )
+    vhl.skin( j, geo )
 
     # hide unnecessary
     for i in hide:
@@ -530,6 +576,236 @@ def hoses( X = 1.0 ):
     #
     name = 'hoseB_R'
     vhl.spline( name = name, start_jnt = 'hoseB_01_R', end_jnt = 'hoseB_17_R', splinePrnt = 'suspension_piston_00_R_jnt', splineStrt = 'suspension_piston_00_R_jnt', splineEnd = 'suspension_piston_01_R_jnt', startSkpR = False, endSkpR = False, color = 'red', X = size )
+
+
+def get_geo_list( name = 'kingAir', ns = 'geo',
+                aileron_l = False,
+                aileron_r = False,
+                caliper_back_l = False,
+                caliper_back_r = False,
+                caliper_front_c = False,
+                chassis = False,
+                elevator_l = False,
+                elevator_r = False,
+                flaps_l = False,
+                flaps_r = False,
+                hoses_back_l = False,
+                hoses_back_r = False,
+                landingDoorA_l = False,
+                landingDoorA_r = False,
+                landingDoorB_l = False,
+                landingDoorB_r = False,
+                landingDoorC_l = False,
+                landingDoorC_r = False,
+                pistonBottom_back_l = False,
+                pistonBottom_back_r = False,
+                pistonBottom_front_c = False,
+                pistonTop_back_l = False,
+                pistonTop_back_r = False,
+                pistonTop_front_c = False,
+                prop_l = False,
+                prop_r = False,
+                rim_back_l = False,
+                rim_back_r = False,
+                rim_front_c = False,
+                rudder_c = False,
+                steerPistonBottom = False,
+                steerPistonTop = False,
+                suspensionArmBottom_c = False,
+                suspensionArmBottom_l = False,
+                suspensionArmBottom_r = False,
+                suspensionArmTop_c = False,
+                suspensionArmTop_l = False,
+                suspensionArmTop_r = False,
+                tire_back_l = False,
+                tire_back_r = False,
+                tire_front_c = False,
+                all = False ):
+    '''
+    geo members via selection set
+    '''
+    geos = []
+    geo_sets = []
+
+    # aileron
+    if aileron_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'aileron_l' )
+        geo_sets.append( geo_list )
+    if aileron_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'aileron_r' )
+        geo_sets.append( geo_list )
+
+    # calipers
+    if caliper_back_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'caliper_back_l' )
+        geo_sets.append( geo_list )
+    if caliper_back_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'caliper_back_r' )
+        geo_sets.append( geo_list )
+    if caliper_front_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'caliper_front_c' )
+        geo_sets.append( geo_list )
+
+    # chassis
+    if chassis or all:
+        geo_list = process_geo_list( name = name + '_' + 'chassis' )
+        geo_sets.append( geo_list )
+
+    # elevator
+    if elevator_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'elevator_l' )
+        geo_sets.append( geo_list )
+    if elevator_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'elevator_r' )
+        geo_sets.append( geo_list )
+
+    # flaps
+    if flaps_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'flaps_l' )
+        geo_sets.append( geo_list )
+    if flaps_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'flaps_r' )
+        geo_sets.append( geo_list )
+
+    # hoses
+    if hoses_back_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'hoses_back_l' )
+        geo_sets.append( geo_list )
+    if hoses_back_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'hoses_back_r' )
+        geo_sets.append( geo_list )
+
+    # landing bay doors
+    if landingDoorA_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'landingDoorA_l' )
+        geo_sets.append( geo_list )
+    if landingDoorA_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'landingDoorA_r' )
+        geo_sets.append( geo_list )
+    if landingDoorB_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'landingDoorB_l' )
+        geo_sets.append( geo_list )
+    if landingDoorB_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'landingDoorB_r' )
+        geo_sets.append( geo_list )
+    if landingDoorC_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'landingDoorC_l' )
+        geo_sets.append( geo_list )
+    if landingDoorC_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'landingDoorC_r' )
+        geo_sets.append( geo_list )
+
+    # landing gear pistons
+    if pistonBottom_back_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'pistonBottom_back_l' )
+        geo_sets.append( geo_list )
+    if pistonBottom_back_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'pistonBottom_back_r' )
+        geo_sets.append( geo_list )
+    if pistonBottom_front_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'pistonBottom_front_c' )
+        geo_sets.append( geo_list )
+    if pistonTop_back_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'pistonTop_back_l' )
+        geo_sets.append( geo_list )
+    if pistonTop_back_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'pistonTop_back_r' )
+        geo_sets.append( geo_list )
+    if pistonTop_front_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'pistonTop_front_c' )
+        geo_sets.append( geo_list )
+
+    # props
+    if prop_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'prop_l' )
+        geo_sets.append( geo_list )
+    if prop_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'prop_r' )
+        geo_sets.append( geo_list )
+
+    # rims
+    if rim_back_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'rim_back_l' )
+        geo_sets.append( geo_list )
+    if rim_back_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'rim_back_r' )
+        geo_sets.append( geo_list )
+    if rim_front_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'rim_front_c' )
+        geo_sets.append( geo_list )
+
+    # rudder
+    if rudder_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'rudder_c' )
+        geo_sets.append( geo_list )
+
+    # steering piston
+    if steerPistonBottom or all:
+        geo_list = process_geo_list( name = name + '_' + 'steerPistonBottom' )
+        geo_sets.append( geo_list )
+    if steerPistonTop or all:
+        geo_list = process_geo_list( name = name + '_' + 'steerPistonTop' )
+        geo_sets.append( geo_list )
+
+    # suspension Arm Bottom
+    if suspensionArmBottom_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'suspensionArmBottom_c' )
+        geo_sets.append( geo_list )
+    if suspensionArmBottom_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'suspensionArmBottom_l' )
+        geo_sets.append( geo_list )
+    if suspensionArmBottom_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'suspensionArmBottom_r' )
+        geo_sets.append( geo_list )
+    if suspensionArmTop_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'suspensionArmTop_c' )
+        geo_sets.append( geo_list )
+    if suspensionArmTop_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'suspensionArmTop_l' )
+        geo_sets.append( geo_list )
+    if suspensionArmTop_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'suspensionArmTop_r' )
+        geo_sets.append( geo_list )
+
+    # tires
+    if tire_back_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'tire_back_l' )
+        geo_sets.append( geo_list )
+    if tire_back_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'tire_back_r' )
+        geo_sets.append( geo_list )
+    if tire_front_c or all:
+        geo_list = process_geo_list( name = name + '_' + 'tire_front_c' )
+        geo_sets.append( geo_list )
+
+    # build list
+    for geo_set in geo_sets:
+        if geo_set:
+            for geo in geo_set:
+                if ns:
+                    if cmds.objExists( ns + ':' + geo ):
+                        geos.append( ns + ':' + geo )
+                    else:
+                        print( geo_set, geo )
+                else:
+                    geos.append( geo )
+
+    return geos
+
+
+def process_geo_list( name = '' ):
+    '''
+    
+    '''
+    s = []
+    setDict = ss.loadDict( os.path.join( ss.defaultPath(), name + '.sel' ) )
+    # print( setDict )
+    if setDict:
+        for obj in setDict.values():
+            s.append( obj )
+        # print( s )
+        return s
+    return None
 
 #
 #
