@@ -13,6 +13,7 @@ wf = web.mod( 'webrFiles_lib' )
 
 def message( what = '', maya = True ):
     what = '-- ' + what + ' --'
+    what = what.replace( '\\', '/' )
     global tell
     tell = what
     if maya:
