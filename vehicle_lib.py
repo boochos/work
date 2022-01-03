@@ -78,7 +78,7 @@ def vehicle_master( masterX = 10, moveX = 10, steerParent = '', geo_grp = '' ):
 
     # steer #
     Steer = 'steer'
-    SteerCt = place.Controller2( Steer, 'front_jnt', False, 'splineStart_ctrl', moveX * 6, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    SteerCt = place.Controller2( Steer, 'front_jnt', False, 'splineStart_ctrl', moveX * 5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.parent( SteerCt[0], CONTROLS )
     # cmds.setAttr( SteerCt[0] + '.tz', moveX * 5 )
     if steerParent:
@@ -88,6 +88,9 @@ def vehicle_master( masterX = 10, moveX = 10, steerParent = '', geo_grp = '' ):
     place.translationLock( SteerCt[2], True )
     place.rotationXLock( SteerCt[2], True )
     place.rotationZLock( SteerCt[2], True )
+    place.translationLock( SteerCt[3], True )
+    place.rotationXLock( SteerCt[3], True )
+    place.rotationZLock( SteerCt[3], True )
 
     if steerParent:
         return [MasterCt[4], steerParent, SteerCt[4]]
@@ -182,7 +185,16 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
     distance = dsp.measureDis( obj1 = obj1, obj2 = obj2 ) * 0.5
     if suffix:
         suffix = '_' + suffix
-
+    upDir1 = 1
+    for i in up1:
+        if i == -1:
+            upDir1 = -1
+            break
+    upDir2 = 1
+    for i in up1:
+        if i == -1:
+            upDir2 = -1
+            break
     # add rig group for cleanliness
     piston_grp = cmds.group( name = name + '_' + suffix + '_AllGrp', em = True )
     # cmds.parent( piston_grp, CONTROLS() )
@@ -214,9 +226,12 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
     nameUp1 = name + '_topUp' + suffix
     nameUp1_Ct = place.Controller2( nameUp1, obj1, True, 'loc_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     cmds.parent( nameUp1_Ct[0], piston_grp )
-    cmds.setAttr( nameUp1_Ct[1] + place.vector( up1 ), distance )
+    # print( nameUp1_Ct[1] , place.vector( up1 ), distance )
+    cmds.setAttr( nameUp1_Ct[1] + place.vector( up1 ), distance * upDir1 )
     if parentUp1:
         cmds.parentConstraint( parentUp1, nameUp1_Ct[0], mo = True )
+    else:
+        cmds.parentConstraint( name1_Ct[4], nameUp1_Ct[0], mo = True )
     place.rotationLock( nameUp1_Ct[2], True )
     # vis
     place.addAttribute( name1_Ct[2], attr, 0, 1, False, 'long' )
@@ -226,9 +241,11 @@ def piston( name = '', suffix = '', obj1 = '', obj2 = '', parent1 = '', parent2 
     nameUp2 = name + '_bottomUp' + suffix
     nameUp2_Ct = place.Controller2( nameUp2, obj2, True, 'loc_ctrl', X , 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     cmds.parent( nameUp2_Ct[0], piston_grp )
-    cmds.setAttr( nameUp2_Ct[1] + place.vector( up2 ), distance )
+    cmds.setAttr( nameUp2_Ct[1] + place.vector( up2 ), distance * upDir2 )
     if parentUp2:
         cmds.parentConstraint( parentUp2, nameUp2_Ct[0], mo = True )
+    else:
+        cmds.parentConstraint( name2_Ct[4], nameUp2_Ct[0], mo = True )
     place.rotationLock( nameUp2_Ct[2], True )
     # vis
     place.addAttribute( name2_Ct[2], attr, 0, 1, False, 'long' )
@@ -925,6 +942,9 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     place.translationLock( SpinCt[2], True )
     place.rotationLock( SpinCt[2], True )
     place.rotationXLock( SpinCt[2], False )
+    place.translationLock( SpinCt[3], True )
+    place.rotationLock( SpinCt[3], True )
+    place.rotationXLock( SpinCt[3], False )
     #
     place.optEnum( SpinCt[2], attr = 'wheelRoll', enum = 'CONTROL' )
     #
@@ -936,10 +956,11 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     cmds.setAttr( ( SpinCt[2] + '.roll' ), cb = True )
     cmds.setAttr( ( SpinCt[2] + '.roll' ), keyable = False )
     #
-    place.addAttribute( [SpinCt[2]], ['rollMultiplier'], 0, 1, True, attrType = 'float' )
+    place.addAttribute( [SpinCt[2]], ['rollWeight'], 0, 1, True, attrType = 'float' )
     #
     cmds.connectAttr( r1 + '.distance', SpinCt[2] + '.radius' )
-    cmds.connectAttr( SpinCt[2] + '.roll', SpinCt[1] + '.rotateX' )
+    # cmds.connectAttr( SpinCt[2] + '.roll', SpinCt[1] + '.rotateX' )
+    place.smartAttrBlend( master = SpinCt[2], slave = SpinCt[1], masterAttr = 'roll', slaveAttr = 'rotateX', blendAttrObj = SpinCt[2], blendAttrString = 'rollWeight', blendWeight = 0.0, reverse = False, blendAttrExisting = True )
     #
     if exp:
         wheel_exp( ctrl = ContactCt[0] )
@@ -1071,17 +1092,18 @@ def tire_circle( obj = '', name = '', radius = 1.0, width = 1.0 ):
     return c
 
 
-def tire_curves( position = '', side = '', mirror = False ):
+def tire_curves( position = '', side = '', suffix = '', mirror = False ):
     '''
     create tire from joint info
+    suffix = for additional tires on same position, ie, cement trucks have double tires in the back
     '''
 
     # print( position, side )
     # wheel joints
-    wheel_center = 'wheel_' + position + '_center_' + side + '_jnt'
-    wheel_bottom = 'wheel_' + position + '_bottom_' + side + '_jnt'
-    tire_width = 'tire_width_' + position + '_' + side + '_jnt'
-    tire_wall = 'tire_wall_' + position + '_' + side + '_jnt'
+    wheel_center = 'wheel' + suffix + '_' + position + '_center_' + side + '_jnt'
+    wheel_bottom = 'wheel' + suffix + '_' + position + '_bottom_' + side + '_jnt'
+    tire_width = 'tire' + suffix + '_width_' + position + '_' + side + '_jnt'
+    tire_wall = 'tire' + suffix + '_wall_' + position + '_' + side + '_jnt'
 
     # joint feedback
 
@@ -1095,15 +1117,15 @@ def tire_curves( position = '', side = '', mirror = False ):
         t = t * -1
 
     # names
-    GRP = position + '_' + side + '_CrvGrp'
+    GRP = 'wheel' + suffix + '_' + position + '_' + side + '_CrvGrp'
     crvs = []
-    c0 = 'tire_crv0_' + position + '_' + side
-    c1 = 'tire_crv1_' + position + '_' + side
-    c2 = 'tire_crv2_' + position + '_' + side
-    c3 = 'tire_crv3_' + position + '_' + side
-    c11 = 'tire_crv11_' + position + '_' + side
-    c22 = 'tire_crv22_' + position + '_' + side
-    c33 = 'tire_crv33_' + position + '_' + side
+    c0 = 'tire' + suffix + '_crv0_' + position + '_' + side
+    c1 = 'tire' + suffix + '_crv1_' + position + '_' + side
+    c2 = 'tire' + suffix + '_crv2_' + position + '_' + side
+    c3 = 'tire' + suffix + '_crv3_' + position + '_' + side
+    c11 = 'tire' + suffix + '_crv11_' + position + '_' + side
+    c22 = 'tire' + suffix + '_crv22_' + position + '_' + side
+    c33 = 'tire' + suffix + '_crv33_' + position + '_' + side
     crvs_mirror = [c0, c1, c2, c3]
     # qualify
     if not cmds.objExists( c0 ):
@@ -1166,18 +1188,18 @@ def tire_mirror_curves( get_side = 'L', crvs = [] ):
         cmds.setAttr( crv + radius, r )
 
 
-def tire_proxy2( position = '', side = '', crvs = [] ):
+def tire_proxy2( position = '', side = '', suffix = '', crvs = [] ):
     '''
     create tire from joint info
     '''
     # loft
-    lofted = cmds.loft( crvs, name = 'lofted_' + position + '_' + side, degree = 1 )  # [u'lofted_front_L', u'loft1']
+    lofted = cmds.loft( crvs, name = 'lofted' + suffix + '_' + position + '_' + side, degree = 1 )  # [u'lofted_front_L', u'loft1']
     place.cleanUp( lofted[0], World = True )
     cmds.select( lofted[0] )
     cmds.xform( cpc = True, p = True )  # center pivot doesnt work unless object is visible
     cmds.setAttr( lofted[0] + '.visibility', 0 )
     # convert to poly
-    loftedPoly = cmds.nurbsToPoly( lofted[0], name = 'lofted_poly_' + position + '_' + side, ch = True, polygonType = 1, polygonCount = 800, format = 0 )  # [u'lofted_poly_front_L', u'nurbsTessellate1']
+    loftedPoly = cmds.nurbsToPoly( lofted[0], name = 'lofted' + suffix + '_poly_' + position + '_' + side, ch = True, polygonType = 1, polygonCount = 800, format = 0 )  # [u'lofted_poly_front_L', u'nurbsTessellate1']
     place.cleanUp( loftedPoly[0], World = True )
     cmds.select( loftedPoly[0] )
     cmds.xform( cpc = True, p = True )  # center pivot doesnt work unless object is visible
@@ -1457,7 +1479,9 @@ def dynamic_target( name = 'chassis', root = 'root_jnt', target = 'up_jnt', fron
     cmds.setAttr( up_Ct[0] + '.visibility', 0 )
 
     # constrain base to target
-    cmds.aimConstraint( aim_Ct[4], base_Ct[1], wut = 'object', wuo = up_Ct[4], aim = aim, u = up, mo = True )
+    aimCon = cmds.aimConstraint( aim_Ct[4], base_Ct[1], wut = 'object', wuo = up_Ct[4], aim = aim, u = up, mo = True )[0]
+    place.attr_easeInto_Limits( name = 'dynamic', masterAttr = aimCon + '.constraintRotateX', slaveAttr = base_Ct[1] + '.rotateX', maxAttr = aim_Ct[2] + '.' + c_front, minAttr = aim_Ct[2] + '.' + c_back )  # front back
+    place.attr_easeInto_Limits( name = 'dynamic', masterAttr = aimCon + '.constraintRotateZ', slaveAttr = base_Ct[1] + '.rotateZ', maxAttr = aim_Ct[2] + '.' + c_right, minAttr = aim_Ct[2] + '.' + c_left )  # left right
 
     # attach aim
     mp = dnm.attachObj( obj = aim_Ct[0], upObj = up_Ct[4], crv = crv, position = 1.0 )
@@ -1471,6 +1495,30 @@ def dynamic_target( name = 'chassis', root = 'root_jnt', target = 'up_jnt', fron
     place.cleanUp( grps[2], World = True )
 
     return [base_Ct, aim_Ct, up_Ct, follicle_Grp ]
+
+
+def dynamic_tire_pressure():
+    '''
+    
+    '''
+    # main attr
+    attrObj = 'chassis_dynamicTarget'
+    attr = 'dynamicPressure'
+
+    # chassis drives wheel
+    chassis = 'chassis_dynamicBase_CtGrp'  # rx = front/back, rz = left/right
+    # wheel drives next 3 groups
+    wheel = 'wheel_front_pressure_L_CtGrp'
+    place.smartAttrBlend( master = chassis, slave = wheel, masterAttr = 'rx', slaveAttr = 'ty', blendAttrObj = attrObj, blendAttrString = attr, blendWeight = 1.0, reverse = True )
+    place.smartAttrBlend( master = chassis, slave = wheel, masterAttr = 'rz', slaveAttr = 'ty', blendAttrObj = attrObj, blendAttrString = attr, blendWeight = 1.0, reverse = False )
+
+    #
+    pivot = 'chassis_front_L_pivot_Grp'
+    cluster = 'wheel_front_clstr_0_L_Handle'  # reverse
+    contact = 'wheel_front_contact_L_CtGrp'  # reverse
+    place.smartAttrBlend( master = wheel, slave = pivot, masterAttr = 'ty', slaveAttr = 'ty', blendAttrObj = attrObj, blendAttrString = attr, blendWeight = 1.0, reverse = False )  # causes cycle
+    place.smartAttrBlend( master = wheel, slave = cluster, masterAttr = 'ty', slaveAttr = 'ty', blendAttrObj = attrObj, blendAttrString = attr, blendWeight = 1.0, reverse = True )
+    place.smartAttrBlend( master = wheel, slave = contact, masterAttr = 'ty', slaveAttr = 'ty', blendAttrObj = attrObj, blendAttrString = attr, blendWeight = 1.0, reverse = True )
 
 
 def __________________PATH():
@@ -2057,7 +2105,7 @@ def path_to_ground():
         message( 'Select 2 objects: expecting master control of path and ground geo as selection.', warning = True )
 
 
-def car_to_path( wheels = ['wheel_front_spin_L', 'wheel_front_spin_R', 'wheel_back_spin_L', 'wheel_back_spin_R'], mod = True ):
+def car_to_path( wheels = ['wheel_front_spin_L', 'wheel_front_spin_R', 'wheel_back_spin_L', 'wheel_back_spin_R'], mod = True, easyBake = True ):
     '''
     select controls first and path object with namespace last
     assumes controls are sorted in proper order
@@ -2069,9 +2117,13 @@ def car_to_path( wheels = ['wheel_front_spin_L', 'wheel_front_spin_R', 'wheel_ba
     path_radius = 'onPath_front.wheelRadius'
     path_roll = 'onPath_front.wheelRoll'
     path_rollMod = 'onPath_front.wheelRollModulus'
-    veh_obj = 'move_CtGrp'
+    if easyBake:
+        veh_obj = 'move'  # better able to bake and export anim
+        veh_steer = 'steer'  # better able to bake and export anim
+    else:
+        veh_obj = 'move_CtGrp'
+        veh_steer = 'steer_CtGrp'
     veh_offset = 'move_Offset'
-    veh_steer = 'steer_CtGrp'
     # wheel base
     path_wheelBase = 'onPath_back.wheelBase'
     chassis_f = 'chassis_back_pivot'
@@ -2101,26 +2153,42 @@ def car_to_path( wheels = ['wheel_front_spin_L', 'wheel_front_spin_R', 'wheel_ba
             for wheel in wheels:
                 veh_radius = veh_ns + ':' + wheel + '.radius'
                 veh_roll = veh_ns + ':' + wheel + '.roll'
+                veh_rx = veh_ns + ':' + wheel + '.rx'
                 cmds.connectAttr( veh_radius, path_radius, f = True )  # should only connect once per radius change, this breaks previous connections, should add smarter logic
-                if mod:
-                    cmds.connectAttr( path_rollMod, veh_roll )
+                if easyBake:
+                    if mod:
+                        cmds.connectAttr( path_rollMod, veh_roll )
+                        cmds.connectAttr( path_rollMod, veh_rx )
+                    else:
+                        cmds.connectAttr( path_roll, veh_roll )
+                        cmds.connectAttr( path_roll, veh_rx )
                 else:
-                    cmds.connectAttr( path_roll, veh_roll )
+                    if mod:
+                        cmds.connectAttr( path_rollMod, veh_roll )
+                    else:
+                        cmds.connectAttr( path_roll, veh_roll )
                 # modulus_node( name = wheel, objectAttrDvdnd = path_roll, objectAttrRmndr = veh_roll, divisor = 360 )
             # amount to shift offset control
             point_A = cmds.xform( veh_obj, query = True, ws = True, rp = True )
             point_B = cmds.xform( veh_steer, query = True, ws = True, rp = True )
-            distance = place.distance2Pts( point_A, point_B )
-            print( distance )  # add value to wheelBase attr
-            cmds.setAttr( veh_offset + '.translateZ', distance * -1 )
+            distance_steer = place.distance2Pts( point_A, point_B )
+            print( distance_steer )  # add value to wheelBase attr
+            # cmds.setAttr( veh_offset + '.translateZ', distance_steer * -1 )  # skip, not necessary
             # wheel base
             point_A = cmds.xform( chassis_f, query = True, ws = True, rp = True )
             point_B = cmds.xform( chassis_b, query = True, ws = True, rp = True )
-            distance = place.distance2Pts( point_A, point_B )
-            cmds.setAttr( path_wheelBase, distance )
+            distance_wheelBase = place.distance2Pts( point_A, point_B )
+            cmds.setAttr( path_wheelBase, distance_wheelBase )
             # attach
             cmds.parentConstraint( path_obj, veh_obj, mo = False )
-            cmds.parentConstraint( path_steer, veh_steer, mo = False )
+            # cmds.parentConstraint( path_steer, veh_steer, mo = False )
+            cmds.orientConstraint( path_steer, veh_steer, skip = ( 'x', 'z' ) )  # cant use parentCons, axis locked if easyBake
+            #
+            # fix distance_steer offset
+            t = cmds.xform( veh_obj, query = True, os = True, t = True )
+            cmds.xform( veh_obj, os = True, t = [t[0], t[1], t[2] - distance_steer] )
+            cn.updateConstraintOffset( veh_obj )
+            #
         else:
             message( 'Expected objects dont exist', warning = True )
             print( path_obj, veh_obj )
@@ -2318,7 +2386,7 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
         cmds.delete( 'locator1' )
 
 
-def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\maya\\scenes\\path_rig_v006.ma', ppl_path = 'P:\\MDLN\\assets\\util\\driver\\rig\\maya\\scenes\\driver_rig_v003.ma' ):
+def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\maya\\scenes\\path_rig_v006.ma', ppl_path = 'P:\\MDLN\\assets\\util\\driver\\rig\\maya\\scenes\\driver_rig_v003.ma', getPath = True ):
     '''
     new scene
     get project path
@@ -2341,7 +2409,7 @@ def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\may
             list_of_files = glob.glob( os.path.join( scenes_path, '*.ma' ) )  # * means all if need specific format then *.csv
             filtered_list = []
             for f in list_of_files:
-                if 'rigSkel' not in f and '_rigCombined_' not in f:
+                if 'rigSkel' not in f and '_rigCombined_' not in f and '_rigPassengers_' not in f:
                     filtered_list.append( f )
             latest_file = max( filtered_list, key = os.path.getctime )
             # print( latest_file )
@@ -2353,16 +2421,18 @@ def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\may
 
     if car and path and ppl_path:
         # ref
-        ns_p = 'pth'
         ns_v = 'vhcl'
         ns_ppl = 'ppl'
-        cmds.file( path, reference = True, namespace = ns_p )
         cmds.file( car, reference = True, namespace = ns_v )
         cmds.file( ppl_path, reference = True, namespace = ns_ppl )
 
-        # attach
-        cmds.select( [ns_v + ':master', ns_p + ':master'] )
-        car_to_path()
+        if getPath:
+            # ref
+            ns_p = 'pth'
+            cmds.file( path, reference = True, namespace = ns_p )
+            # attach
+            cmds.select( [ns_v + ':master', ns_p + ':master'] )
+            car_to_path()
 
         # group
         cmds.select( ns_v + ':master' )
@@ -2430,7 +2500,11 @@ def car_combined_asset( car = '', path = 'P:\\MDLN\\assets\\util\\path\\rig\\may
             cmds.setAttr( ns_ppl + ':Filip.rx', -17 )
 
         # save
-        name = latest_file.replace( '_rig_', '_rigCombined_' )
+        name = ''
+        if getPath:
+            name = latest_file.replace( '_rig_', '_rigCombined_' )
+        else:
+            name = latest_file.replace( '_rig_', '_rigPassengers_' )
         name = name.replace( '\\', '/' )
         fileType = ['mayaAscii']
         # add the file about to be saved to the recent files menu
@@ -2581,7 +2655,7 @@ def mirror_jnts():
         jnt.mirror( j , mirrorBehavior = True )
 
 
-def skin( joint = '', geos = [], constraint = True ):
+def skin( joint = '', geos = [], constraint = True, selectedJoints = False ):
     '''
     skin geo list to joint
     '''
@@ -2596,7 +2670,11 @@ def skin( joint = '', geos = [], constraint = True ):
         if constraint:
             cmds.parentConstraint( joint, g, mo = True )
         else:
-            cmds.select( [g, joint] )
+            if selectedJoints:
+                cmds.select( g, add = True )
+                mel.eval( 'SmoothBindSkin;' )
+            else:
+                cmds.select( [g, joint] )
             mel.eval( 'SmoothBindSkin;' )
             # cmds.bindSkin( tsb = True )  # toSelectedBones
             # cmds.bindSkin( g, joint, tsb = True ) # toSelectedBones

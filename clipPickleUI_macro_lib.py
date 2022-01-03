@@ -120,10 +120,14 @@ class CPUI( object ):
         path = self.path
         if os.name == 'nt':
             # print path
-            # path = path.replace('\'', '\\')
-            # print path
+            # path = path.replace( '/', '\\' )
+            # print( path )
             if os.path.isdir( path ):
+                # print( 'exists: ', path )
+                path = path.replace( '/', '\\' )
                 subprocess.Popen( r'explorer /open, ' + path )
+            else:
+                print( 'doesnt exist: ', path )
         elif platform.system() == 'Darwin':
             subprocess.call( ["open", "-R", path] )
         else:

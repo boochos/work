@@ -483,11 +483,13 @@ class CSUI( object ):
                 foundNs = []
                 for obj in dic.keys():
                     if ':' in obj:
-                        obj = obj.split( ':' )[1]
+                        base = obj.split( ':' )[1]
+                        base = obj.rsplit( ':', 1 )[1]
                         objNs = obj.split( ':' )[0]
+                        objNs = obj.rsplit( ':', 1 )[0]
                         if objNs not in foundNs:
                             for ns in liveNs:
-                                if cmds.objExists( ns + ':' + obj ):
+                                if cmds.objExists( ns + ':' + base ):
                                     if s not in contextualSets:
                                         contextualSets.append( s )
                                         foundNs.append( objNs )

@@ -1090,7 +1090,7 @@ def clipDefaultPath():
     # print os.name
     varPath = cmds.internalVar( userAppDir = True )
     path = os.path.join( varPath, 'clipLibrary' )
-    # print path
+    # print( path )
     return path
 
 
@@ -1310,7 +1310,7 @@ def getNS():
     if sel:
         for item in sel:
             if ':' in sel[0]:
-                ns = sel[0].split( ':' )[0]
+                ns = sel[0].rsplit( ':', 1 )[0]
                 return ns
             else:
                 return None
@@ -1323,7 +1323,7 @@ def replaceNS( obj = '', ns = '' ):
     obj = original object with namespace
     ns = new namespace
     '''
-    result = obj.replace( obj.split( ':' )[0], ns )
+    result = obj.replace( obj.rsplit( ':', 1 )[0], ns )
     # print result
     return result
 

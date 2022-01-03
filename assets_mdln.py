@@ -1,10 +1,12 @@
+import glob
 import imp
 import os
+import shutil
+import time
 
 from atom_face_lib import skn
 import maya.cmds as cmds
 import maya.mel as mel
-import webrImport as web
 import webrImport as web
 
 #
@@ -16,6 +18,12 @@ anm = web.mod( "anim_lib" )
 vhl = web.mod( 'vehicle_lib' )
 app = web.mod( "atom_appendage_lib" )
 ss = web.mod( "selectionSet_lib" )
+pb = web.mod( "playblast_lib" )
+ac = web.mod( "animCurve_lib" )
+ffm = web.mod( "ffMpg" )
+cas = web.mod( "cache_abc_sil" )
+ds = web.mod( "display_lib" )
+tp = web.mod( "togglePlate" )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -279,6 +287,12 @@ def passengers( X = 1 ):
     'Vojta',
     'Filip'
     ]
+    geo_vis = [
+    'geo:GTP_EMan_Peter_20_Stt_Drvg_Adl_Ccs_Gry',
+    'geo:GTP_CWman_Paula_18_Stt_Clp_Obs_Sd_Adl_Asn',
+    'geo:GTP_CMan_Vojta_03_Stt_Lsn_Adl_Ccs_Mgr',
+    'geo:GTP_CMan_Filip_10_Stt_Exp_Adl_Ccs_Adl_Ccs_Mgr'
+    ]
     # loop
     for i in range( len( jnts ) ):
         name = names[i]
@@ -291,16 +305,711 @@ def passengers( X = 1 ):
         # head
         head_Ct = place.Controller2( name + '_head', name + '_3_jnt', True, shapeH, X * 0.4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
         place.cleanUp( head_Ct[0], Ctrl = True )
-        cmds.orientConstraint( head_Ct[4], name + '_3_jnt', mo = True )
         cmds.pointConstraint( name + '_3_jnt', head_Ct[0], mo = True )
+        cmds.orientConstraint( MasterCt[4], head_Ct[0], mo = True )
+        cmds.orientConstraint( head_Ct[4], name + '_3_jnt', mo = True )
         # pose
         place.hijackAttrs( name + '_1_jnt', name_Ct[2], 'rotateX', 'kneeBend', set = False, default = 60, force = True )
         place.hijackScaleMerge( name + '_root_jnt', name_Ct[2], mergeAttr = 'Scale' )
         cmds.setAttr( name_Ct[2] + '.Scale', 0.83 )
+        # visibility
+        place.hijackAttrs( geo_vis[i], name_Ct[2], 'visibility', 'geoVis', set = False, default = 1, force = True )
+
+
+def ref_cars( ref = False ):
+    '''
+    ref things
+    '''
+    #
+    path = 'P:\\MDLN\\assets\\set\\setCorolla\\rig\\maya\\scenes\\setCorolla_rigCombined_v006.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setCorolla' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setHyundaiTucson\\rig\\maya\\scenes\\setHyundaiTucson_rigCombined_v003.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setHyundaiTucson' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setMazda3\\rig\\maya\\scenes\\setMazda3_rigCombined_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setMazda3' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setMazdaCX7\\rig\\maya\\scenes\\setMazdaCX7_rigCombined_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setMazdaCX7' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setMercedesC63\\rig\\maya\\scenes\\setMercedesC63_rigCombined_v005.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setMercedesC63' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setToyotaRav4\\rig\\maya\\scenes\\setToyotaRav4_rigCombined_v003.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setToyotaRav4' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setVolkswagenPassat\\rig\\maya\\scenes\\setVolkswagenPassat_rigCombined_v008.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setVolkswagenPassat' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\2019ToyotaRav4\\rig\\maya\\scenes\\2019ToyotaRav4_rigCombined_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = '2019ToyotaRav4' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\AcuraMdx\\rig\\maya\\scenes\\AcuraMdx_rigCombined_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'AcuraMdx' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\MazdaCx5\\rig\\maya\\scenes\\MazdaCx5_rigCombined_v005.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'MazdaCx5' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\MercedesSprinter\\rig\\maya\\scenes\\MercedesSprinter_rigCombined_v006.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'MercedesSprinter' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\Toyota4runner\\rig\\maya\\scenes\\Toyota4runner_rigCombined_v005.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'Toyota4runner' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\Truck\\rig\\maya\\scenes\\Truck_rigCombined_v005.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'Truck' )
+    else:
+        print( 'no___', path )
+
+
+def ref_cars_passengers( ref = False ):
+    '''
+    ref things
+    '''
+    #
+    path = 'P:\\MDLN\\assets\\set\\setCorolla\\rig\\maya\\scenes\\setCorolla_rigPassengers_v006.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setCorolla' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setHyundaiTucson\\rig\\maya\\scenes\\setHyundaiTucson_rigPassengers_v003.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setHyundaiTucson' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setMazda3\\rig\\maya\\scenes\\setMazda3_rigPassengers_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setMazda3' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setMazdaCX7\\rig\\maya\\scenes\\setMazdaCX7_rigPassengers_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setMazdaCX7' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setMercedesC63\\rig\\maya\\scenes\\setMercedesC63_rigPassengers_v005.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setMercedesC63' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setToyotaRav4\\rig\\maya\\scenes\\setToyotaRav4_rigPassengers_v003.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setToyotaRav4' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\set\\setVolkswagenPassat\\rig\\maya\\scenes\\setVolkswagenPassat_rigPassengers_v008.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'setVolkswagenPassat' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\2019ToyotaRav4\\rig\\maya\\scenes\\2019ToyotaRav4_rigPassengers_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = '2019ToyotaRav4' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\AcuraMdx\\rig\\maya\\scenes\\AcuraMdx_rigPassengers_v004.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'AcuraMdx' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\MazdaCx5\\rig\\maya\\scenes\\MazdaCx5_rigPassengers_v005.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'MazdaCx5' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\MercedesSprinter\\rig\\maya\\scenes\\MercedesSprinter_rigPassengers_v006.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'MercedesSprinter' )
+    else:
+        print( 'no___', path )
+    #
+    path = 'P:\\MDLN\\assets\\veh\\Toyota4runner\\rig\\maya\\scenes\\Toyota4runner_rigPassengers_v005.ma'
+    if os.path.isfile( path ):
+        print( path )
+        if ref:
+            cmds.file( path, reference = True, namespace = 'Toyota4runner' )
+    else:
+        print( 'no___', path )
+
+
+def set_for_animation():
+    '''
+    
+    '''
+    # dynamics
+    cmds.select( "*:*:chassis_dynamicTarget" )
+    sel = cmds.ls( sl = 1 )
+    for s in sel:
+        cmds.setAttr( s + '.dynamicParentOffOn', 0 )
+        cmds.setAttr( s + '.enable', 0 )
+    # tires
+    try:
+        cmds.select( "*:*:move" )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
+                cmds.setAttr( s + '.tireGeo', 0 )
+                cmds.setAttr( s + '.tireProxy', 1 )
+    except:
+        pass
+    # traffic tires
+    try:
+        cmds.select( "*:*:*:move" )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
+                cmds.setAttr( s + '.tireGeo', 0 )
+                cmds.setAttr( s + '.tireProxy', 1 )
+    except:
+        pass
+    # time
+    cmds.playbackOptions( minTime = 1001 )
+    cmds.playbackOptions( animationStartTime = 1001 )
+
+
+def set_all_dynamics():
+    '''
+    
+    '''
+    # time
+    cmds.playbackOptions( minTime = 970 )
+    cmds.playbackOptions( animationStartTime = 970 )
+    # dynamics
+    cmds.select( "*:*:chassis_dynamicTarget" )
+    sel = cmds.ls( sl = 1 )
+    for s in sel:
+        cmds.setAttr( s + '.dynamicParentOffOn', 1 )
+        cmds.setAttr( s + '.enable', 1 )
+        cmds.setAttr( s + '.startFrame', 970 )
+
+
+def set_obj_dynamics( obj = '', on = False ):
+    '''
+    
+    '''
+    if on:
+        cmds.setAttr( obj + '.dynamicParentOffOn', 1 )
+        cmds.setAttr( obj + '.enable', 1 )
+        cmds.setAttr( obj + '.startFrame', 970 )
+    else:
+        cmds.setAttr( obj + '.dynamicParentOffOn', 0 )
+        cmds.setAttr( obj + '.enable', 0 )
+        cmds.setAttr( obj + '.startFrame', 970 )
+
+
+def set_for_playblast( dynamics = False, tires = False ):
+    '''
+    
+    '''
+    # time
+    cmds.playbackOptions( minTime = 1001 )
+    cmds.playbackOptions( animationStartTime = 1001 )
+    # dynamics
+    if dynamics:
+        # delete anim
+        transform = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+        cmds.select( "*:*:chassis_dynamicBase" )
+        sel = cmds.ls( sl = 1 )
+        #
+        for s in sel:
+            if rig_qualified_to_bake( s ):
+                ac.deleteAnim2( s, attrs = transform )
+                for i in transform:
+                    cmds.setAttr( s + '.' + i, 0 )
+        # set
+        set_all_dynamics()
+    # tires
+    if tires:
+        try:
+            cmds.select( "*:*:move" )
+            sel = cmds.ls( sl = 1 )
+            if sel:
+                for s in sel:
+                    cmds.setAttr( s + '.tireGeo', 1 )
+                    cmds.setAttr( s + '.tireProxy', 0 )
+        except:
+            pass
+        # traffic tires
+        try:
+            cmds.select( "*:*:*:move" )
+            sel = cmds.ls( sl = 1 )
+            if sel:
+                for s in sel:
+                    cmds.setAttr( s + '.tireGeo', 1 )
+                    cmds.setAttr( s + '.tireProxy', 0 )
+        except:
+            pass
+
+
+def blast( dynamics = False, burn_in = True ):
+    '''
+    
+    '''
+    start = 1001
+
+    # res
+    special_shot = '101_009_1000'
+    path = cmds.file( query = True, exn = True )
+    if special_shot in path:
+        cmds.setAttr( 'defaultResolution.width', 3840 )
+        cmds.setAttr( 'defaultResolution.height', 2160 )
+    else:
+        cmds.setAttr( 'defaultResolution.width', 4448 )
+        cmds.setAttr( 'defaultResolution.height', 3096 )
+
+    # blast
+    set_for_playblast( dynamics = dynamics )
+    #
+    if burn_in:
+        result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = 'precomp', play = False )  # blastPath, blastName
+        pathOut = result[0].replace( result[1], '' )
+        pathOutName = result[1].replace( '_precomp', '____cam' )  # added cam string, burnin expects cam suffix
+        mp4 = ffm.imgToMp4( pathIn = result[0], image = result[1], start = start, pathOut = pathOut, pathOutName = pathOutName )
+        ffm.burn_in( filein = mp4, startFrame = start, size = 35 )
+        pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_precomp' )
+    else:
+        result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = '', play = False )  # blastPath, blastNam
+        source = result[0]
+        print( source )
+        path = cmds.file( query = True, exn = True )
+        sht = path.rsplit( '/', 1 )[1].split( '.' )[0]
+        print( sht )
+        dest = path.split( 'maya' )[0]
+        dest = os.path.join( dest, 'playblasts' )
+        dest = os.path.join( dest, sht )
+        print( dest )
+        if os.path.isdir( dest ):
+            shutil.rmtree( dest )
+        shutil.copytree( source.replace( '\\', '/' ), dest.replace( '\\', '/' ) )
+
+        # pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_traffic' )
+    #
+    set_for_animation()
+
+
+def rig_qualified_to_bake( obj = '' ):
+    '''
+    if object moving on path, qualified
+    '''
+    pth = 'pth'
+    ns = obj.split( ":", 1 )[0]
+    onPath_front = ns + ':' + pth + ':onPath_front'
+    if cmds.objExists( onPath_front ):
+        animCurves = cmds.findKeyframe( onPath_front, c = True )
+        if animCurves:
+            # print( 'bake', ns )
+            return True
+        else:
+            # print( 'no bake', ns )
+            return False
+    else:
+        return False
+
+
+def shot_qualified_to_bake( path = '' ):
+    '''
+    
+    '''
+    shots = [ '101_009_0300', '101_009_0400', '101_009_0500', '101_009_0700']
+    for s in shots:
+        if s in path:
+            return True
+    return False
+
+
+def bake_dynamics():
+    '''
+
+    '''
+    #
+    cmds.playbackOptions( minTime = 970 )
+    cmds.playbackOptions( animationStartTime = 970 )
+    #
+    transform = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+    cmds.select( "*:*:chassis_dynamicBase" )
+    sel = cmds.ls( sl = 1 )
+    #
+    for s in sel:
+        if rig_qualified_to_bake( s ):
+            ac.deleteAnim2( s, attrs = transform )
+            for i in transform:
+                cmds.setAttr( s + '.' + i, 0 )
+            #
+            ref = s.rsplit( ':', 1 )[0]
+            set_obj_dynamics( ref + ':chassis_dynamicTarget', on = True )
+            #
+            n = anm.SpaceSwitch( s )
+            set_obj_dynamics( ref + ':chassis_dynamicTarget', on = False )
+            n.restore()
+    #
+    cmds.playbackOptions( minTime = 1001 )
+    cmds.playbackOptions( animationStartTime = 1001 )
+
+
+def load_offloaded( find = '' ):
+    '''
+    pplRN
+    '''
+    #
+    rfs = cmds.ls( typ = 'reference' )
+    for ref in rfs:
+        stt = True
+        try:
+            stt = cmds.referenceQuery( ref, isLoaded = True )
+        except:
+            pass
+        if not stt:
+            if find:
+                if find in ref:
+                    cmds.file( lr = ref, lrd = 'all' )
+            else:
+                cmds.file( lr = ref, lrd = 'all' )
+
+
+def offload_loaded( find = '' ):
+    '''
+    pplRN
+    '''
+    #
+    rfs = cmds.ls( typ = 'reference' )
+    for ref in rfs:
+        stt = False
+        try:
+            stt = cmds.referenceQuery( ref, isLoaded = True )
+        except:
+            pass
+        if stt:
+            if find:
+                if find in ref:
+                    cmds.file( ur = ref )
+            else:
+                cmds.file( ur = ref )
+
+
+def save_publish():
+    '''
+    add usffix to scene, save
+    '''
+    # current name, path
+    path = cmds.file( query = True, exn = True )
+    print( path )
+    if '_anim_' in path:
+        path = path.replace( '_anim_', '_animPublish_' )
+    print( path )
+    #
+    # get the current file type
+    if cmds.file( sn = True , q = True ):
+        fileType = cmds.file( query = True, typ = True )
+    else:
+        fileType = ['mayaAscii']
+    # add the file about to be saved to the recent files menu
+    mel.eval( 'addRecentFile "' + path + '" ' + fileType[0] + ';' )
+    # rename the current file
+    cmds.file( path, rn = path )
+    # save it
+    cmds.file( save = True, typ = fileType[0] )
+
+
+def publish( full = True ):
+    '''
+    publish: playblast and save maya scene version
+    '''
+    # start timer
+    start = time.time()
+
+    # publish layout
+    success = publish_layout()
+
+    #
+    if success and full:
+
+        # bake dynamics
+        path = cmds.file( query = True, exn = True )
+        if shot_qualified_to_bake( path ):
+            bake_dynamics()
+        #
+        load_offloaded()  # all
+        offload_loaded( find = 'pplRN' )  # remove people
+        blast()
+        set_for_playblast( tires = True )
+        save_publish()
+
+    # end timer
+    end = time.time()
+    elapsed = end - start
+    print( 'Publish time: ' + str( elapsed / 60 ) + ' min' )
+
+
+def publish_cameras():
+    '''
+    
+    '''
+    exclude = ['front', 'persp', 'side', 'top']
+    cams = []
+    result = cmds.ls( type = 'camera', o = 1 )
+    for r in result:
+        p = cmds.listRelatives( r, parent = 1 )
+        if p:
+            if p[0] not in exclude and 'cam_follow' not in p[0]:
+                cams.append( p[0] )
+    print( cams )
+    for cam in cams:
+        cmds.select( cam )
+        cas.cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = True, forceOverwrite = True )
+    return cams
+
+
+def look_through_publish_camera():
+    '''
+    
+    '''
+    exclude = ['front', 'persp', 'side', 'top']
+    cams = []
+    result = cmds.ls( type = 'camera', o = 1 )
+    for r in result:
+        p = cmds.listRelatives( r, parent = 1 )
+        if p:
+            if p[0] not in exclude and 'cam_follow' not in p[0] and 'renderCam' not in p[0] and ':' in p[0]:
+                cams.append( p[0] )
+    if len( cams ) == 1:
+        cmds.lookThru( 'perspView', cams[0] )
+        ds.toggleObjectDisplay( purpose = 'cam' )
+        tp.platesAllOn()
+        print( 'playblast camera: ', cams[0] )
+        return cams[0]
+    else:
+        print( 'too many cameras' )
+    print( cams )
+    return None
+
+
+def publish_proxies( proxies = [] ):
+    '''
+    
+    '''
+    for p in proxies:
+        cmds.select( p )
+        cas.cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = False, forceOverwrite = True )
+
+
+def publish_layout():
+    '''
+    
+    '''
+    setProxies = 'setProxies'
+    cams = publish_cameras()
+    if cams:
+        ns = cams[0].split( ':' )[0]
+        proxy = ns + ':' + setProxies
+        if cmds.objExists( proxy ):
+            publish_proxies( proxies = [proxy] )
+            return True
+        else:
+            print( 'proxy fail: ', proxy )
+    else:
+        print( 'cams fail: ', cams )
+    return False
+
+
+def publish_all_layouts( publish_layouts = False, publish_full = False ):
+    '''
+    find latest files in assumed shots, publish cameras and proxies 
+    '''
+    # start timer
+    start = time.time()
+
+    shots = [
+        'P:\\MDLN\\101\\101_009_0100\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_0200\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_0300\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_0400\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_0500\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_0700\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_0800\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_0900\\anim\\maya\\',
+        'P:\\MDLN\\101\\101_009_1000\\anim\\maya\\'
+        ]
+    '''
+    shots = [
+        'P:\\MDLN\\101\\101_009_0100\\anim\\maya\\'
+        ]'''
+    # cache
+    for project_path in shots:
+        project_path = project_path.replace( '\\', '/' )
+        # set project
+        mel_command = ( 'setProject "' + project_path + '";' )
+        mel.eval( mel_command )
+        mel.eval( 'print \" -- Project set to  -- ' + project_path + ' -- \";' )
+        # latest scene
+        scenes_path = os.path.join( project_path, 'scenes' )
+        list_of_files = glob.glob( os.path.join( scenes_path, '*.ma' ) )  # * means all if need specific format then *.csv
+        filtered_list = []
+        for f in list_of_files:
+            if 'Traffic' not in f and 'Publish' not in f:
+                filtered_list.append( f )
+        latest_file = max( filtered_list, key = os.path.getctime )
+        # print( latest_file )
+        # open latest
+        latest_file_path = os.path.join( scenes_path, latest_file )
+        print( latest_file_path )
+        # publish type
+        if publish_layouts and not publish_full:
+            # file existance
+            if os.path.isfile( latest_file_path ):
+                cmds.file( latest_file_path, open = True, force = True )
+                publish( full = False )
+        elif publish_full and not publish_layouts:
+            # file existance
+            if os.path.isfile( latest_file_path ):
+                cmds.file( latest_file_path, open = True, force = True )
+                # find camera for playblast before starting full publish
+                camera = look_through_publish_camera()
+                if camera:
+                    publish( full = True )
+                else:
+                    print( 'Quitting. Couldnt find camera for scene: ', latest_file_path )
+                    break
+        else:
+            if os.path.isfile( latest_file_path ):
+                print( 'is file... options not set to publish.' )
+
+    # end timer
+    end = time.time()
+    elapsed = end - start
+    print( 'Shots Publish time: ' + str( elapsed / 60 ) + ' min' )
+
 
 #
+geo_grps = [
+    'setCorolla_grp',
+    'setHyundaiTuscon_grp',
+    'mazda3_grp',
+    'mazda_cx_7_grp',
+    'merc_grp',
+    'toyotaRav4_grp',
+    'setVolkswagenPassat_grp',
+    'Toyota_RAV4',
+    'acuraMdx_grp',
+    'mazdaCx5_grp',
+    'mercedesSprinter_grp',
+    'Toyota4Runner_grp',
+    'Truck_grp'
+    ]
 #
 '''
+# people off
+cmds.select('*:*:*:driver_grp')
+sel = cmds.ls(sl=1)
+for s in sel:
+    cmds.setAttr(s + '.visibility', 0)
+# people on
+cmds.select('*:*:*:driver_grp')
+sel = cmds.ls(sl=1)
+for s in sel:
+    cmds.setAttr(s + '.visibility', 1)
+
+
+# select path masters
+cmds.select('*:pth:master')
+
+
+
 imp.reload( web )
 symd = web.mod( "assets_symd" )
 symd.king_air()

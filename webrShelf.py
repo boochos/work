@@ -13,6 +13,7 @@ wf = web.mod( 'webrFiles_lib' )
 
 def message( what = '', maya = True ):
     what = '-- ' + what + ' --'
+    what = what.replace( '\\', '/' )
     global tell
     tell = what
     if maya:
@@ -56,22 +57,32 @@ def shelfBuild( *args ):
     dp = Depend()
     if not cmds.control( dp.shelf, q = 1, ex = 1 ):
         # build ui
+        message( 'build shelf' )
         '''
         # old method, causes error
         cmds.setParent(shelfPrnt)
         cmds.shelfLayout(dp.shelf)
         '''
         mel.eval( 'addNewShelfTab %s' % dp.shelf )
+        # make sure its empty
+        buttons = cmds.shelfLayout( dp.shelf, query = True, childArray = True )
+        if buttons:
+            print( buttons )
+            cmds.deleteUI( buttons, control = True )
+        #
         cmds.refresh()
+        # add buttons
         shelfAddButtons()
     else:
         # clean ui
+        message( 'clean shelf' )
         '''
         # old method
         cmds.deleteUI(dp.shelf, control=True)
         '''
         buttons = cmds.shelfLayout( dp.shelf, query = True, childArray = True )
         if buttons:
+            print( buttons )
             cmds.deleteUI( buttons, control = True )
             cmds.refresh()
         shelfAddButtons()
@@ -156,20 +167,14 @@ def shelfAddButtons( *args ):
     cmds.shelfButton( label = 'create selection set files', annotation = 'create selection set files', w = wh,
                      h = wh, image = 'TagUI.png', command = 'import webrImport as web\nsUI = web.mod("selectionUI_macro_lib")\nsUI.CSUI()' )
 
-    cmds.shelfButton( label = '2 selected objects', annotation = '2 selected objects\nanim from object 1 is pasted to object 2\ncurrent frame is used as the paste point', w = wh, h = wh, image = 'animCopyPaste.png',
-                     command = 'import webrImport as web\nalm = web.mod("animation_library_manager")\nancop = alm.AnimationToolbox()\nsel = cmds.ls(sl=True)\ncmds.select(sel[0])\nancop.animCopy()\ncmds.select(sel[1])\nancop.animPaste()' )
-
-    cmds.shelfButton( label = 'anim is copied from selected objects', annotation = 'anim is copied from selected objects', w = wh, h = wh,
-                     image = 'AnimCopy.xpm', command = 'import webrImport as web\nalm = web.mod("animation_library_manager")\nancop = alm.AnimationToolbox()\nancop.animCopy()' )
-
-    cmds.shelfButton( label = 'anim is pasted to selected objects', annotation = 'anim is pasted to selected objects', w = wh, h = wh,
-                     image = 'AnimPaste.xpm', command = 'import webrImport as web\nalm = web.mod("animation_library_manager")\nancop = alm.AnimationToolbox()\nancop.animPaste()' )
-
     cmds.shelfButton( label = 'anim is exported to a file', annotation = 'anim is exported to a file', w = wh,
                      h = wh, image = 'AnimExport.xpm', command = 'import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipSave(name="tempClip", temp=True)' )
 
     cmds.shelfButton( label = 'anim is imported from a file', annotation = 'anim is imported from a file', w = wh, h = wh,
                      image = 'AnimImport.xpm', command = 'import webrImport as web\ncp = web.mod("clipPickle_lib")\ncp.clipApply(path=cp.clipDefaultTempPath() + "tempClip.clip")' )
+
+    cmds.shelfButton( label = 'clip library', annotation = 'Clip Library', w = wh,
+                     h = wh, imageOverlayLabel = '', image = 'AnimClip.png', command = 'import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()' )
 
     cmds.shelfButton( label = 'speed attribute is added', annotation = 'speed attribute is added', w = wh,
                      h = wh, image = 'kmh.xpm', command = 'import webrImport as web\nds = web.mod("display_lib")\nds.speed(local=0)' )
@@ -180,8 +185,6 @@ def shelfAddButtons( *args ):
     # 'import display_lib as dis\nreload(dis)\ndis.distance()'
     # 'import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()'
 
-    cmds.shelfButton( label = 'clip library', annotation = 'Clip Library', w = wh,
-                     h = wh, imageOverlayLabel = '', image = 'AnimClip.png', command = 'import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()' )
     # TODO: timewarp tool
     # TODO: timewarp with path anim, uisng some combo to sync path anim to, anim layer as time warp to keep object anim on same spot on curve
     # TODO: rivet
@@ -204,6 +207,7 @@ def getIcons( download = False ):
         # print local
         if download:
             message( 'downloading -- ' + local )
+            print()
             cmds.refresh()
             urllib.urlretrieve( url, local )
     message( 'Icons downloaded.' )

@@ -3,7 +3,6 @@ from shutil import copyfile
 import json
 import os
 import subprocess
-import time
 
 from PySide2 import QtCore, QtGui, QtWidgets
 import maya
@@ -324,8 +323,6 @@ def set_project( project, entity, task, scene = None, opn = False, create = None
     """
     Set Project in Maya.
     """
-    # start timer
-    start = time.time()
     #
     refresh_scenes = [create, project, entity, task]
     go = True
@@ -385,19 +382,11 @@ def set_project( project, entity, task, scene = None, opn = False, create = None
     else:
         maya.mel.eval( 'print \" -- Cant build project path, select more variables -- \";' )
 
-    # end timer
-    end = time.time()
-    elapsed = end - start
-    print( 'Scene open elapsed time: ' + str( elapsed ) )
-
 
 def ref_scene( project, entity, task, scene = None ):
     """
     reference scene
     """
-    # start timer
-    start = time.time()
-    #
     go = True
     if project.selectedItems():
         project = project.selectedItems()[0].text()
@@ -435,11 +424,6 @@ def ref_scene( project, entity, task, scene = None ):
             maya.mel.eval( 'print \" -- no task or file selected -- \";' )
     else:
         maya.mel.eval( 'print \" -- Cant build reference path, select more variables -- \";' )
-
-    # end timer
-    end = time.time()
-    elapsed = end - start
-    print( 'Reference elapsed time: ' + str( elapsed ) )
 
 
 def explore_path( project, entity, task, scene ):
@@ -947,7 +931,7 @@ def sync_file( project, entity, task, scene ):
 if __name__ == '__main__':
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
-    # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
     main_window.show()
@@ -956,8 +940,55 @@ else:
     print( 'nah' )
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
-    # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
     main_window.show()
     app.exec_()
+
+'''
+{
+ "e_str": [
+  "global", 
+  "transfer", 
+  "_transfer", 
+  "admin", 
+  "pipe", 
+  ".DS_Store", 
+  "Thumbs.db", 
+  "plates", 
+  "proxy"
+ ], 
+ "prj_sync_str": [
+  "SGW:G:\\Shared drives\\SGW"
+ ], 
+ "at_str": [
+  "asset_old", 
+  "lightkit", 
+  "renderpass"
+ ], 
+ "a_str": [
+  "pipeline"
+ ], 
+ "t_str": [
+  "anim", 
+  "model", 
+  "rig", 
+  "layout", 
+  "assets", 
+  "previs"
+ ], 
+ "p_str": [
+  ".DS_Store", 
+  "cockroach999", 
+  "Thumbs.db", 
+  "_library", 
+  "EDITORIAL", 
+  "STUDIO", 
+  "pipeline", 
+  "$RECYCLE.BIN", 
+  "VFX_Animation", 
+  "projects"
+ ]
+} 
+'''

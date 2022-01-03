@@ -117,6 +117,8 @@ def outputDict( sel = [] ):
         for s in sel:
             if ':' in s:
                 val = s.split( ':' )[1]
+                val = s.rsplit( ':', 1 )[1]  # nested ref
+                print( val )
             else:
                 val = s
             dic[s] = val
@@ -142,6 +144,7 @@ def getSetNsList( setList = [] ):
     for obj in setList:
         if ':' in obj:
             ref = obj.split( ':' )[0]
+            ref = obj.rsplit( ':', 1 )[0]  # nested ref
             if ref not in refs:
                 refs.append( ref )
     return len( refs )
@@ -155,6 +158,8 @@ def splitNs( obj, colon = True ):
         i = obj.rfind( ':' )
         ref = obj[:i]
         base = obj[i + 1:]
+        base = obj.rsplit( ':', 1 )[1]  # nested ref
+        ref = obj.rsplit( ':', 1 )[0]  # nested ref
         if colon:
             return ref + ':', base
         else:
@@ -168,7 +173,8 @@ def listLiveNs():
     all = cmds.ls()
     for item in all:
         if ':' in item:
-            ns = item.split( ':' )[0]
+            # ns = item.split( ':' )[0]
+            ns = item.rsplit( ':', 1 )[0]  # get
             if ns not in ref:
                 ref.append( ns )
     return ref
@@ -179,11 +185,13 @@ def listLiveContextualNs( setList = [] ):
     liveRefs = []
     for obj in setList:
         if ':' in obj:
-            obj = obj.split( ':' )[1]
+            # obj = obj.split( ':' )[1]
+            obj = obj.rsplit( ':', 1 )[1]
             for ref in allRefs:
                 if cmds.objExists( ref + ':' + obj ):
                     if ref not in liveRefs:
                         liveRefs.append( ref )
+    # print( liveRefs )
     return liveRefs
 
 
@@ -199,6 +207,7 @@ def splitSetToAssets( setDict = {} ):
     for key in setDict:
         if ':' in key:
             ns = key.split( ':' )[0]
+            ns = key.rsplit( ':', 1 )[0]
             if ns not in refs:
                 refs.append( ns )
         else:
@@ -342,10 +351,12 @@ def remapSingleNs( sel = '', setList = [] ):
     remapped = []
     if sel:
         obj = sel.split( ':' )[1]
+        obj = sel.rsplit( ':', 1 )[1]
         ns = sel.split( ':' )[0]
+        ns = sel.rsplit( ':', 1 )[0]
         # iterate keys in dict
         for member in setList:
-            obj = ns + ':' + member.split( ':' )[1]
+            obj = ns + ':' + member.rsplit( ':', 1 )[1]
             if cmds.objExists( obj ):
                 remapped.append( obj )
     return remapped

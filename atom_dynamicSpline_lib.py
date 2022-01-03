@@ -83,6 +83,7 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
     cmds.setAttr( str( blendNode ) + '.' + str( dynCurve ), 1 )
     # print( blendNode )
     hairSys.getShape().iterations.set( 5 )
+    hairSys.getShape().drag.set( 0 )
     # hairSys.getShape().startCurveAttract.set( 5 )
     # hairSys.getShape().attractionDamp.set( 1.5 )
 

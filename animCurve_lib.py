@@ -192,6 +192,16 @@ def deleteAnim( obj, attrs = ['rotateX', 'rotateY', 'rotateZ'], lock = False, ke
         cmds.setAttr( obj + '.' + attr, keyable = keyable )
 
 
+def deleteAnim2( obj, attrs = ['rotateX', 'rotateY', 'rotateZ'] ):
+    animCurves = cmds.findKeyframe( obj, c = True )
+    if animCurves:
+        # should actually do this through connections
+        for crv in animCurves:
+            for attr in attrs:
+                if attr.lower() in crv.lower():
+                    cmds.delete( crv )
+
+
 def unifyKeys():
     sel = cmds.keyframe( q = True, name = True, sl = True )
     if sel:

@@ -292,11 +292,11 @@ def vector( v = [] ):
     '''
     list to translate direction
     '''
-    if v == [1, 0, 0]:
+    if v == [1, 0, 0] or v == [-1, 0, 0]:
         return '.translateX'
-    if v == [0, 1, 0]:
+    if v == [0, 1, 0] or v == [0, -1, 0]:
         return '.translateY'
-    if v == [0, 0, 1]:
+    if v == [0, 0, 1] or v == [0, 0, -1]:
         return '.translateZ'
 
 
@@ -1917,7 +1917,7 @@ def breakConnection( obj = '', attr = '', lock = False ):
         cmds.setAttr( obj + '.' + attr, l = True )
 
 
-def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False ):
+def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False ):
     '''\n
     hijacks attribute with weight effect\n
     obj1   = master
@@ -1928,7 +1928,8 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
     slave queried if existing connection, add addDoubleLin if true, break existing connection, pipe through addDoubleLin
     new master gets multDoubleLin for weight and reverse after if needed
     
-        '''
+    blendAttrExisting = use preexisting attr as weight
+    '''
     #
     name = 'smartBlend'
     rev = None
@@ -1955,10 +1956,13 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
     # create user weight attr
     # hijackAttrs( obj1, obj2, attrOrig, attrNew, set = False, default = None, force = True )
     if blendAttrObj:
-        optEnum( blendAttrObj, 'additive' )
-        hijackAttrs( blendN, blendAttrObj, 'input2', blendAttrString + 'Weight', set = True, default = blendWeight )
-        cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, min = 0 )
-        cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, max = 1 )
+        if not blendAttrExisting:
+            optEnum( blendAttrObj, 'additive' )
+            hijackAttrs( blendN, blendAttrObj, 'input2', blendAttrString + 'Weight', set = True, default = blendWeight )
+            cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, min = 0 )
+            cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, max = 1 )
+        else:
+            hijackAttrs( blendN, blendAttrObj, 'input2', blendAttrString, set = True, default = blendWeight )
     else:
         cmds.setAttr( blendN + '.input2', blendWeight )
 
@@ -2069,6 +2073,65 @@ def attrBlend( obj1, obj2, objOpt, pos = False, rot = False, scale = False, spec
         # connect out blend
         for attr in specific[0]:
             cmds.connectAttr( rotB + '.outputR', obj2 + '.' + attr )
+
+
+def attr_easeInto_Limits( name = '', masterAttr = '', slaveAttr = '', maxAttr = '', minAttr = '' ):
+    '''
+    "attr" variables assume "nodeName.attr" format
+    assumes given node variables already exist
+    '''
+    #
+    strng = 'EaseLimits'
+
+    # max
+    max = '_max_'
+    flip = cmds.shadingNode( 'multDoubleLinear', name = name + max + '_flip' + strng, au = True )
+    cmds.setAttr( flip + '.input2', -1 )
+    cmds.connectAttr( maxAttr, flip + '.input1' )
+
+    subt = cmds.shadingNode( 'plusMinusAverage', name = name + max + '_sub' + strng, au = True )
+    cmds.setAttr( subt + '.operation', 2 )  # subtract
+    cmds.connectAttr( masterAttr, subt + '.input1D[1]' )
+    cmds.connectAttr( flip + '.output', subt + '.input1D[0]' )
+
+    divd = cmds.shadingNode( 'multiplyDivide', name = name + max + '_div' + strng, au = True )
+    cmds.setAttr( divd + '.operation', 2 )  # divide
+    cmds.connectAttr( flip + '.output', divd + '.input1X' )
+    cmds.connectAttr( subt + '.output1D', divd + '.input2X' )
+
+    wghtMax = cmds.shadingNode( 'multDoubleLinear', name = name + max + '_wght' + strng, au = True )
+    cmds.connectAttr( divd + '.outputX', wghtMax + '.input1' )
+    cmds.connectAttr( masterAttr, wghtMax + '.input2' )
+
+    # min
+    min = '_min_'
+    flip = cmds.shadingNode( 'multDoubleLinear', name = name + min + '_flip' + strng, au = True )
+    cmds.setAttr( flip + '.input2', -1 )
+    cmds.connectAttr( minAttr, flip + '.input1' )
+
+    subt = cmds.shadingNode( 'plusMinusAverage', name = name + min + '_sub' + strng, au = True )
+    cmds.setAttr( subt + '.operation', 2 )  # subtract
+    cmds.connectAttr( masterAttr, subt + '.input1D[1]' )
+    cmds.connectAttr( flip + '.output', subt + '.input1D[0]' )
+
+    divd = cmds.shadingNode( 'multiplyDivide', name = name + min + '_div' + strng, au = True )
+    cmds.setAttr( divd + '.operation', 2 )  # divide
+    cmds.connectAttr( flip + '.output', divd + '.input1X' )
+    cmds.connectAttr( subt + '.output1D', divd + '.input2X' )
+
+    wghtMin = cmds.shadingNode( 'multDoubleLinear', name = name + min + '_wght' + strng, au = True )
+    cmds.connectAttr( divd + '.outputX', wghtMin + '.input1' )
+    cmds.connectAttr( masterAttr, wghtMin + '.input2' )
+
+    # condition
+    cndtn = cmds.shadingNode( 'condition', au = True, n = name + '_cond' + strng )
+    cmds.setAttr( cndtn + '.operation', 2 )  # greater than
+    cmds.connectAttr( masterAttr, cndtn + '.firstTerm' )
+    cmds.connectAttr( wghtMax + '.output', cndtn + '.colorIfTrueR' )
+    cmds.connectAttr( wghtMin + '.output', cndtn + '.colorIfFalseR' )
+
+    # condition out
+    cmds.connectAttr( cndtn + '.outColorR', slaveAttr, f = True )
 
 
 def hijackConstraints( master = '', attr = '', value = 0.5, constraint = '' ):

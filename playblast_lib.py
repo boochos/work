@@ -281,7 +281,7 @@ def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.
     # return
     # cam string with name
     if camStr:
-        blastName = sceneName( full = False, suffix = None, bracket = False ) + '____' + camName()
+        blastName = sceneName( full = False, suffix = None, bracket = False ) + '____' + camName()  # do not add more underscores, breaks burnin naming
     else:
         blastName = sceneName( full = False, suffix = None, bracket = False )
     # revision string with name

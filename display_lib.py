@@ -18,20 +18,6 @@ def message( what = '', maya = True ):
         print( what )
 
 
-def witCamDir():
-    app = "nautilus"
-    fyl = cmds.file( q = True, sn = True ).split( 'sequences' )[1].split( '/' )
-    seq = fyl[1]
-    sht = fyl[3]
-    witRoot = '/data/jobs/CHP/reference/onSetData/witnessCams/'
-    call( [app, witRoot] )
-    '''
-    wit = 'Witcam'
-    path = os.path.join(os.path.join(witRoot, os.path.join(seq,sht)),wit)
-    if os.path.isdir(path):
-        call([app, path])'''
-
-
 def findControl( ann = '', panelTyp = '', split = 3 ):
     # split = which parent in full path to return
     cntrls = cmds.lsUI( controls = True, long = 1 )
@@ -280,6 +266,10 @@ class GraphEditorButtonNames():
 
 
 def toggleObjectDisplay( purpose ):
+    '''
+    purpose = 'anim'
+    purpose = 'cam'
+    '''
 
     # get active and find type of panel
     currentPanel = cmds.getPanel( withFocus = True )
@@ -288,6 +278,8 @@ def toggleObjectDisplay( purpose ):
     if panelType == 'modelPanel':
         # all off
         cmds.modelEditor( currentPanel, e = True, alo = 0 )
+        cmds.modelEditor( currentPanel, e = True, imagePlane = 1 )
+        cmds.modelEditor( currentPanel, e = True, pluginShapes = 1 )
 
         # arguments
         if purpose == 'anim':
@@ -297,11 +289,16 @@ def toggleObjectDisplay( purpose ):
             cmds.modelEditor( currentPanel, e = True, locators = 1 )
             cmds.modelEditor( currentPanel, e = True, cameras = 1 )
             cmds.modelEditor( currentPanel, e = True, handles = 1 )
+            cmds.modelEditor( currentPanel, e = True, hud = 1 )
+            cmds.modelEditor( currentPanel, e = True, grid = 1 )
             message( 'Panel display set for animation' )
         elif purpose == 'cam':
             # specific on
             cmds.modelEditor( currentPanel, e = True, cameras = 1 )
             cmds.modelEditor( currentPanel, e = True, polymeshes = 1 )
+            cmds.modelEditor( currentPanel, e = True, hud = 0 )
+            cmds.modelEditor( currentPanel, e = True, grid = 0 )
+            cmds.modelEditor( currentPanel, e = True, wireframeOnShaded = 0 )
             message( 'Panel display set for camera' )
     else:
         message( 'Current panel is of the wrong type' )
@@ -408,7 +405,7 @@ def speed( world = True, local = True ):
                     createSpeedAttr( sel, attr, exp )
                 else:
                     cmds.warning( '-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --' )
-                    deleteUserAttr( sel = sel, exp = True, att = attr )
+                    deleteUserAttr( sel = sel, att = attr )
                     return None
             if local:
                 attr = 'localSpeed'
@@ -417,7 +414,7 @@ def speed( world = True, local = True ):
                     createSpeedAttr( sel, attr, exp )
                 else:
                     cmds.warning( '-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --' )
-                    deleteUserAttr( sel = sel, exp = True, att = attr )
+                    deleteUserAttr( sel = sel, att = attr )
                     return None
     else:
         message( 'Select an object.' )

@@ -20,6 +20,24 @@ def movToMp4( dir = '', fl = '' ):
     print( out )
 
 
+def aviToMov( dir = '', fl = '' ):
+    filein = os.path.join( dir, fl )
+    fileout = os.path.join( dir, fl ).replace( '.avi', '.mp4' )
+    print( filein )
+    print( fileout )
+    # All
+    # cmd = ['ffmpeg', '-i', filein, '-vcodec', 'png', fileout]
+    cmd = ['ffmpeg', '-i', filein, '-c', 'copy', fileout]
+    cmd = ['ffmpeg', '-i', filein, '-crf', '19', '-c:v', 'libx264', fileout]
+    cmd = ['ffmpeg', '-i', filein, '-strict', '-2', '-c:v', 'copy', '-c:a', 'copy', '-y', fileout]
+    cmd = ['ffmpeg', '-i', filein, fileout]
+
+    # -c:v libx264
+    p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
+    out, err = p.communicate()
+    print( out )
+
+
 def renderFrames( filein = '', fileout = '', pad = '4', format = 'png', startFrame = 1001 ):
     '''
     filein = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002.mp4'
@@ -44,26 +62,19 @@ def renderFrames( filein = '', fileout = '', pad = '4', format = 'png', startFra
     '''
 
 
-def imgToMp4( *args ):
+def imgToMp4( pathIn = '', image = '', pad = 4, ext = 'png', start = 1001, pathOut = '', pathOutName = '' ):
     '''
-    os.system('ffmpeg -r 24 -b 5000k -y -i '+ soundPath + ' -i ' + saveDir + fileName +'.%04d.png -f mov ' +  fieldPath + '/' + fileName + '.mov')
+
     '''
-    filein = 'C:/Users/sebas/Documents/maya/__PLAYBLASTS__/dba200_001_010_anm_v032/dba200_001_010_anm_v032____Camera01.0000.png'
-    # filein = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002.mp4'
-    fileout = 'X:/_image/_projects/SI/HOL/shots/026_004/maya/sourceimages/26_4ref1_002.%05d.png'
+    #
+    filein = os.path.join( pathIn, image + '.%0' + str( pad ) + 'd.' + ext )
+    fileout = os.path.join( pathOut, pathOutName + '.mp4' )
     # All
-    cmd = ['ffmpeg', '-i', filein, '-vcodec', 'png', fileout]
+    cmd = ['ffmpeg', '-r', '24', '-start_number', str( start ), '-f', 'image2', '-i', filein, '-vcodec', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', fileout]
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
     print( out )
-    # Start/End
-    # hh:mm:ss[.xxx]
-    start = '00:00:05'
-    end = '00:00:07'
-    cmd = ['ffmpeg', '-ss', start, '-i', filein, '-to', end, '-vcodec', 'png', fileout]
-    p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
-    out, err = p.communicate()
-    print( out )
+    return fileout
 
 
 def img_To_img():
@@ -111,7 +122,13 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
         path = path_no_ext.replace( task, "" )
         source = source + task
         if "_r" in task:
-            task = task.split( "_r" )[0]  # split from revision
+            # make sure camera doesnt start with an 'r'
+            cm = task.split( "____" )[1]  # isolate camera name
+            # print( cm )
+            if cm[0] != 'r':
+                task = task.split( "_r" )[0]
+            else:
+                task = task.split( "____" )[0]  # split from camera
         else:
             task = task.split( "____" )[0]  # split from camera
         # task = "" + task.replace( "_r0", "_v0" )
@@ -124,9 +141,14 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
     path2 = path_no_ext + burn2 + "." + ext
     # path3 = path_no_ext + burn3 + "." + ext
     path_clientName = path_no_ext.replace( file_name, task + "." + ext )
-    print ( path1 )
-    print( path2 )
-    print( path_clientName )
+    # print ( path1 )
+    # print( path2 )
+    # print( path_no_ext )
+    # print( file_name )
+    # print( task )
+    # print( ext )
+    # print( path_clientName )
+    # return
     # margin
 
     wm = "w/" + str( wMargin )  # divide image width to n number of pieces = margin
@@ -162,15 +184,19 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
     out, err = p.communicate()
     # print( err )
     # print( out )
+    # print( 'delete: ', path1 )
     os.remove( path1 )
 
     # frames right upper corner
+    # print( 'client: ', path_clientName )
     cmd = ["ffmpeg", "-i", path2, "-vf", "drawtext=fontfile=C\:\\Windows\\Fonts\\Arial.ttf: text='" + source + "': x=(" + wm + " ): y=(h-lh-" + hm + "): fontcolor=white: fontsize=" + size + ": box=1: boxcolor=black: boxborderw=5", "-y", path_clientName]
     p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
     out, err = p.communicate()
     # print( err )
     # print( out )
+    # print( 'delete: ', path2 )
     os.remove( path2 )
+    # print( 'delete: ', filein )
     os.remove( filein )
 
     # render frames path, frames name, burning qt path with name
@@ -178,7 +204,13 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
 
 # burn_in()
 '''
-import ffMpg
-reload( ffMpg )
-ffMpg.img_To_img()
+import imp
+import webrImport as web
+imp.reload(web)
+path = 'C:\\Users\\sebas\\Documents\\maya\\__PLAYBLASTS__\\101_009_0100_anim_v011\\101_009_0100_anim_precomp_v011'
+fl = '101_009_0100_anim_v012.avi'
+ffm = web.mod('ffMpg')
+ffm.imgToMp4(dir=path, image='*.png')
+
+ffm.aviToMov(dir=path, fl=fl)
 '''
