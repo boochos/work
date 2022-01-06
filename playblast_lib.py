@@ -757,15 +757,15 @@ def detectCompatibleStructure( path = '', destructive = True ):
     ie. defaultDir/shot/sceneName
     '''
     rebuild = False
-    root = getContentsType( path, directory = 1, destructive = True )
+    root = getContentsType( path, directory = 1, destructive = False )
     if root:
         for r in root:
             # print r, '======'
-            shot = getContentsType( r, directory = 0, destructive = True )
+            shot = getContentsType( r, directory = 0, destructive = False )
             if shot:
                 # print shot, '======'
                 for s in shot:
-                    scene = getContentsType( s, directory = 0, destructive = True )
+                    scene = getContentsType( s, directory = 0, destructive = False )
                     if scene:
                         message( 'Directory structure is good' )
                         return None

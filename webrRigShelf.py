@@ -32,7 +32,7 @@ class Depend():
 
 
 def shelfRefresh():
-    getIcons( download = False )
+    getIcons( download = True )
     shelfBuild()
     cmds.deleteUI( Depend().ref )
 
@@ -133,5 +133,6 @@ def getIcons( download = False ):
         # print local
         if download:
             message( 'downloading -- ' + local )
+            print()
             cmds.refresh()
             urllib.urlretrieve( url, local )

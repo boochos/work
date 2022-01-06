@@ -189,7 +189,7 @@ class CSUI( object ):
                     dic[rp.split( ':' )[0]] = rp.split( ':' )[1]
                     return dic
             except:
-                self.message( "  FAIL  --  Replace string failed. --  Use colons,commas  --    ie.    search1:replace1,search2:replace2" )
+                self.message( "FAIL  --  Replace string failed. --  Use colons,commas  --    ie.    search1:replace1,search2:replace2" )
         else:
             return {None: None}
 

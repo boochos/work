@@ -188,7 +188,8 @@ def deleteFlushed():
         for set in chars:
             file = os.path.join( path, set )
             # shutil.copy2(file, delPath) doesnt work on windows
-            os.remove( file )
+            if os.path.isfile( file ):
+                os.remove( file )
     else:
         message( 'Name your scene before proceeding' )
 
@@ -238,7 +239,7 @@ def exportFile( selChar, filePath ):
             writeFile( selChar, 'none', outFile = outFile )
             outFile.close()
             # print ''
-            message( " file:   '" + filePath + "'   saved" )
+            message( "file:   '" + filePath + "'   saved" )
     else:
         message( 'Object  ::' + selChar + '::  is not a characterSet.' )
 

@@ -138,7 +138,8 @@ def graphEditorButtons( *args ):
             return False
     # build
     if not cmds.control( ui.filD, ex = 1 ):
-        bgc = [0.38, 0.38, 0.38]
+        bgc = [0.4, 0.4, 0.4]
+        bgcd = [0.35, 0.35, 0.35]
         if build:
             p = findControl( ann = 'Move Nearest Picked Key Tool', panelTyp = pnl, split = 3 )[0]
             # print '_______    ', findControl(ann='Indicates that either text filter', panelTyp=pnl, split=2)
@@ -192,24 +193,30 @@ def graphEditorButtons( *args ):
             item = geField( name = ui.sclTmBy, parent = p, attach = item,
                            cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.animScale(cmds.textField('scaleTimeBy',query=True,tx=True))",
                            gap = 2, w = 40, tx = 1.0, ann = 'Scale selected curves from the first frame of playback' )
-            item = geButton( name = ui.sftSel, parent = p, attach = item, label = 'SOFT_Sel',
+            item = geButton( name = ui.sftSel, parent = p, attach = item, label = 'SOFT Select',
                             cmd = "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.toggleSelJob()",
-                            gap = 20, w = 70, bg = bgc )
-            item = geButton( name = ui.sbfrm, parent = p, attach = item, label = 'SUBfrm_X',
+                            gap = 20, w = 70, bg = bgcd )
+            item = geButton( name = ui.sbfrm, parent = p, attach = item, label = 'SUB frame X',
                             cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.subframe()",
                             gap = 0, w = 70, bg = bgc, ann = 'subframes to whole frames ' )
             item = geButton( name = ui.unfy, parent = p, attach = item, label = 'UNIFY',
                             cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.unifyKeys()",
-                            gap = 0, w = 70, bg = bgc )
-            item = geButton( name = ui.bkInfty, parent = p, attach = item, label = 'BAKE_Infnty',
-                            cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.bakeInfinity()",
-                            gap = 0, w = 70, bg = bgc )
+                            gap = 0, w = 70, bg = bgcd )
             item = geButton( name = ui.smth, parent = p, attach = item, label = 'SMOOTH',
                             cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.smoothKeys()",
                             gap = 0, w = 70, bg = bgc )
             item = geButton( name = ui.expTgl, parent = p, attach = item, label = 'COLLAPSE',
                             cmd = "import webrImport as web\ngf = web.mod('graphFilter')\ngf.toggleExpand()",
+                            gap = 0, w = 70, bg = bgcd )
+            item = geButton( name = ui.bkInfty, parent = p, attach = item, label = 'BAKE Infinity',
+                            cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.bakeInfinity()",
                             gap = 0, w = 70, bg = bgc )
+            item = geButton( name = ui.infntyLnr, parent = p, attach = item, label = 'LINEAR Infinity',
+                            cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.setInfinityLinear()",
+                            gap = 0, w = 80, bg = bgcd, ann = 'make infinity linear' )
+            item = geButton( name = ui.infntyCns, parent = p, attach = item, label = 'CONSTANT Infinity',
+                            cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.setInfinityConstant()",
+                            gap = 0, w = 95, bg = bgc, ann = 'make infinity constant' )
     else:
         # clean UI
         d = ui.__dict__
@@ -263,6 +270,10 @@ class GraphEditorButtonNames():
         self.sftSel = 'softSelKeys'
         # expand toggleGeo
         self.expTgl = 'expandAttrToggle'
+        # expand toggleGeo
+        self.infntyLnr = 'infntyLnrCrvs'
+        # expand toggleGeo
+        self.infntyCns = 'infntyCnsCrvs'
 
 
 def toggleObjectDisplay( purpose ):

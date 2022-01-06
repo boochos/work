@@ -17,7 +17,6 @@ icons = ['constraintUI.png', 'csAdd.png', 'csEx.png',
          'srv_mirSel_off_icon.xpm', 'srv_mirSel_on_icon.xpm', 'save++_icon.png', 'kmh.xpm', 'camPlateToggle.xpm',
          'playBlastMan.png', 'PrjtSet.xpm', 'refreshWeb.png', 'undoFast.png', 'tgglUI.png']
 
-
 # icons Rigging Shelf
-iconsRig = ['refreshWeb.png', 'save++_icon.png', 'PrjtSet.xpm', 'sel.xpm', 'selStore.xpm', 'saveFileUI.xpm', 'Atom.xpm', 'AtmWghtUtl.xpm', 'AtomUtl.xpm',
+iconsRig = ['refreshWeb.png', 'save++_icon.png', 'PrjtSet.xpm', 'sel.xpm', 'selStore.xpm', 'saveFileUI.xpm', 'Atom.png', 'AtmWghtUtl.xpm', 'AtomUtl.xpm',
             'AtmTrnsfrInflnc.xpm', 'AtmSrfcRg.xpm', 'AtomLck.xpm', 'AtmMshUpdt.xpm', 'TagUI.xpm', 'Zero.xpm', 'PrntSel.png']

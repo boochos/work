@@ -229,6 +229,47 @@ def toggleTangentLock():
         message( 'Tangent Unified' )
 
 
+def setInfinityLinear():
+    '''
+    
+    '''
+    #
+    sel = cmds.keyframe( q = True, name = True, sl = True )
+    if sel:
+        # cmds.keyTangent( itt = 'spline', ott = 'spline' )
+        cmds.setInfinity( pri = 'linear' )
+        cmds.setInfinity( poi = 'linear' )
+        '''
+        frames = sorted( list( set( cmds.keyframe( sel, q = True ) ) ) )
+        i = len( frames )
+        for frame in frames:
+            for c in sel:
+                if not cmds.keyframe( c, q = True, time = ( frame, frame ) ):
+                    message( 'adding keys on frame -- ' + str( frame ) )
+                    cmds.refresh( f = 1 )
+                    cmds.setKeyframe( sel, i = True, t = frame )
+            i = i - 1'''
+        message( 'Done' )
+    else:
+        message( 'Select some curves in the graph editor.' )
+
+
+def setInfinityConstant():
+    '''
+    
+    '''
+    #
+    sel = cmds.keyframe( q = True, name = True, sl = True )
+    if sel:
+        # cmds.keyTangent( itt = 'spline', ott = 'spline' )
+        cmds.setInfinity( pri = 'constant' )
+        cmds.setInfinity( poi = 'constant' )
+
+        message( 'Done' )
+    else:
+        message( 'Select some curves in the graph editor.' )
+
+
 def tangentStep( mltp = 1.0001 ):
     angle = cmds.keyTangent( q = True, outAngle = True )[0]
     cmds.keyTangent( e = True, outAngle = angle + mltp )
