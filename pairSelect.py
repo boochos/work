@@ -25,9 +25,14 @@ class Get():
         prefDir = cmds.internalVar( upd = 1 )
         # build paths
         self.iconPath = os.path.join( prefDir, 'icons' )
-        self.iconOn = os.path.join( self.iconPath, 'srv_mirSel_on_icon.xpm' )
-        self.iconOff = os.path.join( self.iconPath, 'srv_mirSel_off_icon.xpm' )
-        self.pairPath = os.path.join( self.rootPath, 'pairSelectList.txt' )
+        if os.name == 'nt':
+            self.iconOn = os.path.join( self.iconPath, 'selMrrOn.png' ).replace( '\\', '/' )
+            self.iconOff = os.path.join( self.iconPath, 'selMrrOff.png' ).replace( '\\', '/' )
+            self.pairPath = os.path.join( self.rootPath, 'pairSelectList.txt' ).replace( '\\', '/' )
+        else:
+            self.iconOn = os.path.join( self.iconPath, 'selMrrOn.png' )
+            self.iconOff = os.path.join( self.iconPath, 'selMrrOff.png' )
+            self.pairPath = os.path.join( self.rootPath, 'pairSelectList.txt' )
 
 
 def nameSpace( ns = '', base = False ):
@@ -158,9 +163,15 @@ def toggleIcon( off = False ):
     # interate through buttons to find one using appropriate images
     for btn in buttons:
         img = cmds.shelfButton( btn, q = 1, image = 1 )
+        print( img, '___', p.iconOff, '____', p.iconOn )
         # toggle icon
         if img in p.iconOff or img in p.iconOn:
             if not off:
+                # print( 'icon OFF' )
                 cmds.shelfButton( btn, edit = True, image = p.iconOff )
             else:
+                # print( 'icon ON' )
                 cmds.shelfButton( btn, edit = True, image = p.iconOn )
+        else:
+            # print( 'no image: ', img )
+            pass

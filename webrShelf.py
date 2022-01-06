@@ -104,7 +104,7 @@ def shelfAddButtons( *args ):
     cmds.shelfButton( label = 'save ++', annotation = 'save ++', w = wh, h = wh, image = 'savePlus.png',
                      command = 'import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()' )
 
-    cmds.shelfButton( label = '', annotation = 'set project from file name', w = wh, h = wh, image = 'prjtSet.xpm',
+    cmds.shelfButton( label = '', annotation = 'set project from file name', w = wh, h = wh, image = 'projectSet.png',
                      command = 'import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.setProjectFromFilename("scenes")' )
 
     cmds.shelfButton( label = 'temporarily save selection', annotation = 'temporarily save selection',
@@ -117,16 +117,19 @@ def shelfAddButtons( *args ):
                      w = wh, h = wh, image = 'selPrint.png', command = 'sl.prnt()' )
 
     cmds.shelfButton( label = 'select pair script job', annotation = 'select pair script job', w = wh,
-                     h = wh, image = 'srv_mirSel_off_icon.xpm', command = 'import webrImport as web\nps = web.mod("pairSelect")\nps.toggleJob()' )
+                     h = wh, image = 'selMrrOff.png', command = 'import webrImport as web\nps = web.mod("pairSelect")\nps.toggleJob()' )
 
-    cmds.shelfButton( label = 'playblast', annotation = 'playblast', w = wh, h = wh, image = 'playblast.png',
+    cmds.shelfButton( label = 'playblast', annotation = 'playblast', w = wh, h = wh, image = 'blast.png',
                      command = 'import webrImport as web\npb = web.mod("playblast_lib")\npb.blast(x=1, format="image", qlt=100, compression="jpg", offScreen=True )' )
 
     cmds.shelfButton( label = 'manage playblasts in temp folder', annotation = 'playblast Manager', w = wh, h = wh,
-                     image = 'playblastUI.png', command = 'import webrImport as web\npb = web.mod("playblast_lib")\npb.blastWin()' )
+                     image = 'blastUI.png', command = 'import webrImport as web\npb = web.mod("playblast_lib")\npb.blastWin()' )
 
     cmds.shelfButton( label = 'toggle image planes on selected camera', annotation = 'toggle image planes on selected camera',
                      w = wh, h = wh, image = 'plateToggle.png', command = 'import webrImport as web\ntp = web.mod("togglePlate")\ntp.togglePlate()' )
+
+    cmds.shelfButton( label = 'frame range to image plane range', annotation = 'toggle image planes on selected camera',
+                     w = wh, h = wh, image = 'plateRange.png', command = 'import webrImport as web\ntp = web.mod("togglePlate")\ntp.plateRange()' )
 
     cmds.shelfButton( label = 'controller size +', annotation = 'controller size +', w = wh, h = wh,
                      image = 'ctrPlus.png', command = 'import webrImport as web\nds = web.mod("display_lib")\nds.shapeSize(mltp=1.1)' )
@@ -156,10 +159,13 @@ def shelfAddButtons( *args ):
                      w = wh, h = wh, image = 'matchKeys.png', command = 'import webrImport as web\ncn = web.mod("constraint_lib")\ncn.matchKeyedFramesLoop()' )
 
     cmds.shelfButton( label = 'move first object to the location of second', annotation = 'move first object to the location of second',
-                     w = wh, h = wh, image = 'matchX.png', command = 'import webrImport as web\nanm = web.mod("anim_lib")\nanm.matchObj()' )
+                     w = wh, h = wh, image = 'matchAll.png', command = 'import webrImport as web\nanm = web.mod("anim_lib")\nanm.matchObj()' )
 
     cmds.shelfButton( label = 'constraint tools', annotation = 'constraint tools', w = wh, h = wh,
                      image = 'helpersUI.png', command = 'import webrImport as web\ncnUI = web.mod("constraintUI_macro_lib")\ncnUI.CSUI()' )
+
+    cmds.shelfButton( label = 'warp time ui', annotation = 'warp time ui', w = wh, h = wh,
+                     image = 'warpTimeUI.png', command = 'import webrImport as web\nar = web.mod("animRetime_lib")' )
 
     cmds.shelfButton( label = 'select selection', annotation = 'select selection set\nread from text file\nobjects cannot be in multiple sets',
                      w = wh, h = wh, image = 'selSet.png', command = 'import webrImport as web\nss = web.mod("selectionSet_lib")\nss.selectSet()' )
@@ -181,6 +187,12 @@ def shelfAddButtons( *args ):
 
     cmds.shelfButton( label = 'select 2 objects', annotation = 'select 2 objects\ndistance attribute is added\nattr only updates on frame changes',
                      w = wh, h = wh, image = 'distance.png', command = 'import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()' )
+
+    cmds.shelfButton( label = 'select camera', annotation = 'select camera\ntoggles frustum',
+                     w = wh, h = wh, image = 'frustum.png', command = 'import webrImport as web\nal = web.mod("anim_lib")\nal.toggleFrustum()' )
+
+    cmds.shelfButton( label = 'select object', annotation = 'select object\nconstrains new camera to object',
+                     w = wh, h = wh, image = 'followCam.png', command = 'import webrImport as web\ncam = web.mod("camera_lib")\ncam.follow_cam()' )
 
     # 'import display_lib as dis\nreload(dis)\ndis.distance()'
     # 'import webrImport as web\ndis = web.mod("display_lib")\ndis.distance()'

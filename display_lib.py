@@ -491,6 +491,7 @@ def distance( obj1 = None, obj2 = None ):
     '''
     assembles distance relationship
     '''
+    selected = None
     attr = 'distance'
     st = []
     disNode = None
@@ -529,15 +530,16 @@ def distance( obj1 = None, obj2 = None ):
                 cmds.select( selected )
         else:
             message( 'one object already have a distance attr, aborting.' )
-    elif cmds.attributeQuery( attr, node = selected[0], ex = True ):
-        # remove distance from pair, delete dis node
-        disNode = clean( cmds.listConnections( selected[0] + '.worldMatrix[0]', s = False, d = True, type = 'distanceBetween' ) )
-        if disNode:
-            nodes = clean( cmds.listConnections( disNode + '.distance', s = False, d = True ) )
-            if len( nodes ) == 2:
-                distance( obj1 = nodes[0], obj2 = nodes[1] )
-            else:
-                message( 'A pair to the selection was not found' )
+    elif selected:
+        if cmds.attributeQuery( attr, node = selected[0], ex = True ):
+            # remove distance from pair, delete dis node
+            disNode = clean( cmds.listConnections( selected[0] + '.worldMatrix[0]', s = False, d = True, type = 'distanceBetween' ) )
+            if disNode:
+                nodes = clean( cmds.listConnections( disNode + '.distance', s = False, d = True ) )
+                if len( nodes ) == 2:
+                    distance( obj1 = nodes[0], obj2 = nodes[1] )
+                else:
+                    message( 'A pair to the selection was not found' )
     else:
         cmds.warning( '--  Select 2 objects to toggle distance attributes. --' )
 
