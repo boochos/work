@@ -1033,42 +1033,57 @@ def clipApply( path = '', ns = True, onCurrentFrame = True, mergeExistingLayers 
     # TODO: fix pose only export to not take anim curves
     # update all other functions that use the behaviour
     # print( 'incoming start: ', start, 'incoming end: ', end )
-    sel = cmds.ls( sl = 1, fl = 1 )
-    # set import attrs
-    # print clp.name, '_____name'
-    if not clp:
-        clp = clipOpen( path = path )
-    # print clp.__dict__
-    if onCurrentFrame:
-        clp.offset = onCurrentFrameOffset( start = clp.start )
-    if ns:
-        clp = putNS( clp )
-    if putObjectList:
-        clp = pruneObjects( clp, putObjectList )  # not working
-    if putLayerList:
-        clp = pruneLayers( clp, putLayerList )  # working
-    # set type of import
-    clp = setType( clp, poseOnly = poseOnly )
-    # frame range
-    s = None
-    e = None
-    # print( start, clp.start, '$$$$' )
-    if clp.start != start:
-        s = start
+    go = False
+    mes = ''
+    if clp:
+        go = True
     else:
-        print( '____' )
-    if clp.end != end:
-        e = end
-    # print( 'reset start: ', start, 'reset end: ', end )
-    if s or e:
-        # print( 'before cut keys', 'start: ', s, 'end: ', e )
-        clp = cutKeysToRange( clp, s, e )
-        print( 'cut keys good' )
-    # print( 'before put layers' )
-    clp.putLayers( mergeExistingLayers, applyLayerSettings, applyRootAsOverride )
-    # print( 'after put layers', clp.layers )
-    if sel:
-        cmds.select( sel )
+        mes = 'No clip. '
+    if path:
+        if os.path.isfile( path ):
+            go = True
+        else:
+            mes = mes + ' File does not exist: ' + path
+
+    if go:
+        sel = cmds.ls( sl = 1, fl = 1 )
+        # set import attrs
+        # print clp.name, '_____name'
+        if not clp:
+            clp = clipOpen( path = path )
+        # print clp.__dict__
+        if onCurrentFrame:
+            clp.offset = onCurrentFrameOffset( start = clp.start )
+        if ns:
+            clp = putNS( clp )
+        if putObjectList:
+            clp = pruneObjects( clp, putObjectList )  # not working
+        if putLayerList:
+            clp = pruneLayers( clp, putLayerList )  # working
+        # set type of import
+        clp = setType( clp, poseOnly = poseOnly )
+        # frame range
+        s = None
+        e = None
+        # print( start, clp.start, '$$$$' )
+        if clp.start != start:
+            s = start
+        else:
+            print( '____' )
+        if clp.end != end:
+            e = end
+        # print( 'reset start: ', start, 'reset end: ', end )
+        if s or e:
+            # print( 'before cut keys', 'start: ', s, 'end: ', e )
+            clp = cutKeysToRange( clp, s, e )
+            print( 'cut keys good' )
+        # print( 'before put layers' )
+        clp.putLayers( mergeExistingLayers, applyLayerSettings, applyRootAsOverride )
+        # print( 'after put layers', clp.layers )
+        if sel:
+            cmds.select( sel )
+    else:
+        message( mes, maya = True, warning = True )
 
 
 def clipPath( name = '', temp = False, public = False ):
