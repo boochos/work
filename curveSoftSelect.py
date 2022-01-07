@@ -264,7 +264,7 @@ def removeLocal( *args ):
 
 
 def tempModPath( *arg ):
-    return os.path.join( cmds.internalVar( usd = True ) + tempModName() + '.pyc' )
+    return os.path.join( cmds.internalVar( usd = True ) + tempModName() + '.py' )
 
 
 def tempModDownloadPath( *args ):
