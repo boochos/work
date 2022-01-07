@@ -38,6 +38,7 @@ def mod( modulename = '', f = False ):
     # piggy = 'webrPiggyBack'
     local = False
     contents = None
+    download_missing = True
 
     #
     # check if mel, download, else build python in ram
@@ -45,8 +46,6 @@ def mod( modulename = '', f = False ):
         # download to scripts directory
         if os.path.isdir( varPath ):
             if pyVer == 2:
-                # melF = urllib.URLopener()  # doesnt like this in py 3
-                # melF.retrieve( webPath + modulename, os.path.join( varPath, modulename ) )
                 urllib.urlretrieve( webPath + modulename, os.path.join( varPath, modulename ) )
             else:
                 urllib.request.urlretrieve( webPath + modulename, os.path.join( varPath, modulename ) )
@@ -118,18 +117,24 @@ def mod( modulename = '', f = False ):
                         contents = infile.read()
             if not contents:
                 print( '-- Set to use local modules, but module missing. Getting module from web: ', urlPath )
+                if pyVer == 2:
+                    if download_missing:
+                        urllib.urlretrieve( urlPath, localPath )  # py 2
+                    else:
+                        req = urllib2.Request( urlPath )
+                        response = urllib2.urlopen( req )
+                else:
+                    if download_missing:
+                        urllib.request.urlretrieve( urlPath, localPath )  # py 3
+                    else:
+                        response = urllib.request.urlopen( urlPath )
+                contents = response.read()
+        else:
+            if pyVer == 2:
                 req = urllib2.Request( urlPath )
                 response = urllib2.urlopen( req )
-                # req = urllib.request( urlPath )
-                # response = urllib.request.urlopen( req )
-                contents = response.read()
-                #
-                urllib.urlretrieve( urlPath, localPath )
-        else:
-            req = urllib2.Request( urlPath )
-            response = urllib2.urlopen( req )
-            # req = urllib.request( urlPath )
-            # response = urllib.request.urlopen( req )
+            else:
+                response = urllib.request.urlopen( urlPath )
             contents = response.read()
         # create module
         # must be exec mode

@@ -228,7 +228,7 @@ def getIcons( download = False ):
         # print local
         if download:
             message( 'downloading -- ' + local )
-            print()
+            print()  # adds new line
             cmds.refresh()
             #
             if pyVer == 2:

@@ -1,14 +1,23 @@
 import json
 import math
 import os
+import platform
 import py_compile
 import shutil
 import tempfile
-import urllib
 
 import maya.cmds as cmds
 import maya.mel as mel
 import webrImport as web
+
+pyVer = 2
+ver = platform.python_version()
+if '2.' in ver:
+    import urllib2
+    import urllib
+else:
+    pyVer = 3
+    import urllib.request
 
 #
 # import display_lib as ds
@@ -231,8 +240,12 @@ def toggleSelJob( *args ):
 def makeLocal( *args ):
     # download module
     url = 'https://raw.github.com/boochos/work/master/curveSoftSelect.py'
-    urllib.urlretrieve( url, tempModDownloadPath() )
+    if pyVer == 2:
+        urllib.urlretrieve( url, tempModDownloadPath() )
+    else:
+        pass
     py_compile.compile( tempModDownloadPath() )
+
     os.remove( tempModDownloadPath() )
     removeLocal()
     shutil.move( tempModDownloadPath() + 'c', tempModPath() )
@@ -332,7 +345,7 @@ def toggleButton( *args ):
         if ui.sftSel in btn:
             if idB:
                 # turn off
-                cmds.button( btn, edit = True, bgc = [0.38, 0.38, 0.38] )
+                cmds.button( btn, edit = True, bgc = [0.13, 0.77, 0.11] )
                 idB = False
             else:
                 # turn on

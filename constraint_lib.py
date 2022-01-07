@@ -59,20 +59,23 @@ def listX( l = [] ):
 
 def matchKeyedFramesLoop():
     '''
-    uses first selection to add keys on consequent objects in selection
+    uses first selection to add keys latter objects in selection
     '''
     sel = cmds.ls( sl = True )
-    if len( sel ) == 1:
-        # one object selected, add same key on all curves
-        matchKeyedFrames( A = None, B = None, subtractive = True )
+    if sel:
+        if len( sel ) == 1:
+            # one object selected, add same key on all curves
+            matchKeyedFrames( A = None, B = None, subtractive = True )
+        else:
+            # 2 objects
+            obj1 = sel[0]
+            for item in sel:
+                if item != obj1:
+                    cmds.select( obj1, item )
+                    matchKeyedFrames( A = None, B = None, subtractive = True )
+            cmds.select( sel )
     else:
-        # 2 objects
-        obj1 = sel[0]
-        for item in sel:
-            if item != obj1:
-                cmds.select( obj1, item )
-                matchKeyedFrames( A = None, B = None, subtractive = True )
-        cmds.select( sel )
+        message( 'Select at least 2 objects. Assuming first object is keyed, second object gets keys on same frames.', warning = True )
 
 
 def subframe():

@@ -78,52 +78,52 @@ def shelfAddButtons( *args ):
     cmds.setParent( Depend().shelf )
     # build buttons
     cmds.shelfButton( label = 'FRSH', annotation = 'refresh rig shelf', w = wh, h = wh,
-                     image = 'refreshWeb.png', command = 'import webrImport as web\nwrs = web.mod("webrRigShelf")\nwrs.shelfRefreshWin()' )
+                     image = 'reloadShelf.png', command = 'import webrImport as web\nwrs = web.mod("webrRigShelf")\nwrs.shelfRefreshWin()' )
 
-    cmds.shelfButton( label = 'save ++', annotation = 'save ++', w = wh, h = wh, image = 'save++_icon.xpm',
+    cmds.shelfButton( label = 'save scene ui', annotation = 'save scene ui', w = wh,
+                     h = wh, image = 'saveUi.png', command = 'import webrImport as web\nkui = web.mod("key_ui")\nkui.saveSceneWin()' )
+
+    cmds.shelfButton( label = 'save ++', annotation = 'save ++', w = wh, h = wh, image = 'savePlus.png',
                      command = 'import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.incrementalSave()' )
 
-    cmds.shelfButton( label = '', annotation = 'set project from file name', w = wh, h = wh, image = 'PrjtSet.xpm',
+    cmds.shelfButton( label = '', annotation = 'set project from file name', w = wh, h = wh, image = 'projectSet.png',
                      command = 'import webrImport as web\nfm = web.mod("fileMan_lib")\nfm.setProjectFromFilename("scenes")' )
 
     cmds.shelfButton( label = 'temporarily save selection', annotation = 'temporarily save selection',
-                     w = wh, h = wh, image = 'selStore.xpm', command = 'import webrImport as web\nsel = web.mod("selection")\nsl = sel.Sel()' )
+                     w = wh, h = wh, image = 'selStore.png', command = 'import webrImport as web\nsel = web.mod("selection")\nsl = sel.Sel()' )
 
     cmds.shelfButton( label = 'select saved selection', annotation = 'select saved selection',
-                     w = wh, h = wh, image = 'sel.xpm', command = 'sl.select()' )
+                     w = wh, h = wh, image = 'sel.png', command = 'sl.select()' )
 
     cmds.shelfButton( label = 'print selection', annotation = 'print selection',
-                     w = wh, h = wh, image = 'PrntSel.xpm', command = 'sl.prnt()' )
+                     w = wh, h = wh, image = 'selPrint.png', command = 'sl.prnt()' )
 
     cmds.shelfButton( label = 'ATOM', annotation = 'ATOM UI', w = wh, h = wh,
-                     image = 'Atom.xpm', command = 'import webrImport as web\natom = web.mod("atom_lib")\natom.win()' )
+                     image = 'atom.png', command = 'import webrImport as web\natom = web.mod("atom_lib")\natom.win()' )
 
-    cmds.shelfButton( label = 'Atom Weight Util', annotation = 'Atom Weight Util', w = wh, h = wh, image = 'AtmWghtUtl.xpm',
+    cmds.shelfButton( label = 'Atom Weight Util', annotation = 'Atom Weight Util', w = wh, h = wh, image = 'atomWgt.png',
                      command = 'import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.weightingUtilWinv02()' )
 
     cmds.shelfButton( label = 'Joint Orient Util', annotation = 'Joint Orient Util',
-                     w = wh, h = wh, image = 'AtomUtl.xpm', command = 'import webrImport as web\nweb.mod("cometJointOrient.mel")\nimport maya.mel as mel\nmel.eval("cometJointOrient()")' )
+                     w = wh, h = wh, image = 'atomJnt.png', command = 'import webrImport as web\nweb.mod("cometJointOrient.mel")\nimport maya.mel as mel\nmel.eval("cometJointOrient()")' )
 
     cmds.shelfButton( label = 'Atom Influence Match', annotation = 'Atom Influence Match', w = wh, h = wh,
-                     image = 'AtmTrnsfrInflnc.xpm', command = 'import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.transferInfWin()' )
+                     image = 'atomInf.png', command = 'import webrImport as web\nkrl = web.mod("key_rig_lib")\nkrl.transferInfWin()' )
 
     cmds.shelfButton( label = 'Atom Surface Rig', annotation = 'Atom Surface Rig', w = wh, h = wh,
-                     image = 'AtmSrfcRg.xpm', command = 'import webrImport as web\nasr = web.mod("atom_surfaceRig_lib")\nasr.win()' )
+                     image = 'atomSrf.png', command = 'import webrImport as web\nasr = web.mod("atom_surfaceRig_lib")\nasr.win()' )
 
     cmds.shelfButton( label = 'Atom Lock Attr UI', annotation = 'Atom Lock Attr UI', w = wh,
-                     h = wh, image = 'AtomLck.xpm', command = 'import webrImport as web\naul = web.mod("atom_utilities_lib")\naul.atomLockWin()' )
+                     h = wh, image = 'atomAtr.png', command = 'import webrImport as web\naul = web.mod("atom_utilities_lib")\naul.atomLockWin()' )
 
     cmds.shelfButton( label = 'Atom Update Mesh', annotation = 'Atom Update Mesh', w = wh, h = wh,
-                     image = 'AtmMshUpdt.xpm', command = 'import webrImport as web\naum = web.mod("atom_updateMesh_lib")\naum.win()' )
+                     image = 'atomUM.png', command = 'import webrImport as web\naum = web.mod("atom_updateMesh_lib")\naum.win()' )
 
     cmds.shelfButton( label = 'Atom Tag UI', annotation = 'Atom Tag UI', w = wh, h = wh,
-                     image = 'TagUI.xpm', command = 'import webrImport as web\ntg = web.mod("atom_tag_lib")\ntg.Atom_Tag_Win().win()' )
+                     image = 'atomTag.png', command = 'import webrImport as web\ntg = web.mod("atom_tag_lib")\ntg.Atom_Tag_Win().win()' )
 
     cmds.shelfButton( label = 'Atom Zero Joint Orient', annotation = 'Atom Zero Joint Orient', w = wh, h = wh,
-                     image = 'Zero.xpm', command = 'import webrImport as web\njnt = web.mod("atom_joint_lib")\njnt.zeroJntSelection()' )
-
-    cmds.shelfButton( label = 'save scene ui', annotation = 'save scene ui', w = wh,
-                     h = wh, image = 'saveFileUI.xpm', command = 'import webrImport as web\nkui = web.mod("key_ui")\nkui.saveSceneWin()' )
+                     image = 'zeroJnt.png', command = 'import webrImport as web\njnt = web.mod("atom_joint_lib")\njnt.zeroJntSelection()' )
 
 
 def getIcons( download = False ):
@@ -142,6 +142,10 @@ def getIcons( download = False ):
         # print local
         if download:
             message( 'downloading -- ' + local )
-            print()
+            print()  # adds new line
             cmds.refresh()
-            urllib.urlretrieve( url, local )
+            #
+            if pyVer == 2:
+                urllib.urlretrieve( url, local )
+            else:
+                urllib.request.urlretrieve( url, local )
