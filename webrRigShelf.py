@@ -1,5 +1,14 @@
 import os
-import urllib  # need this for downloading icons, line is sometimes commented out
+import platform
+
+pyVer = 2
+ver = platform.python_version()
+if '2.' in ver:
+    import urllib2
+    import urllib
+else:
+    pyVer = 3
+    import urllib.request
 
 import maya.cmds as cmds
 import maya.mel as mel

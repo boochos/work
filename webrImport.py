@@ -4,19 +4,18 @@ import platform
 
 import maya.cmds as cmds
 import maya.mel as mel
-# import urllib.request
 
+pyVer = 2
 ver = platform.python_version()
-# print( ver )
+print( ver )
 if '2.' in ver:
     import urllib2
+    import urllib
 else:
+    pyVer = 3
     import urllib.request
-    pass
 
 
-# import urllib2
-# import urllib.request
 def mod( modulename = '', f = False ):
     '''
     Which source, build module, piggy back functions.
@@ -36,18 +35,21 @@ def mod( modulename = '', f = False ):
         varPath = cmds.internalVar( userScriptDir = True )
     # more vars
     webPath = 'https://raw.githubusercontent.com/boochos/work/master/'
-    piggy = 'webrPiggyBack'
+    # piggy = 'webrPiggyBack'
     local = False
+    contents = None
 
     #
     # check if mel, download, else build python in ram
     if '.mel' in modulename:
         # download to scripts directory
-
-        melF = urllib.URLopener()  # doesnt like this in py 3
         if os.path.isdir( varPath ):
-            melF.retrieve( webPath + modulename, os.path.join( varPath, modulename ) )
-            # urllib.request.urlretrieve( webPath + modulename, os.path.join( varPath, modulename ) )
+            if pyVer == 2:
+                # melF = urllib.URLopener()  # doesnt like this in py 3
+                # melF.retrieve( webPath + modulename, os.path.join( varPath, modulename ) )
+                urllib.urlretrieve( webPath + modulename, os.path.join( varPath, modulename ) )
+            else:
+                urllib.request.urlretrieve( webPath + modulename, os.path.join( varPath, modulename ) )
             mel.eval( 'rehash' )
         else:
             pass
@@ -60,7 +62,12 @@ def mod( modulename = '', f = False ):
             local = frm.local
             # print frm.local , '____local'
         except:
-            print ( 'no local variable found' )
+            print ( 'no local variable found. creating file: webrSource.py' )
+            dir = os.path.join( varPath, 'webrSource.py' )
+            print( dir )
+            fl = open( dir, "a" )
+            fl.write( "local = False" )
+            fl.close()
         # removed below, as its trying to find specific file and doesnt account for shared sys path
         # perform regular import instead
         # also need to find path to local file if in shared directory, check and parse sys path
@@ -109,6 +116,15 @@ def mod( modulename = '', f = False ):
                     if os.path.isfile( localPath ):
                         infile = open( localPath, 'r' )
                         contents = infile.read()
+            if not contents:
+                print( '-- Set to use local modules, but module missing. Getting module from web: ', urlPath )
+                req = urllib2.Request( urlPath )
+                response = urllib2.urlopen( req )
+                # req = urllib.request( urlPath )
+                # response = urllib.request.urlopen( req )
+                contents = response.read()
+                #
+                urllib.urlretrieve( urlPath, localPath )
         else:
             req = urllib2.Request( urlPath )
             response = urllib2.urlopen( req )

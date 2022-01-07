@@ -1,5 +1,14 @@
 import os
-import urllib  # need this for downloading icons, line is sometimes commented out
+import platform
+
+pyVer = 2
+ver = platform.python_version()
+if '2.' in ver:
+    import urllib2
+    import urllib
+else:
+    pyVer = 3
+    import urllib.request
 
 import maya.cmds as cmds
 import maya.mel as mel
@@ -221,7 +230,11 @@ def getIcons( download = False ):
             message( 'downloading -- ' + local )
             print()
             cmds.refresh()
-            urllib.urlretrieve( url, local )
+            #
+            if pyVer == 2:
+                urllib.urlretrieve( url, local )
+            else:
+                urllib.request.urlretrieve( url, local )
     message( 'Icons downloaded.' )
 
 
