@@ -243,9 +243,13 @@ def makeLocal( *args ):
     if pyVer == 2:
         urllib.urlretrieve( url, tempModDownloadPath() )
     else:
-        pass
-    py_compile.compile( tempModDownloadPath() )
+        urllib.request.urlretrieve( url, tempModDownloadPath() )
 
+    # return
+    print( '_____' )
+    r = py_compile.compile( tempModDownloadPath() )
+    print( r, '_______________________here' )
+    return
     os.remove( tempModDownloadPath() )
     removeLocal()
     shutil.move( tempModDownloadPath() + 'c', tempModPath() )
@@ -262,6 +266,10 @@ def tempModPath( *arg ):
 
 
 def tempModDownloadPath( *args ):
+    '''
+    
+    '''
+    print( tempfile.gettempdir() )
     return os.path.join( tempfile.gettempdir(), tempModName() + '.py' )
 
 
@@ -310,7 +318,11 @@ def varLoad( *args ):
 
 def varDump( G, *args ):
     path = varFilePath()
-    fileObj = open( path, 'wb' )
+    if pyVer == 2:
+        fileObj = open( path, 'wb' )
+    else:
+        fileObj = open( path, 'w', encoding = 'utf8' )
+    print( 'G________', G )
     json.dump( G, fileObj, indent = 2 )
 
 
