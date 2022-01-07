@@ -69,12 +69,15 @@ def mod( modulename = '', f = False ):
             # print( download_missing )
             # print frm.local , '____local'
         except:
-            print ( 'no local variable found. creating file: webrSource.py' )
-            dir = os.path.join( varPath, 'webrSource.py' )
-            print( dir )
-            fl = open( dir, "a" )
-            fl.write( "local = False\ndownload_missing = False" )
-            fl.close()
+            if not os.path.isfile( os.path.join( varPath, 'webrSource.py' ) ):
+                print ( 'no local variable found. creating file: webrSource.py' )
+                dir = os.path.join( varPath, 'webrSource.py' )
+                print( dir )
+                fl = open( dir, "a" )
+                fl.write( "local = False\ndownload_missing = False" )
+                fl.close()
+            else:
+                print( 'Couldnt import "local" var. However, file exists.' )
         # removed below, as its trying to find specific file and doesnt account for shared sys path
         # perform regular import instead
         # also need to find path to local file if in shared directory, check and parse sys path

@@ -8,7 +8,6 @@ import webrImport as web
 # web
 cn = web.mod( 'constraint_lib' )
 ac = web.mod( 'animCurve_lib' )
-css = web.mod( 'curveSoftSelect' )
 
 
 def message( what = '', maya = True ):
@@ -117,6 +116,14 @@ def geFieldTx( v = '' ):
         pass
 
 
+def colorOff():
+    return [0.97, 0.92, 0.04]  # yellow
+
+
+def colorOn():
+    return [0.13, 0.77, 0.11]  # green
+
+
 def graphEditorButtons( *args ):
     # TODO: add button to distribute keys on selected curves
     # TODO: use dif layout, window gets locked to a min size
@@ -199,7 +206,7 @@ def graphEditorButtons( *args ):
             w = 105
             item = geButton( name = ui.sftSel, parent = p, attach = item, label = 'SOFT Select',
                             cmd = "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.toggleSelJob()",
-                            gap = 20, w = w, bg = css.colorOff() )
+                            gap = 20, w = w, bg = colorOff() )
             item = geButton( name = ui.sbfrm, parent = p, attach = item, label = 'SUB frame X',
                             cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.subframe()",
                             gap = 0, w = w, bg = bgc, ann = 'subframes to whole frames ' )

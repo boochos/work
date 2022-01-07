@@ -38,14 +38,6 @@ def message( what = '', maya = False ):
         print( what )
 
 
-def colorOff():
-    return [0.97, 0.92, 0.04]  # yellow
-
-
-def colorOn():
-    return [0.13, 0.77, 0.11]  # green
-
-
 def jobValue( *args ):
     que = cmds.undoInfo( q = 1, un = 1 )
     # only run if undo que has a keyframe -edit entry
@@ -253,11 +245,8 @@ def makeLocal( *args ):
     else:
         urllib.request.urlretrieve( url, tempModDownloadPath() )
 
-    # return
-    print( '_____' )
     r = py_compile.compile( tempModDownloadPath() )
-    print( r, '_______________________here' )
-    return
+
     os.remove( tempModDownloadPath() )
     removeLocal()
     shutil.move( tempModDownloadPath() + 'c', tempModPath() )
@@ -277,7 +266,7 @@ def tempModDownloadPath( *args ):
     '''
     
     '''
-    print( tempfile.gettempdir() )
+    # print( tempfile.gettempdir() )
     return os.path.join( tempfile.gettempdir(), tempModName() + '.py' )
 
 
@@ -365,11 +354,11 @@ def toggleButton( *args ):
         if ui.sftSel in btn:
             if idB:
                 # turn off
-                cmds.button( btn, edit = True, bgc = colorOff() )
+                cmds.button( btn, edit = True, bgc = ds.colorOff() )
                 idB = False
             else:
                 # turn on
-                cmds.button( btn, edit = True, bgc = colorOn() )
+                cmds.button( btn, edit = True, bgc = ds.colorOn() )
                 idB = True
 
 
