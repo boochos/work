@@ -245,9 +245,11 @@ def makeLocal( *args ):
     else:
         urllib.request.urlretrieve( url, tempModDownloadPath() )
 
+    # return
     r = py_compile.compile( tempModDownloadPath() )
 
     os.remove( tempModDownloadPath() )
+    return
     removeLocal()
     shutil.move( tempModDownloadPath() + 'c', tempModPath() )
 
