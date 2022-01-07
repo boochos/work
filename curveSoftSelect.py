@@ -252,11 +252,9 @@ def makeLocal( *args ):
         py_compile.compile( tempModDownloadPath(), tempModDownloadPath() + 'c' )
 
     os.remove( tempModDownloadPath() )
-    # return
-    # removeLocal()
-    # shutil.move( tempModDownloadPath() + 'c', tempModPath() )
-    print( 'from: ', tempModDownloadPath() )
-    print( 'to: ', tempModPath() )
+
+    # print( 'from: ', tempModDownloadPath() )
+    # print( 'to: ', tempModPath() )
     shutil.move( tempModDownloadPath() + 'c', tempModPath() )
 
 
@@ -327,7 +325,7 @@ def varDump( G, *args ):
         fileObj = open( path, 'wb' )
     else:
         fileObj = open( path, 'w', encoding = 'utf8' )
-    print( 'G________', G )
+    # print( 'G________', G )
     json.dump( G, fileObj, indent = 2 )
 
 
