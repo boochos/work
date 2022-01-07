@@ -38,6 +38,14 @@ def message( what = '', maya = False ):
         print( what )
 
 
+def colorOff():
+    return [0.97, 0.92, 0.04]  # yellow
+
+
+def colorOn():
+    return [0.13, 0.77, 0.11]  # green
+
+
 def jobValue( *args ):
     que = cmds.undoInfo( q = 1, un = 1 )
     # only run if undo que has a keyframe -edit entry
@@ -357,11 +365,11 @@ def toggleButton( *args ):
         if ui.sftSel in btn:
             if idB:
                 # turn off
-                cmds.button( btn, edit = True, bgc = [0.13, 0.77, 0.11] )
+                cmds.button( btn, edit = True, bgc = colorOff() )
                 idB = False
             else:
                 # turn on
-                cmds.button( btn, edit = True, bgc = [0.3, 0.35, 0.5] )
+                cmds.button( btn, edit = True, bgc = colorOn() )
                 idB = True
 
 

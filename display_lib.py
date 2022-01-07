@@ -8,6 +8,7 @@ import webrImport as web
 # web
 cn = web.mod( 'constraint_lib' )
 ac = web.mod( 'animCurve_lib' )
+css = web.mod( 'curveSoftSelect' )
 
 
 def message( what = '', maya = True ):
@@ -141,7 +142,7 @@ def graphEditorButtons( *args ):
     if not cmds.control( ui.filD, ex = 1 ):
         bgc = [0.4, 0.4, 0.4]
         # bgc = [0.3, 0.48, 0.57]
-        bgcd = [0.97, 0.92, 0.04]
+        bgcd = [0.97, 0.92, 0.04]  # yellow
         if build:
             p = findControl( ann = 'Move Nearest Picked Key Tool', panelTyp = pnl, split = 3 )[0]
             # print '_______    ', findControl(ann='Indicates that either text filter', panelTyp=pnl, split=2)
@@ -198,7 +199,7 @@ def graphEditorButtons( *args ):
             w = 105
             item = geButton( name = ui.sftSel, parent = p, attach = item, label = 'SOFT Select',
                             cmd = "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.toggleSelJob()",
-                            gap = 20, w = w, bg = bgcd )
+                            gap = 20, w = w, bg = css.colorOff() )
             item = geButton( name = ui.sbfrm, parent = p, attach = item, label = 'SUB frame X',
                             cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.subframe()",
                             gap = 0, w = w, bg = bgc, ann = 'subframes to whole frames ' )
