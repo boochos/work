@@ -246,15 +246,18 @@ def makeLocal( *args ):
         urllib.request.urlretrieve( url, tempModDownloadPath() )
 
     # return
-    r = py_compile.compile( tempModDownloadPath() )
+    if pyVer == 2:
+        py_compile.compile( tempModDownloadPath() )
+    else:
+        py_compile.compile( tempModDownloadPath(), tempModDownloadPath() + 'c' )
 
-    # os.remove( tempModDownloadPath() )
+    os.remove( tempModDownloadPath() )
     # return
     # removeLocal()
     # shutil.move( tempModDownloadPath() + 'c', tempModPath() )
     print( 'from: ', tempModDownloadPath() )
-    print( 'from: ', tempModPath() )
-    shutil.move( tempModDownloadPath(), tempModPath() )
+    print( 'to: ', tempModPath() )
+    shutil.move( tempModDownloadPath() + 'c', tempModPath() )
 
 
 def removeLocal( *args ):
@@ -264,7 +267,7 @@ def removeLocal( *args ):
 
 
 def tempModPath( *arg ):
-    return os.path.join( cmds.internalVar( usd = True ) + tempModName() + '.py' )
+    return os.path.join( cmds.internalVar( usd = True ) + tempModName() + '.pyc' )
 
 
 def tempModDownloadPath( *args ):
