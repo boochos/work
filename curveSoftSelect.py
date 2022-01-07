@@ -248,10 +248,13 @@ def makeLocal( *args ):
     # return
     r = py_compile.compile( tempModDownloadPath() )
 
-    os.remove( tempModDownloadPath() )
-    return
-    removeLocal()
-    shutil.move( tempModDownloadPath() + 'c', tempModPath() )
+    # os.remove( tempModDownloadPath() )
+    # return
+    # removeLocal()
+    # shutil.move( tempModDownloadPath() + 'c', tempModPath() )
+    print( 'from: ', tempModDownloadPath() )
+    print( 'from: ', tempModPath() )
+    shutil.move( tempModDownloadPath(), tempModPath() )
 
 
 def removeLocal( *args ):
