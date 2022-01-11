@@ -637,6 +637,85 @@ def set_for_playblast( dynamics = False, tires = False ):
             pass
 
 
+def renderLayerBlast():
+    '''
+    using animPublish file
+    *:*:geo:*
+    '''
+    # clear selection
+    cmds.select( cl = 1 )
+
+    path = cmds.file( query = True, exn = True )
+    print( path )
+    if '_animPublish_' in path:
+        path = path.replace( '_animPublish_', '_anim_' )
+    print( path )
+
+    # rename the current file
+    cmds.file( path, rn = path )
+
+    go = True
+    geoAll = []
+
+    # env
+    cmds.select( 'Bridge:*' )
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        for s in sel:
+            geoAll.append( s )
+    else:
+        print( 'no sel, env' )
+    cmds.setAttr( '____env.visibility', 1 )
+    # hero cars
+    cmds.select( '*:*:geo:*' )
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        for s in sel:
+            if ':geo:' in s and 'f[' not in s:
+                geoAll.append( s )
+    else:
+        print( 'no sel, hero cars' )
+    # traffic cars
+    cmds.select( '*:*:*:geo:*' )
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        for s in sel:
+            if ':geo:' in s and 'f[' not in s:
+                geoAll.append( s )
+    else:
+        print( 'no sel, traffic cars' )
+
+    #
+    if geoAll:
+        #
+        subDir = 'carAnimBty'
+        existing_layers = cmds.ls( type = 'renderLayer' )
+        if subDir not in existing_layers:
+            cmds.select( geoAll )
+            cmds.createRenderLayer( name = subDir, makeCurrent = True )
+        else:
+            cmds.editRenderLayerGlobals( crl = subDir )
+        #
+        pnl = cmds.getPanel( withFocus = True )
+        try:
+            cmds.editRenderLayerGlobals( crl = subDir )
+        except:
+            go = False
+        #
+        set_for_playblast( dynamics = False, tires = True )
+        if go:
+            cmds.setFocus( pnl )
+            cmds.currentTime( 1002 )
+            cmds.currentTime( 1001 )
+            result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = subDir, play = False )
+            print( result )  # [u'C:/Users/sebas/Documents/maya/__PLAYBLASTS__\\101_009_0100_animPublish_v014\\101_009_0100_animPublish_v014_carAnimBty', u'101_009_0100_animPublish_v014_carAnimBty']
+            pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_' + subDir )
+        else:
+            message( 'go == False, skipping shot', warning = True )
+    else:
+        message( 'no car geo found, skipping shot', warning = True )
+
+
 def blast( dynamics = False, burn_in = True ):
     '''
     

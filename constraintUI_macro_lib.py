@@ -171,7 +171,7 @@ class CSUI( object ):
             if con:
                 cmds.parentConstraint( sel[0], sel[1], mo = v9 )
                 if v10 == 'none' or v11 == 'none':
-                    message( 'A constraint already exists, rotations/tranlations cannot be skipped, argument ignored.' )
+                    message( 'A constraint already exists, rotations/translations cannot be skipped, argument ignored.' )
             else:
                 cmds.parentConstraint( sel[0], sel[1], mo = v9, st = v10, sr = v11 )
         else:
@@ -203,10 +203,16 @@ class CSUI( object ):
         self.animBucket = []
         self.objects = cmds.ls( sl = 1 )
         if self.objects:
+            '''
+            # old
             for obj in self.objects:
                 self.animBucket.append( al.SpaceSwitch( obj ) )
                 message( 'Animation Stored: -- ' + obj, maya = True )
-                cmds.refresh( f = 1 )
+                cmds.refresh( f = 1 )'''
+            # new
+            self.animBucket.append( al.SpaceSwitchList() )
+            message( 'Animations Stored', maya = True )
+            #
             self.actionColumn.prefGet()
         else:
             cmds.warning( 'Select object(s)' )
@@ -216,10 +222,16 @@ class CSUI( object ):
             v = cmds.floatFieldGrp( self.actionColumn.floatGroup1, q = True, v = True )
             if v == [0.0, 0.0, 0.0]:
                 v = []
+            '''
+            # old
             for obj in self.animBucket:
                 obj.restore( offset = v )
                 message( 'Animation ReStored: -- ' + obj.obj, maya = True )
-                cmds.refresh( f = 1 )
+                cmds.refresh( f = 1 )'''
+            # new
+            self.animBucket[0].restore( offset = v )
+            message( 'Animations ReStored', maya = True )
+            #
             self.actionColumn.prefGet()
         else:
             cmds.warning( 'No objects have been stored.' )
@@ -232,13 +244,19 @@ class CSUI( object ):
             if v == [0.0, 0.0, 0.0]:
                 v = []
             sel = cmds.ls( sl = True )
-            for i in range( len( self.animBucket ) ):
-                # print i
-                cmds.select( sel[i] )
-                self.animBucket[i].restore( useSelected = True, offset = v )
-                self.actionColumn.prefGet()
-                message( 'Animation ReStored: -- ' + self.animBucket[i].obj, maya = True )
-                cmds.refresh( f = 1 )
+            if sel:
+                '''
+                # old
+                for i in range( len( self.animBucket ) ):
+                    # print i
+                    cmds.select( sel[i] )
+                    self.animBucket[i].restore( useSelected = True, offset = v )
+                    self.actionColumn.prefGet()
+                    message( 'Animation ReStored: -- ' + self.animBucket[i].obj, maya = True )
+                    cmds.refresh( f = 1 )'''
+                # new
+                self.animBucket[0].restore( useSelected = True, offset = v )
+                message( 'Animations ReStored', maya = True )
         else:
             cmds.warning( 'No objects have been stored.' )
 

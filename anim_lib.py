@@ -227,17 +227,27 @@ def changeRO( obj, ro ):
 
 class SpaceSwitch():
 
-    def __init__( self, obj, poseOnly = False ):
+    def __init__( self, obj, poseOnly = False, stor = True ):
         self.name = obj
         self.obj = obj
         self.poseOnly = poseOnly
         self.mtrx = []
         self.pos = []
         self.rot = []
-        self.keys = getKeyedFrames( self.obj )
+        self.autoK = None
+        self.reOrder = False
         self.rng = fr.Get()
-        self.store()
+        self.keys = getKeyedFrames( self.obj )
+        if not self.keys:
+            message( 'No keys, forcing timeline range.', maya = True )
+            self.keys = range( int( self.rng.start ), int( self.rng.end + 1 ) )
+            self.rng.keyStart = self.rng.start
+            self.rng.keyEnd = self.rng.end
+        print( self.keys )
+        if stor:
+            self.store()
         self.rooGet = cmds.getAttr( self.obj + '.rotateOrder' )
+        self.rooPut = self.rooGet
 
         '''
         min
@@ -276,22 +286,116 @@ class SpaceSwitch():
                 cmds.autoKeyframe( state = autoK )
                 cn.uiEnable( controls = 'modelPanel' )
             else:
-                message( 'No keys, forcing timeline range.', maya = True )
-                self.keys = range( int( self.rng.start ), int( self.rng.end ) )
-                self.rng.keyStart = self.rng.start
-                self.rng.keyEnd = self.rng.end
-                self.store()
+                # self.store()
+                pass
+
+    def storeStart( self ):
+        '''
+        prep settings
+        '''
+        #
+        '''
+        if self.keys:
+            # ui off
+            cn.uiEnable( controls = 'modelPanel' )
+            # autokey state
+            self.autoK = cmds.autoKeyframe( q = True, state = True )
+            cmds.autoKeyframe( state = False )'''
+        pass
+
+    def storeEnd( self ):
+        '''
+        restore settings
+        '''
+        # restore everything
+        # cmds.currentTime( self.rng.current )
+        # cmds.autoKeyframe( state = self.autoK )
+        pass
+
+    def storeKeyedFrame( self ):
+        '''
+        store single frame
+        assume when run currentTime() has already been set
+        assume autokey has been accounted for
+        assume modelPanels are off
+        '''
+        #
+        current = cmds.currentTime( q = True )
+        #
+        if current == self.keys[0]:
+            self.storeStart()
+        #
+        if current in self.keys:
+            self.pos.append( cmds.xform( self.obj, q = True, rp = True, ws = True ) )
+            self.rot.append( cmds.xform( self.obj, q = True, ro = True, ws = True ) )
+            self.mtrx.append( cmds.xform( self.obj, q = True, m = True, ws = True ) )
+        #
+        if current == self.keys[-1]:
+            self.storeEnd()
+
+    def restoreStart( self ):
+        '''
+        
+        '''
+        #
+        self.rooPut = cmds.getAttr( self.obj + '.rotateOrder' )
+        if self.rooGet != self.rooPut:
+            self.reOrder = True
+            print( 'reorder' )
+
+    def restoreEnd( self ):
+        '''
+        
+        '''
+        # cmds.currentTime( self.rng.current )
+        # cmds.autoKeyframe( state = self.autoK )
+        pass
+
+    def restoreKeyedFrame( self, useSelected = False, offset = [] ):
+        '''
+        restore single frame
+        assume when run currentTime() has already been set
+        assume autokey has been accounted for
+        assume modelPanels are off
+        '''
+        #
+        current = cmds.currentTime( q = True )
+        #
+        if current == self.keys[0]:
+            self.restoreStart()
+        #
+        if current in self.keys:
+            i = self.keys.index( current )
+            cmds.xform( self.obj, t = self.pos[i], ws = True )
+            # new method for applying rotations, accounts for differences in rotation order
+            if self.reOrder:
+                self.rot[i] = reorderAngles( matrix = self.mtrx[i], rooOld = self.rooGet, rooNew = self.rooPut )
+            cmds.xform( self.obj, ro = self.rot[i], ws = True )
+            # object space offset X, Y, Z
+            if offset:
+                #
+                cmds.xform( self.obj, r = True, os = True, ro = ( offset[0], 0, 0 ) )
+                cmds.xform( self.obj, r = True, os = True, ro = ( 0, offset[1], 0 ) )
+                cmds.xform( self.obj, r = True, os = True, ro = ( 0, 0, offset[2] ) )
+            # account for non-keyable rotate or translate attrs
+            cmds.setKeyframe( self.obj + '.rotate' )
+            cmds.setKeyframe( self.obj + '.translate' )
+            #
+            cn.eulerFilter( self.obj, tangentFix = True )
+        #
+        if current == self.keys[-1]:
+            self.restoreEnd()
 
     def restore( self, useSelected = False, offset = [] ):
         '''
         restore animation
         '''
-        reOrder = False
+        # self.reOrder = False
         if useSelected:
             self.obj = cmds.ls( sl = 1 )[0]
         rooPut = cmds.getAttr( self.obj + '.rotateOrder' )
         if self.rooGet != rooPut:
-            reOrder = True
+            self.reOrder = True
             print( 'reorder' )
         # type of restore
         if self.poseOnly:
@@ -311,14 +415,14 @@ class SpaceSwitch():
                         cmds.currentTime( key )
                         cmds.xform( self.obj, t = self.pos[i], ws = True )
                         # new method for applying rotations, accounts for differences in rotation order
-                        if reOrder:
+                        if self.reOrder:
                             self.rot[i] = reorderAngles( matrix = self.mtrx[i], rooOld = self.rooGet, rooNew = rooPut )
                         cmds.xform( self.obj, ro = self.rot[i], ws = True )
                         '''
                         # removed due to crappyness, applying matrix messes with jointOrient Value
                         if cmds.nodeType(self.obj) == 'lol':
                             cmds.xform(self.obj, t=self.pos[i], ws=True)
-                            if reOrder:
+                            if self.reOrder:
                                 rot[i] = reorderAngles(matrix=mtrx[i], rooOld=rooGet, rooNew=rooPut)
                             cmds.xform(self.obj, ro=self.rot[i], ws=True)
                         else:
@@ -349,6 +453,77 @@ class SpaceSwitch():
                 cn.uiEnable( controls = 'modelPanel' )
             else:
                 message( 'No keys.', maya = True )
+
+
+class SpaceSwitchList():
+
+    def __init__( self ):
+        self.objs = []
+        self.frames = []
+        self.sel = []
+        self.current = None
+        self.autoK = cmds.autoKeyframe( q = True, state = True )  # autokey state
+        #
+        self.getObjs()
+        self.store()
+
+    def getObjs( self ):
+        '''
+        loop objects
+        '''
+        self.sel = cmds.ls( sl = 1 )
+        for s in self.sel:
+            self.objs.append( SpaceSwitch( s, stor = False ) )
+        for o in self.objs:
+            for frame in o.keys:
+                if frame not in self.frames:
+                    self.frames.append( frame )
+        self.frames.sort()
+
+    def store( self ):
+        '''
+        store object positions
+        '''
+        cn.uiEnable( controls = 'modelPanel' )  # ui off
+        cmds.autoKeyframe( state = False )  # autokey off
+        self.current = cmds.currentTime( q = True )
+        #
+        for frame in self.frames:
+            cmds.currentTime( frame )
+            for obj in self.objs:
+                obj.storeKeyedFrame()
+        #
+        cn.uiEnable( controls = 'modelPanel' )  # ui on
+        cmds.autoKeyframe( state = self.autoK )  # autokey restore
+        cmds.currentTime( self.current )
+
+    def restore( self, useSelected = False, offset = [] ):
+        '''
+        restore objects positions
+        '''
+        cn.uiEnable( controls = 'modelPanel' )  # ui off
+        cmds.autoKeyframe( state = False )  # autokey off
+        self.current = cmds.currentTime( q = True )
+        #
+        go = True
+        if useSelected:
+            sel = cmds.ls( sl = 1 )
+            if len( sel ) == len( self.sel ):
+                i = 0
+                for s in sel:
+                    self.objs[i].obj = s
+            else:
+                go = False
+                message( 'wrong number of new objects. should be ' + str( len( self.objs ) ) + ' objects.  -- adjust selection.', warning = True )
+        if go:
+            for frame in self.frames:
+                cmds.currentTime( frame )
+                for obj in self.objs:
+                    obj.restoreKeyedFrame( offset = offset )
+        #
+        cn.uiEnable( controls = 'modelPanel' )  # ui on
+        cmds.autoKeyframe( state = self.autoK )  # autokey restore
+        cmds.currentTime( self.current )
 
 
 def getAnimCurves( obj = '', attrs = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ'] ):
