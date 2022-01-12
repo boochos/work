@@ -173,9 +173,6 @@ def shelfAddButtons( *args ):
     cmds.shelfButton( label = 'constraint tools', annotation = 'constraint tools', w = wh, h = wh,
                      image = 'helpersUI.png', command = 'import webrImport as web\ncnUI = web.mod("constraintUI_macro_lib")\ncnUI.CSUI()' )
 
-    cmds.shelfButton( label = 'warp time ui', annotation = 'warp time ui', w = wh, h = wh,
-                     image = 'warpTimeUI.png', command = 'import webrImport as web\nar = web.mod("animRetime_lib")' )
-
     cmds.shelfButton( label = 'select selection', annotation = 'select selection set\nread from text file\nobjects cannot be in multiple sets',
                      w = wh, h = wh, image = 'selSet.png', command = 'import webrImport as web\nss = web.mod("selectionSet_lib")\nss.selectSet()' )
 
@@ -190,6 +187,9 @@ def shelfAddButtons( *args ):
 
     cmds.shelfButton( label = 'clip library', annotation = 'Clip Library', w = wh,
                      h = wh, imageOverlayLabel = '', image = 'animUI.png', command = 'import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()' )
+
+    cmds.shelfButton( label = 'warp time ui', annotation = 'warp time ui', w = wh, h = wh,
+                     image = 'warpTimeUI.png', command = 'import webrImport as web\nar = web.mod("animRetime_lib")' )
 
     cmds.shelfButton( label = 'speed attribute is added', annotation = 'speed attribute is added', w = wh,
                      h = wh, image = 'kmh.png', command = 'import webrImport as web\nds = web.mod("display_lib")\nds.speed(local=0)' )
