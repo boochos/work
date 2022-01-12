@@ -283,7 +283,8 @@ def bakeInfinity( sparseKeys = True, smart = True, sim = False, sampleBy = 1 ):
         objs = cmds.listConnections( crvs, d = True, s = False, plugs = True )
         cmds.refresh( suspend = 1 )
         print( sim, '________' )
-        cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, smart = smart, sac = sparseKeys, sampleBy = 1 )
+        # cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, smart = smart, sac = sparseKeys, sampleBy = 1 )
+        cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, sac = sparseKeys, sampleBy = 1 )
         cmds.refresh( suspend = 0 )
         message( str( len( objs ) ) + ' curves baked --' + str( objs ), maya = 1 )
     else:

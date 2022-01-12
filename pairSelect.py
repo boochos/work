@@ -163,7 +163,7 @@ def toggleIcon( off = False ):
     # interate through buttons to find one using appropriate images
     for btn in buttons:
         img = cmds.shelfButton( btn, q = 1, image = 1 )
-        print( img, '___', p.iconOff, '____', p.iconOn )
+        # print( img, '___', p.iconOff, '____', p.iconOn )
         # toggle icon
         if img in p.iconOff or img in p.iconOn:
             if not off:

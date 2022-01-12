@@ -219,7 +219,7 @@ def graphEditorButtons( *args ):
             item = geButton( name = ui.expTgl, parent = p, attach = item, label = 'COLLAPSE',
                             cmd = "import webrImport as web\ngf = web.mod('graphFilter')\ngf.toggleExpand()",
                             gap = 0, w = w, bg = bgcd )
-            item = geButton( name = ui.bkInfty, parent = p, attach = item, label = 'BAKE Infinity',
+            item = geButton( name = ui.bkInfty, parent = p, attach = item, label = 'BAKE Results',
                             cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.bakeInfinity()",
                             gap = 0, w = w, bg = bgc )
             item = geButton( name = ui.infntyLnr, parent = p, attach = item, label = 'LINEAR Infinity',

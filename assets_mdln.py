@@ -892,7 +892,7 @@ def publish( full = True ):
     # start timer
     start = time.time()
 
-    # publish layout
+    # publish layout, cam, proxies
     success = publish_layout()
 
     #
@@ -915,6 +915,25 @@ def publish( full = True ):
     print( 'Publish time: ' + str( elapsed / 60 ) + ' min' )
 
 
+def publish_layout():
+    '''
+    
+    '''
+    setProxies = 'setProxies'
+    cams = publish_cameras()
+    if cams:
+        ns = cams[0].split( ':' )[0]
+        proxy = ns + ':' + setProxies
+        if cmds.objExists( proxy ):
+            publish_proxies( proxies = [proxy] )
+            return True
+        else:
+            print( 'proxy fail: ', proxy )
+    else:
+        print( 'cams fail: ', cams )
+    return False
+
+
 def publish_cameras():
     '''
     
@@ -934,30 +953,6 @@ def publish_cameras():
     return cams
 
 
-def look_through_publish_camera():
-    '''
-    
-    '''
-    exclude = ['front', 'persp', 'side', 'top']
-    cams = []
-    result = cmds.ls( type = 'camera', o = 1 )
-    for r in result:
-        p = cmds.listRelatives( r, parent = 1 )
-        if p:
-            if p[0] not in exclude and 'cam_follow' not in p[0] and 'renderCam' not in p[0] and ':' in p[0]:
-                cams.append( p[0] )
-    if len( cams ) == 1:
-        cmds.lookThru( 'perspView', cams[0] )
-        ds.toggleObjectDisplay( purpose = 'cam' )
-        tp.platesAllOn()
-        print( 'playblast camera: ', cams[0] )
-        return cams[0]
-    else:
-        print( 'too many cameras' )
-    print( cams )
-    return None
-
-
 def publish_proxies( proxies = [] ):
     '''
     
@@ -965,25 +960,6 @@ def publish_proxies( proxies = [] ):
     for p in proxies:
         cmds.select( p )
         cas.cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = False, forceOverwrite = True )
-
-
-def publish_layout():
-    '''
-    
-    '''
-    setProxies = 'setProxies'
-    cams = publish_cameras()
-    if cams:
-        ns = cams[0].split( ':' )[0]
-        proxy = ns + ':' + setProxies
-        if cmds.objExists( proxy ):
-            publish_proxies( proxies = [proxy] )
-            return True
-        else:
-            print( 'proxy fail: ', proxy )
-    else:
-        print( 'cams fail: ', cams )
-    return False
 
 
 def publish_all_layouts( publish_layouts = False, publish_full = False ):
@@ -1052,6 +1028,30 @@ def publish_all_layouts( publish_layouts = False, publish_full = False ):
     end = time.time()
     elapsed = end - start
     print( 'Shots Publish time: ' + str( elapsed / 60 ) + ' min' )
+
+
+def look_through_publish_camera():
+    '''
+    
+    '''
+    exclude = ['front', 'persp', 'side', 'top']
+    cams = []
+    result = cmds.ls( type = 'camera', o = 1 )
+    for r in result:
+        p = cmds.listRelatives( r, parent = 1 )
+        if p:
+            if p[0] not in exclude and 'cam_follow' not in p[0] and 'renderCam' not in p[0] and ':' in p[0]:
+                cams.append( p[0] )
+    if len( cams ) == 1:
+        cmds.lookThru( 'perspView', cams[0] )
+        ds.toggleObjectDisplay( purpose = 'cam' )
+        tp.platesAllOn()
+        print( 'playblast camera: ', cams[0] )
+        return cams[0]
+    else:
+        print( 'too many cameras' )
+    print( cams )
+    return None
 
 
 #

@@ -19,6 +19,10 @@ def message( what = '', maya = True, warning = False ):
             print( what )
 
 
+def ____UI____():
+    pass
+
+
 def init_ui():
     # main
     main_window = QtWidgets.QDialog()
@@ -69,7 +73,7 @@ def init_ui():
     disconnect_button.clicked.connect( lambda: connectTimeWarp_ui( warp_list_widget, members_list_widget, connect = False ) )
     #
     bake_button = QtWidgets.QPushButton( "Bake Warp" )
-    bake_button.clicked.connect( lambda: bakeTimeWarp_ui( warp_list_widget, members_list_widget ) )
+    bake_button.clicked.connect( lambda: bakeTimeWarp_ui( warp_list_widget ) )
     # bake_button.setStyleSheet( "background-color: darkgreen" )
     #
     aprox_button = QtWidgets.QPushButton( "Approximate Warp" )
@@ -176,10 +180,15 @@ def connectTimeWarp_ui( warp_list_widget, members_list_widget, connect = True ):
     cmds.undoInfo( closeChunk = True )
 
 
-def bakeTimeWarp_ui():
-    pass
+def bakeTimeWarp_ui( warp_list_widget ):
+    # pass
     cmds.undoInfo( openChunk = True )
     #
+    go = selectTimeWarpMembers_ui( warp_list_widget )
+    if go:
+        bakeWarp( sparseKeys = False, sim = False )
+    #
+    cmds.undoInfo( closeChunk = True )
 
 
 def approximateTimeWarp_ui():
@@ -196,9 +205,13 @@ def selectTimeWarpMembers_ui( warp_list_widget ):
     '''
     cmds.undoInfo( openChunk = True )
     #
-    timewarp = warp_list_widget.currentItem().text()
-    members = getTimeWarpMembers2( timewarp )
-    cmds.select( members )
+    try:
+        timewarp = warp_list_widget.currentItem().text()
+        members = getTimeWarpMembers2( timewarp )
+        cmds.select( members )
+    except:
+        message( 'Select a timewarp node in the left column', warning = True )
+        return False
     #
     cmds.undoInfo( closeChunk = True )
 
@@ -217,6 +230,10 @@ def deleteTimeWarp_ui( warp_list_widget, members_list_widget ):
     getWarps_ui( warp_list_widget )
     #
     cmds.undoInfo( closeChunk = True )
+
+
+def ____MISC____():
+    pass
 
 
 def warpAttrStr():
@@ -297,6 +314,110 @@ def connectTimeWarp( objects = [], timewarp = '', connect = True ):
             '''
     else:
         message( 'Select objects to connect / disconnect', warning = True )
+
+
+def bakeWarp( sparseKeys = True, sim = False ):
+    '''
+    
+    '''
+    #
+    result = getBakeRange()
+    start = result[0]
+    end = result[1]
+    #
+    objs = cmds.ls( sl = 1 )
+    cmds.refresh( suspend = 1 )
+    #
+    cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, sac = sparseKeys, sampleBy = 1 )
+    cmds.refresh( suspend = 0 )
+    message( str( len( objs ) ) + ' curves baked --' + str( objs ), maya = 1 )
+
+
+def subframe():
+    frames = None
+    animCurves = cmds.keyframe( q = True, name = True, sl = True )
+    # print animCurves
+    if animCurves:
+        for crv in animCurves:
+            frames = cmds.keyframe( crv, q = True )
+            # print frames
+            if frames:
+                for frame in frames:
+                    rnd = round( frame, 0 )
+                    # print rnd, frame
+                    if rnd != frame:
+                        message( 'removing: ' + 'key' + ' -- ' + str( frame ) )
+                        cmds.refresh( f = 1 )
+                        if cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 ) == 0:
+                            cmds.cutKey( animCurves, time = ( frame, frame ) )
+                        else:
+                            cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 )
+                            cmds.cutKey( animCurves, time = ( frame, frame ) )
+            else:
+                message( 'no keys' )
+    else:
+        message( 'no curves selected' )
+
+
+class GraphSelection():
+
+    def __init__( self ):
+        self.selection = cmds.ls( sl = True )
+        self.crvs = cmds.keyframe( q = True, name = True, sl = True )
+        self.pack = []
+        if self.crvs:
+            for item in self.crvs:
+                cr = []
+                cr.append( item )
+                cr.append( cmds.keyframe( item, q = True, sl = True ) )
+                self.pack.append( cr )
+
+    def reselect( self, objects = True ):
+        if objects:
+            if self.selection:
+                sel = cmds.ls( sl = True )
+                if sel != self.selection:
+                    cmds.select( self.selection )
+        if self.pack:
+            for cr in self.pack:
+                cmds.selectKey( cr[0], add = True, time = ( cr[1][0], cr[1][len( cr[1] ) - 1] ) )
+
+
+def deleteWarp( timewarp ):
+    '''
+    
+    '''
+    objects = getTimeWarpMembers( timewarp )
+    if objects:
+        connectTimeWarp( objects, timewarp, connect = False )
+    cmds.delete( timewarp )
+
+
+def cleanConversionNodes( object = '' ):
+    '''
+    find conversion nodes connected to object with no output connection and delete them
+    leftovers form disconnect objects from timewarp node
+    '''
+    sel = cmds.ls( sl = 1 )[0]
+    # out
+    s = 0
+    d = 1
+    cons = cmds.listConnections( object, d = d, s = s, type = 'unitToTimeConversion' )
+    print( cons )
+    #
+    if cons:
+        for c in cons:
+            out = cmds.listConnections( c, d = d, s = s )
+            if not out:
+                print( 'delete', c )
+                cmds.delete( c )
+    else:
+        # print('No conversion nodes to clean.')
+        pass
+
+
+def ____GET____():
+    pass
 
 
 def getAnimCurves( object = '', max_recursion = 0 ):
@@ -510,112 +631,6 @@ def getTimeWarps():
     return tw_nodes
 
 
-def bakeTimeWarp( timewarp = None, objects = [] ):
-    '''
-    remap object keys
-    '''
-    pass
-
-
-def unWarpFrame( timeWarp, frame = 0 ):
-    '''
-    # find new frame position
-    timeWarpCurve = animCurve from timewarp node
-    frame = frame number to parse
-    '''
-    #
-    f_plus = None  # frames step forward
-    f_minus = None  # frames step backward
-    increment = 0.001
-    warpAttr = warpAttrStr()
-    warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttr, time = frame )
-    #
-    if warpedFrame != frame:
-        #
-        if warpedFrame < frame:
-            f_plus = frame  # frame iterator
-            # loop foorward
-            while warpedFrame < frame:
-                warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttr, time = f_plus )
-                if warpedFrame > frame:  # reached pivot, step backward
-                    f_minus = f_plus - increment
-                    # loop backward, increment
-                    while warpedFrame > frame:
-                        warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttr, time = f_minus )
-                        f_minus = f_minus - increment
-                        # temp precaution
-                        if f_minus == -5000:
-                            print( 'maxed out' )
-                            return None
-                    print( f_minus )
-                    return f_minus
-
-                f_plus = f_plus + 1
-                # temp precaution
-                if f_plus == 5000:
-                    print( 'maxed out' )
-                    return None
-        else:
-            f_minus = frame  # frame iterator
-            # loop foorward
-            while warpedFrame > frame:
-                warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttr, time = f_minus )
-                if warpedFrame < frame:  # reached pivot, step backward
-                    f_plus = f_minus + increment
-                    # loop backward, increment
-                    while warpedFrame < frame:
-                        warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttr, time = f_plus )
-                        f_plus = f_plus + increment
-                        # temp precaution
-                        if f_plus == 5000:
-                            print( 'maxed out' )
-                            return None
-                    print( f_plus )
-                    return f_plus
-
-                f_minus = f_minus - 1
-                # temp precaution
-                if f_minus == -5000:
-                    print( 'maxed out' )
-                    return None
-    else:  # no warp
-        print( 'no warp on frame', frame )
-        return frame
-
-
-def deleteWarp( timewarp ):
-    '''
-    
-    '''
-    objects = getTimeWarpMembers( timewarp )
-    if objects:
-        connectTimeWarp( objects, timewarp, connect = False )
-    cmds.delete( timewarp )
-
-
-def cleanConversionNodes( object = '' ):
-    '''
-    find conversion nodes connected to object with no output connection and delete them
-    leftovers form disconnect objects from timewarp node
-    '''
-    sel = cmds.ls( sl = 1 )[0]
-    # out
-    s = 0
-    d = 1
-    cons = cmds.listConnections( object, d = d, s = s, type = 'unitToTimeConversion' )
-    print( cons )
-    #
-    if cons:
-        for c in cons:
-            out = cmds.listConnections( c, d = d, s = s )
-            if not out:
-                print( 'delete', c )
-                cmds.delete( c )
-    else:
-        # print('No conversion nodes to clean.')
-        pass
-
-
 def getKeyedFrames( obj ):
     animCurves = cmds.findKeyframe( obj, c = True )
     frames = []
@@ -632,69 +647,31 @@ def getKeyedFrames( obj ):
         return frames
 
 
-def bakeInfinity( sparseKeys = True, smart = True, sim = False ):
-    crvs = cmds.keyframe( q = True, name = True, sl = True )
-    if crvs:
-        start = cmds.playbackOptions( q = True, minTime = True )
-        end = cmds.playbackOptions( q = True, maxTime = True )
-        objs = cmds.listConnections( crvs, d = True, s = False, plugs = True )
-        cmds.refresh( suspend = 1 )
-        print( sim, '________' )
-        cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, smart = smart, sac = sparseKeys, sampleBy = 1 )
-        cmds.refresh( suspend = 0 )
-        message( str( len( objs ) ) + ' curves baked --' + str( objs ), maya = 1 )
-    else:
-        message( 'no curves are selected', maya = 1 )
+def getBakeRange():
+    '''
+    
+    '''
+    frames = []
+    sel = cmds.ls( sl = 1 )
+    for s in sel:
+        crvs = getAnimCurves( object = s, max_recursion = 1 )
+        if crvs:
+            #
+            for crv in crvs:
+                framesTmp = cmds.keyframe( crv, q = True )
+                for frame in framesTmp:
+                    frames.append( frame )
+            frames = list( set( frames ) )
+            frames.sort()
+            #
+    start = cmds.playbackOptions( q = True, minTime = True )
+    end = cmds.playbackOptions( q = True, maxTime = True )
+    if frames[0] < start:
+        start = frames[0]
+    if frames[-1] > end:
+        start = frames[-1]
 
-
-def subframe():
-    frames = None
-    animCurves = cmds.keyframe( q = True, name = True, sl = True )
-    # print animCurves
-    if animCurves:
-        for crv in animCurves:
-            frames = cmds.keyframe( crv, q = True )
-            # print frames
-            if frames:
-                for frame in frames:
-                    rnd = round( frame, 0 )
-                    # print rnd, frame
-                    if rnd != frame:
-                        message( 'removing: ' + 'key' + ' -- ' + str( frame ) )
-                        cmds.refresh( f = 1 )
-                        if cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 ) == 0:
-                            cmds.cutKey( animCurves, time = ( frame, frame ) )
-                        else:
-                            cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 )
-                            cmds.cutKey( animCurves, time = ( frame, frame ) )
-            else:
-                message( 'no keys' )
-    else:
-        message( 'no curves selected' )
-
-
-class GraphSelection():
-
-    def __init__( self ):
-        self.selection = cmds.ls( sl = True )
-        self.crvs = cmds.keyframe( q = True, name = True, sl = True )
-        self.pack = []
-        if self.crvs:
-            for item in self.crvs:
-                cr = []
-                cr.append( item )
-                cr.append( cmds.keyframe( item, q = True, sl = True ) )
-                self.pack.append( cr )
-
-    def reselect( self, objects = True ):
-        if objects:
-            if self.selection:
-                sel = cmds.ls( sl = True )
-                if sel != self.selection:
-                    cmds.select( self.selection )
-        if self.pack:
-            for cr in self.pack:
-                cmds.selectKey( cr[0], add = True, time = ( cr[1][0], cr[1][len( cr[1] ) - 1] ) )
+    return [start, end]
 
 
 if __name__ == '__main__':
