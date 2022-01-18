@@ -776,7 +776,8 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
         'animCurveTL',
         'animCurveTU',
         'animCurveTA',
-        'character'
+        'character',
+        'pairBlend'  # PROBLEM, CANT FIND PROPER PLUG ROUTE, INCLUDES ALL ATTRS AS CONNECTED, WILL NEED TO MAP ATTRS IN/OUT
         ]
     # nodes which have dif in/out plugs
     non_pass_through = [
@@ -789,7 +790,8 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
         'animBlendNodeAdditiveI32',
         'animCurveTL',
         'animCurveTU',
-        'animCurveTA'
+        'animCurveTA',
+        'pairBlend'  # PROBLEM, CANT FIND PROPER PLUG ROUTE, INCLUDES ALL ATTRS AS CONNECTED (LIKELY CUZ PLUGS ARENT USED)
         ]
     #
     found = False
