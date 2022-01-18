@@ -1,9 +1,10 @@
+from shutil import copyfile
 import os
 import subprocess
 import time
+
+
 # from cacheAbc import outDataExp
-
-
 def movToMp4( dir = '', fl = '' ):
     filein = os.path.join( dir, fl )
     fileout = os.path.join( dir, fl ).replace( '.mov', '.mp4' )
@@ -103,7 +104,7 @@ def go():
         # break
 
 
-def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15, wMargin = 20, hMargin = 20 ):
+def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15, wMargin = 20, hMargin = 20, rndrFrames = True ):
     '''
     bigger margin number pushes text to edges of screen
     ffmpeg -i input -vf "drawtext=fontfile=Arial.ttf: text='%{frame_num}': start_number=1: x=(w-tw)/2: y=h-(2*lh): fontcolor=black: fontsize=20: box=1: boxcolor=white: boxborderw=5" -c:a copy output
@@ -164,7 +165,9 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
     if not os.path.isdir( framesPath ):
         # print path
         os.mkdir( framesPath )
-    renderFrames( filein, os.path.join( framesPath, framesName ), startFrame = startFrame )
+    if rndrFrames:
+        renderFrames( filein, os.path.join( framesPath, framesName ), startFrame = startFrame )
+    # copyfile(src, dst)
     # print( 'start burn-in 1 -----------' )
     # print( 'filein', filein )
     # print( 'path1', path1 )

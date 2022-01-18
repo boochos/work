@@ -174,7 +174,7 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
 
         # render layer
         abc_layer = 'abc_layer_tmp'
-        lyr = cmds.createRenderLayer( sel, noRecurse = True, name = abc_layer )
+        lyr = cmds.createRenderLayer( sel, noRecurse = True, name = abc_layer, makeCurrent = True )
         # print( lyr )
 
         # command build
@@ -199,6 +199,7 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
             uiEnable()
 
         # render layer, delete
+        cmds.editRenderLayerGlobals( currentRenderLayer = 'defaultRenderLayer' )
         cmds.delete( lyr )
     else:
         message( 'Version exists, not CACHED: ' + version_name, warning = True )

@@ -77,7 +77,7 @@ def init_ui():
     # bake_button.setStyleSheet( "background-color: darkgreen" )
     #
     aprox_button = QtWidgets.QPushButton( "Approximate Warp" )
-    aprox_button.clicked.connect( lambda: approximateTimeWarp_ui( warp_list_widget, members_list_widget ) )
+    aprox_button.clicked.connect( lambda: approximateTimeWarp_ui( warp_list_widget ) )
     # aprox_button.setStyleSheet( "background-color: darkgreen" )
     #
     select_button = QtWidgets.QPushButton( "Select Objects" )
@@ -114,6 +114,7 @@ def getWarps_ui( warp_list_widget ):
     '''
     
     '''
+    print( 'getwarpsui' )
     warp_list_widget.clear()
     timewarps = getTimeWarps()
     if timewarps:
@@ -125,7 +126,7 @@ def getMembers_ui( warp_list_widget, members_list_widget ):
     '''
     
     '''
-    # print warpNode
+    print( 'membersui' )
     timewarp = warp_list_widget.currentItem().text()
     members_list_widget.clear()
     if cmds.objExists( timewarp ):
@@ -146,12 +147,13 @@ def createTimeWarp_ui( warp_list_widget, members_list_widget, suffix = '' ):
     '''
     
     '''
+    print( 'createui' )
     cmds.undoInfo( openChunk = True )
     #
     sel = cmds.ls( sl = 1 )
     timewarp = createTimeWarp( suffix )
-    print( sel )
-    print( timewarp )
+    # print( sel )
+    # print( timewarp )
     connectTimeWarp( sel, timewarp )
     # redraw
     getWarps_ui( warp_list_widget )
@@ -163,64 +165,104 @@ def connectTimeWarp_ui( warp_list_widget, members_list_widget, connect = True ):
     '''
     
     '''
-    cmds.undoInfo( openChunk = True )
-    #
-    timewarp = warp_list_widget.currentItem().text()
-    sel = cmds.ls( sl = 1 )
-    if timewarp not in sel:
-        if connect:
-            connectTimeWarp( sel, timewarp )
-        else:
-            connectTimeWarp( sel, timewarp, connect )
-        # redraw
-        getMembers_ui( warp_list_widget, members_list_widget )
-        #
+    print( 'connectui' )
+    chunkName = ''
+    if connect:
+        chunkName = 'connectTimeWarp_ui'
     else:
-        message( 'Remove ___timeWarpNode___ node from selection of objects to connect.', warning = True )
-    cmds.undoInfo( closeChunk = True )
+        chunkName = 'disconnectTimeWarp_ui'
+    #
+    # cmds.undoInfo( openChunk = True, chunkName = chunkName )
+    #
+    go = True
+    timewarp = warp_list_widget.currentItem().text()  # get selected warp
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        for s in sel:
+            if cmds.objectType( s ) != 'transform':
+                go = False
+                break
+    if go:
+        if timewarp and sel:  #
+            # selectTimeWarpMembers_ui( warp_list_widget ) # turned off, doesnt seem to be needed
+            # sel = cmds.ls( sl = 1 )
+            if timewarp not in sel:
+                if connect:
+                    connectTimeWarp( sel, timewarp )
+                else:
+                    connectTimeWarp( sel, timewarp, connect )
+                # redraw ui
+                getMembers_ui( warp_list_widget, members_list_widget )
+                #
+            else:
+                message( 'Remove ___timeWarpNode___ node from selection of objects to connect.', warning = True )
+        else:
+            message( ' select a timewarp in the ui and objects in the scene.', warning = True )
+    #
+    else:
+        message( 'everything in the selection has to be a transform.', warning = True )
+    # cmds.undoInfo( closeChunk = True, chunkName = chunkName )
 
 
 def bakeTimeWarp_ui( warp_list_widget ):
     # pass
-    cmds.undoInfo( openChunk = True )
+    cmds.undoInfo( openChunk = True, chunkName = 'bakeTimeWarp_ui' )
     #
     go = selectTimeWarpMembers_ui( warp_list_widget )
+    # getKeyedFramesList()
     if go:
-        bakeWarp( sparseKeys = False, sim = False )
+        pass
+        bakeTimeWarp( sparseKeys = True, sim = False, sampleBy = 1 )
+    else:
+        pass
+        # print( 'no go' )
     #
-    cmds.undoInfo( closeChunk = True )
+    cmds.undoInfo( closeChunk = True, chunkName = 'bakeTimeWarp_ui' )
 
 
-def approximateTimeWarp_ui():
+def approximateTimeWarp_ui( warp_list_widget ):
     pass
-    cmds.undoInfo( openChunk = True )
+    cmds.undoInfo( openChunk = True, chunkName = 'approximateTimeWarp_ui' )
     #
+    members = None
+    timeWarp = getTimeWarpNode( warp_list_widget )
+    if timeWarp:
+        members = getTimeWarpMembers2( timeWarp, select = True )
+        if members:
+            approximateTimeWarp( timeWarp )
+        else:
+            message( 'No members connected to timeWarp node', warning = True )
+    else:
+        message( 'Select a timeWarp node in the left column', warning = True )
     #
-    cmds.undoInfo( closeChunk = True )
+    cmds.undoInfo( closeChunk = True, chunkName = 'approximateTimeWarp_ui' )
 
 
 def selectTimeWarpMembers_ui( warp_list_widget ):
     '''
     
     '''
-    cmds.undoInfo( openChunk = True )
+    print( 'selectui' )
+    cmds.undoInfo( openChunk = True, chunkName = 'selectTimeWarpMembers_ui' )
     #
     try:
         timewarp = warp_list_widget.currentItem().text()
-        members = getTimeWarpMembers2( timewarp )
-        cmds.select( members )
+        members = getTimeWarpMembers2( timewarp, select = True )
+        # cmds.select( members )
+        return True
     except:
         message( 'Select a timewarp node in the left column', warning = True )
         return False
     #
-    cmds.undoInfo( closeChunk = True )
+    cmds.undoInfo( closeChunk = True, chunkName = 'selectTimeWarpMembers_ui' )
 
 
 def deleteTimeWarp_ui( warp_list_widget, members_list_widget ):
     '''
     
     '''
-    cmds.undoInfo( openChunk = True )
+    print( 'deleteui' )
+    cmds.undoInfo( openChunk = True, chunkName = 'deleteTimeWarp_ui' )
     #
     twarp = warp_list_widget.currentItem().text()
     warp_list_widget.clear()
@@ -229,7 +271,7 @@ def deleteTimeWarp_ui( warp_list_widget, members_list_widget ):
     # redraw
     getWarps_ui( warp_list_widget )
     #
-    cmds.undoInfo( closeChunk = True )
+    cmds.undoInfo( closeChunk = True, chunkName = 'deleteTimeWarp_ui' )
 
 
 def ____MISC____():
@@ -248,12 +290,13 @@ def createTimeWarp( suffix = '' ):
     '''
     stuff
     '''
+    print( 'create' )
     attr = warpAttrStr()
     name = warpNodeStr() + suffix
     if not cmds.objExists( name ):
         loc = cmds.spaceLocator( n = name )[0]
         # attr
-        cmds.addAttr( loc, ln = attr, h = False )
+        cmds.addAttr( loc, ln = attr, h = False, at = 'time' )  # time attr !!!
         cmds.setAttr( ( loc + '.' + attr ), cb = True )
         cmds.setAttr( ( loc + '.' + attr ), k = True )
         # range
@@ -269,18 +312,19 @@ def createTimeWarp( suffix = '' ):
         print( 'choose different prefix, object already exists', name )
 
 
-def connectTimeWarp( objects = [], timewarp = '', connect = True ):
+def connectTimeWarp( objects = [], timeWarp = '', connect = True ):
     '''
     objects and timewarp loc
     add support for character sets and anim layers
     '''
+    print( 'connect ANIMCURVES______________', connect )
     allAnimCurves = []
     warpAttr = '_' + warpAttrStr()
     warpCurve = None
     #
 
     #
-    if objects and timewarp:
+    if objects and timeWarp:
         '''
         warpCurve = cmds.listConnections( timewarp + '.' + warpAttrStr() )
         #
@@ -290,33 +334,38 @@ def connectTimeWarp( objects = [], timewarp = '', connect = True ):
             '''
         for obj in objects:
             # animCurves = cmds.findKeyframe( obj, c = True )
-            animCurves = getAnimCurves( object = obj, max_recursion = 1 )
+            animCurves = getAnimCurves( object = obj, max_recursion = 1 )  # character sets cause problems, also animLayers also cause problems
+            print( 'connect', obj, animCurves )
+            # return
             if animCurves:
                 for curve in animCurves:
                     allAnimCurves.append( curve )
                     if connect:
                         # add check to already connected retimeNode, if exists, disconnect first
                         # cmds.connectAttr( warpCurve + '.output', curve + '.input', f = True ) # skips attr control, only connects to animcurve
-                        cmds.connectAttr( timewarp + '.' + warpAttrStr(), curve + '.input', f = True )
+                        cmds.connectAttr( timeWarp + '.' + warpAttrStr(), curve + '.input', f = True )
                     else:
                         # cmds.disconnectAttr( warpCurve + '.output', curve + '.input', f = True ) # skips attr control, only connects to animcurve
-                        cmds.disconnectAttr( timewarp + '.' + warpAttrStr(), curve + '.input' )
+                        connections = getConnections( timeWarp + '.' + warpAttrStr(), direction = 'out', find = cmds.objectType( curve ), find_through = [] )
+                        print( 'disconnect: ', connections )
+                        if curve in connections:
+                            cmds.disconnectAttr( timeWarp + '.' + warpAttrStr(), curve + '.input' )
             else:
                 print( 'No animCurves connected to object:', obj )
             # print( animCurves )
         if not connect:
             # clean up
-            cleanConversionNodes( timewarp + '.' + warpAttrStr() )
+            cleanConversionNodes( timeWarp + '.' + warpAttrStr() )
         # print allAnimCurves
         '''
         else:
-            print( timewarp + '.' + warpAttrStr(), 'has no keys' )
+            print( timeWarp + '.' + warpAttrStr(), 'has no keys' )
             '''
     else:
         message( 'Select objects to connect / disconnect', warning = True )
 
 
-def bakeWarp( sparseKeys = True, sim = False ):
+def bakeTimeWarp( sparseKeys = True, sim = False, sampleBy = 1.0 ):
     '''
     
     '''
@@ -328,9 +377,106 @@ def bakeWarp( sparseKeys = True, sim = False ):
     objs = cmds.ls( sl = 1 )
     cmds.refresh( suspend = 1 )
     #
-    cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, sac = sparseKeys, sampleBy = 1 )
+    # print( 'sparseKeys: ', sparseKeys )
+    # print( 'simulation: ', sim )
+    # print( 'sampleBy: ', sampleBy )
+    cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, sac = sparseKeys, sampleBy = sampleBy )
     cmds.refresh( suspend = 0 )
     message( str( len( objs ) ) + ' curves baked --' + str( objs ), maya = 1 )
+
+
+def approximateTimeWarp( timeWarp = '' ):
+    '''
+    
+    '''
+    print( 'apprx' )
+    frames = getKeyedFramesList()
+    remap_frames_dict = remapFrames( timeWarp = timeWarp, frames = frames, step = 10.0 )
+    # print( remap_frames_dict )
+    # return
+    if remap_frames_dict:
+        #
+        for f in frames:
+            # print( f, remap_frames_dict[f] )
+            cmds.keyframe( edit = 1, absolute = 1, timeChange = remap_frames_dict[f], time = ( f, f ), option = 'over' )
+        # disconnect timeWarp
+        sel = cmds.ls( sl = 1 )
+        if timeWarp not in sel:
+                connectTimeWarp( sel, timeWarp, False )
+    # watch for remapped frames clashing with original frame, can put key on top of existing key
+
+
+def remapFrames( timeWarp = '', frames = [], step = 1.0 ):
+    '''
+    
+    '''
+    remapped_frames = []
+    remap_frames_dict = {}
+    #
+    for frame in frames:
+        remapped_frames.append( seekWardpedFrame( timeWarp, frame, step = step ) )
+    #
+    if len( frames ) == len( remapped_frames ):
+        #
+        for f in range( len( frames ) ):
+            remap_frames_dict[frames[f]] = remapped_frames[f]
+        print( 'dict: ', remap_frames_dict )
+        return remap_frames_dict
+    else:
+        message( 'mismatch number of frames and warped frames', warning = True )
+        return False
+
+
+def seekWardpedFrame( timeWarp = '', frame = 1, step = 1.0 ):
+    '''
+    
+    '''
+    tolerance = 0.025  # 0.005
+    forward = True
+    steps = 20000  # max steps in one direction(forward)
+    direction = step
+    #
+    # cmds.currentTime( frame )
+    warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttrStr(), time = frame )
+    #
+    if warpedFrame > frame:
+        forward = False  # warped frame is earlier in timeline, step back
+        direction = direction * -1
+        # stepDown
+    elif warpedFrame < frame:
+        forward = True  # warped frame is later in timeline, step back
+        # stepUp
+    else:
+        print( '-- new: ', frame, '-- old: ', frame )
+        return frame  # no change
+    #
+    # print( 'direction: ', direction )
+    current = frame
+    for k in range( steps ):
+        #
+        warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttrStr(), time = current )
+        # heading backward
+        if warpedFrame < frame and not forward:  # moved backward past frame
+            dif = frame - warpedFrame
+            #
+            if dif > tolerance:
+                # print( 'too far: ', dif, 'reverse', k, 'step: ', step )
+                return seekWardpedFrame( timeWarp = timeWarp, frame = frame, step = step / 2 )
+            else:
+                print( '-- new: ', current, '-- old: ', frame, '-- dif: ', dif, k )
+                return  current
+        # heading forward
+        if warpedFrame > frame and forward:  # moved forward past frame
+            dif = warpedFrame - frame
+            #
+            if dif > tolerance:
+                # print( 'too far: ', dif, 'reverse', k, 'step: ', step )
+                return seekWardpedFrame( timeWarp = timeWarp, frame = frame, step = step / 2 )
+            else:
+                print( '-- new: ', current, '-- old: ', frame, '-- dif: ', dif, k )
+                return current
+        current = current + direction
+    message( 'max steps reached', warning = True )
 
 
 def subframe():
@@ -387,6 +533,7 @@ def deleteWarp( timewarp ):
     '''
     
     '''
+    print( 'delete' )
     objects = getTimeWarpMembers( timewarp )
     if objects:
         connectTimeWarp( objects, timewarp, connect = False )
@@ -420,41 +567,101 @@ def ____GET____():
     pass
 
 
+def getTimeWarpNode( warp_list_widget ):
+    '''
+    get selected time warp node
+    '''
+    print( 'getwarpnode' )
+    #
+    try:
+        timeWarp = warp_list_widget.currentItem().text()
+        print( 'getTimeWarpNode, here' )
+        return timeWarp
+    except:
+        return False
+
+
 def getAnimCurves( object = '', max_recursion = 0 ):
     '''
     find animCurves, 3 types
+    animurveTT = time, not part of search
     '''
+    print( 'getanimcurves' )
     result = []
-    # print( '___TL' )
-    tl = getConnections( object = object, direction = 'in', find = 'animCurveTL', skip = [object], max_recursion = max_recursion, ignore_types = ['transform'] )
-    if tl:
-        for t in tl:
-            result.append( t )
-    # print( '___TA' )
-    ta = getConnections( object = object, direction = 'in', find = 'animCurveTA', skip = [object], max_recursion = max_recursion, ignore_types = ['transform'] )
-    if ta:
-        for t in ta:
-            result.append( t )
-    # print( '___TU' )
-    tu = getConnections( object = object, direction = 'in', find = 'animCurveTU', skip = [object], max_recursion = max_recursion, ignore_types = ['transform'] )
-    if tl:
-        for t in tu:
-            result.append( t )
-    # print( '___T*', result )
-    return result
+    attrs = cmds.listAttr( object, k = 1 )
+    # return
+    for attr in attrs:  # should optimize for attr type. too many loops
+        obj = object + '.' + attr
+        print( '___animCurve' )
+        animCrvs = getConnections( object = obj, direction = 'in', find = 'animCurve', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'], results = [] )
+        if animCrvs:
+            for c in animCrvs:
+                result.append( c )
+        '''
+        # if only one type gets queried it works, if alll breaks !!!!
+        print( '___TL' )
+        tl = getConnections( object = obj, direction = 'in', find = 'animCurveTL', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'] )
+        if tl:
+            for t in tl:
+                result.append( t )
+        print( '___TA' )
+        ta = getConnections( object = obj, direction = 'in', find = 'animCurveTA', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'] )
+        if ta:
+            for t in ta:
+                result.append( t )
+        print( '___TU' )
+        tu = getConnections( object = obj, direction = 'in', find = 'animCurveTU', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'] )
+        if tu:
+            for t in tu:
+                result.append( t )'''
+        # print( '___T*', result )
+    # clean, remove plugs
+    result_clean = []
+    if result:
+        for r in result:
+            if '.' in r:
+                r = r.split( '.' )[0]  # remove plug
+            result_clean.append( r )
+    result_clean = list( dict.fromkeys( result_clean ) )  # doesnt actually work for some reason, fixed above 'if r not in result_clean'
+    # print( '___', result_clean )
+    return result_clean
 
 
-def getTimeWarpMembers( timewarp, select = False, typ = 'transform' ):
+def getAnimCurvesList():
+    '''
+    list of objects
+    '''
+    print( 'getanimcurvelist' )
+    animCurves = []
+    sel = cmds.ls( sl = 1 )
+    print( sel )
+    for s in sel:
+        print( s )
+        crvs = getAnimCurves( object = s, max_recursion = 1 )
+        # print( crvs )
+        if crvs:
+            for c in crvs:
+                animCurves.append( c )
+    if animCurves:
+        animCurves = list( set( animCurves ) )
+        animCurves.sort()
+        print( 'animCurves list result', animCurves )
+        return animCurves
+    else:
+        return False
+
+
+def getTimeWarpMembers( timeWarp, select = False, typ = 'transform' ):
     '''
     typ = transform / character
     '''
     objects = []
     #
-    warpCurve = cmds.listConnections( timewarp + '.' + warpAttrStr() )
+    warpCurve = cmds.listConnections( timeWarp + '.' + warpAttrStr() )
     if warpCurve:
         warpCurve = warpCurve[0]
         # print( warpCurve )
-        animCurves = cmds.listConnections( warpCurve, t = 'animCurve', scn = 1 )  # curves connected to timewarp
+        animCurves = cmds.listConnections( warpCurve, t = 'animCurve', scn = 1 )  # curves connected to timeWarp
         # print( animCurves )
         if animCurves:
             for curve in animCurves:
@@ -472,7 +679,7 @@ def getTimeWarpMembers( timewarp, select = False, typ = 'transform' ):
         else:
             print( 'no members' )
     else:
-        print( timewarp + '.' + warpAttrStr(), 'has no keys' )
+        print( timeWarp + '.' + warpAttrStr(), 'has no keys' )
     #
     print( objects )
     return objects
@@ -511,7 +718,7 @@ def getTimeWarpMembers( timewarp, select = False, typ = 'transform' ):
     '''
 
 
-def getTimeWarpMembers2( timewarp, select = False, typ = 'transform' ):
+def getTimeWarpMembers2( timeWarp, select = False ):
     '''
     animCurveTU
     unitToTimeConversion
@@ -520,107 +727,241 @@ def getTimeWarpMembers2( timewarp, select = False, typ = 'transform' ):
     animBlendNodeAdditiveRotation
     
     '''
+    print( 'getmembers2 TRANSFORM______________' )
     objects = []
     #
-    skip = [timewarp ]
-    found = getConnections( timewarp + '.' + warpAttrStr(), direction = 'out', find = 'transform', skip = skip )
+    skip = [timeWarp ]
+    found = getConnections( timeWarp + '.' + warpAttrStr(), direction = 'out', find = 'transform', find_through = [], skip = skip, results = [] )  # had to add results value, app wasnt clearing its state for some reason
     # print( 'found', found )
     # return None
     if found:
-        found = list( set( found ) )
+        found = list( dict.fromkeys( found ) )
         objects = found
-    # print 'objects', objects
-    if timewarp in objects:
-        objects.remove( timewarp )
+    # print( 'objects', objects)
+    if timeWarp in objects:
+        objects.remove( timeWarp )
     objects.sort()
+    # build list for selection, no plug
+    clean_objects = []
+    for c in objects:
+        print( c )
+        if '.' in c:
+            clean_objects.append( c.split( '.' )[0] )
+        else:
+            clean_objects.append( c )
+    if select:
+        cmds.select( clean_objects )
+    # return list with plugs
     return objects
 
 
-def getConnections( object = '', direction = 'in', find = 'animCurveTU', skip = [], max_recursion = 1, recursion = 0, ignore_types = [] ):
+def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_through = [], skip = [], max_recursion = 5, recursion = 0, ignore_types = [], plugs = True, results = [] ):
     '''
     object = object with/without attr ==> "___timeWarpNode___b.timeWarpedFrame", "___timeWarpNode___b"
     direction = in / out
     find = returns node type specified ie. animCurveTU or transform
     '''
-    result = []
+    print( 'getconnections RESULTS______________', results, 'recursion', recursion )
+    # return
+    # results = []
+    # nodes which qualify to find connection through, add constraint node
+    find_through = [
+        'animBlendNodeAdditiveDA',
+        'animBlendNodeAdditiveDL',
+        'animBlendNodeAdditiveF',
+        'animBlendNodeAdditiveFA',
+        'animBlendNodeAdditiveFL',
+        'animBlendNodeAdditiveI16',
+        'animBlendNodeAdditiveI32',
+        'animCurveTL',
+        'animCurveTU',
+        'animCurveTA',
+        'character'
+        ]
+    # nodes which have dif in/out plugs
+    non_pass_through = [
+        'animBlendNodeAdditiveDA',
+        'animBlendNodeAdditiveDL',
+        'animBlendNodeAdditiveF',
+        'animBlendNodeAdditiveFA',
+        'animBlendNodeAdditiveFL',
+        'animBlendNodeAdditiveI16',
+        'animBlendNodeAdditiveI32',
+        'animCurveTL',
+        'animCurveTU',
+        'animCurveTA'
+        ]
+    #
     found = False
-    done = False
     localSkip = []
-    #
-    if direction == 'in':
-        s = 1
-        d = 0
-    elif direction == 'out':
-        s = 0
-        d = 1
-    #
-    i = 0
-    max = 2
-    print( type( i ), type( max ) )
-    while not found and i < max:
-        charSet = False
-        i = i + 1
-        if i == max:
-            # print( '______________________________________________________ loop done' )
-            return []
-        connections = cmds.listConnections( object, s = s, d = d, scn = True )
+    max_recursion = 5
+
+    if recursion == max_recursion:
+        print( '__________________________', recursion )
+        return results
+    else:
+        #
+        if cmds.objectType( object ) == 'character':
+            plugs = True
+        # plugs = False
+
+        #
+        if direction == 'in':
+            s = 1
+            d = 0
+            print( '---- get incoming connection to: ', object )
+        elif direction == 'out':
+            s = 0
+            d = 1
+            print( '---- get outgoing connection from: ', object )
+        #
+        i = 0
+        max = 2
+        # print( type( i ), type( max ) )
+        '''
+        while not found and i < max:
+            charSet = False
+            i = i + 1
+            print( i )
+            if i == max:
+                # print( '______________________________________________________ loop done' )
+                return []'''
+        connections = cmds.listConnections( object, s = s, d = d, scn = True, plugs = plugs )
+        print( connections )
+
         # remove duplicates and skip objects
         if connections:
-            connections = list( set( connections ) )
+            connections = list( dict.fromkeys( connections ) )
             # print( '+ _________ connections', object, ' -- ', direction , ' -- ', connections )
             x = []
             for c in connections:
-                # print( c )
+                # print( 'c: ', c )
                 if c in skip or cmds.objectType( c ) in ignore_types:  # remove if in skip or ignore types
+                    # print( 'remove list c: ', c )
                     x.append( c )
-                else:
-                    # print( 'keeper: ', c )
-                    pass
-            #
-            for i in x:
-                connections.remove( i )
-            #
-            # print( '- _________ connections', object, ' -- ', direction , ' -- ', connections )
+            # remove wrong type
+            for j in x:
+                print( '__ is in skip list or --ignore-- types, removed: ', j, cmds.objectType( j ) )
+                skip.append( j )
+                connections.remove( j )
+
         # check for proper type
+        print( 'qualified connections: ', connections, find, results )
+        clean_connections = []  # remove plug, in/out for curve arent the same connection, breaks algo
         if connections:
+            #
             for c in connections:
-                if cmds.objectType( c ) == find:
-                    result.append( c )
+                if cmds.objectType( c ) in non_pass_through:  # remove plug, then append
+                    clean_connections.append( c.split( '.' )[0] )
+                else:
+                    clean_connections.append( c )
+            clean_connections = list( dict.fromkeys( clean_connections ) )
+            #
+            x = []
+            for c in clean_connections:
+                if find in cmds.objectType( c ):  # find = abbreviated ie. animCurveTL = animCurve
+                    if c not in results:
+                        results.append( c )
+                    if c not in x:
+                        x.append( c )  # death loop with out this
                     found = True
-                    # print( 'found', c, find )
+                    print( 'found', c, find, cmds.objectType( c ) )
                     # print( 'skip', skip )
                 else:
-                    # print( 'search:', object, direction, c )
-                    pass
+                    if cmds.objectType( c ) not in find_through:  # has to be in find_through, or same as find
+                        x.append( c )
+                    print( c, 'is wrong type: ', cmds.objectType( c ), ' ... looking for: ', find )
+                    if direction == 'in':
+                        print( 'search for incoming connection to: ', object, 'through: ', c )
+                    else:
+                        print( 'search for outgoing connection from: ', object, 'through: ', c )
+            # remove wrong type, again
+            for j in x:
+                # print( 'removed: ', j, cmds.objectType( c ) )
+                skip.append( j )  # !!!! could loop forever unless skip is added
+                clean_connections.remove( j )
+                print( '__ is in skip list or --wrong-- type, removed: ', j, cmds.objectType( j ) )
         #
-        if not found and connections:
-            # print( 'not found' )
+        # if not found and clean_connections:
+        if clean_connections:
+            print( 'keep looking: ', 'results: ', results, 'clean_con: ', clean_connections )
             #
-            if recursion > max_recursion:
-                # print( 'max recursion' )
-                break
+            if recursion >= max_recursion:
+                print( '________________________________________________max recursion' )
+                # break
             else:
                 recursion = recursion + 1
                 #
-                for c in connections:
+                print( '-- start loop --', clean_connections )
+                x = []
+                for c in clean_connections:
                     skip.append( c )
-                    rslt = getConnections( c, direction = direction, find = find, skip = skip, max_recursion = max_recursion, recursion = recursion, ignore_types = ignore_types )
+                    print( '-- start new --', c, clean_connections )
+                    rslt = None
+
+                    rslt = getConnections( c, direction = direction, find = find, find_through = [], skip = skip, max_recursion = max_recursion, recursion = recursion, ignore_types = ignore_types, plugs = True, results = results )
                     if rslt:
                         for r in rslt:
-                            result.append( r )
-        if result:
-            result = list( set( result ) )
-            return result
-        if not connections:
-            return []
-    return []
+                            results.append( r )
+                    x.append( c )  # remove from list as already tried route
+                    print( '-------- recursion end: ', clean_connections )
+                    # return results
+                # remove attempted routes
+                for j in x:
+                    print( 'removed: ', j )
+                    clean_connections.remove( j )
+                print( '-------- recursion loop end: ', clean_connections )
+        else:
+            print( '-------- no leftovers: ', clean_connections )
+        if results:
+            results = list( set( results ) )
+            print( '---- found: ', results, find )
+            print( '---- leftovers: ', clean_connections )
+            return results
+        else:
+            print( 'end: ', clean_connections )
+
+    print( '___________________________ nothing' )
+    return results
+
+
+def getConnections1( object = '', direction = 'in', find = 'animCurveTU', find_through = [], skip = [], max_recursion = 5, recursion = 0, ignore_types = [], plugs = True, results = [] ):
+    print( 'object_________________________', object )
+    print( 'direction______________________', direction )
+    print( 'find___________________________', find )
+    print( 'find_through___________________', find_through )
+    print( 'skip___________________________', skip )
+    print( 'max_recursion__________________', max_recursion )
+    print( 'recursion______________________', recursion )
+    print( 'ignore_types___________________', ignore_types )
+    print( 'plugs__________________________', plugs )
+    print( 'results________________________', results )
+
+'''
+import imp
+import webrImport as web
+imp.reload(web)
+arl = web.mod('animRetime_lib')
+# retime test
+arl.getConnections( 
+object = 'locator1_translateX_AnimLayer1', 
+direction = 'in', 
+find = 'animCurveTL', 
+find_through = [], 
+skip = [u'locator1', u'locator1_translateX_AnimLayer1'], 
+max_recursion = 2, 
+recursion = 1, 
+ignore_types = ['transform', 'animLayer'], 
+plugs = True, 
+results = [] )
+'''
 
 
 def getTimeWarps():
     '''
     find timewarp nodes
     '''
-    pass
+    print( 'gettimewarps' )
     name = warpNodeStr()
     tw_nodes = []
     objs = cmds.ls( type = 'transform' )
@@ -632,7 +973,12 @@ def getTimeWarps():
 
 
 def getKeyedFrames( obj ):
-    animCurves = cmds.findKeyframe( obj, c = True )
+    '''
+    
+    '''
+    print( 'getframes' )
+    animCurves = cmds.findKeyframe( obj, c = True )  # may have to use getAnimCurves() if this command doesnt get all curves
+    # animCurves = getAnimCurves( object = obj, max_recursion = 1 )
     frames = []
     if animCurves:
         for crv in animCurves:
@@ -647,29 +993,41 @@ def getKeyedFrames( obj ):
         return frames
 
 
-def getBakeRange():
+def getKeyedFramesList():
     '''
-    
+    list of objects
     '''
     frames = []
     sel = cmds.ls( sl = 1 )
+    print( sel )
     for s in sel:
-        crvs = getAnimCurves( object = s, max_recursion = 1 )
-        if crvs:
-            #
-            for crv in crvs:
-                framesTmp = cmds.keyframe( crv, q = True )
-                for frame in framesTmp:
-                    frames.append( frame )
-            frames = list( set( frames ) )
-            frames.sort()
-            #
+        print( s )
+        frms = getKeyedFrames( s )
+        print( frms )
+        if frms:
+            for f in frms:
+                frames.append( f )
+    frames = list( set( frames ) )
+    frames.sort()
+    print( 'frames list result', frames )
+    return frames
+
+
+def getBakeRange( keyRange = True ):
+    '''
+    keyRange = expand bake range if keys are outside playbackOptions
+    '''
+    #
     start = cmds.playbackOptions( q = True, minTime = True )
     end = cmds.playbackOptions( q = True, maxTime = True )
-    if frames[0] < start:
-        start = frames[0]
-    if frames[-1] > end:
-        start = frames[-1]
+    #
+    if keyRange:
+        frames = getKeyedFramesList()
+        if frames:
+            if frames[0] < start:
+                start = frames[0]
+            if frames[-1] > end:
+                start = frames[-1]
 
     return [start, end]
 

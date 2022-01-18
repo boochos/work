@@ -68,7 +68,7 @@ def mirror_jnts():
         jnt.mirror( j , mirrorBehavior = False )
 
 
-def ferry( name = 'ferry', geo_grp = 'ferry_grp', X = 1.1, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\ferry\\model\\maya\\scenes\\ferry_model_v004.ma' ):
+def ferry( name = 'ferry', geo_grp = 'ferry_grp', X = 1.1, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\ferry\\model\\maya\\scenes\\ferry_model_v010.ma' ):
     '''
     build ferry
     '''
@@ -533,11 +533,14 @@ def set_for_animation():
     
     '''
     # dynamics
-    cmds.select( "*:*:chassis_dynamicTarget" )
-    sel = cmds.ls( sl = 1 )
-    for s in sel:
-        cmds.setAttr( s + '.dynamicParentOffOn', 0 )
-        cmds.setAttr( s + '.enable', 0 )
+    try:
+        cmds.select( "*:*:chassis_dynamicTarget" )
+        sel = cmds.ls( sl = 1 )
+        for s in sel:
+            cmds.setAttr( s + '.dynamicParentOffOn', 0 )
+            cmds.setAttr( s + '.enable', 0 )
+    except:
+        pass
     # tires
     try:
         cmds.select( "*:*:move" )
@@ -573,10 +576,11 @@ def set_all_dynamics():
     # dynamics
     cmds.select( "*:*:chassis_dynamicTarget" )
     sel = cmds.ls( sl = 1 )
-    for s in sel:
-        cmds.setAttr( s + '.dynamicParentOffOn', 1 )
-        cmds.setAttr( s + '.enable', 1 )
-        cmds.setAttr( s + '.startFrame', 970 )
+    if sel:
+        for s in sel:
+            cmds.setAttr( s + '.dynamicParentOffOn', 1 )
+            cmds.setAttr( s + '.enable', 1 )
+            cmds.setAttr( s + '.startFrame', 970 )
 
 
 def set_obj_dynamics( obj = '', on = False ):
@@ -604,16 +608,20 @@ def set_for_playblast( dynamics = False, tires = False ):
     if dynamics:
         # delete anim
         transform = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
-        cmds.select( "*:*:chassis_dynamicBase" )
-        sel = cmds.ls( sl = 1 )
-        #
-        for s in sel:
-            if rig_qualified_to_bake( s ):
-                ac.deleteAnim2( s, attrs = transform )
-                for i in transform:
-                    cmds.setAttr( s + '.' + i, 0 )
-        # set
-        set_all_dynamics()
+        try:
+            cmds.select( "*:*:chassis_dynamicBase" )
+            sel = cmds.ls( sl = 1 )
+            #
+            if sel:
+                for s in sel:
+                    if rig_qualified_to_bake( s ):
+                        ac.deleteAnim2( s, attrs = transform )
+                        for i in transform:
+                            cmds.setAttr( s + '.' + i, 0 )
+                # set
+                set_all_dynamics()
+        except:
+            pass
     # tires
     if tires:
         try:
@@ -647,52 +655,72 @@ def renderLayerBlast():
 
     path = cmds.file( query = True, exn = True )
     print( path )
+    subDir = ''
+    cars = False
+    if '101_001' in path:
+        # ferry shot
+        subDir = 'ferryAnimBty'
+    else:
+        # bridge shot
+        subDir = 'carAnimBty'
+        cars = True
+    #
     if '_animPublish_' in path:
         path = path.replace( '_animPublish_', '_anim_' )
-    print( path )
+        # rename the current file
+        cmds.file( path, rn = path )
 
     # rename the current file
-    cmds.file( path, rn = path )
+    # cmds.file( path, rn = path )
 
+    # geo
     go = True
     geoAll = []
-
-    # env
-    cmds.select( 'Bridge:*' )
-    sel = cmds.ls( sl = 1 )
-    if sel:
-        for s in sel:
-            geoAll.append( s )
-    else:
-        print( 'no sel, env' )
-    cmds.setAttr( '____env.visibility', 1 )
-    # hero cars
-    cmds.select( '*:*:geo:*' )
-    sel = cmds.ls( sl = 1 )
-    if sel:
-        for s in sel:
-            if ':geo:' in s and 'f[' not in s:
+    if cars:
+        # env
+        cmds.select( 'Bridge:*' )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
                 geoAll.append( s )
+        else:
+            print( 'no sel, env' )
+        cmds.setAttr( '____env.visibility', 1 )
+        # hero cars
+        cmds.select( '*:*:geo:*' )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
+                if ':geo:' in s and 'f[' not in s:
+                    geoAll.append( s )
+        else:
+            print( 'no sel, hero cars' )
+        # traffic cars
+        cmds.select( '*:*:*:geo:*' )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
+                if ':geo:' in s and 'f[' not in s:
+                    geoAll.append( s )
+        else:
+            print( 'no sel, traffic cars' )
     else:
-        print( 'no sel, hero cars' )
-    # traffic cars
-    cmds.select( '*:*:*:geo:*' )
-    sel = cmds.ls( sl = 1 )
-    if sel:
-        for s in sel:
-            if ':geo:' in s and 'f[' not in s:
+        # ferry
+        cmds.select( '*:geo:ferry_grp' )
+        cmds.select( 'directionalLight1', add = True )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
                 geoAll.append( s )
-    else:
-        print( 'no sel, traffic cars' )
 
     #
     if geoAll:
         #
-        subDir = 'carAnimBty'
         existing_layers = cmds.ls( type = 'renderLayer' )
         if subDir not in existing_layers:
             cmds.select( geoAll )
-            cmds.createRenderLayer( name = subDir, makeCurrent = True )
+            lyr = cmds.createRenderLayer( name = subDir, makeCurrent = True )
+            cmds.select( cl = 1 )
         else:
             cmds.editRenderLayerGlobals( crl = subDir )
         #
@@ -702,14 +730,20 @@ def renderLayerBlast():
         except:
             go = False
         #
-        set_for_playblast( dynamics = False, tires = True )
         if go:
+            set_for_playblast( dynamics = False, tires = True )
             cmds.setFocus( pnl )
             cmds.currentTime( 1002 )
             cmds.currentTime( 1001 )
+            cmds.select( clear = 1 )
             result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = subDir, play = False )
             print( result )  # [u'C:/Users/sebas/Documents/maya/__PLAYBLASTS__\\101_009_0100_animPublish_v014\\101_009_0100_animPublish_v014_carAnimBty', u'101_009_0100_animPublish_v014_carAnimBty']
+            mp4 = ffm.imgToMp4( pathIn = result[0], image = result[1], start = 1001, pathOut = result[0], pathOutName = result[1] )
             pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_' + subDir )
+
+            #
+            cmds.editRenderLayerGlobals( currentRenderLayer = 'defaultRenderLayer' )
+            cmds.delete( lyr )
         else:
             message( 'go == False, skipping shot', warning = True )
     else:
@@ -724,8 +758,9 @@ def blast( dynamics = False, burn_in = True ):
 
     # res
     special_shot = '101_009_1000'
+    special_shot2 = '101_001_'
     path = cmds.file( query = True, exn = True )
-    if special_shot in path:
+    if special_shot in path or special_shot2 in path:
         cmds.setAttr( 'defaultResolution.width', 3840 )
         cmds.setAttr( 'defaultResolution.height', 2160 )
     else:
@@ -736,12 +771,21 @@ def blast( dynamics = False, burn_in = True ):
     set_for_playblast( dynamics = dynamics )
     #
     if burn_in:
+        # blast
+        cmds.select( clear = 1 )
         result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = 'precomp', play = False )  # blastPath, blastName
+        # to mp4
         pathOut = result[0].replace( result[1], '' )
         pathOutName = result[1].replace( '_precomp', '____cam' )  # added cam string, burnin expects cam suffix
         mp4 = ffm.imgToMp4( pathIn = result[0], image = result[1], start = start, pathOut = pathOut, pathOutName = pathOutName )
-        ffm.burn_in( filein = mp4, startFrame = start, size = 35 )
+        # copy mp4 to image seq directory, matching name
+        shutil.copyfile( mp4, os.path.join( result[0], result[1] + '.mp4' ) )
+        # add burn in
+        ffm.burn_in( filein = mp4, startFrame = start, size = 35, rndrFrames = False )
+        # move precomp string in all image seq names, including new copied mp4
         pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_precomp' )
+        # beauty blast with qt
+        renderLayerBlast()
     else:
         result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = '', play = False )  # blastPath, blastNam
         source = result[0]
@@ -803,7 +847,9 @@ def bake_dynamics():
     transform = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
     cmds.select( "*:*:chassis_dynamicBase" )
     sel = cmds.ls( sl = 1 )
-    #
+    qualified_rigs = []
+    n = None
+    # qualify
     for s in sel:
         if rig_qualified_to_bake( s ):
             ac.deleteAnim2( s, attrs = transform )
@@ -812,10 +858,17 @@ def bake_dynamics():
             #
             ref = s.rsplit( ':', 1 )[0]
             set_obj_dynamics( ref + ':chassis_dynamicTarget', on = True )
-            #
-            n = anm.SpaceSwitch( s )
-            set_obj_dynamics( ref + ':chassis_dynamicTarget', on = False )
-            n.restore()
+            qualified_rigs.append( ref + ':chassis_dynamicTarget' )
+    #
+    if qualified_rigs:
+        print( qualified_rigs )
+        cmds.select( qualified_rigs )
+        # store
+        n = anm.SpaceSwitchList()
+        # restore
+        for q in qualified_rigs:
+                set_obj_dynamics( q, on = False )
+        n.restore()
     #
     cmds.playbackOptions( minTime = 1001 )
     cmds.playbackOptions( animationStartTime = 1001 )
@@ -908,6 +961,8 @@ def publish( full = True ):
         blast()
         set_for_playblast( tires = True )
         save_publish()
+        if cmds.objExists( 'directionalLight1' ):
+            cmds.setAttr( 'directionalLight1.visibility', 0 )
 
     # end timer
     end = time.time()
@@ -960,6 +1015,7 @@ def publish_proxies( proxies = [] ):
     for p in proxies:
         cmds.select( p )
         cas.cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = False, forceOverwrite = True )
+    cmds.select( clear = 1 )
 
 
 def publish_all_layouts( publish_layouts = False, publish_full = False ):
