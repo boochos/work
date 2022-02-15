@@ -332,10 +332,34 @@ def toggleGeo():
         state = cmds.modelEditor( pnl, q = True, polymeshes = True )
         if state:
             cmds.modelEditor( pnl, e = True, polymeshes = 0 )
-            # cmds.modelEditor(pnl, e=True, nurbsSurfaces=0)
+            cmds.modelEditor( pnl, e = True, nurbsSurfaces = 0 )
         else:
             cmds.modelEditor( pnl, e = True, polymeshes = 1 )
-            # cmds.modelEditor(pnl, e=True, nurbsSurfaces=1)
+            cmds.modelEditor( pnl, e = True, nurbsSurfaces = 1 )
+
+
+def toggleCurves():
+    pnl = cmds.getPanel( withFocus = True )
+    if cmds.getPanel( to = pnl ) == 'modelPanel':
+        state = cmds.modelEditor( pnl, q = True, nurbsCurves = True )
+        if state:
+            cmds.modelEditor( pnl, e = True, nurbsCurves = 0 )
+        else:
+            cmds.modelEditor( pnl, e = True, nurbsCurves = 1 )
+
+
+def toggleCameras():
+    pnl = cmds.getPanel( withFocus = True )
+    if cmds.getPanel( to = pnl ) == 'modelPanel':
+        state = cmds.modelEditor( pnl, q = True, cameras = True )
+        if state:
+            cmds.modelEditor( pnl, e = True, cameras = 0 )
+            cmds.modelEditor( pnl, e = True, imagePlane = 0 )
+            cmds.modelEditor( pnl, e = True, pluginShapes = 0 )
+        else:
+            cmds.modelEditor( pnl, e = True, cameras = 1 )
+            cmds.modelEditor( pnl, e = True, imagePlane = 1 )
+            cmds.modelEditor( pnl, e = True, pluginShapes = 1 )
 
 
 def toggleRes():
@@ -390,7 +414,7 @@ def locSize( lc, mltp = 1 ):
 
 def changeColor( color = 17, shapes = False ):
     sel = cmds.ls( sl = True )
-    if sel is not None:
+    if sel:
         if shapes:
             sel = shapeNodes()
         for item in sel:
@@ -398,6 +422,18 @@ def changeColor( color = 17, shapes = False ):
             cmds.setAttr( item + '.overrideColor', color )
     else:
         message( 'Select an object' )
+
+
+def shapeNodes():
+    sel = cmds.ls( sl = 1 )
+    shapes = []
+    if sel:
+        for s in sel:
+            shape = cmds.listRelatives( s, s = True, f = True )
+            if shape:
+                for shp in shape:
+                    shapes.append( shp )
+    return shapes
 
 
 def worldSpdExp( sel, attr ):
@@ -434,6 +470,72 @@ def speed( world = True, local = True ):
                 exp = localSpdExp( sel, attr )
                 if not cmds.attributeQuery( attr, node = sel, ex = True ):
                     createSpeedAttr( sel, attr, exp )
+                else:
+                    cmds.warning( '-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --' )
+                    deleteUserAttr( sel = sel, att = attr )
+                    return None
+    else:
+        message( 'Select an object.' )
+
+
+def rpmExp( sel, attr ):
+    '''
+    exp = "
+    float $lastPosX = `getAttr -t (frame-1) " + sel + ".tx`;\nfloat $lastPosY = `getAttr -t (frame-1) " + sel + ".ty`;\n
+    float $lastPosZ = `getAttr -t (frame-1) " + sel + ".tz`;\n
+    float $speed = abs(mag (<<" + sel + ".translateX-$lastPosX," + sel + ".translateY-$lastPosY," + sel + ".translateZ-$lastPosZ>>) );\n
+    float $inKPH = $speed*24*60*60/100000;\n
+    " + sel + "." + attr + " = $inKPH;"
+    return exp
+    '''
+    pass
+
+
+def createRpmAttr( sel, attr, exp ):
+    cmds.addAttr( sel, longName = attr, attributeType = 'float', k = 0 )
+    cmds.setAttr( sel + "." + attr, cb = 1 )
+    cmds.expression( o = sel, s = exp )
+
+
+def rpmAvg( obj, attr ):
+    '''
+    3 frame average
+    '''
+    # 360/(fps * 60) = degrees
+    # 360/(24  * 60) = 0.25
+    frames = [cmds.currentTime( q = True ) - 1, cmds.currentTime( q = True ), cmds.currentTime( q = True ) + 1]
+    val = []
+    rpm = []
+    for frame in frames:
+        val.append( cmds.getAttr( obj + '.' + attr, t = frame ) )
+    list( set( val ) )
+    if len( val ) != 1:
+        rpm.append( ( val[0] - val[1] ) / 0.25 )
+        rpm.append( ( val[1] - val[2] ) / 0.25 )
+        # average of 2 values
+        return sum( rpm, 0.0 ) / len( rpm )
+    else:
+        return 0.0
+
+
+def rpm( world = True, local = True ):
+    selected = cmds.ls( sl = True )
+    if len( selected ) != 0:
+        for sel in selected:
+            if world:
+                attr = 'worldSpeed'
+                exp = worldSpdExp( sel, attr )
+                if not cmds.attributeQuery( attr, node = sel, ex = True ):
+                    createRpmAttr( sel, attr, exp )
+                else:
+                    cmds.warning( '-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --' )
+                    deleteUserAttr( sel = sel, att = attr )
+                    return None
+            if local:
+                attr = 'localSpeed'
+                exp = localSpdExp( sel, attr )
+                if not cmds.attributeQuery( attr, node = sel, ex = True ):
+                    createRpmAttr( sel, attr, exp )
                 else:
                     cmds.warning( '-- Speed attr (' + attr + ') already exists - ' + sel + ' ! --' )
                     deleteUserAttr( sel = sel, att = attr )

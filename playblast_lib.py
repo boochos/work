@@ -391,6 +391,8 @@ def blastRenameSeq( result = [], splitStr = '_v', moveStr = '_dragonflyBty' ):
                 # print( 'no' )
                 pass
             os.rename( result[0], blastPathNew )
+    #
+    return [blastPathNew, blastNameNew]
 
 
 def blastWin():

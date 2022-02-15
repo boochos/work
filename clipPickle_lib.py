@@ -429,6 +429,9 @@ class Attribute( Key ):
             self.putAttr()
 
     def putAttr( self ):
+        '''
+        import pose, set key only if animCurve found
+        '''
         # print self.obj, self.name
         if cmds.objExists( self.obj + '.' + self.name ):
             if not cmds.getAttr( self.obj + '.' + self.name, l = True ):
@@ -441,8 +444,7 @@ class Attribute( Key ):
                             cmds.setAttr( self.obj + '.' + self.name, self.value )
                         else:
                             # range keys need to be from start to end
-                            cmds.setKeyframe( self.obj, at = self.attr, time = ( self.frame + self.offset, self.frame + self.offset ),
-                                             value = self.value, shape = False, nr = False, mr = True )
+                            cmds.setKeyframe( self.obj, at = self.name, value = self.value, shape = False, nr = False, mr = True )
                     except:
                         message( 'setAttr failed on  ' + self.obj + '.' + self.name )
 
@@ -880,49 +882,53 @@ class Clip( Layer ):
         # restore layers from class
         clash = 'CLASH__'
         for layer in self.layers:
-            # set import options
-            layer.offset = self.offset
-            sceneRootLayer = cmds.animLayer( q = True, root = True )
-            # check if iteration is root layer, root layer name = None
-            if not layer.name:
-                if not applyRootAsOverride:
-                    self.setActiveLayer( l = sceneRootLayer )
-                else:
-                    # creates new name for base layer
-                    layer.name = self.layerNew( name = 'BaseAnimation' )
-                    cmds.setAttr( layer.name + '.override', True )
-                    self.layerAddObjects( layer = layer.name, objects = layer.objects )
+            if self.poseOnly:
+                print( 'pose only', self.poseOnly )
                 layer.putObjects()
             else:
-                if not cmds.animLayer( layer.name, q = True, ex = True ):
-                    # create layer
-                    cmds.animLayer( layer.name )
+                # set import options
+                layer.offset = self.offset
+                sceneRootLayer = cmds.animLayer( q = True, root = True )
+                # check if iteration is root layer, root layer name = None
+                if not layer.name:
+                    if not applyRootAsOverride:
+                        self.setActiveLayer( l = sceneRootLayer )
+                    else:
+                        # creates new name for base layer
+                        layer.name = self.layerNew( name = 'BaseAnimation' )
+                        cmds.setAttr( layer.name + '.override', True )
+                        self.layerAddObjects( layer = layer.name, objects = layer.objects )
+                    layer.putObjects()
                 else:
-                    # print mergeExistingLayers
-                    if not mergeExistingLayers:  # dont merge with existing layer of same name
-                        if not cmds.animLayer( clash + layer.name, q = True, ex = True ):
-                            # update name in class with clashing prefix
-                            layer.name = cmds.animLayer( clash + layer.name )
-                            message( 'Layer ' + layer.name + ' already exists' )
-                        else:
-                            layer.name = clash + layer.name
-                            # message( 'Layer ' + layer.name + ' already exists' )
-                            pass
-                            # break
-                # set layer attrs
-                if applyLayerSettings:
-                    layer.putLayerAttrs()
-                # set layer to current
-                self.setActiveLayer( l = layer.name )
-                if layer.objects:
-                    for obj in layer.objects:
-                        if cmds.objExists( obj.name ):
-                            cmds.select( obj.name )
-                            cmds.animLayer( layer.name, e = True, aso = True )
+                    if not cmds.animLayer( layer.name, q = True, ex = True ):
+                        # create layer
+                        cmds.animLayer( layer.name )
+                    else:
+                        # print mergeExistingLayers
+                        if not mergeExistingLayers:  # dont merge with existing layer of same name
+                            if not cmds.animLayer( clash + layer.name, q = True, ex = True ):
+                                # update name in class with clashing prefix
+                                layer.name = cmds.animLayer( clash + layer.name )
+                                message( 'Layer ' + layer.name + ' already exists' )
+                            else:
+                                layer.name = clash + layer.name
+                                # message( 'Layer ' + layer.name + ' already exists' )
+                                pass
+                                # break
+                    # set layer attrs
+                    if applyLayerSettings:
+                        layer.putLayerAttrs()
+                    # set layer to current
+                    self.setActiveLayer( l = layer.name )
+                    if layer.objects:
+                        for obj in layer.objects:
+                            if cmds.objExists( obj.name ):
+                                cmds.select( obj.name )
+                                cmds.animLayer( layer.name, e = True, aso = True )
 
-                # should check if layer is empty, no objects exist in scene that existed during export, should delete if layer is empty or putObjects
-                # add animation
-                layer.putObjects()
+                    # should check if layer is empty, no objects exist in scene that existed during export, should delete if layer is empty or putObjects
+                    # add animation
+                    layer.putObjects()
 
 
 def clipSave( name = 'clipTemp', comment = '', poseOnly = False, temp = False, bakeRange = [0, 0], public = False ):

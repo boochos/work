@@ -4,6 +4,8 @@ import os
 import shutil
 import time
 
+from pymel.core import *
+
 from atom_face_lib import skn
 import maya.cmds as cmds
 import maya.mel as mel
@@ -68,7 +70,7 @@ def mirror_jnts():
         jnt.mirror( j , mirrorBehavior = False )
 
 
-def ferry( name = 'ferry', geo_grp = 'ferry_grp', X = 1.1, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\ferry\\model\\maya\\scenes\\ferry_model_v010.ma' ):
+def ferry( name = 'ferry', geo_grp = 'ferry_grp', X = 1.1, ns = 'geo', ref_geo = 'P:\\MDLN\\assets\\veh\\ferry\\model\\maya\\scenes\\ferry_model_v011.ma' ):
     '''
     build ferry
     '''
@@ -574,7 +576,11 @@ def set_all_dynamics():
     cmds.playbackOptions( minTime = 970 )
     cmds.playbackOptions( animationStartTime = 970 )
     # dynamics
-    cmds.select( "*:*:chassis_dynamicTarget" )
+    cmds.select( clear = True )
+    try:
+        cmds.select( "*:*:chassis_dynamicTarget" )
+    except:
+        pass
     sel = cmds.ls( sl = 1 )
     if sel:
         for s in sel:
@@ -657,7 +663,7 @@ def renderLayerBlast():
     print( path )
     subDir = ''
     cars = False
-    if '101_001' in path:
+    if '101_001' in path or '101_027' in path:
         # ferry shot
         subDir = 'ferryAnimBty'
     else:
@@ -687,7 +693,11 @@ def renderLayerBlast():
             print( 'no sel, env' )
         cmds.setAttr( '____env.visibility', 1 )
         # hero cars
-        cmds.select( '*:*:geo:*' )
+        cmds.select( clear = 1 )
+        try:
+            cmds.select( '*:*:geo:*' )
+        except:
+            pass
         sel = cmds.ls( sl = 1 )
         if sel:
             for s in sel:
@@ -696,7 +706,11 @@ def renderLayerBlast():
         else:
             print( 'no sel, hero cars' )
         # traffic cars
-        cmds.select( '*:*:*:geo:*' )
+        cmds.select( clear = 1 )
+        try:
+            cmds.select( '*:*:*:geo:*' )
+        except:
+            pass
         sel = cmds.ls( sl = 1 )
         if sel:
             for s in sel:
@@ -750,6 +764,180 @@ def renderLayerBlast():
         message( 'no car geo found, skipping shot', warning = True )
 
 
+def witness_camera():
+    '''
+    
+    '''
+    #
+    result = cmds.ls( type = 'camera', o = 1 )
+    for r in result:
+        p = cmds.listRelatives( r, parent = 1 )
+        if p:
+            if ':witness_cam' in p[0]:
+                return p[0]
+
+
+def witness_plate( on = True ):
+    '''
+    
+    '''
+    cam = camName()
+    #
+    st = 0
+    if on:
+        st = 3
+    #
+    if cam:
+        #
+        connections = cmds.listConnections( cam, sh = True, t = 'imagePlane' )
+        print( connections )
+        #
+        if connections:
+            connections = list( set( connections ) )
+            plates = platesOnly( connections )
+            #
+            for plate in plates:
+                p = plate.split( '->' )[1]
+                if ':' not in p:
+                    cmds.setAttr( p + '.displayMode', st )
+                    cmds.setAttr( p + '.frameCache', 0 )
+        else:
+            message( 'No plates' )
+    else:
+        message( 'Not a camera' )
+
+
+def camName():
+    pnl = cmds.getPanel( withFocus = True )
+    typ = cmds.getPanel( typeOf = pnl )
+    if typ == 'modelPanel':
+        cam = cmds.modelPanel( pnl, q = True, cam = True )
+        if cam:
+            typ = cmds.objectType( cam )
+            if typ == 'camera':
+                return cam
+            else:
+                if typ == 'transform':
+                    trans = PyNode( cam )
+                    # get the transform's shape, aka the camera node
+                    cam = trans.getShape()
+                    return str( cam )
+        else:
+            # print 'no model returned', cam
+            pass
+    else:
+        # print 'not model panel', pnl
+        pass
+
+
+def platesOnly( connections ):
+    plates = []
+    for item in connections:
+        if cmds.nodeType( item ) == 'imagePlane':
+            plates.append( item )
+    return plates
+
+
+def witness_blast():
+    '''
+    for ferry, prfile view
+    using animPublish file
+    *:*:geo:*
+    '''
+    # clear selection
+    cmds.select( cl = 1 )
+
+    path = cmds.file( query = True, exn = True )
+    print( path )
+    subDir = ''
+    cars = False
+    if '101_001' in path:
+        # ferry shot
+        subDir = 'ferryWitness'
+    #
+    if '_animPublish_' in path:
+        path = path.replace( '_animPublish_', '_anim_' )
+        # rename the current file
+        cmds.file( path, rn = path )
+
+    # geo
+    go = True
+    geoAll = []
+
+    # ferry
+    cmds.select( clear = True )
+    cmds.select( '*:geo:ferry_grp' )
+    cmds.select( 'directionalLight1', add = True )
+    cmds.select( '*:witness_cam', add = True )
+    cmds.select( '*:cam_grp', add = True )
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        for s in sel:
+            geoAll.append( s )
+
+    #
+    lyr = None
+    if geoAll:
+        #
+        existing_layers = cmds.ls( type = 'renderLayer' )
+        if subDir not in existing_layers:
+            cmds.select( geoAll )
+            lyr = cmds.createRenderLayer( name = subDir, makeCurrent = True )
+            cmds.select( cl = 1 )
+        else:
+            lyr = subDir
+            cmds.editRenderLayerGlobals( crl = subDir )
+        #
+        pnl = cmds.getPanel( withFocus = True )
+        cam = cmds.modelPanel( pnl, q = True, camera = True )
+        wit_cam = witness_camera()
+        cmds.setAttr( wit_cam + '.nearClipPlane', 100 )
+        cmds.modelPanel( pnl, e = True, cam = wit_cam )
+        mel.eval( 'modelEditor -e -udm true ' + pnl + ';' )
+        mel.eval( 'modelEditor -e -dl "default" ' + pnl + ';' )
+        try:
+            cmds.editRenderLayerGlobals( crl = subDir )
+        except:
+            go = False
+        #
+        if go:
+            set_for_playblast( dynamics = False, tires = True )
+            cmds.setFocus( pnl )
+            cmds.currentTime( 1002 )
+            cmds.currentTime( 1001 )
+            cmds.select( clear = 1 )
+            result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = subDir, play = False )
+            print( result )  # [u'C:/Users/sebas/Documents/maya/__PLAYBLASTS__\\101_009_0100_animPublish_v014\\101_009_0100_animPublish_v014_carAnimBty', u'101_009_0100_animPublish_v014_carAnimBty']
+            mp4 = ffm.imgToMp4( pathIn = result[0], image = result[1], start = 1001, pathOut = result[0], pathOutName = result[1] )
+            result = pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_' + subDir )
+            #
+            source = result[0]
+            print( source )
+            path = cmds.file( query = True, exn = True )
+            sht = path.rsplit( '/', 1 )[1].split( '.' )[0]
+            sht = sht.replace( '_anim_', '_anim_' + subDir + '_' )
+            print( sht )
+            dest = path.split( 'maya' )[0]
+            dest = os.path.join( dest, 'playblasts' )
+            dest = os.path.join( dest, sht )
+            print( dest )
+            if os.path.isdir( dest ):
+                shutil.rmtree( dest )
+            shutil.copytree( source.replace( '\\', '/' ), dest.replace( '\\', '/' ) )
+            shutil.rmtree( source.replace( '\\', '/' ) )
+
+            #
+            cmds.modelPanel( pnl, e = True, cam = cam )
+            mel.eval( 'modelEditor -e -udm false ' + pnl + ';' )
+            mel.eval( 'modelEditor -e -dl "all" ' + pnl + ';' )
+            cmds.editRenderLayerGlobals( currentRenderLayer = 'defaultRenderLayer' )
+            cmds.delete( lyr )
+        else:
+            message( 'go == False, skipping shot', warning = True )
+    else:
+        message( 'no ferry geo found, skipping shot', warning = True )
+
+
 def blast( dynamics = False, burn_in = True ):
     '''
     
@@ -759,34 +947,75 @@ def blast( dynamics = False, burn_in = True ):
     # res
     special_shot = '101_009_1000'
     special_shot2 = '101_001_'
+    special_shot3 = '101_027_'
     path = cmds.file( query = True, exn = True )
-    if special_shot in path or special_shot2 in path:
+    # resolution
+    if special_shot in path or special_shot2 in path or special_shot3 in path:
         cmds.setAttr( 'defaultResolution.width', 3840 )
         cmds.setAttr( 'defaultResolution.height', 2160 )
     else:
         cmds.setAttr( 'defaultResolution.width', 4448 )
         cmds.setAttr( 'defaultResolution.height', 3096 )
+    # ferry or bridge
+    if special_shot2 in path or special_shot3 in path:
+        special_shot2 = True
+    else:
+        special_shot2 = False
 
     # blast
     set_for_playblast( dynamics = dynamics )
+
+    #
+    # witness_plate( on = False )
+    '''
+    if special_shot2:
+        witness_blast()'''
+        # return
+
     #
     if burn_in:
         # blast
+        #
+        #
+        if special_shot2:
+            # witness_plate( on = True )
+            result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = 'precomp', play = False )  # blastPath, blastName
+            # to mp4
+            pathOut = result[0].replace( result[1], '' )
+            pathOutName = result[1].replace( '_precomp', '____cam' )  # added cam string, burnin expects cam suffix
+            mp4 = ffm.imgToMp4( pathIn = result[0], image = result[1], start = start, pathOut = pathOut, pathOutName = pathOutName )
+            # copy mp4 to image seq directory, matching name
+            shutil.copyfile( mp4, os.path.join( result[0], result[1] + '.mp4' ) )
+            print( result[0] )
+            shutil.rmtree( result[0] )
+            # add burn in
+            ffm.burn_in( filein = mp4, startFrame = start, size = 35, rndrFrames = False )
+            # witness_plate( on = False )
+        #
+        #
+        # return
         cmds.select( clear = 1 )
         result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = 'precomp', play = False )  # blastPath, blastName
         # to mp4
-        pathOut = result[0].replace( result[1], '' )
-        pathOutName = result[1].replace( '_precomp', '____cam' )  # added cam string, burnin expects cam suffix
+        if not special_shot2:
+            pathOut = result[0].replace( result[1], '' )
+            pathOutName = result[1].replace( '_precomp', '____cam' )  # added cam string, burnin expects cam suffix
+        else:
+            pathOut = result[0]
+            pathOutName = result[1]
         mp4 = ffm.imgToMp4( pathIn = result[0], image = result[1], start = start, pathOut = pathOut, pathOutName = pathOutName )
-        # copy mp4 to image seq directory, matching name
-        shutil.copyfile( mp4, os.path.join( result[0], result[1] + '.mp4' ) )
-        # add burn in
-        ffm.burn_in( filein = mp4, startFrame = start, size = 35, rndrFrames = False )
+        if not special_shot2:
+            # copy mp4 to image seq directory, matching name
+            shutil.copyfile( mp4, os.path.join( result[0], result[1] + '.mp4' ) )
+            # add burn in
+            ffm.burn_in( filein = mp4, startFrame = start, size = 35, rndrFrames = False )
         # move precomp string in all image seq names, including new copied mp4
         pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_precomp' )
         # beauty blast with qt
         renderLayerBlast()
+        # witness_plate( on = True )
     else:
+        # expecting traffic shots from bridge
         result = pb.blast( x = 0.5, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = '', play = False )  # blastPath, blastNam
         source = result[0]
         print( source )
@@ -845,20 +1074,25 @@ def bake_dynamics():
     cmds.playbackOptions( animationStartTime = 970 )
     #
     transform = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
-    cmds.select( "*:*:chassis_dynamicBase" )
+    cmds.select( clear = 1 )
+    try:
+        cmds.select( "*:*:chassis_dynamicBase" )
+    except:
+        pass
     sel = cmds.ls( sl = 1 )
     qualified_rigs = []
     n = None
     # qualify
-    for s in sel:
-        if rig_qualified_to_bake( s ):
-            ac.deleteAnim2( s, attrs = transform )
-            for i in transform:
-                cmds.setAttr( s + '.' + i, 0 )
-            #
-            ref = s.rsplit( ':', 1 )[0]
-            set_obj_dynamics( ref + ':chassis_dynamicTarget', on = True )
-            qualified_rigs.append( ref + ':chassis_dynamicTarget' )
+    if sel:
+        for s in sel:
+            if rig_qualified_to_bake( s ):
+                ac.deleteAnim2( s, attrs = transform )
+                for i in transform:
+                    cmds.setAttr( s + '.' + i, 0 )
+                #
+                ref = s.rsplit( ':', 1 )[0]
+                set_obj_dynamics( ref + ':chassis_dynamicTarget', on = True )
+                qualified_rigs.append( ref + ':chassis_dynamicTarget' )
     #
     if qualified_rigs:
         print( qualified_rigs )
@@ -949,17 +1183,26 @@ def publish( full = True ):
     success = publish_layout()
 
     #
+    ferry = False
+    special_shot = '101_001_'
+    path = cmds.file( query = True, exn = True )
+    if special_shot in path:
+        ferry = True
+
+    #
     if success and full:
 
-        # bake dynamics
-        path = cmds.file( query = True, exn = True )
-        if shot_qualified_to_bake( path ):
-            bake_dynamics()
-        #
-        load_offloaded()  # all
-        offload_loaded( find = 'pplRN' )  # remove people
-        blast()
-        set_for_playblast( tires = True )
+        if not ferry:
+            # bake dynamics
+            if shot_qualified_to_bake( path ):
+                bake_dynamics()
+            #
+            load_offloaded()  # all
+            offload_loaded( find = 'pplRN' )  # remove people
+            blast()
+            set_for_playblast( tires = True )
+        else:
+            blast()
         save_publish()
         if cmds.objExists( 'directionalLight1' ):
             cmds.setAttr( 'directionalLight1.visibility', 0 )
@@ -974,7 +1217,14 @@ def publish_layout():
     '''
     
     '''
+    #
     setProxies = 'setProxies'
+    special_shot = '101_001_'
+    special_shot1 = '101_027_'
+    path = cmds.file( query = True, exn = True )
+    if special_shot in path or special_shot1 in path:
+        setProxies = 'cam_grp'
+    #
     cams = publish_cameras()
     if cams:
         ns = cams[0].split( ':' )[0]
@@ -999,12 +1249,12 @@ def publish_cameras():
     for r in result:
         p = cmds.listRelatives( r, parent = 1 )
         if p:
-            if p[0] not in exclude and 'cam_follow' not in p[0]:
+            if p[0] not in exclude and 'cam_follow' not in p[0] and 'witness_cam' not in p[0]:
                 cams.append( p[0] )
     print( cams )
     for cam in cams:
         cmds.select( cam )
-        cas.cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = True, forceOverwrite = True )
+        cas.cache_abc( framePad = 5, frameSample = 0.25, forceType = False, camera = True, forceOverwrite = True )
     return cams
 
 
