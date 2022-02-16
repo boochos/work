@@ -129,7 +129,6 @@ icons = [
     'animIn.png',
     'animOut.png',
     'animUI.png',
-    'Atom.png',
     'blast.png',
     'blastUI.png',
     'csAdd.png',
