@@ -42,7 +42,7 @@ def uiEnable( controls = 'modelPanel' ):
                 cmds.control( p, e = 1, m = not state )
 
 
-def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = False, forceOverwrite = True ):
+def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = False, forceOverwrite = True, eulerFilter = True ):
     '''
     alembic cache selected object to assumed directory structure:
     
@@ -167,6 +167,11 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
             # print( 'doesnt exist' )
             version_qualified = True
 
+    # euler filter
+    eulerString = ''
+    if eulerFilter:
+        eulerString = ' -eulerFilter'
+
     # turn off ui
     ui = True
 
@@ -178,7 +183,8 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
         # print( lyr )
 
         # command build
-        m = 'AbcExport -j "-frameRange ' + str( int( start ) ) + ' ' + str( int( end ) ) + ' ' + '-step ' + str( float( frameSample ) ) + ' -uvWrite -worldSpace -writeVisibility -writeUVSets -dataFormat ogawa -root ' + sel + ' -file ' + path + '";'
+        m = 'AbcExport -j "-frameRange ' + str( int( start ) ) + ' ' + str( int( end ) ) + ' ' + '-step ' + str( float( frameSample ) ) + eulerString + ' -uvWrite -worldSpace -writeVisibility -writeUVSets -dataFormat ogawa -root ' + sel + ' -file ' + path + '";'
+        print( m )
 
         # ui off
         if ui:

@@ -82,6 +82,17 @@ def init_ui():
     frameStep_layout.addWidget( frameStep_line_edit, 0 )
     main_layout.addLayout( frameStep_layout )
 
+    # euler filter
+    eulerFilter_layout = QtWidgets.QHBoxLayout()
+    eulerFilter_label = QtWidgets.QLabel( 'Euler Filter:  ' )
+    eulerFilter_check = QtWidgets.QCheckBox()
+    eulerFilter_check.setChecked( True )
+    #
+    eulerFilter_layout.addWidget( eulerFilter_label, 0 )
+    eulerFilter_layout.addWidget( eulerFilter_check, 0 )
+    eulerFilter_layout.setAlignment( QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter )
+    main_layout.addLayout( eulerFilter_layout )
+
     # force overwrite
     forceOverwrite_layout = QtWidgets.QHBoxLayout()
     forceOverwrite_label = QtWidgets.QLabel( 'Force Overwrite:  ' )
@@ -123,7 +134,7 @@ def init_ui():
     # cache button
     cache_layout = QtWidgets.QHBoxLayout()
     cache_button = QtWidgets.QPushButton( 'CREATE ALEMBIC' )
-    cache_button.clicked.connect( lambda:create_alembic( pad = framePad_line_edit, step = frameStep_line_edit, overwrite = forceOverwrite_check, forceTyp = forceType_check, cam = forceRadio_cam ) )
+    cache_button.clicked.connect( lambda:create_alembic( pad = framePad_line_edit, step = frameStep_line_edit, overwrite = forceOverwrite_check, forceTyp = forceType_check, cam = forceRadio_cam, eulerFltr = eulerFilter_check ) )
     #
     cache_layout.addWidget( cache_button, 0 )
     #
@@ -187,7 +198,7 @@ def warning( objects = [] ):
     msgBox.exec_()
 
 
-def create_alembic( pad, step, overwrite, forceTyp, cam ):
+def create_alembic( pad, step, overwrite, forceTyp, cam, eulerFltr ):
     '''
     vars are ui elements
     '''
@@ -204,6 +215,9 @@ def create_alembic( pad, step, overwrite, forceTyp, cam ):
 
     # step every nth frame
     frameSample = float( step.text() )
+
+    # eulerFltr state
+    eulerFilter = eulerFltr.isChecked()
 
     # overwrite state
     forceOverwrite = overwrite.isChecked()
@@ -222,7 +236,7 @@ def create_alembic( pad, step, overwrite, forceTyp, cam ):
     if sel:
         for i in sel:
             cmds.select( i )
-            not_cached = cas.cache_abc( framePad = framePad, frameSample = frameSample, forceType = forceType, camera = camera, forceOverwrite = forceOverwrite )
+            not_cached = cas.cache_abc( framePad = framePad, frameSample = frameSample, forceType = forceType, camera = camera, forceOverwrite = forceOverwrite, eulerFilter = eulerFilter )
             if not_cached:
                 # print( 'not' )
                 result.append( not_cached )

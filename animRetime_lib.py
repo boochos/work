@@ -136,7 +136,7 @@ def getMembers_ui( warp_list_widget, members_list_widget ):
             for m in members:
                 members_list_widget.addItem( m )
     else:
-        print( 'object doesnt exist' )
+        # print( 'object doesnt exist' )
         warp_list_widget.clear()
         members_list_widget.clear()
         # redraw
@@ -335,7 +335,7 @@ def connectTimeWarp( objects = [], timeWarp = '', connect = True ):
         for obj in objects:
             # animCurves = cmds.findKeyframe( obj, c = True )
             animCurves = getAnimCurves( object = obj, max_recursion = 1 )  # character sets cause problems, also animLayers also cause problems
-            print( 'connect', obj, animCurves )
+            # print( 'connect', obj, animCurves )
             # return
             if animCurves:
                 for curve in animCurves:
@@ -347,16 +347,16 @@ def connectTimeWarp( objects = [], timeWarp = '', connect = True ):
                     else:
                         # cmds.disconnectAttr( warpCurve + '.output', curve + '.input', f = True ) # skips attr control, only connects to animcurve
                         connections = getConnections( timeWarp + '.' + warpAttrStr(), direction = 'out', find = cmds.objectType( curve ), find_through = [] )
-                        print( 'disconnect: ', connections )
+                        # print( 'disconnect: ', connections )
                         if curve in connections:
                             cmds.disconnectAttr( timeWarp + '.' + warpAttrStr(), curve + '.input' )
             else:
-                print( 'No animCurves connected to object:', obj )
+                # print( 'No animCurves connected to object:', obj )
+                pass
             # print( animCurves )
         if not connect:
-            # not necessary
-            # cleanConversionNodes( timeWarp + '.' + warpAttrStr() )
-            pass
+            # clean up
+            cleanConversionNodes( timeWarp + '.' + warpAttrStr() )
         # print allAnimCurves
         '''
         else:
@@ -391,19 +391,29 @@ def approximateTimeWarp( timeWarp = '' ):
     
     '''
     print( 'apprx' )
+    members = cmds.ls( sl = 1 )  # members are selected
+    # print(members)
     frames = getKeyedFramesList()
+    frames.reverse()
+    # print('reversed: ', frames)
     remap_frames_dict = remapFrames( timeWarp = timeWarp, frames = frames, step = 10.0 )
-    # print( remap_frames_dict )
+    animCurves = getAnimCurves( object = timeWarp, max_recursion = 1, direction = 'out' )
+    sel = cmds.ls( sl = 1 )  # members are selected
+    # print(sel)
+    # print( animCurves )
     # return
     if remap_frames_dict:
-        #
-        for f in frames:
-            # print( f, remap_frames_dict[f] )
-            cmds.keyframe( edit = 1, absolute = 1, timeChange = remap_frames_dict[f], time = ( f, f ), option = 'over' )
+        for animCurve in animCurves:
+            cmds.select( animCurve )
+            # print(animCurve)
+            #
+            for f in frames:
+                # print( f, remap_frames_dict[f] )
+                cmds.keyframe( edit = 1, absolute = 1, timeChange = remap_frames_dict[f], time = ( f, f ), option = 'over' )  # only works for active animLayer
         # disconnect timeWarp
-        sel = cmds.ls( sl = 1 )
-        if timeWarp not in sel:
-                connectTimeWarp( sel, timeWarp, False )
+        cmds.select( members )
+        if timeWarp not in members:
+                connectTimeWarp( members, timeWarp, False )
     # watch for remapped frames clashing with original frame, can put key on top of existing key
 
 
@@ -474,7 +484,7 @@ def seekWardpedFrame( timeWarp = '', frame = 1, step = 1.0 ):
                 # print( 'too far: ', dif, 'reverse', k, 'step: ', step )
                 return seekWardpedFrame( timeWarp = timeWarp, frame = frame, step = step / 2 )
             else:
-                print( '-- new: ', current, '-- old: ', frame, '-- dif: ', dif, k )
+                # print( '-- new: ', current, '-- old: ', frame, '-- dif: ', dif, k )
                 return current
         current = current + direction
     message( 'max steps reached', warning = True )
@@ -506,40 +516,6 @@ def subframe():
         message( 'no curves selected' )
 
 
-def deleteWarp( timewarp ):
-    '''
-    
-    '''
-    print( 'delete' )
-    objects = getTimeWarpMembers2( timewarp, plugs = False )
-    if objects:
-        connectTimeWarp( objects, timewarp, connect = False )
-    cmds.delete( timewarp )
-
-
-def cleanConversionNodes( object = '' ):
-    '''
-    find conversion nodes connected to object with no output connection and delete them
-    leftovers form disconnect objects from timewarp node
-    '''
-    sel = cmds.ls( sl = 1 )[0]
-    # out
-    s = 0
-    d = 1
-    cons = cmds.listConnections( object, d = d, s = s, type = 'unitToTimeConversion' )
-    print( cons )
-    #
-    if cons:
-        for c in cons:
-            out = cmds.listConnections( c, d = d, s = s )
-            if not out:
-                print( 'delete', c )
-                cmds.delete( c )
-    else:
-        # print('No conversion nodes to clean.')
-        pass
-
-
 class GraphSelection():
 
     def __init__( self ):
@@ -562,6 +538,40 @@ class GraphSelection():
         if self.pack:
             for cr in self.pack:
                 cmds.selectKey( cr[0], add = True, time = ( cr[1][0], cr[1][len( cr[1] ) - 1] ) )
+
+
+def deleteWarp( timewarp ):
+    '''
+    
+    '''
+    print( 'delete' )
+    objects = getTimeWarpMembers( timewarp )
+    if objects:
+        connectTimeWarp( objects, timewarp, connect = False )
+    cmds.delete( timewarp )
+
+
+def cleanConversionNodes( object = '' ):
+    '''
+    find conversion nodes connected to object with no output connection and delete them
+    leftovers form disconnect objects from timewarp node
+    '''
+    sel = cmds.ls( sl = 1 )[0]
+    # out
+    s = 0
+    d = 1
+    cons = cmds.listConnections( object, d = d, s = s, type = 'unitToTimeConversion' )
+    print( cons )
+    #
+    if cons:
+        for c in cons:
+            out = cmds.listConnections( c, d = d, s = s )
+            if not out:
+                # print( 'delete', c )
+                cmds.delete( c )
+    else:
+        # print('No conversion nodes to clean.')
+        pass
 
 
 def ____GET____():
@@ -593,7 +603,7 @@ def getAnimCurves( object = '', max_recursion = 0 ):
     # return
     for attr in attrs:  # should optimize for attr type. too many loops
         obj = object + '.' + attr
-        print( '___animCurve' )
+        # print( '___animCurve' )
         animCrvs = getConnections( object = obj, direction = 'in', find = 'animCurve', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'], results = [] )
         if animCrvs:
             for c in animCrvs:
@@ -637,7 +647,7 @@ def getAnimCurvesList():
     sel = cmds.ls( sl = 1 )
     print( sel )
     for s in sel:
-        print( s )
+        # print( s )
         crvs = getAnimCurves( object = s, max_recursion = 1 )
         # print( crvs )
         if crvs:
@@ -646,13 +656,81 @@ def getAnimCurvesList():
     if animCurves:
         animCurves = list( set( animCurves ) )
         animCurves.sort()
-        print( 'animCurves list result', animCurves )
+        # print( 'animCurves list result', animCurves )
         return animCurves
     else:
         return False
 
 
-def getTimeWarpMembers2( timeWarp, select = False, plugs = True ):
+def getTimeWarpMembers( timeWarp, select = False, typ = 'transform' ):
+    '''
+    typ = transform / character
+    '''
+    objects = []
+    #
+    warpCurve = cmds.listConnections( timeWarp + '.' + warpAttrStr() )
+    if warpCurve:
+        warpCurve = warpCurve[0]
+        # print( warpCurve )
+        animCurves = cmds.listConnections( warpCurve, t = 'animCurve', scn = 1 )  # curves connected to timeWarp
+        # print( animCurves )
+        if animCurves:
+            for curve in animCurves:
+                # print 0, curve
+                connected_nodes = cmds.listConnections( curve, scn = 1, t = typ )  # objects connected to anim curves
+                # print curve, 'connected to', connected_node
+                if connected_nodes:
+                    for n in connected_nodes:
+                        if n not in objects:
+                            objects.append( n )
+                else:
+                    # print( 'no transforms' )
+                    pass
+            if select and objects:
+                cmds.select( objects )
+        else:
+            print( 'no members' )
+    else:
+        print( timeWarp + '.' + warpAttrStr(), 'has no keys' )
+    #
+    print( objects )
+    return objects
+
+    '''
+    # find all objects connected to character set
+    sel = cmds.ls(sl=1)[0]
+    cons = cmds.listConnections(sel, t='character')
+    chars = []
+    if cons:
+        for c in cons:
+            if c not in chars:
+                chars.append(c)
+    print cons
+    print chars
+    objs = []
+    for char in chars:
+        members = cmds.character( char, q = True )
+        for m in members:
+            m = m.split('.')[0]
+            if m not in objs:
+                objs.append(m)
+    print objs
+    # three methods to find connection to timewarp
+    # 1 through transform connection
+    # 2 through character set connection
+    # 3 through animLayer connection
+    '''
+    '''
+    timwarp maps
+    assume first curve node is always baseLayer animCurve
+    tw => conv => curve => node
+    tw => conv => curve => char => node
+    tw => conv => curve => animLayerBlendNode... => node
+    tw => conv => curve => char => animLayerBlendNode... => node
+    '''
+
+
+def getTimeWarpMembers2( timeWarp, select = False ):
     '''
     animCurveTU
     unitToTimeConversion
@@ -669,28 +747,23 @@ def getTimeWarpMembers2( timeWarp, select = False, plugs = True ):
     # print( 'found', found )
     # return None
     if found:
-        objects = list( dict.fromkeys( found ) )
-        # print( 'objects', objects)
-        if timeWarp in objects:
-            objects.remove( timeWarp )
-        objects.sort()
-        # build list for selection, no plug
-        clean_objects = []
-        for c in objects:
-            print( c )
-            if '.' in c:
-                clean_objects.append( c.split( '.' )[0] )
-            else:
-                clean_objects.append( c )
-
-        clean_objects = list( dict.fromkeys( clean_objects ) )  # once plugs removed more than one of same object likely in list
-        if select:
-            cmds.select( clean_objects )
-        # return list with plugs
-        if plugs:
-            return objects
+        found = list( dict.fromkeys( found ) )
+        objects = found
+    # print( 'objects', objects)
+    if timeWarp in objects:
+        objects.remove( timeWarp )
+    objects.sort()
+    # build list for selection, no plug
+    clean_objects = []
+    for c in objects:
+        # print( c )
+        if '.' in c:
+            clean_objects.append( c.split( '.' )[0] )
         else:
-            return clean_objects
+            clean_objects.append( c )
+    if select:
+        cmds.select( clean_objects )
+    # return list with plugs
     return objects
 
 
@@ -712,11 +785,16 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
         'animBlendNodeAdditiveFL',
         'animBlendNodeAdditiveI16',
         'animBlendNodeAdditiveI32',
+        'animBlendNodeAdditiveRotation',
+        'animBlendNodeAdditiveScale',
+        'animBlendNodeAdditive',
+        'animBlendNodeEnum',
+        'animBlendNodeBoolean',
         'animCurveTL',
         'animCurveTU',
         'animCurveTA',
         'character',
-        'pairBlend'
+        'pairBlend'  # PROBLEM, CANT FIND PROPER PLUG ROUTE, INCLUDES ALL ATTRS AS CONNECTED, WILL NEED TO MAP ATTRS IN/OUT
         ]
     # nodes which have dif in/out plugs
     non_pass_through = [
@@ -727,12 +805,19 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
         'animBlendNodeAdditiveFL',
         'animBlendNodeAdditiveI16',
         'animBlendNodeAdditiveI32',
+        'animBlendNodeAdditiveRotation',
+        'animBlendNodeAdditiveScale',
+        'animBlendNodeAdditive',
+        'animBlendNodeEnum',
+        'animBlendNodeBoolean',
         'animCurveTL',
         'animCurveTU',
-        'animCurveTA'
+        'animCurveTA',
+        'pairBlend'  # PROBLEM, CANT FIND PROPER PLUG ROUTE, INCLUDES ALL ATTRS AS CONNECTED (LIKELY CUZ PLUGS ARENT USED)
         ]
     #
     found = False
+    localSkip = []
     max_recursion = 5
 
     if recursion == max_recursion:
@@ -742,6 +827,8 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
         #
         if cmds.objectType( object ) == 'character':
             plugs = True
+        # plugs = False
+
         #
         if direction == 'in':
             s = 1
@@ -752,18 +839,29 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
             d = 1
             # print( '---- get outgoing connection from: ', object )
         #
-        object = getPlug( object )  # swap out plug
-        connections = cmds.listConnections( object , s = s, d = d, scn = True, plugs = plugs )
+        i = 0
+        max = 2
+        # print( type( i ), type( max ) )
+        '''
+        while not found and i < max:
+            charSet = False
+            i = i + 1
+            print( i )
+            if i == max:
+                # print( '______________________________________________________ loop done' )
+                return []'''
+        connections = cmds.listConnections( object, s = s, d = d, scn = True, plugs = plugs )
         # print( connections )
 
         # remove duplicates and skip objects
         if connections:
             connections = list( dict.fromkeys( connections ) )
+            # print( '+ _________ connections', object, ' -- ', direction , ' -- ', connections )
             x = []
             for c in connections:
-                #
+                # print( 'c: ', c )
                 if c in skip or cmds.objectType( c ) in ignore_types:  # remove if in skip or ignore types
-                    #
+                    # print( 'remove list c: ', c )
                     x.append( c )
             # remove wrong type
             for j in x:
@@ -792,20 +890,17 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
                         x.append( c )  # death loop with out this
                     found = True
                     # print( 'found', c, find, cmds.objectType( c ) )
-                    #
+                    # print( 'skip', skip )
                 else:
-                    qualified = True
                     if cmds.objectType( c ) not in find_through:  # has to be in find_through, or same as find
                         x.append( c )
-                        qualified = False
                     # print( c, 'is wrong type: ', cmds.objectType( c ), ' ... looking for: ', find )
-                    if qualified:
-                        if direction == 'in':
-                            # print( 'search for incoming connection to: ', object, 'through: ', c )
-                            pass
-                        else:
-                            # print( 'search for outgoing connection from: ', object, 'through: ', c )
-                            pass
+                    if direction == 'in':
+                        # print( 'search for incoming connection to: ', object, 'through: ', c )
+                        pass
+                    else:
+                        # print( 'search for outgoing connection from: ', object, 'through: ', c )
+                        pass
             # remove wrong type, again
             for j in x:
                 # print( 'removed: ', j, cmds.objectType( c ) )
@@ -820,6 +915,7 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
             if recursion >= max_recursion:
                 # print( '________________________________________________max recursion' )
                 pass
+                # break
             else:
                 recursion = recursion + 1
                 #
@@ -847,7 +943,7 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
             pass
         if results:
             results = list( set( results ) )
-            print( '---- found: ', results, find )
+            # print( '---- found: ', results, find )
             # print( '---- leftovers: ', clean_connections )
             return results
         else:
@@ -858,38 +954,12 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
     return results
 
 
-def getPlug( obj = '' ):
-    '''
-    currently only for pairBlend nodes
-    replace plugs
-    expect <obj.plug> string
-    for now assume plug 2 is always constraint, NOT animCurve plug
-    '''
-    plug = {
-        'inRotateX1':'outRotateX',
-        'inRotateY1':'outRotateY',
-        'inRotateZ1':'outRotateZ',
-        'inTranslateX1':'outTranslateX',
-        'inTranslateY1':'outTranslateY',
-        'inTranslateZ1':'outTranslateZ',
-        'outRotateX':'inRotateX1',
-        'outRotateY':'inRotateY1',
-        'outRotateZ':'inRotateZ1',
-        'outTranslateX':'inTranslateX1',
-        'outTranslateY':'inTranslateY1',
-        'outTranslateZ':'inTranslateZ1',
-        }
-    if '.' in obj:
-        o = obj.split( '.' )[0]
-        p = obj.split( '.' )[1]
-        if p in plug.keys():
-            return o + '.' + plug[p]
-        else:
-            return obj  # return with same plug
-    return obj  # no plug, return same object
-
-
 def getConnections1( object = '', direction = 'in', find = 'animCurveTU', find_through = [], skip = [], max_recursion = 5, recursion = 0, ignore_types = [], plugs = True, results = [] ):
+    '''
+    
+    '''
+    pass
+    '''
     print( 'object_________________________', object )
     print( 'direction______________________', direction )
     print( 'find___________________________', find )
@@ -899,7 +969,7 @@ def getConnections1( object = '', direction = 'in', find = 'animCurveTU', find_t
     print( 'recursion______________________', recursion )
     print( 'ignore_types___________________', ignore_types )
     print( 'plugs__________________________', plugs )
-    print( 'results________________________', results )
+    print( 'results________________________', results )'''
 
 '''
 import imp
@@ -941,8 +1011,10 @@ def getKeyedFrames( obj ):
     
     '''
     print( 'getframes' )
-    animCurves = cmds.findKeyframe( obj, c = True )  # may have to use getAnimCurves() if this command doesnt get all curves
-    # animCurves = getAnimCurves( object = obj, max_recursion = 1 )
+    animCurves = cmds.findKeyframe( obj, c = True )  # may have to use getAnimCurves(), this command seems tonly get active animlayer curves
+    print( len( animCurves ), animCurves )
+    animCurves = getAnimCurves( object = obj, max_recursion = 1 )
+    print( len( animCurves ), animCurves )
     frames = []
     if animCurves:
         for crv in animCurves:
@@ -959,7 +1031,7 @@ def getKeyedFrames( obj ):
 
 def getKeyedFramesList():
     '''
-    list of objects
+    single timewarp node expected to be selected
     '''
     frames = []
     sel = cmds.ls( sl = 1 )
@@ -967,13 +1039,13 @@ def getKeyedFramesList():
     for s in sel:
         print( s )
         frms = getKeyedFrames( s )
-        print( frms )
+        # print( frms )
         if frms:
             for f in frms:
                 frames.append( f )
     frames = list( set( frames ) )
     frames.sort()
-    print( 'frames list result', frames )
+    print( 'frames list result, should start with last frame to remove chances of overwritten keys', frames )
     return frames
 
 

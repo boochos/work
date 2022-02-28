@@ -63,7 +63,7 @@ def mirror_jnts():
         jnt.mirror( j , mirrorBehavior = True )
 
 
-def king_air( X = 12, ns = 'geo', ref_geo = 'P:\\SYMD\\assets\\veh\\kingAirB200\\model\\maya\\scenes\\kingAirB200_model_v005.ma' ):
+def king_air( X = 12, ns = 'geo', ref_geo = 'P:\\SYMD\\assets\\veh\\kingAirB200\\model\\maya\\scenes\\kingAirB200_model_v009.ma', pilot_geo = '' ):
     '''
     build plane
     '''
@@ -81,6 +81,9 @@ def king_air( X = 12, ns = 'geo', ref_geo = 'P:\\SYMD\\assets\\veh\\kingAirB200\
     # mass to pivot, chassis
     chassis_joint = 'chassis_jnt'
     chassis_geo = get_geo_list( chassis = True )
+    for g in chassis_geo:
+        print( g )
+    # return
     vhl.skin( chassis_joint, chassis_geo )
     # pivot_controls = [frontl, frontr, backl, backr] use to be control[2] is now returning entire structure[0-4]
     pivot_controls = vhl.four_point_pivot( name = 'chassis', parent = 'move_Grp', center = chassis_joint, front = 'wheel_front_bottom_L_jnt', frontL = '', frontR = '', back = 'back_jnt', backL = 'back_L_jnt', backR = 'back_R_jnt', up = 'up_jnt', X = X * 2 )
@@ -126,7 +129,10 @@ def king_air( X = 12, ns = 'geo', ref_geo = 'P:\\SYMD\\assets\\veh\\kingAirB200\
     place.optEnum( move, attr = 'tires', enum = 'VIS' )
     for geos in tires_geo:
         for g in geos:
-            place.hijackVis( g, move, name = 'tireGeo', suffix = False, default = None, mode = 'visibility' )
+            try:
+                place.hijackVis( g, move, name = 'tireGeo', suffix = False, default = None, mode = 'visibility' )
+            except:
+                pass
     for g in tires_proxy:
         place.hijackVis( g, move, name = 'tireProxy', suffix = False, default = None, mode = 'visibility' )
     cmds.setAttr( move + '.tireGeo', 1 )
@@ -461,11 +467,13 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
     new_ctrls = [ctrls[0], 'suspension_piston_01_R_jnt']
     whlA = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
-                     tire_geo = [tire_geo[0]], rim_geo = [rim_geo[0]], caliper_geo = [], name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.15 )
+                     tire_geo = [tire_geo[0]], rim_geo = [rim_geo[1]], caliper_geo = [], name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.15 )
     # whlA = [steer, ContactCt, PressureCt]
     # pivot_controls   = [frontl, frontr, backl, backr]
     place.smartAttrBlend( master = whlA[2][2], slave = pivot_controls[2][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
     place.smartAttrBlend( master = whlA[2][2], slave = whlA[1][1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )
+    # secondary wheel
+    place.smartAttrBlend( master = 'wheelA_back_spin_L', slave = 'wheelB_back_spin_L_CtGrp', masterAttr = 'rotateX', slaveAttr = 'rotateX', blendAttrObj = 'wheelA_back_spin_L', blendAttrString = 'spinPair', blendWeight = 1.0, reverse = False )
     # return
     # back B
     sel = [
@@ -479,11 +487,13 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
     new_ctrls = [ctrls[0], 'suspension_piston_01_R_jnt']
     whlB = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
-                     tire_geo = [tire_geo[1]], rim_geo = [rim_geo[1]], caliper_geo = [], name = 'wheelB_back', suffix = suffix, X = X * 0.25, exp = False, pressureMult = 0.15 )
+                     tire_geo = [tire_geo[1]], rim_geo = [rim_geo[0]], caliper_geo = [], name = 'wheelB_back', suffix = suffix, X = X * 0.25, exp = False, pressureMult = 0.15 )
     # whlB = [steer, ContactCt, PressureCt]
     place.smartAttrBlend( master = whlB[2][2], slave = whlB[1][1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )
     place.smartAttrBlend( master = whlA[2][2], slave = whlB[2][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
     place.translationYLock( whlB[2][2], True )
+    # secondary wheel
+    place.smartAttrBlend( master = 'wheelA_back_spin_R', slave = 'wheelB_back_spin_R_CtGrp', masterAttr = 'rotateX', slaveAttr = 'rotateX', blendAttrObj = 'wheelA_back_spin_R', blendAttrString = 'spinPair', blendWeight = 1.0, reverse = False )
 
     # return
 
@@ -1239,7 +1249,11 @@ def get_geo_list( name = 'kingAir', ns = 'geo',
                     if cmds.objExists( ns + ':' + geo ):
                         geos.append( ns + ':' + geo )
                     else:
-                        print( geo_set, geo )
+                        if 'pilot' in geo:
+                            # geos.append( ns + ':plt:' + geo )
+                            pass
+                        else:
+                            print( 'not here', geo_set, geo )
                 else:
                     geos.append( geo )
 
@@ -1252,9 +1266,9 @@ def process_geo_list( name = '' ):
     '''
     s = []
     setDict = ss.loadDict( os.path.join( ss.defaultPath(), name + '.sel' ) )
-    # print( setDict )
+    print( '___ loaded raw', setDict )
     if setDict:
-        for obj in setDict.values():
+        for obj in setDict.keys():
             s.append( obj )
         # print( s )
         return s

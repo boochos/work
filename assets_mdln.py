@@ -4,7 +4,7 @@ import os
 import shutil
 import time
 
-from pymel.core import *
+# from pymel.core import *
 
 from atom_face_lib import skn
 import maya.cmds as cmds
@@ -948,9 +948,10 @@ def blast( dynamics = False, burn_in = True ):
     special_shot = '101_009_1000'
     special_shot2 = '101_001_'
     special_shot3 = '101_027_'
+    special_shot4 = '101_009_0310'
     path = cmds.file( query = True, exn = True )
     # resolution
-    if special_shot in path or special_shot2 in path or special_shot3 in path:
+    if special_shot in path or special_shot2 in path or special_shot3 in path or special_shot4 in path:
         cmds.setAttr( 'defaultResolution.width', 3840 )
         cmds.setAttr( 'defaultResolution.height', 2160 )
     else:
@@ -1148,15 +1149,15 @@ def offload_loaded( find = '' ):
                 cmds.file( ur = ref )
 
 
-def save_publish():
+def save_publish( find = '_anim_', addSuffix = '_animPublish_' ):
     '''
-    add usffix to scene, save
+    add suffix to scene, save
     '''
     # current name, path
     path = cmds.file( query = True, exn = True )
     print( path )
-    if '_anim_' in path:
-        path = path.replace( '_anim_', '_animPublish_' )
+    if find in path:
+        path = path.replace( find, addSuffix )
     print( path )
     #
     # get the current file type

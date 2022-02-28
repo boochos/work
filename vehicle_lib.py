@@ -1303,7 +1303,7 @@ def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2,
     depth = lattice[0]  # X
     row = ( lattice[1] - 1 ) / 2  # Y
     column = lattice[2]  # Z
-    for i in range( row ):  # depth
+    for i in range( int( row ) ):  # depth
         sl = ltc + '.pt[' + str( i ) + '][0:' + str( depth - 1 ) + '][0:' + str( column - 1 ) + ']'
         sl = ltc + '.pt[0:' + str( depth - 1 ) + '][' + str( i ) + '][0:' + str( column - 1 ) + ']'
         # print( sl )
@@ -2299,7 +2299,10 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
     place.optEnum( move, attr = 'tires', enum = 'VIS' )
     for geos in tires_geo:
         for g in geos:
-            place.hijackVis( g, move, name = 'tireGeo', suffix = False, default = None, mode = 'visibility' )
+            try:
+                place.hijackVis( g, move, name = 'tireGeo', suffix = False, default = None, mode = 'visibility' )
+            except:
+                pass
     for g in tires_proxy:
         place.hijackVis( g, move, name = 'tireProxy', suffix = False, default = None, mode = 'visibility' )
     cmds.setAttr( move + '.tireGeo', 1 )
