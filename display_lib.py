@@ -333,9 +333,11 @@ def toggleGeo():
         if state:
             cmds.modelEditor( pnl, e = True, polymeshes = 0 )
             cmds.modelEditor( pnl, e = True, nurbsSurfaces = 0 )
+            cmds.modelEditor( pnl, e = True, pluginShapes = 0 )
         else:
             cmds.modelEditor( pnl, e = True, polymeshes = 1 )
             cmds.modelEditor( pnl, e = True, nurbsSurfaces = 1 )
+            cmds.modelEditor( pnl, e = True, pluginShapes = 1 )
 
 
 def toggleCurves():
@@ -344,8 +346,10 @@ def toggleCurves():
         state = cmds.modelEditor( pnl, q = True, nurbsCurves = True )
         if state:
             cmds.modelEditor( pnl, e = True, nurbsCurves = 0 )
+            cmds.modelEditor( pnl, e = True, locators = 0 )
         else:
             cmds.modelEditor( pnl, e = True, nurbsCurves = 1 )
+            cmds.modelEditor( pnl, e = True, locators = 1 )
 
 
 def toggleCameras():
@@ -355,11 +359,11 @@ def toggleCameras():
         if state:
             cmds.modelEditor( pnl, e = True, cameras = 0 )
             cmds.modelEditor( pnl, e = True, imagePlane = 0 )
-            cmds.modelEditor( pnl, e = True, pluginShapes = 0 )
+            # cmds.modelEditor( pnl, e = True, pluginShapes = 0 )
         else:
             cmds.modelEditor( pnl, e = True, cameras = 1 )
             cmds.modelEditor( pnl, e = True, imagePlane = 1 )
-            cmds.modelEditor( pnl, e = True, pluginShapes = 1 )
+            # cmds.modelEditor( pnl, e = True, pluginShapes = 1 )
 
 
 def toggleRes():

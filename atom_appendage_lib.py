@@ -895,6 +895,12 @@ def create_3_joint_pv( stJnt, endJnt, prefix, suffix, limbName, rotControl, aimC
 def create_3_joint_pv2( stJnt = '', endJnt = '', prefix = '', suffix = '', distance_offset = 0.0, orient = True, color = 'yellow', X = 1, midJnt = '' ):
     '''
     stJnt HAS TO BE ORIENTED PROPERLY ALIGNED TO THE TRIANGLE, OBJECTS GET PARENT TO IT AND ASSUME PROPER ORIENTATION !!!!
+    
+    ***
+    assumes if joint has tz negative its been mirrored and flips vars accordingly, 
+    will place pv on wrong side if R side limb has positive tz value 
+    ***
+    
     x = points to side
     y = is up vector
     z = points up or down chain
@@ -934,6 +940,7 @@ def create_3_joint_pv2( stJnt = '', endJnt = '', prefix = '', suffix = '', dista
     posYZ_direction = 1
     if cmds.getAttr( midJnt + '.tz' ) < 0:  # assume joint is mirrored if mid joint has negative tz value
         # translate z and y move in negative directions
+        # print( 'mirrord', midJnt )
         posYZ_direction = -1
 
     pvGuideJnt = midJnt

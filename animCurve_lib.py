@@ -275,6 +275,16 @@ def tangentStep( mltp = 1.0001 ):
     cmds.keyTangent( e = True, outAngle = angle + mltp )
 
 
+def tangentFlat():
+    #
+    sel = cmds.keyframe( q = True, name = True, sl = True )
+    if sel:
+        cmds.keyTangent( itt = 'flat', ott = 'flat' )
+        # message( 'Done' )
+    else:
+        message( 'Select some curves in the graph editor.' )
+
+
 def bakeInfinity( sparseKeys = True, smart = True, sim = False, sampleBy = 1 ):
     crvs = cmds.keyframe( q = True, name = True, sl = True )
     if crvs:

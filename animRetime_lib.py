@@ -629,6 +629,41 @@ def uiEnable( controls = 'modelPanel' ):
                 cmds.control( p, e = 1, m = not state )
 
 
+def manuallyDisconnectAnimLayer( timeWarp = '' ):
+    '''
+    assumes 
+    active anim layer is meant to be disconnected from retime
+    retime node is selected
+    '''
+    # store selection, assume
+    timeWarp = cmds.ls( sl = 1 )
+    if timeWarp:
+        timeWarp = timeWarp[0]
+    if warpNodeStr() in timeWarp:
+        #
+        animLayers = cmds.ls( type = 'animLayer' )
+        activeLayer = None
+        for lyr in animLayers:
+            if cmds.animLayer( lyr, sel = 1, q = 1 ):
+                activeLayer = lyr
+                break
+        # get curves
+        result = cmds.animLayer( activeLayer, q = 1, anc = 1 )
+        cmds.select( result )
+        print( result )
+        # disconnect
+        for curve in result:
+            # pass
+            try:
+                cmds.disconnectAttr( timeWarp + '.' + warpAttrStr(), curve + '.input' )
+            except:
+                print( 'No connection or error: ', curve )
+        # reselect
+        cmds.select( timeWarp )
+    else:
+        print( 'Selection is not a timewarp node' )
+
+
 def ____GET____():
     pass
 

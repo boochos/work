@@ -96,6 +96,37 @@ def jointChain( suffix = 'chain', pad = 2, length = 1, amount = 30, radius = 0.4
     return jnt
 
 
+def jointChainAlign( name = '', suffix = '', objs = [] ):
+    '''
+    places joints on list of objects and aligns axis
+    '''
+    if objs:
+        #
+        sel = cmds.ls( sl = 1 )
+        #
+        cmds.select( objs )
+        joints = joint( order = 0, jntSuffix = 'utl', pad = 2, rpQuery = True, radius = 0.15 )
+        #
+        cmds.select( joints[0] )
+        cmds.joint( e = True, oj = 'zyx', secondaryAxisOrient = 'yup', ch = True, zso = True )
+        jointOrientZero( jnt = joints[-1] )
+        #
+        joints = renameHierarchy( joints[0], name, pad = 2, suffix = suffix )
+        #
+        cmds.select( sel )
+        return joints
+    return None
+
+
+def jointOrientZero( jnt = '' ):
+    '''
+    reset joint Orient attr to 0,0,0
+    '''
+    cmds.setAttr( jnt + '.jointOrientX', 0 )
+    cmds.setAttr( jnt + '.jointOrientY', 0 )
+    cmds.setAttr( jnt + '.jointOrientZ', 0 )
+
+
 def joint( order, jntSuffix, pad = 2, rpQuery = True, radius = 0.4 ):
     sel = cmds.ls( sl = True, fl = True, l = True )
     if len( sel ) > 0:
@@ -1562,21 +1593,24 @@ def renameHierarchy( root, name, pad = 2, suffix = None ):
     '''
     cmds.select( root, hi = True )
     sel = cmds.ls( sl = True, l = True )
+    result = []
     newName = ''
     j = 1  # start count is 1 not zero, avoid 00 pad
     for i in range( 0, len( sel ), 1 ):
         if suffix == None:
             sel[i] = cmds.rename( sel[i], name + '_' +
                                  str( ( '%0' + str( pad ) + 'd' ) % ( j ) ) )
+            result.append( sel[i] )
         else:
             sel[i] = cmds.rename( 
                 sel[i], name + '_' + str( ( '%0' + str( pad ) + 'd' ) % ( j ) ) + '_' + suffix )
+            result.append( sel[i] )
         if i == 0:
             root = sel[i]
         cmds.select( root, hi = True )
         sel = cmds.ls( sl = True )
         if i + 1 == len( sel ):
-            return sel
+            return result
         i = i + 1
         j = j + 1
 
