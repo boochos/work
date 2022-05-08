@@ -196,18 +196,29 @@ class WeightBroswer( key_ui_lib.FileDialog ):
         self.popWin( self.startingPath, self.fileFilter )
 
 
-def getSkinCluster( sel ):
+def getSkinCluster( obj = '' ):
     '''
     Get a skinCluster node
     '''
+    #
     skinNode = None
-    pm_node = cmds.ls( sl = 1 )
-    if len( pm_node ) == 1:
-        if cmds.nodeType( pm_node ) == 'transform':
-            print( pm_node )
-            pm_shape = cmds.listRelatives( pm_node, shapes = True )
-            print( pm_shape )
-            cons = cmds.listHistory( pm_shape[0], pdo = True )
+    #
+    if obj:
+        pm_node = obj
+    else:
+        pm_node = cmds.ls( sl = 1 )
+        if len( pm_node ) == 1:
+            pm_node = pm_node[0]
+        else:
+            print( 'expected one object in selection', pm_node )
+            return skinNode
+    #
+    if cmds.nodeType( pm_node ) == 'transform':
+        print( pm_node )
+        pm_shape = cmds.listRelatives( pm_node, shapes = True )
+        print( pm_shape )
+        for s in pm_shape:
+            cons = cmds.listHistory( s, pdo = True )
             if cons:
                 for con in cons:
                     if cmds.nodeType( con ) == 'skinCluster':
@@ -537,9 +548,11 @@ def weightTransferControl( func, path = None, *args ):
     '''
     funcDict = {'import': [importWeights02, 'Import Weights'], 'export': [exportWeights02, 'Export Weights']}
     sel = cmds.ls( sl = True )
+    print( '???', sel )
 
     if len( sel ) == 1:
         skinNode = getSkinCluster( sel[0] )
+        print( '___', skinNode )
         # change the behavior based on the existnce of a skinCluster on the
         # selected item
         skinCheck = None

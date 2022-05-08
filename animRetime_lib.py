@@ -416,6 +416,7 @@ def approximateTimeWarp( timeWarp = '' ):
     
     '''
     print( 'apprx' )
+    start = time.time()
     # ui off
     uiEnable()
     #
@@ -424,7 +425,7 @@ def approximateTimeWarp( timeWarp = '' ):
     frames = getKeyedFramesList()
     frames.reverse()
     # print('reversed: ', frames)
-    remap_frames_dict = remapFrames( timeWarp = timeWarp, frames = frames, step = 10.0 )
+    remap_frames_dict = remapFrames( timeWarp = timeWarp, frames = frames, step = 30.0 )
     animCurves = getAnimCurves( object = timeWarp, max_recursion = 1, direction = 'out' )
     sel = cmds.ls( sl = 1 )  # members are selected
     # print(sel)
@@ -442,6 +443,11 @@ def approximateTimeWarp( timeWarp = '' ):
         cmds.select( members )
         if timeWarp not in members:
                 connectTimeWarp( members, timeWarp, False )
+
+    #
+    end = time.time()
+    elapsed = end - start
+    message( 'Approx elapse time: ' + str( elapsed ), warning = False )
     # ui on
     uiEnable()
     #
@@ -473,9 +479,9 @@ def seekWardpedFrame( timeWarp = '', frame = 1, step = 1.0 ):
     '''
     
     '''
-    tolerance = 0.025  # 0.005
+    tolerance = 0.05  # 0.005
     forward = True
-    steps = 20000  # max steps in one direction(forward)
+    steps = 50000  # max steps in one direction(forward)
     direction = step
     #
     # cmds.currentTime( frame )
@@ -503,20 +509,20 @@ def seekWardpedFrame( timeWarp = '', frame = 1, step = 1.0 ):
             #
             if dif > tolerance:
                 # print( 'too far: ', dif, 'reverse', k, 'step: ', step )
-                return seekWardpedFrame( timeWarp = timeWarp, frame = frame, step = step / 2 )
+                return seekWardpedFrame( timeWarp = timeWarp, frame = frame, step = step * 0.98 )
             else:
                 print( '-- new: ', current, '-- old: ', frame, '-- dif: ', dif, k )
-                return  current
+                return  round( current, 2 )  # maya timeline seems to like up to 2 decimal points
         # heading forward
         if warpedFrame > frame and forward:  # moved forward past frame
             dif = warpedFrame - frame
             #
             if dif > tolerance:
                 # print( 'too far: ', dif, 'reverse', k, 'step: ', step )
-                return seekWardpedFrame( timeWarp = timeWarp, frame = frame, step = step / 2 )
+                return seekWardpedFrame( timeWarp = timeWarp, frame = frame, step = step * 0.98 )
             else:
                 # print( '-- new: ', current, '-- old: ', frame, '-- dif: ', dif, k )
-                return current
+                return round( current, 2 )  # maya timeline seems to like up to 2 decimal points
         current = current + direction
     message( 'max steps reached', warning = True )
 

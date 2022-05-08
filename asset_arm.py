@@ -18,7 +18,8 @@ def arm( *args ):
     place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = True, Size = 300 )
     cmds.parentConstraint( 'master_Grp', 'root_jnt', mo = True )
 
-    geo = 'cbw100_cg_arm_mdl_v003:Arm_geo'
+    X = 0.25
+    geo = 'cbw100_cg_arm_mdl_pub:Arm_geo'
     cmds.deltaMush( geo, smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
     # creates rig controllers, places in appropriate groups and constrains to the master_grp
 
@@ -37,16 +38,21 @@ def arm( *args ):
     place.cleanUp( geo, Body = True )
 
     #
-    shldr_Ct = place.Controller2( 'shoulder', 'shoulder_jnt', False, 'diamond_ctrl', 150, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    shldr_Ct = place.Controller2( 'shoulder', 'shoulder_jnt', False, 'diamond_ctrl', X * 150, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
     cmds.parentConstraint( shldr_Ct[4], 'shoulder_jnt', mo = True )
     cmds.parentConstraint( 'root_jnt', shldr_Ct[0], mo = True )
     cmds.parent( shldr_Ct[0], CONTROLS() )
     # return
     #
-    wrst_Ct = place.Controller2( 'wrist', 'wrist_jnt', False, 'facetYup_ctrl', 150, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    wrst_Ct = place.Controller2( 'wrist', 'wrist_jnt', False, 'facetYup_ctrl', X * 150, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    # cmds.setAttr( wrst_Ct[0] + '.rx', -90 )
+    # cmds.setAttr( wrst_Ct[0] + '.ry', -180 )
+    # cmds.setAttr( wrst_Ct[0] + '.rz', 0 )
     cmds.orientConstraint( wrst_Ct[4], 'wrist_jnt', mo = True )
     cmds.parentConstraint( 'root_jnt', wrst_Ct[0], mo = True )
     cmds.parent( wrst_Ct[0], CONTROLS() )
+    #
+    place.smartAttrBlend( master = 'wrist_jnt', slave = 'forearm_jnt', masterAttr = 'rotateY', slaveAttr = 'rotateZ', blendAttrObj = wrst_Ct[2], blendAttrString = 'wristTwist', blendWeight = 1.0, reverse = False, blendAttrExisting = False )
 
     #
     '''
@@ -61,7 +67,7 @@ def arm( *args ):
     sjnt = 'shoulder_jnt'
     ejnt = 'wrist_jnt'
     # problem, pv build on wrong side, compensated with negative offset, cuz joints arent mirrored from left side
-    pv_Ct = appendage.create_3_joint_pv2( stJnt = sjnt, endJnt = ejnt, prefix = sjnt.split( '_jnt' )[0], suffix = 'R', distance_offset = -150.0, orient = True, color = 'red', X = 50, midJnt = '' )
+    pv_Ct = appendage.create_3_joint_pv2( stJnt = sjnt, endJnt = ejnt, prefix = sjnt.split( '_jnt' )[0], suffix = 'R', distance_offset = X * -150.0, orient = True, color = 'red', X = 50, midJnt = '' )
     cmds.parent( pv_Ct[0], CONTROLS() )
     cmds.parentConstraint( 'master_Grp', pv_Ct[0], mo = True )
     # main ik
@@ -109,10 +115,10 @@ def arm( *args ):
         i = 0
         for jnt in finger_jnts:
             shape = 'facetZup_ctrl'
-            size = 30
+            size = X * 30
             if i == 0:
                 shape = 'facetXup_ctrl'
-                size = 40
+                size = X * 40
             name = jnt.split( '_jnt' )[0]
             fngr_Ct = place.Controller2( name, jnt, True, shape, size, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
             cmds.orientConstraint( fngr_Ct[4], jnt, mo = True )
