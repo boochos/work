@@ -109,12 +109,14 @@ def addControlCurveButton( path ):
             # print files
             files.sort()
             for file in files:
-                # print 'here'
+                # print( '__', path, '____', file )
                 if os.path.isfile( os.path.join( path, file ) ):
                     txtSplit = file.split( '.' )
                     if txtSplit[1] == 'txt':
                         # cmds.button(label=txtSplit[0], c='import atom_ui_lib\natom_ui_lib.importCurveShape("' + txtSplit[0] + '","' + path + '")')
-                        cmds.button( label = txtSplit[0], c = 'import webrImport as web\naui = web.mod("atom_ui_lib")\naui.importCurveShape("' + txtSplit[0] + '","' + path + '")', p = 'atom_ccst_main_columnLayout' )
+                        c = 'import webrImport as web\naui = web.mod("atom_ui_lib")\naui.importCurveShape("' + txtSplit[0] + '",r"' + path + '")'
+                        # print( c )
+                        cmds.button( label = txtSplit[0], c = c, p = 'atom_ccst_main_columnLayout' )
         else:
             print( 'no shapes found in path:  ' + path )
 
@@ -181,7 +183,7 @@ def importCurveShape( name = '', path = '', codeScale = False, overRide = False 
                 curveScale = codeScale
 
             if cmds.nodeType( shapeNode ) == 'nurbsCurve':
-                # print path, 'shape__________'
+                # print( path, 'shape__________' )
                 inFile = importCurveShapeSource( name )
                 if inFile:
                     cvInfo = shapeScale( shape = inFile, scale = curveScale )

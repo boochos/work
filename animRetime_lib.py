@@ -43,15 +43,30 @@ def init_ui():
     sffx_line_layout.addWidget( sffx_edit )
     main_layout.addLayout( sffx_line_layout )
     #
-    # lists
+    # column lists
     lists_layout = QtWidgets.QHBoxLayout()
+    # col 1
+    col1_layout = QtWidgets.QVBoxLayout()
+    col1_label1 = QtWidgets.QLabel( 'Time Warp Nodes :' )
     warp_list_widget = QtWidgets.QListWidget()
+    col1_label2 = QtWidgets.QLabel( 'Anim Layers :' )
+    animLayers_list_widget = QtWidgets.QListWidget()
+    animLayers_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.ExtendedSelection )
+    col1_layout.addWidget( col1_label1 )
+    col1_layout.addWidget( warp_list_widget )
+    col1_layout.addWidget( col1_label2 )
+    col1_layout.addWidget( animLayers_list_widget )
+    # col 2
+    col2_layout = QtWidgets.QVBoxLayout()
+    col2_label1 = QtWidgets.QLabel( 'Connected Members :' )
     members_list_widget = QtWidgets.QListWidget()
     members_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.NoSelection )
-    #
-    lists_layout.addWidget( warp_list_widget )
-    lists_layout.addWidget( members_list_widget )
-    #
+    col2_layout.addWidget( col2_label1 )
+    col2_layout.addWidget( members_list_widget )
+    # attach columns
+    lists_layout.addLayout( col1_layout )  # attach col 1
+    lists_layout.addLayout( col2_layout )  # attach col 2
+    # attach rows
     main_layout.addLayout( top_layout )
     main_layout.addLayout( lists_layout )
     main_layout.addLayout( bottom_layout )
@@ -105,7 +120,7 @@ def init_ui():
     top_layout.addWidget( delete_button )
     #
     #
-    getWarps_ui( warp_list_widget, members_list_widget )
+    getWarps_ui( warp_list_widget, members_list_widget, animLayers_list_widget )
     #
     # parse current scene
     # get_current( project_list_widget, members_list_widget, tasks_list_widget, scene_list_widget )
@@ -113,17 +128,26 @@ def init_ui():
     return main_window
 
 
-def getWarps_ui( warp_list_widget, members_list_widget ):
+def getWarps_ui( warp_list_widget, members_list_widget, animLayers_list_widget ):
     '''
     
     '''
     print( 'getwarpsui' )
+    # clear
     warp_list_widget.clear()
     members_list_widget.clear()
+    animLayers_list_widget.clear()
+    #
+    # populate
     timewarps = getTimeWarps()
     if timewarps:
         for t in timewarps:
             warp_list_widget.addItem( t )
+    #
+    animLayers = getAnimLayers()
+    if animLayers:
+        for a in animLayers:
+            animLayers_list_widget.addItem( a )
 
 
 def getMembers_ui( warp_list_widget, members_list_widget ):
@@ -1121,6 +1145,21 @@ def getTimeWarps():
             tw_nodes.append( o )
     print( tw_nodes )
     return tw_nodes
+
+
+def getAnimLayers():
+    '''
+    get layers
+    '''
+    animLayers = cmds.ls( type = 'animLayer' )
+    return animLayers
+
+
+def getTimeWarpAnimLayers():
+    '''
+    get warped layers
+    '''
+    return
 
 
 def getKeyedFrames( obj ):

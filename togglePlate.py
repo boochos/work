@@ -125,13 +125,22 @@ def plateRange( handles = 0 ):
             #
             for plate in plates:
                 path = cmds.getAttr( plate + '.imageName' )
-                # print path
+                #
                 if os.path.isfile( path ):
-                    # print 'file'
+                    #
                     fl = path.split( '/' )[-1]
                     path = path[:-len( fl ) - 1]
-                    # print path
+                    #
+                    # remove dirs from list
                     fls = os.listdir( path )
+                    dirs = []
+                    for f in fls:
+                        # print( f )
+                        if os.path.isdir( os.path.join( path, f ) ):
+                            # print( os.path.join( path, f ) )
+                            dirs.append( f )
+                    for d in dirs:
+                        fls.remove( d )
                     # print fls.sort()
                     frst = fls[0]
                     lst = fls[-1]
@@ -141,6 +150,7 @@ def plateRange( handles = 0 ):
                     cmds.playbackOptions( minTime = frst + handles )
                     cmds.playbackOptions( animationEndTime = lst )
                     cmds.playbackOptions( maxTime = lst - handles )
+                    message( 'Range: ' + str( frst ) + ' -- ' + str( lst ) )
         else:
             message( 'No plates' )
     else:
