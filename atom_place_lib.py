@@ -127,10 +127,13 @@ def jointOrientZero( jnt = '' ):
     cmds.setAttr( jnt + '.jointOrientZ', 0 )
 
 
-def joint( order, jntSuffix, pad = 2, rpQuery = True, radius = 0.4 ):
+def joint( order = 0, jntSuffix = '', pad = 2, rpQuery = True, radius = 0.4 ):
+    '''
+    
+    '''
     sel = cmds.ls( sl = True, fl = True, l = True )
     if len( sel ) > 0:
-        if order == 0:
+        if order != 1:
             jnt = []
             cmds.select( cl = True )
             i = 1
@@ -146,7 +149,7 @@ def joint( order, jntSuffix, pad = 2, rpQuery = True, radius = 0.4 ):
                 i = i + 1
             cmds.select( sel )
             return jnt
-        elif order == 1:
+        else:
             rvrsSel = []
             # (reverse order loop - range(size of(array),stop@,increment by)
             for i in range( len( sel ), 0, -1 ):

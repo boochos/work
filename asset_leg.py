@@ -1,3 +1,4 @@
+import os
 import maya.cmds as cmds
 #
 import webrImport as web
@@ -10,6 +11,7 @@ stage = web.mod( 'atom_splineStage_lib' )
 sfk = web.mod( 'atom_splineFk_lib' )
 cw = web.mod( 'createWrap' )
 zero = web.mod( 'zero' )
+krl = web.mod( "key_rig_lib" )
 
 
 def CONTROLS():
@@ -51,13 +53,14 @@ def leg( *args ):
     cmds.parentConstraint( 'master_Grp', 'root_jnt', mo = True )
 
     X = 0.2
-    sock_geo = 'cbw100_cg_leg_mdl_v002:Leg_sock'
-    leg_geo = 'cbw100_cg_leg_mdl_v002:Leg_geo'
-    cmds.deltaMush( sock_geo, smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    weights_meshImport()
+    sck_geo = sock_geo()[0]
+    lg_geo = leg_geo()[0]
+    cmds.deltaMush( sck_geo, smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
     # cmds.deltaMush( leg_geo, smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
     # wrap
     # dfrmr = cw.createWrap( sock_geo, leg_geo )
-    # cw.wrapDeformer( master = sock_geo, slave = leg_geo )
+    # cw.wrapDeformer( master = sck_geo, slave = lg_geo )
     # return
     # creates rig controllers, places in appropriate groups and constrains to the master_grp
 
@@ -73,7 +76,7 @@ def leg( *args ):
     olSkool
     '''
     place.cleanUp( 'root_jnt', SknJnts = True )
-    place.cleanUp( 'cbw100_cg_leg_mdl_v002:geo_grp', Body = True )
+    place.cleanUp( leg_geo()[0].split( ':' )[0] + 'geo_grp', Body = True )
 
     # hip
     hip_Ct = place.Controller2( 'hip', 'hip_jnt', False, 'diamond_ctrl', X * 150, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
@@ -86,7 +89,7 @@ def leg( *args ):
     cmds.orientConstraint( ankl_Ct[4], 'ankle_jnt', mo = True )
     cmds.parent( ankl_Ct[0], CONTROLS() )
     #
-    place.smartAttrBlend( master = 'ankle_jnt', slave = 'ankleTwist_jnt', masterAttr = 'rotateY', slaveAttr = 'rotateZ', blendAttrObj = ankl_Ct[2], blendAttrString = 'ankleTwist', blendWeight = 1.0, reverse = True, blendAttrExisting = False )
+    place.smartAttrBlend( master = 'ankle_jnt', slave = 'ankleTwist_jnt', masterAttr = 'rotateY', slaveAttr = 'rotateZ', blendAttrObj = ankl_Ct[2], blendAttrString = 'ankleTwist', blendWeight = 1.0, reverse = False, blendAttrExisting = False )
 
     # ball
     ball_Ct = place.Controller2( 'ball', 'index_02_jnt', False, 'ballRoll_ctrl', X * 150, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
@@ -116,7 +119,7 @@ def leg( *args ):
     sjnt = 'hip_jnt'
     ejnt = 'ankle_jnt'
     # problem, pv build on wrong side, compensated with negative offset, cuz joints arent mirrored from left side
-    pv_Ct = appendage.create_3_joint_pv2( stJnt = sjnt, endJnt = ejnt, prefix = sjnt.split( '_jnt' )[0], suffix = 'R', distance_offset = X * -250.0, orient = True, color = 'red', X = 30, midJnt = '' )
+    pv_Ct = appendage.create_3_joint_pv2( stJnt = sjnt, endJnt = ejnt, prefix = sjnt.split( '_jnt' )[0], suffix = 'R', distance_offset = X * 250.0, orient = True, color = 'red', X = 30, midJnt = '' )
     cmds.parent( pv_Ct[0], CONTROLS() )
     cmds.parentConstraint( 'master_Grp', pv_Ct[0], mo = True )
     # main ik
@@ -177,26 +180,6 @@ def leg( *args ):
         print( tailRig.ctrlList[2][2] )
         cmds.setAttr( tailRig.ctrlList[2][2] + '.FK_ParentOffOn', 0 )
         cmds.setAttr( tailRig.ctrlList[3][2] + '.FK_ParentOffOn', 0 )
-    '''
-    for finger_jnts in finger_jnt_lsts:
-        #
-        i = 0
-        for jnt in finger_jnts:
-            shape = 'facetZup_ctrl'
-            size = X * 30
-            if i == 0:
-                shape = 'facetXup_ctrl'
-                size = X * 40
-            name = jnt.split( '_jnt' )[0]
-            fngr_Ct = place.Controller2( name, jnt, True, shape, size, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
-            cmds.orientConstraint( fngr_Ct[4], jnt, mo = True )
-            if i == 0:
-                cmds.parentConstraint( 'ankle_jnt', fngr_Ct[0], mo = True )
-            else:
-                cmds.parentConstraint( finger_jnts[i - 1], fngr_Ct[0], mo = True )
-            cmds.parent( fngr_Ct[0], CONTROLS() )
-            i = i + 1
-    '''
 
     # scale
     mstr = 'master'
@@ -215,3 +198,105 @@ def leg( *args ):
         cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
         cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
 
+
+def leg_geo():
+    leg_geo = ['cbw100_cg_leg_mdl_v003:Leg_geo']
+    return leg_geo
+
+
+def sock_geo():
+    sock_geo = ['cbw100_cg_leg_mdl_v003:Leg_sock']
+    return sock_geo
+
+
+def leg_nurbs():
+    '''
+    not used in this rig
+    '''
+    return ''
+
+
+def weights_path():
+    '''
+    make path if not present from current file
+    '''
+    # path
+    path = cmds.file( query = True, sceneName = True )
+    filename = cmds.file( query = True, sceneName = True , shortName = True )
+    path = path.split( filename )[0]
+    path = os.path.join( path, 'weights' )
+    if not os.path.isdir( path ):
+        os.mkdir( path )
+    return path
+
+
+def weights_meshExport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = sock_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, g )
+        krl.exportMeshWeights( ex_path, geo, updatebar = True )
+
+
+def weights_nurbsExport():
+    '''
+    exportNurbsCurveWeights( path, obj )
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = leg_nurbs()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, g )
+        krl.exportNurbsSurfaceWeights( ex_path, geo )
+
+
+def weights_meshImport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = sock_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        im_path = os.path.join( path, g )
+        krl.importMeshWeights( im_path, geo, updatebar = True )
+
+
+def weights_nurbsImport():
+    '''
+    importNurbSurfaceWeights2( path, obj )
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = leg_nurbs()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        else:
+            g = geo
+        im_path = os.path.join( path, g )
+        krl.importNurbSurfaceWeights2( im_path, geo )
