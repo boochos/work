@@ -1055,6 +1055,7 @@ def optEnum( obj, attr = 'Deformer', enum = 'OPTNS' ):
     if not cmds.attributeQuery( attr, node = obj, ex = True ):
         cmds.addAttr( obj, ln = attr, attributeType = 'enum', en = enum )
         cmds.setAttr( obj + '.' + attr, cb = True )
+        cmds.setAttr( obj + '.' + attr, lock = 1 )
     else:
         print( '___already exists', obj, attr )
 

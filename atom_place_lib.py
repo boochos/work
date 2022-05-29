@@ -207,6 +207,9 @@ def loc( locSuffix, obj = None ):
 
 
 def null( nllSuffix, order = None ):
+    '''
+    
+    '''
     sel = cmds.ls( sl = True, fl = True, l = True )
     if len( sel ) > 0:
         null = []
@@ -226,6 +229,58 @@ def null( nllSuffix, order = None ):
         mel.eval( 'warning \"' +
                  '////... select at least one object ...////' + '\";' )
         return None
+
+
+def null2( nllSuffix, obj, orient = True ):
+    '''
+    # Version 2 (no selection required, state object(s) to match as variable "obj")
+    # place nulls on positions derived from selection
+    # nllSuffix
+    # suffix for null    
+    '''
+    null = []
+    defRoo = 'xyz'
+    if type( obj ) != list:
+        pos = cmds.xform( obj, q = True, rp = True, ws = True )
+        rot = cmds.xform( obj, q = True, ro = True, ws = True )
+        n = cmds.group( name = nllSuffix, em = True )
+        objRoo = cmds.xform( obj, q = True, roo = True )
+        setRotOrderWithXform( n, objRoo )
+        cmds.xform( n, t = pos, ro = rot, ws = True )
+        setRotOrderWithXform( n, defRoo )
+        if orient == False:
+            cmds.xform( n, ro = ( 0, 0, 0 ) )
+        null.append( n )
+        return null
+    elif type( obj ) == list:
+        for item in obj:
+            n = null2( nllSuffix, item, orient )[0]
+            null.append( n )
+        return null
+    else:
+        mel.eval( 
+            'warning \"' + '////... \"obj\" variable must be a single object or list type ...////' + '\";' )
+        return None
+
+
+def group( name = '', obj = '', order = None ):
+    '''
+    
+    '''
+    #
+    sel = cmds.ls( sl = True, fl = True, l = True )
+    if obj:
+        pos = cmds.xform( obj, q = True, rp = True, ws = True )
+        rot = cmds.xform( obj, q = True, ro = True, ws = True )
+        if not name:
+            name = getUniqueName( 'group' )
+        n = cmds.group( name = name, em = True )
+        if order:
+            cmds.xform( n, roo = order )
+        cmds.xform( n, t = pos, ro = rot )
+        cmds.select( sel )
+        return n
+    return None
 
 
 def circle( name = '', obj = '', shape = '', size = 1.0, color = 17, sections = 8, degree = 1, normal = ( 0, 0, 1 ), orient = True, colorName = None , radius = 1.0 ):
@@ -281,37 +336,6 @@ def circle( name = '', obj = '', shape = '', size = 1.0, color = 17, sections = 
     else:
         mel.eval( 
             'warning \"' + '////... No object specified under \'obj\' variable ...////' + '\";' )
-        return None
-
-# Version 2 (no selection required, state object(s) to match as variable "obj")
-# place nulls on positions derived from selection
-# nllSuffix
-# suffix for null
-
-
-def null2( nllSuffix, obj, orient = True ):
-    null = []
-    defRoo = 'xyz'
-    if type( obj ) != list:
-        pos = cmds.xform( obj, q = True, rp = True, ws = True )
-        rot = cmds.xform( obj, q = True, ro = True, ws = True )
-        n = cmds.group( name = nllSuffix, em = True )
-        objRoo = cmds.xform( obj, q = True, roo = True )
-        setRotOrderWithXform( n, objRoo )
-        cmds.xform( n, t = pos, ro = rot, ws = True )
-        setRotOrderWithXform( n, defRoo )
-        if orient == False:
-            cmds.xform( n, ro = ( 0, 0, 0 ) )
-        null.append( n )
-        return null
-    elif type( obj ) == list:
-        for item in obj:
-            n = null2( nllSuffix, item, orient )[0]
-            null.append( n )
-        return null
-    else:
-        mel.eval( 
-            'warning \"' + '////... \"obj\" variable must be a single object or list type ...////' + '\";' )
         return None
 
 

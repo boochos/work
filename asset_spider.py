@@ -475,9 +475,6 @@ def spider( *args ):
     place.cleanUp( 'root_jnt', Ctrl = False, SknJnts = True, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
     place.cleanUp( geo, Ctrl = False, SknJnts = False, Body = True, Accessory = False, Utility = False, World = False, olSkool = False )
     #
-    # place.cleanUp( 'subdiv', Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = True, World = False, olSkool = False )
-    #
-    # buildSplines()
 
     # have to run last cuz consraint node parent under spine joint breaks spline build
     '''
@@ -486,6 +483,23 @@ def spider( *args ):
         cmds.parentConstraint( jnt, legJntL[i], mo = True )
         cmds.parentConstraint( jnt, legJntR[i], mo = True )
         i = i + 1'''
+
+    # scale
+    # geo = 'geo_spider_body'
+    mstr = 'master'
+    uni = 'uniformScale'
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 100.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    # misc.addAttribute( [mstr], [uni], 0.1, 10.0, True, 'float' )
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
+        cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
 
 
 def buildSplines( *args ):
@@ -645,6 +659,7 @@ def buildSplines( *args ):
     cmds.connectAttr( '___CONTROLS.scaleZ', neckName + '_E_IK_curve_scale.input2Z' )
 
     # scale
+    '''
     # scale
     geo = 'caterpillar_c_geo_lod_0'
     mstr = 'master'
@@ -662,4 +677,4 @@ def buildSplines( *args ):
     for s in scl:
         cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
         cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
-
+    '''

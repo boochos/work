@@ -236,15 +236,20 @@ def weights_meshExport():
     '''
     # path
     path = weights_path()
+    print( path )
     # geo
     all_geo = sock_geo()
+    print( all_geo )
     for geo in all_geo:
         g = ''
         if '|' in geo:
             g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
         else:
             g = geo
         ex_path = os.path.join( path, g )
+        print( ex_path )
         krl.exportMeshWeights( ex_path, geo, updatebar = True )
 
 
@@ -278,6 +283,8 @@ def weights_meshImport():
         g = ''
         if '|' in geo:
             g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
         else:
             g = geo
         im_path = os.path.join( path, g )
