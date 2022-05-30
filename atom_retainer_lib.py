@@ -264,91 +264,151 @@ def twist( row_controls = [] ):
             w = w + weight_inc
 
 
-def slideBulgeAll( row_cv_controls = [] ):
-    '''
-    connect cv rows with slide Bulge effect
-    '''
-    # start
-    master_cvs = row_cv_controls[0]
-    slave_cvs = row_cv_controls[1]
-    for c in range( len( master_cvs ) ):
-        slideBulge( master = master_cvs[c][2], slave = slave_cvs[c][2], slide_weight = 0.5, bulge_weight = 0.5 )
-    # end
-    master_cvs = row_cv_controls[-1]
-    slave_cvs = row_cv_controls[-2]
-    for c in range( len( master_cvs ) ):
-        slideBulge( master = master_cvs[c][2], slave = slave_cvs[c][2], slide_weight = -0.5, bulge_weight = 0.5 )
-
-
-def slideBulge( master = '', slave = '', slide_weight = 0.5, bulge_weight = 0.5 ):
+def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight = 0.5, feedbackAttrs = False ):
     '''
     add sliding(translate along geo) based on distance from anchor cvs, or rotation of rows
     min max distance
     '''
-    # attr names
-    name = 'distance'
-    suffix = 'root'
-    op1 = 'slide'
-    attr1 = 'neutralize_distance_' + suffix
-    attr2 = 'distance_' + suffix
-    attr3 = op1 + '_distance_' + suffix
-    attr4 = op1 + '_weight_' + suffix
-    op2 = 'bulge'
-    attr5 = op2 + '_distance_' + suffix
-    attr6 = op2 + '_weight_' + suffix
-    #
-    attr7 = op1 + '_enable'  # add math
-    attr8 = op2 + '_enable'  # add math
-    # add attrs
-    misc.optEnum( slave, attr = name, enum = 'CONTROL' )
-    createAttr( obj = slave, attr = attr2 )
-    createAttr( obj = slave, attr = attr1 )
-    misc.optEnum( slave, attr = op1, enum = 'CONTROL' )
-    createAttr( obj = slave, attr = attr7, dv = 1, typ = 'bool' )
-    createAttr( obj = slave, attr = attr3 )
-    createAttr( obj = slave, attr = attr4, k = 1, dv = slide_weight )
-    misc.optEnum( slave, attr = op2, enum = 'CONTROL' )
-    createAttr( obj = slave, attr = attr8, dv = 1, typ = 'bool' )
-    createAttr( obj = slave, attr = attr5 )
-    createAttr( obj = slave, attr = attr6, k = 1, dv = bulge_weight )
     #
     slave_CtGrp = cmds.listRelatives( slave, p = True )[0]
     slave_TopGrp = cmds.listRelatives( slave_CtGrp, p = True )[0]
     master_CtGrp = cmds.listRelatives( master, p = True )[0]
-    master_TopGrp = cmds.listRelatives( master_CtGrp, p = True )[0]
-    distance( obj1 = slave_TopGrp, obj2 = master_TopGrp, attrObj = slave + '.' + attr2 )
+    # attr names
+    suffix = anchorAttr1()  # test for pre-existing, iterate
+    limits = True
+    # qualify suffix
+    if cmds.attributeQuery( anchorPrefix() + suffix, node = slave, ex = 1 ):
+        suffix = anchorAttr2()
+        limits = False
+    # cv specific attrs
+    attr_sfx = suffix
+    attr_ntrlz_ds = 'neutralize_distance_' + suffix
+    attr_ds_sfx = 'distance_' + suffix
+    op1 = 'slide'
+    attr_sld_ds_sfx = op1 + '_distance_' + suffix
+    attr_sld_w_sfx = op1 + '_w_' + suffix
+    op2 = 'bulge'
+    attr_blg_ds_sfx = op2 + '_distance_' + suffix
+    attr_blg_w_sfx = op2 + '_w_' + suffix
+    attr_sld_sfx = op1 + '_onOff_' + suffix  # add math
+    attr_blg_sfx = op2 + '_onOff_' + suffix  # add math
+    # limits attrs
+    mintzl = 'minTransZLimit'
+    maxtzl = 'maxTransZLimit'
+    mintyl = 'minTransYLimit'
+    maxtyl = 'maxTransYLimit'
+    attr_sld_min_sfx = op1 + '_min'
+    attr_sld_max_sfx = op1 + '_max'
+    attr_blg_min_sfx = op2 + '_min'
+    attr_blg_max_sfx = op2 + '_max'
+    slide_raw = 'slide_current'
+    bulge_raw = 'bulge_current'
+
+    # add attrs
+    if limits:
+        misc.optEnum( slave, attr = 'slide_soft', enum = 'LIMITS' )
+        # min
+        cmds.transformLimits( slave_CtGrp, tz = [-100, 100], etz = [1, 1] )
+        place.hijackAttrs( slave_CtGrp, slave, mintzl, attr_sld_min_sfx, set = True, default = -0.5, force = True )
+        # raw
+        createAttr( obj = slave, attr = slide_raw )
+        cmds.connectAttr( slave_CtGrp + '.translateZ', slave + '.' + slide_raw )
+        cmds.setAttr( slave + '.' + slide_raw, lock = 1 )
+        # max
+        cmds.transformLimits( slave_CtGrp, tz = [-100, 100], etz = [1, 1] )
+        place.hijackAttrs( slave_CtGrp, slave, maxtzl, attr_sld_max_sfx, set = True, default = 0.5, force = True )
+        misc.optEnum( slave, attr = 'bulge_soft', enum = 'LIMITS' )
+        # min
+        cmds.transformLimits( slave_CtGrp, ty = [-100, 100], ety = [1, 1] )
+        place.hijackAttrs( slave_CtGrp, slave, mintyl, attr_blg_min_sfx, set = True, default = -0.5, force = True )
+        # raw
+        createAttr( obj = slave, attr = bulge_raw )
+        cmds.connectAttr( slave_CtGrp + '.translateY', slave + '.' + bulge_raw )
+        cmds.setAttr( slave + '.' + bulge_raw, lock = 1 )
+        # max
+        cmds.transformLimits( slave_CtGrp, ty = [-100, 100], ety = [1, 1] )
+        place.hijackAttrs( slave_CtGrp, slave, maxtyl, attr_blg_max_sfx, set = True, default = 0.5, force = True )
     #
-    sub = cmds.shadingNode( 'plusMinusAverage' , au = True, n = name + '_' + slave + '_' + master + '_sub' )
+    misc.optEnum( slave, attr = anchorPrefix() + attr_sfx, enum = 'CONTROL' )
+    createAttr( obj = slave, attr = attr_ds_sfx, cb = feedbackAttrs )
+    createAttr( obj = slave, attr = attr_ntrlz_ds, cb = feedbackAttrs )
+    misc.optEnum( slave, attr = op1 + '_' + suffix, enum = master, cb = feedbackAttrs )
+    createAttr( obj = slave, attr = attr_sld_sfx, dv = 1, typ = 'bool' )
+    createAttr( obj = slave, attr = attr_sld_ds_sfx, cb = feedbackAttrs )
+    createAttr( obj = slave, attr = attr_sld_w_sfx, k = 1, dv = slide_weight )
+    misc.optEnum( slave, attr = op2 + '_' + suffix, enum = master, cb = feedbackAttrs )
+    createAttr( obj = slave, attr = attr_blg_sfx, dv = 1, typ = 'bool' )
+    createAttr( obj = slave, attr = attr_blg_ds_sfx, cb = feedbackAttrs )
+    createAttr( obj = slave, attr = attr_blg_w_sfx, k = 1, dv = bulge_weight )
+    #
+    distance( name = '', obj1 = master_CtGrp, obj2 = slave_TopGrp, attrObj = slave + '.' + attr_ds_sfx )  # (Ct --> Top)  <-- (causes cycle)
+
+    # return
+    #
+    sub = cmds.shadingNode( 'plusMinusAverage' , au = True, n = slave + '___' + master + '_sub' )
     cmds.setAttr( sub + '.operation', 2 )  # subtract
-    cmds.connectAttr( slave + '.' + attr1, sub + '.input1D[0]' )
-    cmds.connectAttr( slave + '.' + attr2, sub + '.input1D[1]' )
+    cmds.connectAttr( slave + '.' + attr_ntrlz_ds, sub + '.input1D[0]' )
+    cmds.connectAttr( slave + '.' + attr_ds_sfx, sub + '.input1D[1]' )
+    # return
     # slide
-    mlt = cmds.shadingNode( 'multDoubleLinear', au = True, n = op1 + '_' + slave + '_' + master + '_mlt' )
+    mlt = cmds.shadingNode( 'multDoubleLinear', au = True, n = op1 + '___' + slave + '___' + master + '_mlt' )
     cmds.connectAttr( sub + '.output1D', mlt + '.input1' )
-    cmds.connectAttr( slave + '.' + attr4, mlt + '.input2' )
-    cmds.connectAttr( mlt + '.output', slave + '.' + attr3 )
+    cmds.connectAttr( slave + '.' + attr_sld_w_sfx, mlt + '.input2' )
+    cmds.connectAttr( mlt + '.output', slave + '.' + attr_sld_ds_sfx )
     #
-    mlt2 = cmds.shadingNode( 'multDoubleLinear', au = True, n = op1 + '_' + slave + '_' + master + '_enable_mlt' )
-    cmds.connectAttr( slave + '.' + attr3, mlt2 + '.input1' )
-    cmds.connectAttr( slave + '.' + attr7, mlt2 + '.input2' )
-    cmds.connectAttr( mlt2 + '.output', slave_CtGrp + '.translateZ' )  # final output
+    mlt2 = cmds.shadingNode( 'multDoubleLinear', au = True, n = op1 + '___' + slave + '___' + master + '_enable_mlt' )
+    cmds.connectAttr( slave + '.' + attr_sld_ds_sfx, mlt2 + '.input1' )
+    cmds.connectAttr( slave + '.' + attr_sld_sfx, mlt2 + '.input2' )
+    # return
+    if suffix != 'anchor1':
+        place.smartAttrBlend( master = mlt2, slave = slave_CtGrp, masterAttr = 'output', slaveAttr = 'translateZ', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False )
+        pass
+    else:
+        cmds.connectAttr( mlt2 + '.output', slave_CtGrp + '.translateZ' )  # final output
+    # return
     # bulge
-    mlt = cmds.shadingNode( 'multDoubleLinear', au = True, n = op2 + '_' + slave + '_' + master + '_mlt' )
+    mlt = cmds.shadingNode( 'multDoubleLinear', au = True, n = op2 + '___' + slave + '___' + master + '_mlt' )
     cmds.connectAttr( sub + '.output1D', mlt + '.input1' )
-    cmds.connectAttr( slave + '.' + attr6, mlt + '.input2' )
-    cmds.connectAttr( mlt + '.output', slave + '.' + attr5 )
+    cmds.connectAttr( slave + '.' + attr_blg_w_sfx, mlt + '.input2' )
+    cmds.connectAttr( mlt + '.output', slave + '.' + attr_blg_ds_sfx )
     #
-    mlt3 = cmds.shadingNode( 'multDoubleLinear', au = True, n = op2 + '_' + slave + '_' + master + '_enable_mlt' )
-    cmds.connectAttr( slave + '.' + attr5, mlt3 + '.input1' )
-    cmds.connectAttr( slave + '.' + attr8, mlt3 + '.input2' )
-    cmds.connectAttr( mlt3 + '.output', slave_CtGrp + '.translateY' )  # final output
+    mlt3 = cmds.shadingNode( 'multDoubleLinear', au = True, n = op2 + '___' + slave + '___' + master + '_enable_mlt' )
+    cmds.connectAttr( slave + '.' + attr_blg_ds_sfx, mlt3 + '.input1' )
+    cmds.connectAttr( slave + '.' + attr_blg_sfx, mlt3 + '.input2' )
+    if suffix != 'anchor1':
+        place.smartAttrBlend( master = mlt3, slave = slave_CtGrp, masterAttr = 'output', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False )
+        pass
+    else:
+        cmds.connectAttr( mlt3 + '.output', slave_CtGrp + '.translateY' )  # final output
     # neutralize offset
-    neutralize = cmds.getAttr( slave + '.' + attr2 )
-    cmds.setAttr( slave + '.' + attr1, neutralize )
+    neutralize = cmds.getAttr( slave + '.' + attr_ds_sfx )
+    cmds.setAttr( slave + '.' + attr_ntrlz_ds, neutralize )
     #
-    cmds.setAttr( slave + '.' + attr2, lock = 1 )
-    cmds.setAttr( slave + '.' + attr3, lock = 1 )
-    cmds.setAttr( slave + '.' + attr5, lock = 1 )
+    cmds.setAttr( slave + '.' + attr_ds_sfx, lock = 1 )
+    cmds.setAttr( slave + '.' + attr_sld_ds_sfx, lock = 1 )
+    cmds.setAttr( slave + '.' + attr_blg_ds_sfx, lock = 1 )
+    # ease limits
+    if not limits:
+        # slide
+        name = op1
+        masterAttr = None
+        slaveAttr = slave_CtGrp + '.translateZ'
+        con = cmds.listConnections( slaveAttr, s = 1, d = 0, skipConversionNodes = True, plugs = True )
+        maxAttr = slave + '.' + attr_sld_max_sfx.replace( anchorAttr2(), anchorAttr1() )
+        minAttr = slave + '.' + attr_sld_min_sfx.replace( anchorAttr2(), anchorAttr1() )
+        if con:
+            masterAttr = con[0]
+            easeInto_Limits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr , maxAttr = maxAttr, minAttr = minAttr )
+        # bulge
+        name = op2
+        masterAttr = None
+        slaveAttr = slave_CtGrp + '.translateY'
+        con = cmds.listConnections( slaveAttr, s = 1, d = 0, skipConversionNodes = True, plugs = True )
+        maxAttr = slave + '.' + attr_blg_max_sfx.replace( anchorAttr2(), anchorAttr1() )
+        minAttr = slave + '.' + attr_blg_min_sfx.replace( anchorAttr2(), anchorAttr1() )
+        if con:
+            masterAttr = con[0]
+            easeInto_Limits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr , maxAttr = maxAttr, minAttr = minAttr )
 
 
 def slideBulgeAnchorsAll( row_cv_controls = [] ):
@@ -362,96 +422,7 @@ def slideBulgeAnchorsAll( row_cv_controls = [] ):
         anchor2_cvs = row_cv_controls[-1]
         for c in range( len( anchor1_cvs ) ):
             slideBulgeAnchors( master = anchor1_cvs[c][2], slave = slave_cvs[c][2], slide_weight = 0.5, bulge_weight = 0.5 )
-            slideBulgeAnchors( master = anchor2_cvs[c][2], slave = slave_cvs[c][2], slide_weight = 0.5, bulge_weight = 0.5 )
-
-
-def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight = 0.5, feedbackAttrs = False ):
-    '''
-    add sliding(translate along geo) based on distance from anchor cvs, or rotation of rows
-    min max distance
-    '''
-    # attr names
-    suffix = anchorAttr1()  # test for pre-existing, iterate
-    # qualify suffix
-    if cmds.attributeQuery( suffix, node = slave, ex = 1 ):
-        suffix = anchorAttr2()
-
-    attr0 = suffix
-    attr1 = 'neutralize_distance_' + suffix
-    attr2 = 'distance_' + suffix
-    op1 = 'slide'
-    attr3 = op1 + '_distance_' + suffix
-    attr4 = op1 + '_w_' + suffix
-    op2 = 'bulge'
-    attr5 = op2 + '_distance_' + suffix
-    attr6 = op2 + '_w_' + suffix
-    attr7 = op1 + '_' + suffix  # add math
-    attr8 = op2 + '_' + suffix  # add math
-    # add attrs
-    misc.optEnum( slave, attr = attr0, enum = 'CONTROL' )
-    createAttr( obj = slave, attr = attr2, cb = feedbackAttrs )
-    createAttr( obj = slave, attr = attr1, cb = feedbackAttrs )
-    if feedbackAttrs:
-        misc.optEnum( slave, attr = op1 + '_' + suffix, enum = master )
-    createAttr( obj = slave, attr = attr7, dv = 1, typ = 'bool' )
-    createAttr( obj = slave, attr = attr3, cb = feedbackAttrs )
-    createAttr( obj = slave, attr = attr4, k = 1, dv = slide_weight )
-    if feedbackAttrs:
-        misc.optEnum( slave, attr = op2 + '_' + suffix, enum = master )
-    createAttr( obj = slave, attr = attr8, dv = 1, typ = 'bool' )
-    createAttr( obj = slave, attr = attr5, cb = feedbackAttrs )
-    createAttr( obj = slave, attr = attr6, k = 1, dv = bulge_weight )
-    #
-    slave_CtGrp = cmds.listRelatives( slave, p = True )[0]
-    slave_TopGrp = cmds.listRelatives( slave_CtGrp, p = True )[0]
-    master_CtGrp = cmds.listRelatives( master, p = True )[0]
-    master_TopGrp = cmds.listRelatives( master_CtGrp, p = True )[0]
-    disNode = distance( name = '', obj1 = master_CtGrp, obj2 = slave_TopGrp, attrObj = slave + '.' + attr2 )  # (Ct --> Top)  <-- (causes cycle)
-
-    # return
-    #
-    sub = cmds.shadingNode( 'plusMinusAverage' , au = True, n = slave + '___' + master + '_sub' )
-    cmds.setAttr( sub + '.operation', 2 )  # subtract
-    cmds.connectAttr( slave + '.' + attr1, sub + '.input1D[0]' )
-    cmds.connectAttr( slave + '.' + attr2, sub + '.input1D[1]' )
-    # return
-    # slide
-    mlt = cmds.shadingNode( 'multDoubleLinear', au = True, n = op1 + '___' + slave + '___' + master + '_mlt' )
-    cmds.connectAttr( sub + '.output1D', mlt + '.input1' )
-    cmds.connectAttr( slave + '.' + attr4, mlt + '.input2' )
-    cmds.connectAttr( mlt + '.output', slave + '.' + attr3 )
-    #
-    mlt2 = cmds.shadingNode( 'multDoubleLinear', au = True, n = op1 + '___' + slave + '___' + master + '_enable_mlt' )
-    cmds.connectAttr( slave + '.' + attr3, mlt2 + '.input1' )
-    cmds.connectAttr( slave + '.' + attr7, mlt2 + '.input2' )
-    # return
-    if suffix != 'anchor1':
-        place.smartAttrBlend( master = mlt2, slave = slave_CtGrp, masterAttr = 'output', slaveAttr = 'translateZ', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True, blendAttrExisting = False )
-        pass
-    else:
-        cmds.connectAttr( mlt2 + '.output', slave_CtGrp + '.translateZ' )  # final output
-    # return
-    # bulge
-    mlt = cmds.shadingNode( 'multDoubleLinear', au = True, n = op2 + '___' + slave + '___' + master + '_mlt' )
-    cmds.connectAttr( sub + '.output1D', mlt + '.input1' )
-    cmds.connectAttr( slave + '.' + attr6, mlt + '.input2' )
-    cmds.connectAttr( mlt + '.output', slave + '.' + attr5 )
-    #
-    mlt3 = cmds.shadingNode( 'multDoubleLinear', au = True, n = op2 + '___' + slave + '___' + master + '_enable_mlt' )
-    cmds.connectAttr( slave + '.' + attr5, mlt3 + '.input1' )
-    cmds.connectAttr( slave + '.' + attr8, mlt3 + '.input2' )
-    if suffix != 'anchor1':
-        place.smartAttrBlend( master = mlt3, slave = slave_CtGrp, masterAttr = 'output', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False )
-        pass
-    else:
-        cmds.connectAttr( mlt3 + '.output', slave_CtGrp + '.translateY' )  # final output
-    # neutralize offset
-    neutralize = cmds.getAttr( slave + '.' + attr2 )
-    cmds.setAttr( slave + '.' + attr1, neutralize )
-    #
-    cmds.setAttr( slave + '.' + attr2, lock = 1 )
-    cmds.setAttr( slave + '.' + attr3, lock = 1 )
-    cmds.setAttr( slave + '.' + attr5, lock = 1 )
+            slideBulgeAnchors( master = anchor2_cvs[c][2], slave = slave_cvs[c][2], slide_weight = -0.5, bulge_weight = 0.5 )
 
 
 def dynamic():
@@ -479,10 +450,26 @@ def anchorAttr2():
     return '_2'
 
 
+def anchorPrefix():
+    '''
+    string
+    '''
+    return 'CV'
+
+
+def easeInto_Limits( name = '', masterAttr = '', slaveAttr = '', maxAttr = '', minAttr = '' ):
+    '''
+    "attr" variables assume "nodeName.attr" format
+    assumes given node variables already exist
+    '''
+    place.attr_easeInto_Limits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr, maxAttr = maxAttr, minAttr = minAttr )
+
+
 def createAttr( obj = '', attr = '', k = False, l = False, dv = 0.0, typ = 'float', cb = True ):
     '''
-    creates attr and applies expression
+    creates attr
     '''
+    # print( attr )
     cmds.addAttr( obj, longName = attr, attributeType = typ, k = k, dv = dv )
     cmds.setAttr( obj + "." + attr, cb = cb )
     cmds.setAttr( obj + "." + attr, k = k )
@@ -490,6 +477,9 @@ def createAttr( obj = '', attr = '', k = False, l = False, dv = 0.0, typ = 'floa
 
 
 def createDisNode( name = '' ):
+    '''
+    distance node
+    '''
     dis = cmds.createNode( 'distanceBetween', name = name + '___dis' )
     return dis
 
@@ -508,22 +498,6 @@ def insertTwistPivotControl( obj = [], X = 1, colorName = '' ):
     #
     cmds.parent( ctrl, obj[0] )
     cmds.parent( obj[1], ctrl )
-
-
-def slideLimits():
-    '''
-    add attr limits to slide Ct_Grp
-    scale with rig
-    '''
-    pass
-
-
-def bulgeLimits():
-    '''
-    add attr limits to bulge Ct_Grp
-    scale with rig
-    '''
-    pass
 
 
 def distance( name = '', obj1 = '', obj2 = '', attrObj = '' ):

@@ -1165,20 +1165,25 @@ def hijackForceAttr( name = '', objAttr1 = '', objAttr2 = '', objAttr3 = '' ):
     if not objAttr3:
         cnct = cmds.listConnections( 
             objAttr1, source = True, destination = False, plugs = True )
-        # print cnct, '__________'
+        # print( cnct, '__________' )
         if cnct:
             if len( cnct ) == 1:
-                objAttr3 = cnct[0]
+                if objAttr2 not in cnct:
+                    objAttr3 = cnct[0]
+                    # print( 'here', objAttr1, objAttr2, objAttr3 )
+                else:
+                    # print( 'fixed dumb operation' )
+                    return None
             else:
                 return None
         else:
             cmds.connectAttr( objAttr2, objAttr1 )
             return None
+    # shouldnt be here unless already connected,
     add = cmds.createNode( 'addDoubleLinear', n = name + '_MergeAttrs' )
     cmds.connectAttr( objAttr3, add + '.input1', f = True )
     cmds.connectAttr( objAttr2, add + '.input2' )
     #
-    # cmds.connectAttr(add + '.output', objAttr1, f=True)
     # necessary for scale type attr, need to start at a value of 1
     addScale = cmds.createNode( 'addDoubleLinear', n = name + '_MergeScaleAttrs' )
     cmds.setAttr( addScale + '.input2', -1.0 )

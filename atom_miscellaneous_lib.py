@@ -1047,14 +1047,14 @@ def zero( obj, t = True, r = True, s = True ):
             cmds.setAttr( obj + item, 1 )
 
 
-def optEnum( obj, attr = 'Deformer', enum = 'OPTNS' ):
+def optEnum( obj, attr = 'Deformer', enum = 'OPTNS', cb = True ):
     '''\n
     obj = object to recieve 'OPTNS' attr
     attr = attribute name(if options are for deformer, attr='Def')
     '''
     if not cmds.attributeQuery( attr, node = obj, ex = True ):
         cmds.addAttr( obj, ln = attr, attributeType = 'enum', en = enum )
-        cmds.setAttr( obj + '.' + attr, cb = True )
+        cmds.setAttr( obj + '.' + attr, cb = cb )
         cmds.setAttr( obj + '.' + attr, lock = 1 )
     else:
         print( '___already exists', obj, attr )
