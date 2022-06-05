@@ -1298,15 +1298,16 @@ def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2,
     cmds.setAttr( result[2] + '.visibility', 0 )
     # print( result )
     # clusters
+    print( 'line 1301 - vehicle - TIRE PRESSURE  function, lattice cvs get membership to multiple clusters, creates double transform' )
     clusters = []
     ltc = result[1]
     depth = lattice[0]  # X
-    row = ( lattice[1] - 1 ) / 2  # Y
+    row = int( ( lattice[1] - 1 ) / 2 )  # Y
     column = lattice[2]  # Z
     for i in range( int( row ) ):  # depth
         sl = ltc + '.pt[' + str( i ) + '][0:' + str( depth - 1 ) + '][0:' + str( column - 1 ) + ']'
         sl = ltc + '.pt[0:' + str( depth - 1 ) + '][' + str( i ) + '][0:' + str( column - 1 ) + ']'
-        # print( sl )
+        print( 'deforming cluster [depth, row, column] ___________', sl )
         cmds.select( sl )
         c = cmds.cluster( name = name + '_clstr_' + str( i ) + '_' + suffix + '_' )[1]
         clusters.append( c )
@@ -1314,7 +1315,7 @@ def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2,
     # top cluster (lattice[row])
     sl = ltc + '.pt[' + str( row ) + ':' + str( lattice[1] ) + '][0:' + str( depth - 1 ) + '][0:' + str( column - 1 ) + ']'
     sl = ltc + '.pt[0:' + str( depth - 1 ) + '][' + str( row ) + ':' + str( lattice[1] ) + '][0:' + str( column - 1 ) + ']'
-    # print( sl )
+    print( 'top cluster ___________', sl )
     cmds.select( sl )
     c = cmds.cluster( name = name + '_clstrTop_' + suffix + '_' )[1]
     # clusters.append( c )
@@ -2236,6 +2237,7 @@ def car( name = '', geo_grp = '', frontSolidAxle = False, backSolidAxle = False,
     chassis_joint = 'chassis_jnt'
     chassis_geo = get_geo_list( name = name, ns = ns, chassis = True )
     skin( chassis_joint, chassis_geo )
+    # return
     # pivot_controls = [frontl, frontr, backl, backr, front, back, center, up] # entire controller hierarchy [0-4]
     pivot_controls = four_point_pivot( name = 'chassis', parent = master_move_controls[1], skipParentUp = skipParentUp, center = Ct[0][0], front = 'front_jnt', frontL = 'wheel_front_bottom_L_jnt', frontR = 'wheel_front_bottom_R_jnt', back = 'back_jnt', backL = 'wheel_back_bottom_L_jnt', backR = 'wheel_back_bottom_R_jnt', up = 'up_jnt', chassis_geo = '', X = X * 2 )
     cmds.parentConstraint( pivot_controls[4][4], Ct[2][0], mo = True )  # front vector for dynamic rig
@@ -2669,7 +2671,9 @@ def skin( joint = '', geos = [], constraint = True, selectedJoints = False ):
     #
     sel = cmds.ls( sl = 1 )
     # skin
+    # print( len( geos ), geos )
     for g in geos:
+        # print( g )
         if constraint:
             cmds.parentConstraint( joint, g, mo = True )
         else:
@@ -2829,6 +2833,7 @@ def get_geo_list( name = '', ns = '', chassis = False,
     # chassis
     if chassis or all:
         geo_list = process_geo_list( name = name + '_' + 'chassis' )
+        # print( 'processed', geo_list )
         geo_sets.append( geo_list )
 
     # front l
@@ -2893,10 +2898,19 @@ def get_geo_list( name = '', ns = '', chassis = False,
         if geo_set:
             for geo in geo_set:
                 if ns:
-                    if cmds.objExists( ns + ':' + geo ):
-                        geos.append( ns + ':' + geo )
+                    if '|' in geo:
+                        objPath = geo.split( '|' )
+                        parts = ''
+                        for obj in objPath:
+                            parts = parts + ns + ':' + obj + '|'
+                        print( parts[0:-1] )
+                        geos.append( parts )
                     else:
-                        print( geo_set, geo )
+                        if cmds.objExists( ns + ':' + geo ):
+                            geos.append( ns + ':' + geo )
+                        else:
+                            # print( geo_set, geo )0
+                            pass
                 else:
                     geos.append( geo )
 

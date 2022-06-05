@@ -518,8 +518,8 @@ def incrementalSave( basepath, basename, extension ):
                     if phile is not False:
                         file_info = splitEndNumFromString( phile[1] )
                         if string_info[0] == file_info[0]:
-                            if file_info[1] > num:
-                                num = file_info[1]
+                            if int( file_info[1] ) > num:
+                                num = int( file_info[1] )
         # increment the suffix
         version = '%03d' % ( int( num ) + 1 )
         name = os.path.join( scene_info[0], string_info[0] ) + str( version ) + '.' + scene_info[2]

@@ -150,63 +150,6 @@ def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1 ):
         print( 'degrees has to be 1 or 3' )
 
 
-def scale():
-    '''
-    add scaling to rig on master control
-    '''
-    #
-    mstr = 'master'
-    uni = 'uniformScale'
-    scl = ['.scaleX', '.scaleY', '.scaleZ']
-    #
-    misc.addAttribute( [mstr], [uni], 0.01, 100.0, True, 'float' )
-    cmds.setAttr( mstr + '.' + uni, 1.0 )
-    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
-    for s in scl:
-        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
-    misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
-    for s in scl:
-        cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
-
-
-def skin( joints = [], geo = '' ):
-    '''
-    skin object
-    '''
-    cmds.select( joints )
-    cmds.select( geo, add = True )
-    sknClstr = mel.eval( 'newSkinCluster "-bindMethod 1 -normalizeWeights 1 -weightDistribution 0 -mi 1 -omi true -dr 0.1 -rui true,multipleBindPose,1";' )[0]
-    cmds.setAttr( sknClstr + '.skinningMethod', 1 )
-
-
-def degree3( row_controls, row_cv_controls ):
-    '''
-    make changes for degree 3 based nurbs object
-    '''
-    # rows to disappear
-    #
-    con = cn.getConstraint( row_controls[1][0] )
-    cmds.delete( con )
-    cmds.parentConstraint( row_controls[0][4], row_controls[1][0], mo = False )  # second, row_1
-    cmds.setAttr( row_controls[1][0] + '.visibility', 0 )
-    #
-    con = cn.getConstraint( row_controls[-2][0] )
-    cmds.delete( con )
-    cmds.parentConstraint( row_controls[-1][4], row_controls[-2][0], mo = False )  # second last, row_4
-    cmds.setAttr( row_controls[-2][0] + '.visibility', 0 )
-    # row cvs to disappear
-    for cv in range( len( row_cv_controls[1] ) ):  # second
-        con = cn.getConstraint( row_cv_controls[1][cv][0] )
-        cmds.delete( con )
-        cmds.parentConstraint( row_cv_controls[0][cv][4], row_cv_controls[1][cv][0], mo = False )
-        cmds.setAttr( row_cv_controls[1][cv][0] + '.visibility', 0 )
-    for cv in range( len( row_cv_controls[-2] ) ):  # second last
-        con = cn.getConstraint( row_cv_controls[-2][cv][0] )
-        cmds.delete( con )
-        cmds.parentConstraint( row_cv_controls[-1][cv][4], row_cv_controls[-2][cv][0], mo = False )
-        cmds.setAttr( row_cv_controls[-2][cv][0] + '.visibility', 0 )
-
-
 def twist( row_controls = [] ):
     '''
     add twist to mid rows, could use in place of twist joints
@@ -398,7 +341,7 @@ def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight
         minAttr = slave + '.' + attr_sld_min_sfx.replace( anchorAttr2(), anchorAttr1() )
         if con:
             masterAttr = con[0]
-            easeInto_Limits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr , maxAttr = maxAttr, minAttr = minAttr )
+            easeIntoLimits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr , maxAttr = maxAttr, minAttr = minAttr )
         # bulge
         name = op2
         masterAttr = None
@@ -408,7 +351,7 @@ def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight
         minAttr = slave + '.' + attr_blg_min_sfx.replace( anchorAttr2(), anchorAttr1() )
         if con:
             masterAttr = con[0]
-            easeInto_Limits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr , maxAttr = maxAttr, minAttr = minAttr )
+            easeIntoLimits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr , maxAttr = maxAttr, minAttr = minAttr )
 
 
 def slideBulgeAnchorsAll( row_cv_controls = [] ):
@@ -427,12 +370,19 @@ def slideBulgeAnchorsAll( row_cv_controls = [] ):
 
 def dynamic():
     '''
-    add dynamic jiggle to cv
+    add dynamic jiggle to cv, try using dynamic spline same as in vehicle
     '''
     pass
 
 
-def __________________UTIL():
+def muslce():
+    '''
+    make retainer a muscle
+    '''
+    pass
+
+
+def __________________STRINGS():
     pass
 
 
@@ -457,7 +407,68 @@ def anchorPrefix():
     return 'CV'
 
 
-def easeInto_Limits( name = '', masterAttr = '', slaveAttr = '', maxAttr = '', minAttr = '' ):
+def __________________UTIL():
+    pass
+
+
+def scale():
+    '''
+    add scaling to rig on master control
+    '''
+    #
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.01, 100.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
+
+
+def skin( joints = [], geo = '' ):
+    '''
+    skin object
+    '''
+    cmds.select( joints )
+    cmds.select( geo, add = True )
+    sknClstr = mel.eval( 'newSkinCluster "-bindMethod 1 -normalizeWeights 1 -weightDistribution 0 -mi 1 -omi true -dr 0.1 -rui true,multipleBindPose,1";' )[0]
+    cmds.setAttr( sknClstr + '.skinningMethod', 1 )
+
+
+def degree3( row_controls, row_cv_controls ):
+    '''
+    make changes for degree 3 based nurbs object
+    '''
+    # rows to disappear
+    #
+    con = cn.getConstraint( row_controls[1][0] )
+    cmds.delete( con )
+    cmds.parentConstraint( row_controls[0][4], row_controls[1][0], mo = False )  # second, row_1
+    cmds.setAttr( row_controls[1][0] + '.visibility', 0 )
+    #
+    con = cn.getConstraint( row_controls[-2][0] )
+    cmds.delete( con )
+    cmds.parentConstraint( row_controls[-1][4], row_controls[-2][0], mo = False )  # second last, row_4
+    cmds.setAttr( row_controls[-2][0] + '.visibility', 0 )
+    # row cvs to disappear
+    for cv in range( len( row_cv_controls[1] ) ):  # second
+        con = cn.getConstraint( row_cv_controls[1][cv][0] )
+        cmds.delete( con )
+        cmds.parentConstraint( row_cv_controls[0][cv][4], row_cv_controls[1][cv][0], mo = False )
+        cmds.setAttr( row_cv_controls[1][cv][0] + '.visibility', 0 )
+    for cv in range( len( row_cv_controls[-2] ) ):  # second last
+        con = cn.getConstraint( row_cv_controls[-2][cv][0] )
+        cmds.delete( con )
+        cmds.parentConstraint( row_cv_controls[-1][cv][4], row_cv_controls[-2][cv][0], mo = False )
+        cmds.setAttr( row_cv_controls[-2][cv][0] + '.visibility', 0 )
+
+
+def easeIntoLimits( name = '', masterAttr = '', slaveAttr = '', maxAttr = '', minAttr = '' ):
     '''
     "attr" variables assume "nodeName.attr" format
     assumes given node variables already exist
@@ -522,6 +533,35 @@ def distance( name = '', obj1 = '', obj2 = '', attrObj = '' ):
     return
 
 
+def findParent( obj = '', find = '___CONTROLS' ):
+    '''
+    find 1st parent in hierarchy
+    '''
+    limit = 50
+    i = 0
+    ns = ''
+    if ':' in obj:
+        find = obj.split( ':' )[0] + ':' + find
+
+    if obj:
+        while i < limit:
+            parent = cmds.listRelatives( obj, p = True )
+            if parent:
+                print( parent , find )
+                obj = parent[0]
+                if obj == find:
+                    return obj
+            i = i + 1
+        # print( 'nothing', obj )
+        return None
+    else:
+        print( 'needs an object' )
+
+
+def __________________MANAGE():
+    pass
+
+
 def neutralizeDistances():
     '''
     find all controls with proper attrs, run script to neutralize offset
@@ -539,10 +579,11 @@ def neutralizeDistances():
                     if '_CtGrp' in item:
                         control = cmds.listRelatives( item, c = True )
                         for c in control:
-                            if cmds.attributeQuery( anchorAttr1(), node = c, ex = 1 ):
+                            if cmds.attributeQuery( anchorPrefix() + anchorAttr1(), node = c, ex = 1 ):
                                 controls.append( c )
                             else:
-                                print( c )
+                                # print( c )
+                                pass
                     else:
                         # print( 'no ctGrp', item )
                         pass
@@ -555,6 +596,8 @@ def neutralizeDistances():
             cmds.setAttr( c + '.neutralize_distance_' + anchorAttr1(), dis )
             dis = cmds.getAttr( c + '.distance_' + anchorAttr2() )
             cmds.setAttr( c + '.neutralize_distance_' + anchorAttr2(), dis )
+    else:
+        print( 'no controls' )
 
 
 def neutralizeRows():
@@ -565,9 +608,16 @@ def neutralizeRows():
     pass
 
 
+def neutralizeCVs():
+    '''
+    neutralize cv positions, may need to add extra control, same as rows have, 'pivot'
+    '''
+    pass
+
+
 def disable( state = False ):
     '''
-    disable all deformation effects
+    disable all slide / bulge translations
     '''
     controls = []
     sel = cmds.ls( sl = 1 )
@@ -601,28 +651,86 @@ def disable( state = False ):
             cmds.setAttr( c + '.bulge_enable_' + anchorAttr2(), state )
 
 
-def findParent( obj = '', find = '___CONTROLS' ):
+def setDrivenKey():
     '''
-    find 1st parent in hierarchy
+    add set driven key functionality, per cv
     '''
-    limit = 50
-    i = 0
-    if obj:
-        while i < limit:
-            parent = cmds.listRelatives( obj, p = True )
-            if parent:
-                obj = parent[0]
-                if obj == find:
-                    return obj
-            i = i + 1
-        print( 'nothing' )
-        return None
-    else:
-        print( 'needs an object' )
+    pass
+
+
+def geoAttach():
+    '''
+    temporary
+    attach to geo for setup position
+    geo constraint
+    use normal or tangent constraint, one of these should keep control oriented to geo plane ?
+    '''
+    pass
+
+
+def geoDetach():
+    '''
+    temporary
+    detach from geo
+    delete constraints (geo, normal, tangent)
+    '''
+    pass
 
 
 def mirror():
     '''
+    mirror controls, feed center cv for mirror plane
+    '''
+    pass
+
+
+def mirrorAB():
+    '''
     take one retainer shape, mirror position of all controls in world space to opposite side.
+    '''
+    pass
+
+
+def __________________PORT():
+    pass
+
+
+def importDrivenKey():
+    '''
+    add set driven key functionality, per cv
+    '''
+    pass
+
+
+def exportDrivenKey():
+    '''
+    add set driven key functionality, per cv
+    '''
+    pass
+
+
+def exportPose():
+    '''
+    use scene path as default location to save,
+    export retainer pose
+    '''
+
+
+def importPose():
+    '''
+    import pose, use scene path to find location
+    '''
+
+
+def importConstraints():
+    '''
+    only raw constraints, un-rigged
+    '''
+    pass
+
+
+def exportConstraints():
+    '''
+    
     '''
     pass
