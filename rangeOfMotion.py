@@ -8,81 +8,6 @@ ac = web.mod( 'animCurve_lib' )
 plc = web.mod( 'atom_place_lib' )
 
 
-def pose( obj = '', attr = '', startFrame = 1001, rotR = 90, posR = 2.0, sclR = 1.0, transitionDuration = 10, framesToNeutral = 10 ):
-    '''
-    create range of motion animation
-    sclR needs to be between 0.1 - 1.
-    '''
-    #
-    cmds.currentTime( startFrame )
-    currentPose = cmds.getAttr( obj + '.' + attr )
-    #
-    rot_mlt = 1.0
-    pos_mlt = 1.0
-    scl_mlt = 1.0
-    #
-    min = 0.0
-    max = 0.0
-    #
-    pos = 'translate'
-    rot = 'rotate'
-    scl = 'scale'
-    #
-    if rot in attr:
-        # print( rotR )
-        if rotR > 0:
-            min = ( currentPose - rotR ) * rot_mlt
-            max = ( currentPose + rotR ) * rot_mlt
-        else:
-            return startFrame
-    if pos in attr:
-        if posR > 0:
-            min = ( currentPose - posR ) * pos_mlt
-            max = ( currentPose + posR ) * pos_mlt
-        else:
-            return startFrame
-    if scl in attr:
-        if sclR > 0 and sclR < 1.0:
-            min = ( currentPose * sclR ) * scl_mlt
-            max = ( currentPose * ( 1.0 + sclR ) ) * scl_mlt
-        else:
-            return startFrame
-    #
-    frameStart = startFrame
-    frameMin = startFrame + transitionDuration
-    frameMax = frameMin + ( transitionDuration * 3 )
-    frameEnd = frameMax + framesToNeutral
-    #
-    # print( attr, min, max )
-    cmds.setKeyframe( obj + '.' + attr, t = frameStart, v = currentPose )
-    cmds.setKeyframe( obj + '.' + attr, t = frameMin, v = min )
-    cmds.setKeyframe( obj + '.' + attr, t = frameMax, v = max )
-    cmds.setKeyframe( obj + '.' + attr, t = frameEnd, v = currentPose )
-
-    return frameEnd
-
-
-def poseLoop( startFrame = 1001, rotR = 90, posR = 1.00, sclR = 0.0, transitionDuration = 10, framesToNeutral = 10 ):
-    '''
-    get selection
-    loop through objects
-    loop through object axis
-    create range of motion animation
-    '''
-    #
-    sel = cmds.ls( sl = 1 )
-    current = cmds.currentTime( startFrame )
-    #
-    for obj in sel:
-        attrs = listAttrs( obj )
-        if attrs:
-            for attr in attrs:
-                deleteAnim( obj, attr )
-                current = pose( obj = obj, attr = attr, startFrame = current, rotR = rotR, posR = posR, sclR = sclR, transitionDuration = transitionDuration, framesToNeutral = framesToNeutral )
-                # print(current)
-    setFrameRange( start = startFrame, end = current )
-
-
 def simplePose( obj = '', attr = '', startFrame = 1001, min = -1.0, max = 1.0, transitionDuration = 10 ):
     '''
     create range of motion animation
@@ -319,74 +244,24 @@ def compoundTorquePose( obj = '', torqueAxis = 'y', startFrame = 1001, min = -1.
     cmds.setKeyframe( obj, at = transforms )
     # pose 2 & 3
     if torqueAxis.lower() == 'x':
-        '''
-        cmds.currentTime( frame + transitionDuration )
-        cmds.xform( obj, os = False, ro = rotP )
-        cmds.setKeyframe( obj, at = transforms )
-        cmds.xform( obj, os = True, r = True, ro = [min, 0, 0] )
-        cmds.setKeyframe( obj, at = transforms )
-        '''
         frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = min, transitionDuration = transitionDuration )
-        #
-        '''
-        cmds.currentTime( frame + ( transitionDuration * 3 ) )
-        cmds.xform( obj, os = False, ro = rotP )
-        cmds.setKeyframe( obj, at = transforms )
-        cmds.xform( obj, os = True, r = True, ro = [max, 0, 0] )
-        cmds.setKeyframe( obj, at = transforms )
-        '''
         frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = ( min * -1 ) + max, transitionDuration = transitionDuration * 2 )
     else:
         print( 'no x' )
     #
     if torqueAxis.lower() == 'y':
-        '''
-        cmds.currentTime( startFrame + transitionDuration )
-        cmds.xform( obj, os = False, ro = rotP )
-        cmds.setKeyframe( obj, at = transforms )
-        cmds.xform( obj, os = True, r = True, ro = [0, min, 0] )
-        cmds.setKeyframe( obj, at = transforms )
-        '''
         frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = min, transitionDuration = transitionDuration )
-        #
-        '''
-        cmds.currentTime( startFrame + ( transitionDuration * 3 ) )
-        cmds.xform( obj, os = False, ro = rotP )
-        cmds.setKeyframe( obj, at = transforms )
-        cmds.xform( obj, os = True, r = True, ro = [0, max, 0] )
-        cmds.setKeyframe( obj, at = transforms )
-        '''
         frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = ( min * -1 ) + max, transitionDuration = transitionDuration * 2 )
     else:
         print( 'no y' )
     #
     if torqueAxis.lower() == 'z':
-        '''
-        cmds.currentTime( startFrame + transitionDuration )
-        cmds.xform( obj, os = False, ro = rotP )
-        cmds.setKeyframe( obj, at = transforms )
-        cmds.xform( obj, os = True, r = True, ro = [0, 0, min] )
-        cmds.setKeyframe( obj, at = transforms )
-        '''
         frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = min, transitionDuration = transitionDuration )
-        #
-        '''
-        cmds.currentTime( startFrame + ( transitionDuration * 3 ) )
-        cmds.xform( obj, os = False, ro = rotP )
-        cmds.setKeyframe( obj, at = transforms )
-        cmds.xform( obj, os = True, r = True, ro = [0, 0, max ] )
-        cmds.setKeyframe( obj, at = transforms )
-        '''
         frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = ( min * -1 ) + max, transitionDuration = transitionDuration * 2 )
 
     else:
         print( 'no z' )
     # pose 4
-    '''
-    cmds.currentTime( startFrame + ( transitionDuration * 4 ) )
-    cmds.xform( obj, os = False, r = False, ro = rotP )
-    cmds.setKeyframe( obj, at = transforms )
-    '''
     frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = max * -1, transitionDuration = transitionDuration )
 
     return frame
