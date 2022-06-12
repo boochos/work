@@ -14,15 +14,34 @@ zero = web.mod( 'zero' )
 krl = web.mod( "key_rig_lib" )
 ui = web.mod( "atom_ui_lib" )
 cn = web.mod( "constraint_lib" )
+cp = web.mod( 'clipPickle_lib' )
+
+
+def message( what = '', maya = True, warning = False ):
+    what = '-- ' + what + ' --'
+    if '\\' in what:
+        what = what.replace( '\\', '/' )
+    if warning:
+        cmds.warning( what )
+    else:
+        if maya:
+            mel.eval( 'print \"' + what + '\";' )
+        else:
+            # print( what)
+            pass
 
 
 def __________________BUILD():
     pass
 
 
-def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1 ):
+def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1, hideRows = False ):
     '''
     degree = 1 or 3
+    ---
+    CANT USE DEGREE 1 (LINEAR) WITH MUSCLE, HAS SEAM, MUSCLE RIPS IT APART ... RETAINER HAS TO BE (CUBIC) IF INFLUENCED BY MUSCLE, 
+    CANT MOVE 2ND AND 2ND LAST ROWS, MUSCLE SYSTEM DOESNT LIKE IT.
+    ---
     create rigged nurbs object
     row options to expand with end rows
     cv options for twist
@@ -34,6 +53,7 @@ def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1 ):
     #
     PreBuild = place.rigPrebuild( Top = 4, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = X * 10 )
     scale()
+    logType( typ = 'cylinder' )
     MasterCt = PreBuild[5]
     # place.cleanUp( obj, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
     #
@@ -60,14 +80,22 @@ def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1 ):
     #
     if degree == 1 or degree == 3:
         geo = cmds.cylinder( name = name, axis = axis, spans = spans, sections = sections, degree = degree, heightRatio = 6 )
+        print( geo )
         place.cleanUp( geo[0], Body = True )
-        rows = spans + 1
+        if degree == 3:
+            if hideRows:
+                rows = spans + 3
+            else:
+                rows = spans + 1
+                cmds.setAttr( geo[1] + '.spans', spans - 2 )
+        else:
+            rows = spans + 1
+        # rows = spans + 1
         cvs = sections
 
         rotation = -90
         rotation_inc = 360 / cvs  # each cv gets rotation to, for bulge effect
         if degree == 3:
-            rows = rows + 2
             rotation = -90 + rotation_inc  # / cvs * -1
 
         # create parts
@@ -135,7 +163,7 @@ def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1 ):
         # skin before moving stuff around
         skin( joints, geo = geo[0] )
         #
-        if degree == 3:  # could do this always to keep consistent if behaviour is bad even in linear(degree 1)
+        if degree == 3 and hideRows:  # could do this always to keep consistent if behaviour is bad even in linear(degree 1)
             degree3( row_controls, row_cv_controls )
             row_controls.pop( 1 )  # remove second
             row_controls.pop( -2 )  # remove second last
@@ -387,24 +415,27 @@ def __________________STRINGS():
 
 
 def anchorAttr1():
-    '''
-    string for anchor
-    '''
     return '_1'
 
 
 def anchorAttr2():
-    '''
-    string for anchor
-    '''
     return '_2'
 
 
 def anchorPrefix():
-    '''
-    string
-    '''
     return 'CV'
+
+
+def typeAttr():
+    return 'type'
+
+
+def defaultDir():
+    return 'retainerPoses'
+
+
+def rigTopNodeName():
+    return '___UTIL___'
 
 
 def __________________UTIL():
@@ -556,6 +587,94 @@ def findParent( obj = '', find = '___CONTROLS' ):
         return None
     else:
         print( 'needs an object' )
+
+
+def logType( typ = '' ):
+    '''
+    
+    '''
+    misc.optEnum( rigTopNodeName(), attr = typeAttr(), enum = typ )
+
+
+def defaultPath():
+    '''
+    
+    '''
+    path = cmds.file( query = True, sn = True )
+    if path:
+        # print( path )
+        path = path.rsplit( '/', 1 )[0]
+        if 'scenes' in path:
+            path = os.path.join( path, defaultDir() )
+            if os.path.isdir( path ):
+                return path
+            else:
+                os.mkdir( path )
+                return path
+        else:
+            print( path )
+            message( 'missing string in path: "scenes"' )
+            return None
+    message( 'save scene' )
+
+
+def versionPath():
+    '''
+    create version for each export
+    import should pickup latest
+    '''
+    pass
+
+
+def getControls():
+    '''
+    should find every control in asset
+    including offset control
+    '''
+    controls = []
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        s = sel[0]
+        # find control group
+        parent = findParent( s )
+        if parent:
+            topGrps = cmds.listRelatives( parent, c = True )
+            for topGrp in topGrps:
+                ctGrp = cmds.listRelatives( topGrp, c = True )
+                for item in ctGrp:
+                    if '_CtGrp' in item:
+                        control = cmds.listRelatives( item, c = True )
+                        for c in control:
+                            if cmds.attributeQuery( 'Offset_Vis', node = c, ex = 1 ):
+                                controls.append( c )
+                            offset = cmds.listRelatives( item, c = True )
+                            for o in offset:
+                                if '_offset' in o:
+                                    controls.append( o )
+                            else:
+                                # print( c )
+                                pass
+                    else:
+                        # print( 'no ctGrp', item )
+                        pass
+        else:
+            # print( 'no controls' )
+            pass
+    message( 'select a control' )
+    return controls
+
+
+def getRetainerShape():
+    '''
+    
+    '''
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        sel = sel[0]
+        parent = findParent( sel , find = rigTopNodeName() )
+        if parent:
+            result = cmds.getAttr( parent + '.' + typeAttr() )
+            return result
 
 
 def __________________MANAGE():
@@ -713,13 +832,30 @@ def exportPose():
     '''
     use scene path as default location to save,
     export retainer pose
+    
+    NEED TO CREATE VERSION FOR EACH EXPORT AND NAMING SYSTEM TO BYPASS MULTIPLE EXPORTS OF SAME SHAPE RIG
+    TRACK CLASHING RIGS, WITH DIF AMOUNT OF CVS, ONLY IMPORT TO COMPATIBLE RIGS
+    
     '''
+    sel = cmds.ls( sl = 1 )
+    # export
+    name = ''
+    if name:
+        if sel:
+            version = '.' + self.cmdCreateVersionNumber()
+            cp.clipSave( name = name + version, poseOnly = True )
+            message( 'Set   ' + name + '   exported to   ' + path )
+        else:
+            message( 'Select some objects. Export aborted.', maya = True, warning = True )
+    else:
+        message( 'Provided a name. Export aborted.', maya = True, warning = True )
 
 
 def importPose():
     '''
     import pose, use scene path to find location
     '''
+    pass
 
 
 def importConstraints():

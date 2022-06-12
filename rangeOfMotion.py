@@ -1,3 +1,5 @@
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaAnim as OpenMayaAnim
 import maya.cmds as cmds
 import maya.mel as mel
 import webrImport as web
@@ -22,17 +24,20 @@ def simplePose( obj = '', attr = '', startFrame = 1001, min = -1.0, max = 1.0, t
     cmds.setKeyframe( obj + '.' + attr, t = startFrame + ( transitionDuration * 3 ), v = max )
     cmds.setKeyframe( obj + '.' + attr, t = startFrame + ( transitionDuration * 4 ), v = currentPose )
 
+    # eulerFilter( obj, tangentFix = True )
     return startFrame + ( transitionDuration * 4 )
 
 
-def simplePoseLoop( startFrame = 1001, rotR = 90, posR = 1.00, sclR = 0.0, transitionDuration = 10, hyperExtensionAxis = '', hyperExtensionNegative = True ):
+def simplePoseLoop( startFrame = 1001, rotR = 90, posR = 1.00, sclR = 0.0, transitionDuration = 10, hyperExtensionAxis = '', hyperExtensionNegative = True, deletePrevious = False ):
     '''
     get selection
     loop through objects
     loop through object axis
     create range of motion animation
     '''
+
     #
+    attrs = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
     sel = cmds.ls( sl = 1 )
     current = cmds.currentTime( startFrame )
     #
@@ -40,8 +45,11 @@ def simplePoseLoop( startFrame = 1001, rotR = 90, posR = 1.00, sclR = 0.0, trans
         attrs = listAttrs( obj )
         if attrs:
             for attr in attrs:
+                # delete anim
+                if deletePrevious:
+                    for attr in attrs:
+                        deleteAnim( obj = obj, attr = attr )
                 #
-                deleteAnim( obj, attr )
                 currentPose = cmds.getAttr( obj + '.' + attr )
                 #
                 rot_mlt = 0.35
@@ -90,7 +98,9 @@ def simplePoseLoop( startFrame = 1001, rotR = 90, posR = 1.00, sclR = 0.0, trans
                 if go:
                     current = simplePose( obj = obj, attr = attr, startFrame = current, min = min, max = max, transitionDuration = transitionDuration )
                 # print(current)
+        eulerFilter( obj, tangentFix = True )
     setFrameRange( start = startFrame, end = current )
+    return current
 
 
 def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDuration = 10, sideUpFront = ['x', 'y', 'z'], rotFlip = [1, 1, 1], posFlip = [1, 1, 1], deletePrevious = True, torque = True ):
@@ -200,6 +210,7 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
         # create torque function
         frame = compoundTorquePose( obj = obj, torqueAxis = rot_up, startFrame = frame, min = rotR * -1, max = rotR, transitionDuration = transitionDuration )
 
+    '''
     # pose 6 forward
     frame = frame + transitionDuration
     # rot
@@ -209,7 +220,7 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     # pos
     cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose )
     cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose + ( posR * posFlip[2] ) )
+    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose + ( posR * posFlip[2] ) )'''
 
     # pose 7 neutral
     frame = frame + transitionDuration
@@ -223,10 +234,11 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose )
 
     # print( '____________', frame )
+    # eulerFilter( obj, tangentFix = True )
     return frame
 
 
-def compoundTorquePose( obj = '', torqueAxis = 'y', startFrame = 1001, min = -1.0, max = 1.0, transitionDuration = 10 ):
+def compoundTorquePose( obj = '', torqueAxis = 'y', startFrame = 1001, min = -1.0, max = 1.0, transitionDuration = 10, deletePrevious = False ):
     '''
     create torque function
     neutral to xfrom object space rotation, similar to simplePose() or pose()
@@ -237,6 +249,12 @@ def compoundTorquePose( obj = '', torqueAxis = 'y', startFrame = 1001, min = -1.
     cmds.currentTime( frame )
     rotP = cmds.xform( obj, q = True, os = True, ro = True )
     transforms = [ 'rx', 'ry', 'rz', 'tx', 'ty', 'tz']
+
+    # delete anim
+    attrs = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+    if deletePrevious:
+        for attr in attrs:
+            deleteAnim( obj = obj, attr = attr )
 
     # pose 1
     cmds.currentTime( frame )
@@ -264,6 +282,7 @@ def compoundTorquePose( obj = '', torqueAxis = 'y', startFrame = 1001, min = -1.
     # pose 4
     frame = torqueTransition( obj = obj, torqueAxis = torqueAxis, startFrame = frame, amount = max * -1, transitionDuration = transitionDuration )
 
+    # eulerFilter( obj, tangentFix = True )
     return frame
 
 
@@ -276,7 +295,7 @@ def torqueTransition( obj = '', torqueAxis = '', startFrame = 1, amount = 1.0, t
     transforms = [ 'rx', 'ry', 'rz', 'tx', 'ty', 'tz']
     rotP = cmds.xform( obj, q = True, os = True, ro = True )
     step = amount / transitionDuration
-    print( '___step', step )
+    # print( '___step', step )
     # print('___start', startFrame)
     #
     i = 1
@@ -305,6 +324,100 @@ def torqueTransition( obj = '', torqueAxis = '', startFrame = 1, amount = 1.0, t
             cmds.xform( obj, os = True, r = True, ro = [0, 0, step * i] )
             cmds.setKeyframe( obj, at = transforms )
             i = i + 1
+    return startFrame + transitionDuration
+
+
+def osRotation( obj = '', axis = '', startFrame = 1, amount = 1.0, transitionDuration = 10, deletePrevious = True ):
+    '''
+    create frame by frame transition, to overcome rotate order problems
+    '''
+    #
+    cmds.currentTime( startFrame )
+    transforms = [ 'rx', 'ry', 'rz', 'tx', 'ty', 'tz']
+    rotP = cmds.xform( obj, q = True, os = True, ro = True )
+    step = amount / transitionDuration
+    # print( '___step', step )
+    # print('___start', startFrame)
+
+    # delete anim
+    attrs = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+    if deletePrevious:
+        for attr in attrs:
+            deleteAnim( obj = obj, attr = attr )
+
+    cmds.setKeyframe( obj, at = transforms )
+    #
+    i = 1
+    if axis.lower() == 'x':
+        while i < transitionDuration + 1:
+            cmds.currentTime( startFrame + i )
+            cmds.xform( obj, os = False, ro = rotP )
+            cmds.setKeyframe( obj, at = transforms )
+            cmds.xform( obj, os = True, r = True, ro = [step * i, 0, 0] )
+            cmds.setKeyframe( obj, at = transforms )
+            i = i + 1
+    if axis.lower() == 'y':
+        while i < transitionDuration + 1:
+            cmds.currentTime( startFrame + i )
+            cmds.xform( obj, os = False, ro = rotP )
+            cmds.setKeyframe( obj, at = transforms )
+            cmds.xform( obj, os = True, r = True, ro = [0, step * i, 0] )
+            cmds.setKeyframe( obj, at = transforms )
+            print( step * i )
+            i = i + 1
+    if axis.lower() == 'z':
+        while i < transitionDuration + 1:
+            cmds.currentTime( startFrame + i )
+            cmds.xform( obj, os = False, ro = rotP )
+            cmds.setKeyframe( obj, at = transforms )
+            cmds.xform( obj, os = True, r = True, ro = [0, 0, step * i] )
+            cmds.setKeyframe( obj, at = transforms )
+            i = i + 1
+    #
+    eulerFilter( obj, tangentFix = True )
+    return startFrame + transitionDuration
+
+
+def osMultiAxisRotation( obj = '', startFrame = 1, amount = [0.0, 0.0, 0.0], transitionDuration = 10, deletePrevious = True ):
+    '''
+    create frame by frame transition, to overcome rotate order problems
+    '''
+    #
+    cmds.currentTime( startFrame )
+    transforms = [ 'rx', 'ry', 'rz', 'tx', 'ty', 'tz']
+    rotP = cmds.xform( obj, q = True, os = True, ro = True )
+    #
+    stepX = 0.0
+    stepY = 0.0
+    stepZ = 0.0
+    #
+    if amount[0]:
+        stepX = amount[0] / transitionDuration
+    if amount[1]:
+        stepY = amount[1] / transitionDuration
+    if amount[2]:
+        stepZ = amount[2] / transitionDuration
+    # print( '___step', step )
+    # print('___start', startFrame)
+
+    # delete anim
+    attrs = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+    if deletePrevious:
+        for attr in attrs:
+            deleteAnim( obj = obj, attr = attr )
+
+    cmds.setKeyframe( obj, at = transforms )
+    #
+    i = 1
+    while i < transitionDuration + 1:
+        cmds.currentTime( startFrame + i )
+        cmds.xform( obj, os = False, ro = rotP )
+        cmds.setKeyframe( obj, at = transforms )
+        cmds.xform( obj, os = True, r = True, ro = [stepX * i, stepY * i, stepZ * i] )
+        cmds.setKeyframe( obj, at = transforms )
+        i = i + 1
+    #
+    eulerFilter( obj, tangentFix = True )
     return startFrame + transitionDuration
 
 
@@ -353,6 +466,53 @@ def setFrameRange( start = 1001, end = 1101 ):
     cmds.playbackOptions( animationStartTime = start )
     cmds.playbackOptions( maxTime = end )
     cmds.playbackOptions( animationEndTime = end )
+
+
+def eulerFilter( obj, tangentFix = False ):
+    curves = cmds.keyframe( obj, q = True, name = True )
+    euler = []
+    if curves:
+        for crv in curves:
+            c = curveNodeFromName( crv )
+            if c.animCurveType() == 0:  # angular
+                euler.append( crv )
+        if euler:
+            cmds.filterCurve( euler )
+        if tangentFix:
+            fixTangents( obj )
+        # print 'here'
+
+
+def curveNodeFromName( crv = '' ):
+    selectionList = OpenMaya.MSelectionList()
+    selectionList.add( crv )
+    dependNode = OpenMaya.MObject()
+    selectionList.getDependNode( 0, dependNode )
+    crvNode = OpenMayaAnim.MFnAnimCurve( dependNode )
+    return crvNode
+
+
+def fixTangents( obj, attrs = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ'] ):
+    animCurves = cmds.findKeyframe( obj, c = True )
+    for crv in animCurves:
+        for attr in attrs:
+            if attr in crv:
+                if 'step' in cmds.keyTangent( crv, q = True, ott = True ):
+                    frames = cmds.keyframe( crv, q = True )
+                    ott = cmds.keyTangent( crv, q = True, ott = True )
+                    ot = []
+                    it = []
+                    for o in ott:
+                        if o == 'step':
+                            ot.append( 'step' )
+                            it.append( 'auto' )
+                        else:
+                            ot.append( 'auto' )
+                            it.append( 'auto' )
+                    for i in range( len( frames ) ):
+                        cmds.keyTangent( crv, edit = True, t = ( frames[i], frames[i] ), itt = it[i], ott = ot[i] )
+                else:
+                    cmds.keyTangent( crv, edit = True, itt = 'auto', ott = 'auto' )
 
 '''
 import webrImport as web

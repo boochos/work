@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import maya.cmds as cmds
 import maya.mel as mel
@@ -13,6 +14,8 @@ sfk = web.mod( 'atom_splineFk_lib' )
 anm = web.mod( "anim_lib" )
 vcl = web.mod( "vehicle_lib" )
 ac = web.mod( "animCurve_lib" )
+ffm = web.mod( "ffMpg" )
+pb = web.mod( "playblast_lib" )
 # atl.path(segments=5, size=0.05, length=10)
 
 
@@ -39,23 +42,29 @@ def bake_dynamics():
         cmds.select( "*:*:chassis_dynamicBase" )
     except:
         cmds.select( "*:chassis_dynamicBase" )  # added for UW2
+    #
     sel = cmds.ls( sl = 1 )
     qualified_rigs = []
     n = None
     # qualify
     if sel:
         for s in sel:
-            ac.deleteAnim2( s, attrs = transform )
+            ac.deleteAnim2( s, attrs = transform )  # dont need this but could affect end result if keys exist
             for i in transform:
                 cmds.setAttr( s + '.' + i, 0 )
             #
             ref = s.rsplit( ':', 1 )[0]
             set_obj_dynamics( ref + ':chassis_dynamicTarget', on = True )
             qualified_rigs.append( ref + ':chassis_dynamicTarget' )
+            # return
     #
     if qualified_rigs:
         print( qualified_rigs )
         cmds.select( qualified_rigs )
+        sel = cmds.ls( sl = 1 )
+        for s in sel:
+            ac.deleteAnim2( s, attrs = transform )
+        # return
         # store
         n = anm.SpaceSwitchList()
         # restore
@@ -65,6 +74,75 @@ def bake_dynamics():
     #
     cmds.playbackOptions( minTime = 1001 )
     cmds.playbackOptions( animationStartTime = 1001 )
+
+
+def set_for_animation():
+    '''
+    
+    '''
+    # dynamics
+    try:
+        cmds.select( "*:*:chassis_dynamicTarget" )
+        sel = cmds.ls( sl = 1 )
+        for s in sel:
+            cmds.setAttr( s + '.dynamicParentOffOn', 0 )
+            cmds.setAttr( s + '.enable', 0 )
+    except:
+        pass
+    # tires
+    try:
+        cmds.select( "*:move" )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
+                cmds.setAttr( s + '.tireGeo', 0 )
+                cmds.setAttr( s + '.tireProxy', 1 )
+    except:
+        pass
+    # nested
+    try:
+        cmds.select( "*:*:move" )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
+                cmds.setAttr( s + '.tireGeo', 0 )
+                cmds.setAttr( s + '.tireProxy', 1 )
+    except:
+        pass
+    # nested 2x
+    try:
+        cmds.select( "*:*:*:move" )
+        sel = cmds.ls( sl = 1 )
+        if sel:
+            for s in sel:
+                cmds.setAttr( s + '.tireGeo', 0 )
+                cmds.setAttr( s + '.tireProxy', 1 )
+    except:
+        pass
+    # time
+    cmds.playbackOptions( minTime = 1001 )
+    cmds.playbackOptions( animationStartTime = 1001 )
+
+
+def set_all_dynamics():
+    '''
+    
+    '''
+    # time
+    cmds.playbackOptions( minTime = 970 )
+    cmds.playbackOptions( animationStartTime = 970 )
+    # dynamics
+    cmds.select( clear = True )
+    try:
+        cmds.select( "*:*:chassis_dynamicTarget" )
+    except:
+        pass
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        for s in sel:
+            cmds.setAttr( s + '.dynamicParentOffOn', 1 )
+            cmds.setAttr( s + '.enable', 1 )
+            cmds.setAttr( s + '.startFrame', 970 )
 
 
 def set_obj_dynamics( obj = '', on = False ):
@@ -79,6 +157,121 @@ def set_obj_dynamics( obj = '', on = False ):
         cmds.setAttr( obj + '.dynamicParentOffOn', 0 )
         cmds.setAttr( obj + '.enable', 0 )
         cmds.setAttr( obj + '.startFrame', 970 )
+
+
+def set_for_playblast( dynamics = False, tires = True ):
+    '''
+    
+    '''
+    # time
+    cmds.playbackOptions( minTime = 1001 )
+    cmds.playbackOptions( animationStartTime = 1001 )
+    # dynamics
+    if dynamics:
+        # delete anim
+        transform = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+        try:
+            cmds.select( "*:*:chassis_dynamicBase" )
+            sel = cmds.ls( sl = 1 )
+            #
+            if sel:
+                for s in sel:
+                    ac.deleteAnim2( s, attrs = transform )
+                    for i in transform:
+                        cmds.setAttr( s + '.' + i, 0 )
+                # set
+                set_all_dynamics()
+        except:
+            pass
+    # tires
+    if tires:
+        # tires
+        try:
+            cmds.select( "*:move" )
+            sel = cmds.ls( sl = 1 )
+            if sel:
+                for s in sel:
+                    cmds.setAttr( s + '.tireGeo', 1 )
+                    cmds.setAttr( s + '.tireProxy', 0 )
+        except:
+            pass
+        # nested 1
+        try:
+            cmds.select( "*:*:move" )
+            sel = cmds.ls( sl = 1 )
+            if sel:
+                for s in sel:
+                    cmds.setAttr( s + '.tireGeo', 1 )
+                    cmds.setAttr( s + '.tireProxy', 0 )
+        except:
+            pass
+        # nested 2
+        try:
+            cmds.select( "*:*:*:move" )
+            sel = cmds.ls( sl = 1 )
+            if sel:
+                for s in sel:
+                    cmds.setAttr( s + '.tireGeo', 1 )
+                    cmds.setAttr( s + '.tireProxy', 0 )
+        except:
+            pass
+
+
+def blast( bake_all_dynamics = False, burn_in = False, live_dynamics = False ):
+    '''
+    
+    '''
+    start = 1001
+    # uw2 res
+    cmds.setAttr( 'defaultResolution.width', 1920 )
+    cmds.setAttr( 'defaultResolution.height', 1080 )
+
+    # bake
+    if bake_all_dynamics:
+        bake_dynamics()
+
+    # blast
+    set_for_playblast( dynamics = live_dynamics )
+
+    #
+    if burn_in:
+        # blast
+        cmds.select( clear = 1 )
+        result = pb.blast( x = 1.0, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = 'precomp', play = False )  # blastPath, blastName
+        # to mp4
+        pathOut = result[0].replace( result[1], '' )
+        pathOutName = result[1].replace( '_precomp', '____cam' )  # added cam string, burnin expects cam suffix
+        #
+        mp4 = ffm.imgToMp4( pathIn = result[0], image = result[1], start = start, pathOut = pathOut, pathOutName = pathOutName )
+        # copy mp4 to image seq directory, matching name
+        shutil.copyfile( mp4, os.path.join( result[0], result[1] + '.mp4' ) )
+        # add burn in
+        ffm.burn_in( filein = mp4, startFrame = start, size = 25, rndrFrames = False )
+        # move precomp string in all image seq names, including new copied mp4
+        pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_precomp' )
+        # beauty blast with qt
+        '''
+        renderLayerBlast()
+        '''
+    else:
+        # expecting traffic shots from bridge
+        result = pb.blast( x = 1.0, format = "image", qlt = 100, compression = "png", offScreen = True, useGlobals = True, forceTemp = True, camStr = False, strp_r = True, subDir = '', play = False )  # blastPath, blastNam
+        source = result[0]
+        print( source )
+        path = cmds.file( query = True, exn = True )
+        sht = path.rsplit( '/', 1 )[1].split( '.' )[0]
+        print( sht )
+        dest = path.split( 'maya' )[0]
+        dest = os.path.join( dest, 'playblasts' )
+        dest = os.path.join( dest, sht )
+        print( dest )
+        if os.path.isdir( dest ):
+            shutil.rmtree( dest )
+        shutil.copytree( source.replace( '\\', '/' ), dest.replace( '\\', '/' ) )
+
+        # pb.blastRenameSeq( result = result, splitStr = '_v', moveStr = '_traffic' )
+    #
+    set_for_animation()
 
 
 def attachToPath():

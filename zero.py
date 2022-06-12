@@ -10,10 +10,14 @@ def message( what = '', maya = True ):
         print( what )
 
 
-def zero():
+def zero( obj = '' ):
     # does not account for custom attributes
     # could add another loop for custom attrs
-    sel = cmds.ls( sl = True )
+    sel = []
+    if not obj:
+        sel = cmds.ls( sl = True )
+    else:
+        sel = [obj]
     # predefined attrs
     transform = ["translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ"]
     scale = ["scaleX", "scaleY", "scaleZ"]
