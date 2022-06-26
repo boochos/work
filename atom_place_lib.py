@@ -465,7 +465,7 @@ class Controller():
 class Controller2():
     # initialize
 
-    def __init__( self, name, obj, orient = True, shape = 'diamond_ctrl',
+    def __init__( self, name = '', obj = '', orient = True, shape = 'diamond_ctrl',
                  size = 1, color = 8, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True,
                  groups = False, orientCt = False, colorName = None ):
         #

@@ -516,7 +516,12 @@ class CSUI( object ):
             for sel in selection:
                 selAdd.append( sel )
         if selAdd:
-            cmds.select( selAdd )
+            try:
+                cmds.select( selAdd )
+                print( 'fine', selAdd )
+            except:
+                message( 'Selection conflict with: ' )
+                print( selAdd )
         else:
             message( 'Nothing to select.' )
 

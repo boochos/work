@@ -16,6 +16,7 @@ vcl = web.mod( "vehicle_lib" )
 ac = web.mod( "animCurve_lib" )
 ffm = web.mod( "ffMpg" )
 pb = web.mod( "playblast_lib" )
+z = web.mod( 'zero' )
 # atl.path(segments=5, size=0.05, length=10)
 
 
@@ -25,7 +26,7 @@ def cadillac():
     '''
     vcl.car( name = 'cadillac', geo_grp = 'car_grp', frontSolidAxle = False, backSolidAxle = False, chassisAxleLock = False, X = 6.0,
             ns = 'geo',
-            ref_geo = 'P:\\UW2\\assets\\veh\\cadillac\\model\\maya\\scenes\\cadillac_model_v010.ma' )
+            ref_geo = 'P:\\UW2\\assets\\veh\\cadillac\\model\\maya\\scenes\\cadillac_model_v011.ma' )
 
 
 def bake_dynamics():
@@ -64,6 +65,7 @@ def bake_dynamics():
         sel = cmds.ls( sl = 1 )
         for s in sel:
             ac.deleteAnim2( s, attrs = transform )
+            z.zero( s )
         # return
         # store
         n = anm.SpaceSwitchList()
@@ -225,6 +227,9 @@ def blast( bake_all_dynamics = False, burn_in = False, live_dynamics = False ):
     # uw2 res
     cmds.setAttr( 'defaultResolution.width', 1920 )
     cmds.setAttr( 'defaultResolution.height', 1080 )
+    #
+    # cmds.setAttr( 'defaultResolution.width', 3840 )
+    # cmds.setAttr( 'defaultResolution.height', 2160 )
 
     # bake
     if bake_all_dynamics:
@@ -274,7 +279,7 @@ def blast( bake_all_dynamics = False, burn_in = False, live_dynamics = False ):
     set_for_animation()
 
 
-def attachToPath():
+def refPathAndAttach():
     '''
     ref path and attach
     '''
@@ -562,3 +567,14 @@ def leafABC():
         mel.eval( m )
         i = i + 1
 
+'''
+# with bake
+import webrImport as web
+spdr = web.mod('assets_uw2')
+spdr.blast(bake_all_dynamics = True, burn_in = True, live_dynamics = False )
+
+# no bake
+import webrImport as web
+spdr = web.mod('assets_uw2')
+spdr.blast(bake_all_dynamics = False, burn_in = True, live_dynamics = False ) 
+'''

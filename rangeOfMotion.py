@@ -19,10 +19,10 @@ def simplePose( obj = '', attr = '', startFrame = 1001, min = -1.0, max = 1.0, t
     currentPose = cmds.getAttr( obj + '.' + attr )
     #
     # print( attr, min, max )
-    cmds.setKeyframe( obj + '.' + attr, t = startFrame, v = currentPose )
-    cmds.setKeyframe( obj + '.' + attr, t = startFrame + transitionDuration, v = min )
-    cmds.setKeyframe( obj + '.' + attr, t = startFrame + ( transitionDuration * 3 ), v = max )
-    cmds.setKeyframe( obj + '.' + attr, t = startFrame + ( transitionDuration * 4 ), v = currentPose )
+    cmds.setKeyframe( obj + '.' + attr, t = startFrame, v = currentPose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.' + attr, t = startFrame + transitionDuration, v = min, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.' + attr, t = startFrame + ( transitionDuration * 3 ), v = max, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.' + attr, t = startFrame + ( transitionDuration * 4 ), v = currentPose, itt = 'linear', ott = 'linear' )
 
     # eulerFilter( obj, tangentFix = True )
     return startFrame + ( transitionDuration * 4 )
@@ -138,13 +138,13 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     # pose 1 neutral
     frame = startFrame
     # rot
-    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose )
+    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose, itt = 'linear', ott = 'linear' )
     # pos
-    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose )
+    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose, itt = 'linear', ott = 'linear' )
 
     if torque and rotR > 0.0:
         # create torque function
@@ -153,13 +153,13 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     # pose 2 forward
     frame = frame + transitionDuration
     # rot
-    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose + ( rotR * rotFlip[2] ) )
+    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose + ( rotR * rotFlip[2] ), itt = 'linear', ott = 'linear' )
     # pos
-    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose + ( posR * posFlip[2] ) )
+    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose + ( posR * posFlip[2] ), itt = 'linear', ott = 'linear' )
 
     if torque and rotR > 0.0:
         # create torque function
@@ -168,13 +168,13 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     # pose 3 side
     frame = frame + transitionDuration
     # rot
-    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose + ( rotR * rotFlip[0] ) )
-    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose )
+    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose + ( rotR * rotFlip[0] ), itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose, itt = 'linear', ott = 'linear' )
     # pos
-    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose + ( posR * posFlip[0] ) )
-    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose )
+    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose + ( posR * posFlip[0] ), itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose, itt = 'linear', ott = 'linear' )
 
     if torque and rotR > 0.0:
         # create torque function
@@ -183,13 +183,13 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     # pose 4 back
     frame = frame + transitionDuration
     # rot
-    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose + ( ( rotR * -1 ) * rotFlip[2] ) )
+    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose + ( ( rotR * -1 ) * rotFlip[2] ), itt = 'linear', ott = 'linear' )
     # pos
-    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose + ( ( posR * -1 ) * posFlip[2] ) )
+    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose + ( ( posR * -1 ) * posFlip[2] ), itt = 'linear', ott = 'linear' )
 
     if torque and rotR > 0.0:
         # create torque function
@@ -198,13 +198,13 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     # pose 5 other side
     frame = frame + transitionDuration
     # rot
-    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose + ( ( rotR * -1 ) * rotFlip[0] ) )
-    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose )
+    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose + ( ( rotR * -1 ) * rotFlip[0] ), itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose, itt = 'linear', ott = 'linear' )
     # pos
-    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose + ( ( posR * -1 ) * posFlip[0] ) )
-    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose )
+    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose + ( ( posR * -1 ) * posFlip[0] ), itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose, itt = 'linear', ott = 'linear' )
 
     if torque and rotR > 0.0:
         # create torque function
@@ -225,13 +225,13 @@ def compoundPose( obj = '', startFrame = 1, rotR = 60, posR = 2.0, transitionDur
     # pose 7 neutral
     frame = frame + transitionDuration
     # rot
-    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose )
-    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose )
+    cmds.setKeyframe( obj + '.rotate' + rot_side, t = frame, v = rot_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_up, t = frame, v = rot_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.rotate' + rot_front, t = frame, v = rot_front_pose, itt = 'linear', ott = 'linear' )
     # pos
-    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose )
-    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose )
+    cmds.setKeyframe( obj + '.translate' + pos_side, t = frame, v = pos_side_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_up, t = frame, v = pos_up_pose, itt = 'linear', ott = 'linear' )
+    cmds.setKeyframe( obj + '.translate' + pos_front, t = frame, v = pos_front_pose, itt = 'linear', ott = 'linear' )
 
     # print( '____________', frame )
     # eulerFilter( obj, tangentFix = True )
@@ -303,26 +303,26 @@ def torqueTransition( obj = '', torqueAxis = '', startFrame = 1, amount = 1.0, t
         while i < transitionDuration + 1:
             cmds.currentTime( startFrame + i )
             cmds.xform( obj, os = False, ro = rotP )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             cmds.xform( obj, os = True, r = True, ro = [step * i, 0, 0] )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             i = i + 1
     if torqueAxis.lower() == 'y':
         while i < transitionDuration + 1:
             cmds.currentTime( startFrame + i )
             cmds.xform( obj, os = False, ro = rotP )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             cmds.xform( obj, os = True, r = True, ro = [0, step * i, 0] )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             print( step * i )
             i = i + 1
     if torqueAxis.lower() == 'z':
         while i < transitionDuration + 1:
             cmds.currentTime( startFrame + i )
             cmds.xform( obj, os = False, ro = rotP )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             cmds.xform( obj, os = True, r = True, ro = [0, 0, step * i] )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             i = i + 1
     return startFrame + transitionDuration
 
@@ -345,40 +345,40 @@ def osRotation( obj = '', axis = '', startFrame = 1, amount = 1.0, transitionDur
         for attr in attrs:
             deleteAnim( obj = obj, attr = attr )
 
-    cmds.setKeyframe( obj, at = transforms )
+    cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
     #
     i = 1
     if axis.lower() == 'x':
         while i < transitionDuration + 1:
             cmds.currentTime( startFrame + i )
             cmds.xform( obj, os = False, ro = rotP )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             cmds.xform( obj, os = True, r = True, ro = [step * i, 0, 0] )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             i = i + 1
     if axis.lower() == 'y':
         while i < transitionDuration + 1:
             cmds.currentTime( startFrame + i )
             cmds.xform( obj, os = False, ro = rotP )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             cmds.xform( obj, os = True, r = True, ro = [0, step * i, 0] )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             print( step * i )
             i = i + 1
     if axis.lower() == 'z':
         while i < transitionDuration + 1:
             cmds.currentTime( startFrame + i )
             cmds.xform( obj, os = False, ro = rotP )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             cmds.xform( obj, os = True, r = True, ro = [0, 0, step * i] )
-            cmds.setKeyframe( obj, at = transforms )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
             i = i + 1
     #
     eulerFilter( obj, tangentFix = True )
     return startFrame + transitionDuration
 
 
-def osMultiAxisRotation( obj = '', startFrame = 1, amount = [0.0, 0.0, 0.0], transitionDuration = 10, deletePrevious = True ):
+def osMultiAxisRotation( obj = '', startFrame = 1, amount = [0.0, 0.0, 0.0], transitionDuration = 10, deletePrevious = True, relative = True ):
     '''
     create frame by frame transition, to overcome rotate order problems
     '''
@@ -386,6 +386,66 @@ def osMultiAxisRotation( obj = '', startFrame = 1, amount = [0.0, 0.0, 0.0], tra
     cmds.currentTime( startFrame )
     transforms = [ 'rx', 'ry', 'rz', 'tx', 'ty', 'tz']
     rotP = cmds.xform( obj, q = True, os = True, ro = True )
+    #
+    stepX = 0.0
+    stepY = 0.0
+    stepZ = 0.0
+    #
+    if relative:
+        if amount[0]:
+            stepX = amount[0] / transitionDuration
+        if amount[1]:
+            stepY = amount[1] / transitionDuration
+        if amount[2]:
+            stepZ = amount[2] / transitionDuration
+    else:
+        if amount[0]:
+            stepX = ( amount[0] - rotP[0] ) / transitionDuration
+        if amount[1]:
+            stepY = ( amount[1] - rotP[1] ) / transitionDuration
+        if amount[2]:
+            stepZ = ( amount[2] - rotP[2] ) / transitionDuration
+    # print( '___step', step )
+    # print('___start', startFrame)
+
+    # delete anim
+    attrs = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+    if deletePrevious:
+        for attr in attrs:
+            deleteAnim( obj = obj, attr = attr )
+
+    cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
+    #
+    i = 1
+    if relative:
+        while i < transitionDuration + 1:
+            cmds.currentTime( startFrame + i )
+            cmds.xform( obj, os = False, ro = rotP )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
+            if relative:
+                cmds.xform( obj, os = True, r = relative, ro = [stepX * i, stepY * i, stepZ * i] )
+            else:
+                pass
+                # cmds.xform( obj, os = True, a = True, ro = [rotP[0] - ( stepX * i ), rotP[0] - ( stepY * i ), rotP[0] - ( stepZ * i )] )
+            cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
+            i = i + 1
+    else:
+        cmds.currentTime( startFrame + transitionDuration )
+        cmds.xform( obj, os = True, a = True, ro = amount )
+        cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
+    #
+    eulerFilter( obj, tangentFix = True )
+    return startFrame + transitionDuration
+
+
+def osMultiAxisPosition( obj = '', startFrame = 1, amount = [0.0, 0.0, 0.0], transitionDuration = 10, deletePrevious = True ):
+    '''
+    create frame by frame transition
+    '''
+    #
+    cmds.currentTime( startFrame )
+    transforms = [ 'rx', 'ry', 'rz', 'tx', 'ty', 'tz']
+    transP = cmds.xform( obj, q = True, t = True )
     #
     stepX = 0.0
     stepY = 0.0
@@ -406,15 +466,15 @@ def osMultiAxisRotation( obj = '', startFrame = 1, amount = [0.0, 0.0, 0.0], tra
         for attr in attrs:
             deleteAnim( obj = obj, attr = attr )
 
-    cmds.setKeyframe( obj, at = transforms )
+    cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
     #
     i = 1
     while i < transitionDuration + 1:
         cmds.currentTime( startFrame + i )
-        cmds.xform( obj, os = False, ro = rotP )
-        cmds.setKeyframe( obj, at = transforms )
-        cmds.xform( obj, os = True, r = True, ro = [stepX * i, stepY * i, stepZ * i] )
-        cmds.setKeyframe( obj, at = transforms )
+        cmds.xform( obj, os = False, t = transP )
+        cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
+        cmds.xform( obj, os = True, r = True, t = [stepX * i, stepY * i, stepZ * i] )
+        cmds.setKeyframe( obj, at = transforms, itt = 'linear', ott = 'linear' )
         i = i + 1
     #
     eulerFilter( obj, tangentFix = True )

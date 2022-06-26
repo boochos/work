@@ -108,6 +108,22 @@ def burn_in( filein = "", task = "", startFrame = 1001, topRight = "", size = 15
     '''
     bigger margin number pushes text to edges of screen
     ffmpeg -i input -vf "drawtext=fontfile=Arial.ttf: text='%{frame_num}': start_number=1: x=(w-tw)/2: y=h-(2*lh): fontcolor=black: fontsize=20: box=1: boxcolor=white: boxborderw=5" -c:a copy output
+    
+    multi text overlay example:
+    ffmpeg -threads 8 -i D:\imagesequence\dpx\brn_055.%04d.dpx -vf "
+    [in]
+    drawtext=fontsize=18:fontcolor=Green:fontfile='/Windows/Fonts/arial.ttf':text='shotcam':x=(w)/2:y=(h)-25, 
+    drawtext=fontsize=18:fontcolor=Green:fontfile='/Windows/Fonts/arial.ttf':text='Focal Length':x=(w)/1.2:y=(h)-25
+    [out] 
+    "D:/imagesequence/dpx/final_with_text_mod_04.jpg
+    
+    again as image seq:
+    ffmpeg -threads 8 -i D:\imagesequence\dpx\brn_055.%04d.dpx -vf "
+    [in]
+    drawtext=fontsize=18:fontcolor=Green:fontfile='/Windows/Fonts/arial.ttf':text='shotcam':x=(w)/2:y=(h)-25, 
+    drawtext=fontsize=18:fontcolor=Green:fontfile='/Windows/Fonts/arial.ttf':text='Focal Length':x=(w)/1.2:y=(h)-25
+    [out]
+    " -y -r 30 -vcodec png -pix_fmt rgb32 D:\imagesequence\dpx\test.mov
     '''
     #
     # print( filein )

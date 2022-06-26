@@ -34,6 +34,8 @@ def zero( obj = '' ):
             for attr in keyable:
                 if attr in transform:
                     cmds.setAttr( i + "." + attr, 0 )
+                else:
+                    print( 'no trans' )
             # loop through predefined attrs in $scale array
             for attr in keyable:
                 if attr in scale:
