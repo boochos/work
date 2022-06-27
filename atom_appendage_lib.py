@@ -1009,7 +1009,7 @@ def create_3_joint_pv2( stJnt = '', endJnt = '', prefix = '', suffix = '', dista
     Pv = prefix + '_pv'
     if suffix:
         Pv = Pv + '_' + suffix
-    PvCt = place.Controller2( Pv, tmpLoc, orient, 'diamondZup_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    PvCt = place.Controller2( Pv, tmpLoc, orient, 'diamondYup_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     if orient:
         # re-orient master so transforms are local to ik plane ie. x-side, y-up, z-forward
         ro = cmds.xform( PvCt[0], query = True, os = True, ro = True )

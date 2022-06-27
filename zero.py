@@ -47,3 +47,12 @@ def zero( obj = '' ):
                         cmds.setAttr( i + "." + attr, custom[key] )
     else:
         message( 'Select at least one object' )
+
+
+def zeroRotations( obj ):
+    '''
+    
+    '''
+    cmds.setAttr( obj + '.rotateX', 0 )
+    cmds.setAttr( obj + '.rotateY', 0 )
+    cmds.setAttr( obj + '.rotateZ', 0 )

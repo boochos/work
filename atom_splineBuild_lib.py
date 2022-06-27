@@ -623,11 +623,13 @@ def ikGroup( prefix, X, skinJnts, rotOrder, BUS_clusterGrps_Sjnt_Ejnt_Sblnd_Ebln
     grp = place.null( ( prefix + '_IK_CtrlGrp' ) )[0]
 
     # add attributes to grp
-    prefixPlus = prefix + 'Vis'
+    # prefixPlus = prefix + 'Vis'
+    prefixPlus = 'Vis'  # removed prefix
     place.addAttribute( grp, prefixPlus, 0, 1, 0, 'long' )
     cmds.connectAttr( ( grp + '.' + prefixPlus ), ( grp + '.visibility' ), f = True )
     cmds.setAttr( grp + '.' + prefixPlus, 1 )
-    attrList = [prefix + 'Root', prefix + 'Stretch']
+    # attrList = [prefix + 'Root', prefix + 'Stretch']
+    attrList = [ 'Root', 'Stretch']  # removed prefix
     place.addAttribute( grp, attrList, 0, 1, 1, 'double' )
     # add attrs from cluster group
     place.hijackCustomAttrs( BUS_clusterCntrlGrps_ClstrCtrlGrp_AttrList_ClusterCntrls_XtraP[1], grp )

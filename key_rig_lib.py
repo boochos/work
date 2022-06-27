@@ -1717,6 +1717,8 @@ def matchSkinInfs( source = 'skinCluster15', dest = 'skinCluster16', bind = Fals
             else:
                 nurbs.append( item )
     # for item in joints:
-    cmds.skinCluster( skinD, edit = True, ai = joints, tsb = True, lw = True, wt = 0.0 )
+    if joints:
+        cmds.skinCluster( skinD, edit = True, ai = joints, tsb = True, lw = True, wt = 0.0 )
     # for item in nurbs:
-    cmds.skinCluster( skinD, edit = True, ai = nurbs, ns = 10, dropoffRate = 4.0, ug = True, lw = True, wt = 0.0 )
+    if nurbs:
+        cmds.skinCluster( skinD, edit = True, ai = nurbs, ns = 10, dropoffRate = 4.0, ug = True, lw = True, wt = 0.0 )
