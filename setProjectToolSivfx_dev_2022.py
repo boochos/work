@@ -502,7 +502,9 @@ def incrementalSave( basepath, basename, extension ):
                     if phile is not False:
                         file_info = splitEndNumFromString( phile[1] )
                         if string_info[0] == file_info[0]:
-                            if file_info[1] > num:
+                            print( file_info )
+                            print( file_info[1], num )
+                            if int( file_info[1] ) > int( num ):
                                 num = file_info[1]
         # increment the suffix
         version = '%03d' % ( int( num ) + 1 )
@@ -785,7 +787,7 @@ class Prefs():
 
     def prefSave( self, *args ):
         # save
-        fileObjectJSON = open( self.prefPath(), 'wb' )
+        fileObjectJSON = open( self.prefPath(), 'w' )
         json.dump( self.prefs, fileObjectJSON, indent = 1 )
         fileObjectJSON.close()
 

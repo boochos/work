@@ -1,15 +1,9 @@
 import os
-import os
-
-import maya.cmds as cmds
 import maya.cmds as cmds
 import maya.mel as mel
-import maya.mel as mel
-import webrImport as web
-import webrImport as web
-
 #
 # import animCurve_lib as ac
+import webrImport as web
 # web
 ac = web.mod( 'animCurve_lib' )
 
@@ -101,23 +95,34 @@ def listTop():
     top = []
     all = listAll()
     if all:
-        for set in all:
-            cnnct = cmds.listConnections( set + '.message', d = True, s = False )
+        for chr in all:
+            # print( chr )
+            cnnct = cmds.listConnections( chr + '.message', d = True, s = False )
+            # qualify
+            tabInfo = 'MayaNodeEditorSavedTabsInfo'
+            if cnnct:
+                if tabInfo in cnnct:
+                    cnnct.remove( tabInfo )
+            #
             if cnnct:
                 # case 1, partition node connection
                 for node in cnnct:
                     if cmds.objExists( node ):
                         # connections are returned that are not objects
                         if cmds.nodeType( node ) == 'partition':
-                            top.append( set )
+                            top.append( chr )
+                            print( 'case1, no:', chr )
                             break
                 # case 2, 'set' node connection
                 if len( cnnct ) == 1:
                     if 'set' in cnnct[0]:
-                        top.append( set )
+                        top.append( chr )
+                    else:
+                        print( 'case2, no:', chr )
+                        print( cnnct )
             # case 1, no connection
             else:
-                top.append( set )
+                top.append( chr )
         return top
     else:
         message( 'No character sets exist' )
@@ -626,4 +631,3 @@ def matchCharSet( source = None, objs = [] ):
                 cmds.character( obj, include = char[0] )
         else:
             message( 'Object not added to Charecter set. More than one option found.' )
-

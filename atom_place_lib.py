@@ -561,8 +561,11 @@ class Controller2():
             setChannels( gp, translate = [False, True], rotate = [False, True], scale = [
                         True, False], visibility = [True, False, False], other = [False, True] )
             cmds.setAttr( ctO + '.visibility', cb = False )
-            i = cmds.getAttr( ctO + '.visibility', cb = True )
-
+            cmds.getAttr( ctO + '.visibility', cb = True )
+        #
+        cmds.setAttr( ct + '.rotateOrder', k = False, cb = True )
+        cmds.setAttr( ctO + '.rotateOrder', k = False, cb = True )
+        #
         if self.groups == True:
             self.result = [ topgp, ctgp, ct, ctO, gp]
             return topgp, ctgp, ct, ctO, gp
@@ -1844,9 +1847,9 @@ def rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True,
     if Master == True:
         Master = namePrebuild( Master = True )
         world = cmds.group( em = True )
-        master = Controller( Master, world, False, 'facetYup_ctrl', Size,
-                            12, 8, 1, ( 0, 1, 0 ), True, True, False, colorName = 'yellow' )
-        MasterCt = master.createController()
+        MasterCt = Controller2( Master, world, False, 'facetYup_ctrl', Size,
+                            12, 8, 1, ( 0, 1, 0 ), True, True, False, colorName = 'yellow' ).result
+        # MasterCt = master.createController()
         setRotOrder( MasterCt[0], 2, True )
         cmds.delete( world )
         cmds.parent( MasterCt[0], CONTROLS )

@@ -95,6 +95,7 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
         path_back = os.path.join( assets, cameras )
     else:
         path_back = os.path.join( assets, geo )
+
     # print( path_back )
 
     # build path_front
@@ -108,6 +109,10 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
     # path destination
     path = os.path.join( path_front, path_back )
     # print( path )
+    # create path if cam or geo doesnt exist
+    if not os.path.exists( path ):
+        # make version directory
+        os.mkdir( path )
 
     # parse department
     dpt = project.split( '/' )[-3]

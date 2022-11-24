@@ -756,6 +756,7 @@ def locator( obj = None, ro = 'zxy', X = 0.01, constrain = True, toSelection = F
         cmds.setAttr( lc + '.sy', k = False, cb = True )
         cmds.setAttr( lc + '.sz', k = False, cb = True )
         cmds.setAttr( lc + '.v', k = False, cb = True )
+        # cmds.setAttr( lc + '.rotateOrder', k = True )
         if '.' in obj:  # component selection
             roo = 0
         else:
@@ -1839,6 +1840,7 @@ def locator( obj = None, ro = 'zxy', X = 0.01, constrain = True, toSelection = F
         cmds.setAttr( lc + '.sy', k = False, cb = True )
         cmds.setAttr( lc + '.sz', k = False, cb = True )
         cmds.setAttr( lc + '.v', k = False, cb = True )
+        cmds.setAttr( lc + '.rotateOrder', k = False, cb = True )
         if '.' in obj:  # component selection
             roo = 0
         else:

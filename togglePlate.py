@@ -144,6 +144,8 @@ def plateRange( handles = 0 ):
                     # print fls.sort()
                     frst = fls[0]
                     lst = fls[-1]
+                    if 'Thumbs' in lst:
+                        lst = fls[-2]
                     frst = int( frst.rsplit( '.', 2 )[1] )
                     lst = int( lst.rsplit( '.', 2 )[1] )
                     cmds.playbackOptions( animationStartTime = frst )

@@ -160,7 +160,10 @@ def leg( master = '', pelvis = '', side = '', X = 1 ):
     cmds.parent( ankl_Ct[0], CONTROLS() )
 
     # roll
-    roll_Ct = place.Controller2( name = 'toe_roll' + suffix, obj = 'toeB_02_jnt' + suffix, groups = True, orient = True, orientCt = True, shape = 'rectangleWideZup_ctrl', size = X * 12, colorName = color ).result
+    pvt = 'toeB_02_jnt'
+    if not cmds.objExists( pvt ):
+        pvt = 'toeA_02_jnt'
+    roll_Ct = place.Controller2( name = 'toe_roll' + suffix, obj = pvt + suffix, groups = True, orient = True, orientCt = True, shape = 'rectangleWideZup_ctrl', size = X * 12, colorName = color ).result
     cmds.parentConstraint( roll_Ct[4], ankl_Ct[0], mo = True )
     cmds.parentConstraint( foot_Ct[4], roll_Ct[0], mo = True )
     cmds.parent( roll_Ct[0], CONTROLS() )
@@ -188,23 +191,26 @@ def leg( master = '', pelvis = '', side = '', X = 1 ):
     if side == 'R':
         direction = 1
     for jnts in toe_jnt_lsts:
-        name = jnts[0].split( '_' )[0] + suffix
-        digitRig = sfk.SplineFK( name, jnts[0], jnts[-1], None, direction = direction,
-                                  controllerSize = X * 8, rootParent = ankl_Ct[4], parent1 = foot_Ct[4], parentDefault = [1, 0], segIteration = 4, stretch = 0, ik = 'ik', colorScheme = color )
-        # print( tailRig.ctrlList[2][2] )
-        cmds.setAttr( digitRig.ctrlList[2][2] + '.FK_ParentOffOn', 0 )
-        cmds.setAttr( digitRig.ctrlList[3][2] + '.FK_ParentOffOn', 0 )
+        if cmds.objExists( jnts[0] ):
+            name = jnts[0].split( '_' )[0] + suffix
+            digitRig = sfk.SplineFK( name, jnts[0], jnts[-1], None, direction = direction,
+                                      controllerSize = X * 8, rootParent = ankl_Ct[4], parent1 = foot_Ct[4], parentDefault = [1, 0], segIteration = 4, stretch = 0, ik = 'ik', colorScheme = color )
+            # print( tailRig.ctrlList[2][2] )
+            cmds.setAttr( digitRig.ctrlList[2][2] + '.FK_ParentOffOn', 0 )
+            cmds.setAttr( digitRig.ctrlList[3][2] + '.FK_ParentOffOn', 0 )
 
 
-def build( X = 1, lite = 1 ):
+def build( X = 0.7, lite = 1 ):
     '''
     elbow_dbl_jnt_L
     '''
     #
     atom.win()
     #
+    '''
     weights_meshImport()
-    fix_normals( lite = lite )
+    fix_normals( lite = lite )'''
+
     # wrp.createWrap2( low_geo()[0], mid_geo()[0] )
     # wrp.wrapDeformer( master = low_geo()[0], slave = high_geo()[0] )
     # return
@@ -222,17 +228,14 @@ def build( X = 1, lite = 1 ):
     cg = cog( X = X, parent = prebuild.masterCt[4] )
     plvs = pelvis( X = X, parent = cg[4] )
     chst = chest( X = X, parent = cg[4] )
-
     # arms
     armL = arm( master = prebuild.masterCt[4], chest = 'spine_jnt_06', side = 'L', X = X )
     clavicle( obj = 'clavicle_jnt_01_L', shoulder = 'shoulder_jnt_L', parent = 'spine_jnt_06' )
     armR = arm( master = prebuild.masterCt[4], chest = 'spine_jnt_06', side = 'R', X = X )
     clavicle( obj = 'clavicle_jnt_01_R', shoulder = 'shoulder_jnt_R', parent = 'spine_jnt_06' )
-
     # legs
     lgsL = leg( master = prebuild.masterCt[4], pelvis = plvs, side = 'L', X = X )
     lgsR = leg( master = prebuild.masterCt[4], pelvis = plvs, side = 'R', X = X )
-
     # neck
     nck = neck( X = X )
     hd = head( X = X, parent = nck[4] )
@@ -240,6 +243,11 @@ def build( X = 1, lite = 1 ):
     # splines
     spline( name = 'neck_spline', start_jnt = 'neck_jnt_01', end_jnt = 'neck_jnt_05', splinePrnt = nck[4], splineStrt = nck[4], splineEnd = hd[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 2 )
     spline( name = 'spine_spline', start_jnt = 'pelvis_jnt', end_jnt = 'spine_jnt_06', splinePrnt = cg[4], splineStrt = plvs[4], splineEnd = chst[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 3 )
+    # shorts
+    shorts( master = prebuild.masterCt[4], pelvis = plvs, side = 'L', X = X )
+    shorts( master = prebuild.masterCt[4], pelvis = plvs, side = 'R', X = X )
+    # scale
+    scale_rig()
 
 
 class Prebuild():
@@ -259,14 +267,19 @@ class Prebuild():
         cmds.parentConstraint( self.masterCt[4], 'root_jnt', mo = 1 )
         cmds.parent( 'root_jnt', self.SKIN_JOINTS )
         #
-        cmds.deltaMush( low_geo()[0], smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
-        cmds.deltaMush( mid_geo()[0], smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
-        cmds.deltaMush( high_geo()[0], smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+        geos = low_geo()
+        for geo in geos:
+            cmds.deltaMush( geo, smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+        # cmds.deltaMush( mid_geo()[0], smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+        # cmds.deltaMush( high_geo()[0], smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
         #
+        '''
+        # not using cuz mesh had only one LOD and doesnt support multi geos per LOD
         misc.optEnum( self.masterCt[2], attr = 'LOD', enum = 'OPTNS' )
         place.hijackVis( low_geo()[0], self.masterCt[2], name = 'lowGeo', suffix = False, default = 1, mode = 'visibility' )
         place.hijackVis( mid_geo()[0], self.masterCt[2], name = 'medGeo', suffix = False, default = 0, mode = 'visibility' )
         place.hijackVis( high_geo()[0], self.masterCt[2], name = 'highGeo', suffix = False, default = 0, mode = 'visibility' )
+        '''
 
 
 def head( obj = 'neck_jnt_06', parent = 'neck_jnt_05', X = 1.0 ):
@@ -504,7 +517,11 @@ def weights_path():
 
 
 def low_geo():
-    return ['statue_man_model:Statue_man_Low']
+    return ['male_model:T_Shirt_Geo001',
+    'male_model:Shorts_Geo001',
+    'male_model:Shuze01',
+    'male_model:Body_Geo001',
+    'male_model:Shuze02']
 
 
 def mid_geo():
@@ -635,6 +652,58 @@ def fix_normals( del_history = False, lite = True ):
         cmds.polySoftEdge( angle = 45 )
     if del_history:
         cmds.delete( geo, ch = True )
+
+
+def shorts( master = '', pelvis = '', side = 'L', X = 1 ):
+    '''
+    
+    '''
+    suffix = ''
+    color = ''
+    if side == 'L':
+        suffix = '_L'
+        color = 'blue'
+        color2 = 'lightBlue'
+    else:
+        suffix = '_R'
+        color = 'red'
+        color2 = 'pink'
+    #
+    hp_jnt = 'hip_jnt' + suffix
+    shrts_jnt = 'shorts_jnt' + suffix
+    # hip
+    shrts_Ct = place.Controller2( name = 'shorts' + suffix, obj = hp_jnt, groups = True, orient = True, orientCt = True, shape = 'squareXup_ctrl', size = X * 80, colorName = color ).result
+    #
+    cmds.parentConstraint( shrts_Ct[4], shrts_jnt, mo = True )
+    cmds.parentConstraint( hp_jnt, shrts_Ct[0], mo = True )
+    cmds.parent( shrts_Ct[0], CONTROLS() )
+
+
+def scale_rig():
+    '''
+    
+    '''
+    # scale
+    # geo = 'caterpillar_c_geo_lod_0'
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 100.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    # misc.addAttribute( [mstr], [uni], 0.1, 10.0, True, 'float' )
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
+    geos = low_geo()
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
+        i = 1
+        for geo in geos:
+            cmds.connectAttr( mstr + '.' + uni, 'deltaMush' + str( i ) + s )  # set scale, apply deltaMush, add scale connection for deltaMush
+            i = i + 1
 
 '''
 # rig build

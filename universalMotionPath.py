@@ -77,7 +77,7 @@ def build_curve( length = 10, cvs = 2, layer = 0 ):
             return crv
 
 
-def path2( length = 10, layers = 2, X = 2.0 ):
+def path2( length = 10, layers = 3, X = 2.0 ):
     '''
     path 2.0
     '''
@@ -110,24 +110,125 @@ def path2( length = 10, layers = 2, X = 2.0 ):
     cmds.parentConstraint( 'master_Grp', upCntCt[0], mo = True )
 
     # layers
-    layers = []
+    layers_built = []
     colors = [ 'lightYellow', 'lightBlue', 'pink', 'hotPink', 'purple']
+    cvs = 2  # cvs
+    i = 0  # layer
+    j = 0  # colors
+    while i < layers:
+        if i == 0:
+            lyrs = layer( master = MasterCt, length = length, cvs = cvs, layer = i, attachToCurve = '', color = colors[j], up = upCntCt[4], X = X )
+            layers_built.append( lyrs )
+        else:
+            lyrs = layer( master = MasterCt, length = length, cvs = cvs, layer = i, attachToCurve = layers_built[i - 1].curve, color = colors[j], up = upCntCt[4], X = X )
+            layers_built.append( lyrs )
+        # counters
+        print( i, cvs )
+        cvs = ( cvs * 2 ) - 1
+        i = i + 1
+        if j == 4:
+            j = 0
+        else:
+            j = j + 1
+    '''
     lyrs = layer( master = MasterCt, length = length, cvs = 2, layer = 0, attachToCurve = '', color = colors[0], up = upCntCt[4], X = X )
-    layers.append( lyrs )
-    lyrs = layer( master = MasterCt, length = length, cvs = 3, layer = 1, attachToCurve = layers[0].curve, color = colors[1], up = upCntCt[4], X = X )
-    layers.append( lyrs )
-    lyrs = layer( master = MasterCt, length = length, cvs = 5, layer = 2, attachToCurve = layers[1].curve, color = colors[2], up = upCntCt[4], X = X )
-    layers.append( lyrs )
-    lyrs = layer( master = MasterCt, length = length, cvs = 9, layer = 3, attachToCurve = layers[2].curve, color = colors[3], up = upCntCt[4], X = X )
-    layers.append( lyrs )
-    lyrs = layer( master = MasterCt, length = length, cvs = 17, layer = 4, attachToCurve = layers[3].curve, color = colors[4], up = upCntCt[4], X = X )
-    layers.append( lyrs )
-    lyrs = layer( master = MasterCt, length = length, cvs = 33, layer = 5, attachToCurve = layers[4].curve, color = colors[0], up = upCntCt[4], X = X )
-    layers.append( lyrs )
-    lyrs = layer( master = MasterCt, length = length, cvs = 65, layer = 6, attachToCurve = layers[5].curve, color = colors[1], up = upCntCt[4], X = X )
-    layers.append( lyrs )
-    lyrs = layer( master = MasterCt, length = length, cvs = 129, layer = 7, attachToCurve = layers[6].curve, color = colors[2], up = upCntCt[4], X = X )
-    layers.append( lyrs )
+    layers_built.append( lyrs )
+    lyrs = layer( master = MasterCt, length = length, cvs = 3, layer = 1, attachToCurve = layers_built[0].curve, color = colors[1], up = upCntCt[4], X = X )
+    layers_built.append( lyrs )
+    lyrs = layer( master = MasterCt, length = length, cvs = 5, layer = 2, attachToCurve = layers_built[1].curve, color = colors[2], up = upCntCt[4], X = X )
+    layers_built.append( lyrs )
+    lyrs = layer( master = MasterCt, length = length, cvs = 9, layer = 3, attachToCurve = layers_built[2].curve, color = colors[3], up = upCntCt[4], X = X )
+    layers_built.append( lyrs )
+    lyrs = layer( master = MasterCt, length = length, cvs = 17, layer = 4, attachToCurve = layers_built[3].curve, color = colors[4], up = upCntCt[4], X = X )
+    layers_built.append( lyrs )
+    lyrs = layer( master = MasterCt, length = length, cvs = 33, layer = 5, attachToCurve = layers_built[4].curve, color = colors[0], up = upCntCt[4], X = X )
+    layers_built.append( lyrs )
+    lyrs = layer( master = MasterCt, length = length, cvs = 65, layer = 6, attachToCurve = layers_built[5].curve, color = colors[1], up = upCntCt[4], X = X )
+    layers_built.append( lyrs )
+    lyrs = layer( master = MasterCt, length = length, cvs = 129, layer = 7, attachToCurve = layers_built[6].curve, color = colors[2], up = upCntCt[4], X = X )
+    layers_built.append( lyrs )'''
+
+    # path
+    s = 0.0
+    travel = 'travel'
+    spacing = 'offset'
+    frontTwist = 'frontTwist'
+    upTwist = 'upTwist'
+    sideTwist = 'sideTwist'
+    wheelRadius = 'wheelRadius'
+    pathLength = 'pathLength'
+    pathTraveled = 'pathTraveled'
+    wheelRoll = 'wheelRoll'
+    wheelRollMod = 'wheelRollModulus'
+    wheelBase = 'wheelBase'
+    msgPths = 'paths'
+    msgMp = 'motionPath'
+    # vehicle on path, front of vehicle
+    opf = 'onPath_front'
+    opfCt = place.Controller2( opf, MasterCt[4], False, 'squareOriginZup_ctrl', X * 5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'lightBlue' ).result
+    place.cleanUp( opfCt[0], World = True )
+    # cmds.parentConstraint( MasterCt[4], opfCt[0], mo = True ) # causes double transform
+    place.rotationLock( opfCt[2], True )
+    place.translationLock( opfCt[2], True )
+    misc.optEnum( opfCt[2], attr = 'path', enum = 'CONTROL' )
+    misc.addAttribute( [opfCt[2]], [travel], 0.0, 100.0, True, 'float' )
+    cmds.setAttr( opfCt[2] + '.' + travel, 0.1 )
+    misc.addAttribute( [opfCt[2]], [frontTwist], -360, 360, False, 'float' )
+    cmds.setAttr( opfCt[2] + '.' + frontTwist , cb = False )
+    misc.addAttribute( [opfCt[2]], [upTwist], -360, 360, False, 'float' )
+    cmds.setAttr( opfCt[2] + '.' + upTwist , cb = False )
+    misc.addAttribute( [opfCt[2]], [sideTwist], -360, 360, False, 'float' )
+    cmds.setAttr( opfCt[2] + '.' + sideTwist , cb = False )
+    misc.optEnum( opfCt[2], attr = 'wheelMath', enum = 'COMPUTE' )
+    misc.addAttribute( [opfCt[2]], [wheelRadius], 0.001, 1000, False, 'float' )
+    # cmds.addAttr( modNode + '.' + divdA, e = True, min = 0.001 )
+    cmds.addAttr( opfCt[2], ln = pathLength, at = 'float', h = False )
+    cmds.setAttr( opfCt[2] + '.' + pathLength , cb = True )
+    cmds.setAttr( opfCt[2] + '.' + pathLength , k = False )
+    misc.hijackAttrs( opfCt[2], layers_built[-1].crv_info, pathLength, 'arcLength', set = False, default = None, force = True )
+    cmds.addAttr( opfCt[2], ln = pathTraveled, at = 'float', h = False )
+    cmds.setAttr( opfCt[2] + '.' + pathTraveled , cb = True )
+    cmds.setAttr( opfCt[2] + '.' + pathTraveled , k = False )
+    cmds.addAttr( opfCt[2], ln = wheelRoll, at = 'float', h = False )
+    cmds.setAttr( opfCt[2] + '.' + wheelRoll , cb = True )
+    cmds.setAttr( opfCt[2] + '.' + wheelRoll , k = False )
+    cmds.addAttr( opfCt[2], ln = wheelRollMod, at = 'float', h = False )
+    cmds.setAttr( opfCt[2] + '.' + wheelRollMod , cb = True )
+    cmds.setAttr( opfCt[2] + '.' + wheelRollMod , k = False )
+
+    # vehicle on path, back of vehicle
+    opb = 'onPath_back'
+    opbCt = place.Controller2( opb, MasterCt[4], False, 'squareOriginZup_ctrl', X * 4.9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'lightBlue' ).result
+    place.cleanUp( opbCt[0], World = True )
+    cmds.addAttr( opbCt[2], ln = msgPths, at = 'message' )
+    cmds.addAttr( opbCt[2], ln = msgMp, at = 'message' )
+    # cmds.parentConstraint( MasterCt[4], opbCt[0], mo = True )  # causes double transform
+    place.rotationLock( opbCt[2], True )
+    misc.optEnum( opbCt[2], attr = travel + 'Control', enum = 'OPTNS' )
+    misc.addAttribute( [opbCt[2]], [pathDeviate], 0, 0.5, True, 'float' )
+    cmds.connectAttr( opbCt[2] + '.' + pathDeviate, MasterCt[2] + '.' + pathDeviate, f = True )
+    misc.addAttribute( [opbCt[2]], [wheelBase], 0, 1000, True, 'float' )
+    misc.addAttribute( [opbCt[2]], [spacing], -100.0, 100.0, True, 'float' )
+    cmds.setAttr( opbCt[2] + '.' + wheelBase, 10 )
+
+    # vehicle on path, top of vehicle
+    opu = 'onPath_up'
+    opuCt = place.Controller2( opu, MasterCt[4], False, 'loc_ctrl', X * 50, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'lightBlue' ).result
+    place.cleanUp( opuCt[0], World = True )
+    cmds.setAttr( opuCt[0] + '.ty', X * 100 )
+    cmds.setAttr( opuCt[0] + '.visibility', 0 )
+    cmds.parentConstraint( opbCt[4], opuCt[0], mo = True )
+    # aim
+    cmds.aimConstraint( opbCt[4], opfCt[3], wut = 'object', wuo = opuCt[4], aim = [0, 0, -1], u = [0, 1, 0], mo = True )
+    place.rotationLock( opfCt[3], True )
+
+    # front - attach to path
+    motpth_f = cmds.pathAnimation( opfCt[1], name = 'front_motionPath' , c = layers_built[-1].curve, startU = s, follow = True, wut = 'object', wuo = upCntCt[4], fm = True )
+    cmds.connectAttr( opfCt[2] + '.' + frontTwist, motpth_f + '.' + frontTwist )
+    cmds.connectAttr( opfCt[2] + '.' + upTwist, motpth_f + '.' + upTwist )
+    cmds.connectAttr( opfCt[2] + '.' + sideTwist, motpth_f + '.' + sideTwist )
+    cmds.setAttr( opfCt[2] + '.' + frontTwist, 180 )
+    cmds.setAttr( opfCt[2] + '.' + sideTwist, 90 )
 
 
 def layer( master = [], length = 10, cvs = 2, layer = 0, attachToCurve = '', color = '', up = '', X = 1 ):
@@ -1039,3 +1140,11 @@ def deleteAnim( obj = '', attr = '' ):
     deletes any existing keys
     '''
     ac.deleteAnim2( obj, attrs = [attr] )
+
+'''
+# path rig
+import webrImport as web
+ump = web.mod('universalMotionPath')
+ump.path2()
+
+'''

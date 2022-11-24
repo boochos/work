@@ -254,6 +254,7 @@ class Key():
         curveWeightPtr = scriptUtil.asDoublePtr()
         self.crvApi.getTangent( self.i, tangentAngle, curveWeightPtr, True )
         self.inAngle = tangentAngle.asDegrees()
+        # print( 'inAngle', self.crv, self.i, self.inAngle )
         inw = scriptUtil.getDouble( curveWeightPtr )
         # out angle, weight
         tangentAngle = OpenMaya.MAngle()
@@ -272,6 +273,20 @@ class Key():
             self.inWeight = inw
             self.outWeight = outw
 
+    def putValue( self ):
+        '''
+        put value only
+        '''
+        cmds.setKeyframe( self.obj,
+                          at = self.attr,
+                          time = ( self.frame + self.offset, self.frame + self.offset ),
+                          value = self.value,
+                          inTangentType = 'auto',
+                          outTangentType = 'auto',
+                          shape = False,
+                          nr = False,
+                          mr = True )
+
     def putKey( self ):
         # print self.obj, self.attr, self.frame, self.offset, self.value, '_____________________________'
         if cmds.getAttr( self.obj + '.' + self.attr, se = True ):
@@ -282,32 +297,41 @@ class Key():
                 s = cmds.setKeyframe( self.obj, at = self.attr, time = ( 
                     self.frame + self.offset, self.frame + self.offset ), value = self.value, shape = False, nr = False, mr = True )
                 self.crv = cmds.findKeyframe( self.obj, at = self.attr, c = True )[0]
-                # make tangents spline type, if default is 'auto', tangent edit doesn't take on first key in anim curve
-                cmds.keyTangent( self.crv, edit = True, time = ( self.frame + self.offset, self.frame + self.offset ),
-                                inTangentType = 'spline', outTangentType = 'spline' )
             else:
                 self.crv = crv[0]
+                '''
+                # already done in putValue()
                 s = cmds.setKeyframe( self.obj, at = self.attr, time = ( 
-                    self.frame + self.offset, self.frame + self.offset ), value = self.value, shape = False, nr = False, mr = True, i = True )
+                    self.frame + self.offset, self.frame + self.offset ), value = self.value, shape = False, nr = False, mr = True, i = True )'''
             # apply the rest
             if self.crv:
                 # set curve type, set weights
+                '''
                 cmds.keyframe( self.crv, time = ( self.frame + self.offset, self.frame +
-                                              self.offset ), valueChange = self.value )  # correction, hacky, (not sure what this is doing)
-                # print self.crv, self.weightedTangents, '!!!!!!!!'
-                # cmds.setAttr( self.crv + '.weightedTangents', self.weightedTangents )
+                                              self.offset ), valueChange = self.value )  # correction, hacky, (not sure what this is doing)'''
                 cmds.keyTangent( self.crv, edit = True, weightedTangents = self.weightedTangents )
+                '''
                 cmds.keyTangent( self.crv, edit = True, time = ( self.frame + self.offset, self.frame + self.offset ),
-                                inTangentType = self.inTangentType, outTangentType = self.outTangentType )
+                                inTangentType = self.inTangentType, outTangentType = self.outTangentType )'''
+
+                # lock off, so outAngle doesnt change inAngle
+                cmds.keyTangent( self.crv, edit = True, time = ( 
+                        self.frame + self.offset, self.frame + self.offset ), lock = False )
+                # tangents angles
                 if self.inAngle != None:
                     cmds.keyTangent( self.crv, edit = True, time = ( 
                         self.frame + self.offset, self.frame + self.offset ), inAngle = self.inAngle )
                 if self.outAngle != None:
                     cmds.keyTangent( self.crv, edit = True, time = ( 
                         self.frame + self.offset, self.frame + self.offset ), outAngle = self.outAngle )
+                # tangent types
+                cmds.keyTangent( self.crv, edit = True, time = ( self.frame + self.offset, self.frame + self.offset ),
+                                inTangentType = self.inTangentType, outTangentType = self.outTangentType )
+                # lock
                 if self.lock == True or self.lock == False:
                     cmds.keyTangent( self.crv, edit = True, time = ( 
                         self.frame + self.offset, self.frame + self.offset ), lock = self.lock )
+                # weighted types
                 if self.weightedTangents:
                     cmds.keyTangent( self.crv, edit = True, time = ( 
                         self.frame + self.offset, self.frame + self.offset ), weightLock = self.weightLock )
@@ -317,6 +341,7 @@ class Key():
                     if self.outWeight != None:
                         cmds.keyTangent( self.crv, edit = True, time = ( 
                             self.frame + self.offset, self.frame + self.offset ), outWeight = self.outWeight )
+
             else:
                 message( 'Unable to add animation to ' + self.obj + '.' + self.attr )
                 # pass
@@ -409,19 +434,38 @@ class Attribute( Key ):
     def putCurve( self ):
         if not self.poseOnly:
             if self.keys:
-                for k in self.keys:
-                    k.obj = self.obj
-                    k.offset = self.offset
-                    k.crv = self.crv
-                    # make sure attr exists, is not locked
-                    if cmds.objExists( self.obj + '.' + self.name ):
-                        if not cmds.getAttr( self.obj + '.' + self.name, l = True ):
+                # make sure attr exists, is not locked
+                if cmds.objExists( self.obj + '.' + self.name ):
+                    if not cmds.getAttr( self.obj + '.' + self.name, l = True ):
+                        # set value first, helps for exact recreation of curves
+                        for k in self.keys:
+                            k.obj = self.obj
+                            k.offset = self.offset
+                            k.crv = self.crv
+                            k.putValue()
+                        # set key parameters
+                        fix_first_key = False
+                        for k in self.keys:
+                            k.obj = self.obj
+                            k.offset = self.offset
+                            k.crv = self.crv
+                            #
                             k.putKey()
                             # print '\n', k.__dict__, '\n'
-                            self.putCurveAttrs()
-                    else:
-                        # print 'obj doesnt exist', self.obj + '.' + self.name
-                        pass
+                            fix_first_key = True
+                        if fix_first_key:
+                            # first key hack fix
+                            # behaves as if tangents dont exist until second key is created
+                            # rerun putKey on first keyed frame
+                            k = self.keys[0]
+                            k.obj = self.obj
+                            k.offset = self.offset
+                            k.crv = self.crv
+                            k.putKey()
+                        self.putCurveAttrs()
+                else:
+                    # print 'obj doesnt exist', self.obj + '.' + self.name
+                    pass
             else:
                 # print 'no keys'
                 self.putAttr()
