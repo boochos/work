@@ -498,6 +498,7 @@ class Attribute( Key ):
         self.crv = cmds.findKeyframe( self.obj, at = self.name, c = True )
         if self.crv:
             self.crv = self.crv[0]
+            # print( self.crv, self.preInfinity, self.postInfinity )
             cmds.setAttr( self.crv + '.preInfinity', self.preInfinity )
             cmds.setAttr( self.crv + '.postInfinity', self.postInfinity )
 
@@ -1187,7 +1188,7 @@ def onCurrentFrameOffset( start = 0.0 ):
 
 def insertIntoRange( attr, rng = [0.0, 0.0], extendEnd = True ):
     '''
-    
+    duplicates key class
     '''
     print( 'insert into range' )
     keys = []
@@ -1336,7 +1337,8 @@ def cutKeysToRange( clp, start = None, end = None ):
                 if attr.crv:
                     keys = []
                     for key in attr.keys:
-                        if key.frame >= start and key.frame <= end:
+                        print( key.frame, start, end )
+                        if key.frame >= s and key.frame <= e:
                             keys.append( key )
                     if keys:
                         attr.keys = keys

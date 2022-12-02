@@ -7,8 +7,12 @@ import maya.cmds as cmds
 def getControlPoints( p0 = [1.0, 0.0, 0.0], p3 = [10.0, 10.0, 0.0] ):
     '''
     feed p0=[frame, value, outAngle], p3=[frame, value, inAngle]
+    mltp = 0.3333333333333333 tangent length if non weighted tangents
+    mltp = feed function length of tangent (length is an x coordinate)
     '''
     # could use multiplier to adjust length of existing weights after key is inserted
+    # when tangent is not weighted, below multiplier will solve x position of the tangent
+    # otherwise i need to add this as a 'tangent length' variable
     mltp = 0.3333333333333333  # multiplier to solve adjacent side, p[1] x coor, 33.333333333333%
     # gap between keys
     gap = p3[0] - p0[0]
@@ -33,7 +37,13 @@ def getControlPoints( p0 = [1.0, 0.0, 0.0], p3 = [10.0, 10.0, 0.0] ):
     # print opo, ' p2 opo height'
     p2 = [p3[0] - adj, p3[1] - opo]  # adjusting, may need fixing for +/- angles
     # print p2
-    # resort lists [x,x,x,x] [y,y,y,y]
+    # resort lists =
+    # x,y coordinates of key1 or p0
+    # x,y coordinates of out tangent of key1 or p0,
+    # x,y coordinates of in tangent of key2 or p2,
+    # x,y coordinates of key2 or p2
+    # [x,x,x,x] [y,y,y,y]
+
     return [p0[0], p1[0], p2[0], p3[0]], [p0[1], p1[1], p2[1], p3[1]]
 
 
