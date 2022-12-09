@@ -275,17 +275,23 @@ class Key():
 
     def putValue( self ):
         '''
-        put value only
+        put value only, otherwise tangents dont apply properly
         '''
+        # create key
         cmds.setKeyframe( self.obj,
                           at = self.attr,
                           time = ( self.frame + self.offset, self.frame + self.offset ),
-                          value = self.value,
+                          value = 0.0,
                           inTangentType = 'auto',
                           outTangentType = 'auto',
                           shape = False,
                           nr = False,
                           mr = True )
+        # operates on anim curve, set value relative to active anim layer
+        cmds.keyframe( self.obj,
+                       at = self.attr,
+                       time = ( self.frame + self.offset, self.frame + self.offset ),
+                       valueChange = self.value )
 
     def putKey( self ):
         # print self.obj, self.attr, self.frame, self.offset, self.value, '_____________________________'
@@ -306,15 +312,16 @@ class Key():
             # apply the rest
             if self.crv:
                 # set curve type, set weights
+                # use keyframe to properly set value in non base anim layers, keyframe operates on curve, setKeyframe operates on attr
                 '''
                 cmds.keyframe( self.crv, time = ( self.frame + self.offset, self.frame +
-                                              self.offset ), valueChange = self.value )  # correction, hacky, (not sure what this is doing)'''
+                                              self.offset ), valueChange = self.value )'''  # correction, hacky, (not sure what this is doing)
                 cmds.keyTangent( self.crv, edit = True, weightedTangents = self.weightedTangents )
                 '''
                 cmds.keyTangent( self.crv, edit = True, time = ( self.frame + self.offset, self.frame + self.offset ),
                                 inTangentType = self.inTangentType, outTangentType = self.outTangentType )'''
 
-                # lock off, so outAngle doesnt change inAngle
+                # set lock off, so outAngle doesnt change inAngle
                 cmds.keyTangent( self.crv, edit = True, time = ( 
                         self.frame + self.offset, self.frame + self.offset ), lock = False )
                 # tangents angles
@@ -327,20 +334,25 @@ class Key():
                 # tangent types
                 cmds.keyTangent( self.crv, edit = True, time = ( self.frame + self.offset, self.frame + self.offset ),
                                 inTangentType = self.inTangentType, outTangentType = self.outTangentType )
-                # lock
-                if self.lock == True or self.lock == False:
-                    cmds.keyTangent( self.crv, edit = True, time = ( 
-                        self.frame + self.offset, self.frame + self.offset ), lock = self.lock )
+
                 # weighted types
                 if self.weightedTangents:
+                    # set weightLock off, to isolate weights
                     cmds.keyTangent( self.crv, edit = True, time = ( 
-                        self.frame + self.offset, self.frame + self.offset ), weightLock = self.weightLock )
+                        self.frame + self.offset, self.frame + self.offset ), weightLock = False )
                     if self.inWeight != None:
                         cmds.keyTangent( self.crv, edit = True, time = ( 
                             self.frame + self.offset, self.frame + self.offset ), inWeight = self.inWeight )
                     if self.outWeight != None:
                         cmds.keyTangent( self.crv, edit = True, time = ( 
                             self.frame + self.offset, self.frame + self.offset ), outWeight = self.outWeight )
+                    # set lock weight
+                    cmds.keyTangent( self.crv, edit = True, time = ( 
+                        self.frame + self.offset, self.frame + self.offset ), weightLock = self.weightLock )
+                # lock
+                if self.lock == True or self.lock == False:
+                    cmds.keyTangent( self.crv, edit = True, time = ( 
+                        self.frame + self.offset, self.frame + self.offset ), lock = self.lock )
 
             else:
                 message( 'Unable to add animation to ' + self.obj + '.' + self.attr )
@@ -524,8 +536,22 @@ class Obj( Attribute ):
         self.getBakedAttribute()
 
     def getAttribute( self ):
+        '''
+        
+        '''
         # if lattice point is selected, returning list is 'attr.attr'
-        keyable = cmds.listAttr( self.name, k = True, s = True )
+        rootLayer = cmds.animLayer( q = True, root = True )
+        layer = getActiveLayer()
+        keyable = []
+        #
+        if layer == rootLayer:
+            keyable = cmds.listAttr( self.name, k = True, s = True )
+        else:
+            keyable_candidate = cmds.animLayer( layer, q = True, at = True )  # node.attr, only store attrs that are a member of the layer
+            for k in keyable_candidate:
+                if self.name in k:  # see if current object owns attribute in current iteration
+                    keyable.append( k )
+        #
         if keyable:
             for attr in keyable:
                 if attr not in self.attributesDriven:
@@ -848,8 +874,21 @@ class Clip( Layer ):
             for layer in self.layerNames:
                 # collect objects in layer
                 currentLayerMembers = []
+                connected = []
+                '''
+                # old method, filters out objects
                 connected = cmds.listConnections( 
-                    layer, s = 1, d = 0, t = 'transform' )
+                    layer, s = 1, d = 0, t = 'transform' )  # filters out utility nodes. fail
+                '''
+                # new method
+                if not connected:
+                    nodes = []
+                    attributes = cmds.animLayer( layer, q = True, at = True )  # node.attr return
+                    if attributes:
+                        for a in attributes:
+                            nodes.append( a.split( '.' )[0] )
+                        connected = list( set( nodes ) )
+                #
                 if connected:
                     objects = list( set( connected ) )
                     for s in self.sel:
@@ -864,7 +903,7 @@ class Clip( Layer ):
                         clp.get()
                         self.layers.append( clp )
                 else:
-                    print( layer, '     no members' )
+                    print( layer, '     no members' )  # root layer also returns no members
             self.setActiveLayer( l = self.rootLayer )
             # build root layer class
             clp = Layer( sel = self.sel, comment = self.comment, poseOnly = self.poseOnly, bakeRange = self.bakeRange )
@@ -968,8 +1007,13 @@ class Clip( Layer ):
                     if layer.objects:
                         for obj in layer.objects:
                             if cmds.objExists( obj.name ):
+                                '''
+                                # old method all attrs on object
                                 cmds.select( obj.name )
-                                cmds.animLayer( layer.name, e = True, aso = True )
+                                cmds.animLayer( layer.name, e = True, aso = True )'''
+                                # new method specific attrs on object
+                                for attr in obj.attributes:
+                                    cmds.animLayer( layer.name, e = True, attribute = obj.name + '.' + attr.name )
 
                     # should check if layer is empty, no objects exist in scene that existed during export, should delete if layer is empty or putObjects
                     # add animation
@@ -1225,19 +1269,19 @@ def insertKey( clp, frame = 0.0, rng = [0.0, 0.0] ):
             for attr in obj.attributes:
                 attrRng = []
                 if attr.crv:
-                    print( 00 )
+                    # print( 00 )
                     start = attr.frames[0]
                     end = attr.frames[len( attr.frames ) - 1]
                     if end < rng[0]:
-                        print( 0 )
+                        # print( 0 )
                         # keep last key in attr.keys, duplicate it and alter frame numbers to new range, make tangents flat
                         insertIntoRange( attr, rng = rng, extendEnd = True )
                     elif start > rng[1]:
-                        print( 1 )
+                        # print( 1 )
                         # keep first key in attr.keys, duplicate it and alter frame numbers to new range, make tangents flat
                         insertIntoRange( attr, rng = rng, extendEnd = False )
                     elif frame > attr.frames[0] and frame < attr.frames[len( attr.frames ) - 1] and frame not in attr.frames:
-                        print( 2 )
+                        # print( 2 )
                         k = insertKeyValue( attr, frame )
                         # print k.frame
                         attr.keys.append( k )
@@ -1267,20 +1311,29 @@ def insertKeyValue( attr, frame = 0.0 ):
     while frame > attr.keys[i].frame:
         i = i + 1
         if len( attr.keys ) - 1 < i:
-            print( 'done' )
+            # print( 'done' )
             return None  # needs an actual value to work
     else:
         preVal = attr.keys[i - 1].value
         nexVal = attr.keys[i].value
         preFrm = attr.keys[i - 1].frame
         nexFrm = attr.keys[i].frame
-        p0 = [preFrm, preVal, attr.keys[i - 1].outAngle]
-        p3 = [nexFrm, nexVal, attr.keys[i].inAngle]
+        # format tangent weight
+        outWeight = 0.0
+        inWeight = 0.0
+        if attr.keys[i - 1].outWeight:
+            outWeight = attr.keys[i - 1].outWeight
+            inWeight = attr.keys[i].inWeight
+        else:
+            print( 'not weight' )
+        #
+        p0 = [preFrm, preVal, attr.keys[i - 1].outAngle, outWeight]
+        p3 = [nexFrm, nexVal, attr.keys[i].inAngle, inWeight]
         corX, corY = cpb.getControlPoints( p0, p3 )
         # print corX, corY
-        print( 'seeking' )
+        # print( 'seeking' )
         degIn, hlengthIn, value, degOut, hlengthOut = cpb.seekPoint( corX, corY, frame )
-        print( 'seeked' )
+        # print( 'seeked' )
         k = Key( attr.obj, attr.name, attr.crv, frame, weightedTangents = weighted, auto = False )
         # print degIn, value, degOut, crv
         k.value = value
@@ -1298,14 +1351,21 @@ def insertKeyValue( attr, frame = 0.0 ):
             gap = p3[0] - p0[0]
             #
             front = ( frame - p0[0] )
+            print( 'front gap frames:', front )
             back = ( p3[0] - frame )
+            print( 'back gap frames:', back )
             #
-            print( time, p0[0], gap, '____________' )
-            front = ( frame - p0[0] ) / gap
-            back = ( p3[0] - frame ) / gap
+            mlt_front = ( front / gap )  # wrong ratio
+            print( 'mlt_front:', mlt_front )
+            mlt_back = ( back / gap )  # wrong ratio
+            print( 'mlt_back:', mlt_back )
             #
-            attr.keys[i - 1].outWeightt = ow * front
-            attr.keys[i].inWeightinWeight = iw * back
+            attr.keys[i - 1].outWeight = ow * mlt_front
+            print( 'original outWeight:', ow )
+            print( 'new outWeight:', ow * mlt_front )
+            attr.keys[i].inWeight = iw * mlt_back
+            print( 'original inWeight:', iw )
+            print( 'new inWeight:', iw * mlt_back )
         return k
 
 
@@ -1323,13 +1383,13 @@ def cutKeysToRange( clp, start = None, end = None ):
     else:
         e = clp.end
     # insert
-    print( 'end', end, s, e )
+    # print( 'end', end, s, e )
     if end != None:
         clp = insertKey( clp, end, rng = [s, e] )
-    print( 'start', start, s, e )
+    # print( 'start', start, s, e )
     if start != None:
         clp = insertKey( clp, start, rng = [s, e] )
-    print( 'key inserted' )
+    # print( 'key inserted' )
     # exclude keys out of range
     for layer in clp.layers:
         for obj in layer.objects:
@@ -1337,7 +1397,7 @@ def cutKeysToRange( clp, start = None, end = None ):
                 if attr.crv:
                     keys = []
                     for key in attr.keys:
-                        print( key.frame, start, end )
+                        # print( key.frame, start, end )
                         if key.frame >= s and key.frame <= e:
                             keys.append( key )
                     if keys:
@@ -1393,6 +1453,18 @@ def replaceNS( obj = '', ns = '' ):
     result = obj.replace( obj.rsplit( ':', 1 )[0], ns )
     # print result
     return result
+
+
+def getActiveLayer():
+    '''
+    return current active anim layer
+    '''
+    layerNames = cmds.ls( type = 'animLayer' )
+    # rootLayer = cmds.animLayer( q = True, root = True )
+    for layer in layerNames:
+        if cmds.animLayer( layer, q = True, selected = True ):
+            return layer
+    return None
 
 
 def pruneLayers( clp, layers = [] ):

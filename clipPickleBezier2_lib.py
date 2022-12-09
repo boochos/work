@@ -4,9 +4,9 @@ import math
 import maya.cmds as cmds
 
 
-def getControlPoints( p0 = [1.0, 0.0, 0.0], p3 = [10.0, 10.0, 0.0] ):
+def getControlPoints( p0 = [1.0, 0.0, 0.0, 0.0], p3 = [10.0, 10.0, 0.0, 0.0] ):
     '''
-    feed p0=[frame, value, outAngle], p3=[frame, value, inAngle]
+    feed p0=[frame, value, outAngle, outWeight], p3=[frame, value, inAngle, inWeight]
     mltp = 0.3333333333333333 tangent length if non weighted tangents
     mltp = feed function length of tangent (length is an x coordinate)
     '''
@@ -16,12 +16,15 @@ def getControlPoints( p0 = [1.0, 0.0, 0.0], p3 = [10.0, 10.0, 0.0] ):
     mltp = 0.3333333333333333  # multiplier to solve adjacent side, p[1] x coor, 33.333333333333%
     # gap between keys
     gap = p3[0] - p0[0]
+    adj = gap * mltp  # tangent coor in x
     # print gap, ' gap'
 
     # p1
     outA = p0[2]
     # print outA, ' p1 hyp angle'
-    adj = gap * mltp  # tangent coor in x
+    if p0[3] > 0.0:
+        adj = p0[3] * 1.0  # 0.9344
+        # print( p0[3] )
     # print adj, ' p1 adj length'
     opo = math.tan( math.radians( outA ) ) * ( adj )
     # print opo, ' p1 opo height'
@@ -31,9 +34,11 @@ def getControlPoints( p0 = [1.0, 0.0, 0.0], p3 = [10.0, 10.0, 0.0] ):
     # p2
     outA = p3[2]
     # print outA, ' p2 hyp angle'
-    adj = gap * mltp  # tangent coor in x
+    if p3[3] > 0.0:
+        adj = p3[3] * 1.0  # 0.9344
+        # print( p3[3] )
     # print adj, ' p2 adj length'
-    opo = math.tan( math.radians( outA ) ) * adj
+    opo = math.tan( math.radians( outA ) ) * ( adj )
     # print opo, ' p2 opo height'
     p2 = [p3[0] - adj, p3[1] - opo]  # adjusting, may need fixing for +/- angles
     # print p2
@@ -99,8 +104,10 @@ def getPointTangents( xList, yList ):
 def seekPoint( corX = [1, 4, 7, 10], corY = [0, 0, 10, 10], frame = 3.25, accuracy = 0.002 ):
     '''
     accuracy can cause error, recursion too high
+    default should be 0.002
     '''
     steps = 20000
+    # steps = 80000  # test for weighted tangents, no dif
     for k in range( steps ):
         # print k
         t = float( k ) / ( steps - 1 )
@@ -113,6 +120,7 @@ def seekPoint( corX = [1, 4, 7, 10], corY = [0, 0, 10, 10], frame = 3.25, accura
             degIn, hlengthIn, degOut, hlengthOut = getPointTangents( x, y )
             # print y, 'here', x    #find tangents in B function maybe
             # print degIn, y[1], degOut
+            # print( 'value: ', y[1] )
             return degIn, hlengthIn, y[1], degOut, hlengthOut
     # if loop fails due to high accuracy, keep trying
     steps = steps * 3
