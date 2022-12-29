@@ -33,16 +33,62 @@ def init_ui():
     top_layout = QtWidgets.QHBoxLayout()
     bottom_layout = QtWidgets.QHBoxLayout()
     #
+    # always on top
+    alwaysOnTop_label = QtWidgets.QLabel( 'Window On Top:  ' )
+    alwaysOnTop_check = QtWidgets.QCheckBox()
+    alwaysOnTop_check.setChecked( True )
+    alwaysOnTop_check.clicked.connect( lambda:onTopToggle( main_window ) )
     # suffix layout
     sffx_line_layout = QtWidgets.QHBoxLayout()
-    sffx_label = QtWidgets.QLabel( 'Warp node suffix:' )
+    sffx_label = QtWidgets.QLabel( 'Warp node suffix option:  ' )
     sffx_edit = QtWidgets.QLineEdit()
     sffx_label.setMinimumWidth( 50 )
     #
+    # sffx_line_layout.addWidget( alwaysOnTop_label )
+    # sffx_line_layout.addWidget( alwaysOnTop_check )
+    #
     sffx_line_layout.addWidget( sffx_label )
     sffx_line_layout.addWidget( sffx_edit )
+    sffx_line_layout.addWidget( alwaysOnTop_label )
+    sffx_line_layout.addWidget( alwaysOnTop_check )
     main_layout.addLayout( sffx_line_layout )
     #
+    # buttons
+    create_warp_button = QtWidgets.QPushButton( "Create Warp" )
+    create_warp_button.clicked.connect( lambda: createTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 , sffx_edit.text() ) )
+    create_warp_button.setStyleSheet( "background-color: darkgreen" )
+    #
+    connect_button = QtWidgets.QPushButton( "Add Controls" )
+    connect_button.clicked.connect( lambda: connectToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
+    #
+    disconnect_button = QtWidgets.QPushButton( "Remove Controls" )
+    disconnect_button.clicked.connect( lambda: connectToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14, connect = False ) )
+    #
+    bake_button = QtWidgets.QPushButton( "Bake Warp" )
+    bake_button.clicked.connect( lambda: bakeTimeWarp_ui( warp_list_widget ) )
+    bake_button.setStyleSheet( "background-color: grey" )
+    #
+    aprox_button = QtWidgets.QPushButton( "Approximate Warp" )
+    aprox_button.clicked.connect( lambda: approximateTimeWarp_ui( warp_list_widget ) )
+    aprox_button.setStyleSheet( "background-color: grey" )
+    #
+    select_button = QtWidgets.QPushButton( "Select Controls" )
+    select_button.clicked.connect( lambda: selectTimeWarpMembers_ui( warp_list_widget ) )
+    #
+    delete_button = QtWidgets.QPushButton( "Delete Warp" )
+    delete_button.clicked.connect( lambda: deleteTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
+    delete_button.setStyleSheet( "background-color: darkred" )
+    #
+    refresh_button = QtWidgets.QPushButton( "Refresh UI" )
+    refresh_button.clicked.connect( lambda: getWarps_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
+    refresh_button.setStyleSheet( "background-color: darkcyan" )
+    #
+    connectLayer_button = QtWidgets.QPushButton( "Add Layers" )
+    connectLayer_button.clicked.connect( lambda: connectLayerToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14, connectLayers = True ) )
+    #
+    disconnectLayer_button = QtWidgets.QPushButton( "Remove Layers" )
+    disconnectLayer_button.clicked.connect( lambda: connectLayerToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14, connectLayers = False ) )
+
     # column lists
     lists_layout = QtWidgets.QHBoxLayout()
     # col 1
@@ -52,17 +98,46 @@ def init_ui():
     col1_label2 = QtWidgets.QLabel( 'Anim Layers :' )
     animLayers_list_widget = QtWidgets.QListWidget()
     animLayers_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.ExtendedSelection )
-    col1_layout.addWidget( col1_label1 )
-    col1_layout.addWidget( warp_list_widget )
-    col1_layout.addWidget( col1_label2 )
-    col1_layout.addWidget( animLayers_list_widget )
     # col 2
     col2_layout = QtWidgets.QVBoxLayout()
-    col2_label1 = QtWidgets.QLabel( 'Connected Members :' )
+    col2_row1Label0_layout = QtWidgets.QHBoxLayout()
+    col2_row1Label1_layout = QtWidgets.QHBoxLayout()
+    col2_row1Label0_layout.addLayout( col2_row1Label1_layout )
+    col2_row1Label1_layout.setAlignment( QtCore.Qt.AlignLeft )
+    col2_label1 = QtWidgets.QLabel( 'Controls in scope:' )
+    col2_label2 = QtWidgets.QLabel( '' )
+    col2_label2.setStyleSheet( "font-weight: bold" )
+    col2_row1Label2_layout = QtWidgets.QHBoxLayout()
+    col2_row1Label0_layout.addLayout( col2_row1Label2_layout )
+    col2_row1Label2_layout.setAlignment( QtCore.Qt.AlignRight )
+    col2_label3 = QtWidgets.QLabel( 'Curves:' )
+    col2_label4 = QtWidgets.QLabel( '' )
+    col2_label4.setStyleSheet( "font-weight: bold" )
+    col2_row1Label1_layout.addWidget( col2_label1 )
+    col2_row1Label1_layout.addWidget( col2_label2 )
+    col2_row1Label2_layout.addWidget( col2_label3 )
+    col2_row1Label2_layout.addWidget( col2_label4 )
     members_list_widget = QtWidgets.QListWidget()
     members_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.NoSelection )
-    col2_layout.addWidget( col2_label1 )
-    col2_layout.addWidget( members_list_widget )
+    col2_row2Label0_layout = QtWidgets.QHBoxLayout()
+    col2_row2Label1_layout = QtWidgets.QHBoxLayout()
+    col2_row2Label0_layout.addLayout( col2_row2Label1_layout )
+    col2_row2Label1_layout.setAlignment( QtCore.Qt.AlignLeft )
+    col2_label11 = QtWidgets.QLabel( 'Anim Layers in scope:' )
+    col2_label12 = QtWidgets.QLabel( '' )
+    col2_label12.setStyleSheet( "font-weight: bold" )
+    col2_row2Label2_layout = QtWidgets.QHBoxLayout()
+    col2_row2Label0_layout.addLayout( col2_row2Label2_layout )
+    col2_row2Label2_layout.setAlignment( QtCore.Qt.AlignRight )
+    col2_label13 = QtWidgets.QLabel( 'Curves:' )
+    col2_label14 = QtWidgets.QLabel( '' )
+    col2_label14.setStyleSheet( "font-weight: bold" )
+    col2_row2Label1_layout.addWidget( col2_label11 )
+    col2_row2Label1_layout.addWidget( col2_label12 )
+    col2_row2Label2_layout.addWidget( col2_label13 )
+    col2_row2Label2_layout.addWidget( col2_label14 )
+    animLayerMembers_list_widget = QtWidgets.QListWidget()
+    animLayerMembers_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.ExtendedSelection )
     # attach columns
     lists_layout.addLayout( col1_layout )  # attach col 1
     lists_layout.addLayout( col2_layout )  # attach col 2
@@ -73,54 +148,44 @@ def init_ui():
     #
     main_window.setLayout( main_layout )
     main_window.setWindowTitle( 'Time Warp Tool' )
-    main_window.resize( 500, 500 )
+    main_window.resize( 450, 500 )
     #
-    warp_list_widget.itemSelectionChanged.connect( lambda: getMembers_ui( warp_list_widget, members_list_widget ) )
+    warp_list_widget.itemSelectionChanged.connect( lambda: getMembers_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
     # members_list_widget.itemSelectionChanged.connect( lambda: get_tasks( warp_list_widget.currentItem().text(), members_list_widget.currentItem().text() ) )
     #
-    # buttons
-    #
-    create_warp_button = QtWidgets.QPushButton( "Create Warp" )
-    create_warp_button.clicked.connect( lambda: createTimeWarp_ui( warp_list_widget, members_list_widget, sffx_edit.text() ) )
-    create_warp_button.setStyleSheet( "background-color: darkgreen" )
-    #
-    connect_button = QtWidgets.QPushButton( "Connect Objects" )
-    connect_button.clicked.connect( lambda: connectTimeWarp_ui( warp_list_widget, members_list_widget ) )
-    #
-    disconnect_button = QtWidgets.QPushButton( "Disconnect Objects" )
-    disconnect_button.clicked.connect( lambda: connectTimeWarp_ui( warp_list_widget, members_list_widget, connect = False ) )
-    #
-    bake_button = QtWidgets.QPushButton( "Bake Warp" )
-    bake_button.clicked.connect( lambda: bakeTimeWarp_ui( warp_list_widget ) )
-    # bake_button.setStyleSheet( "background-color: darkgreen" )
-    #
-    aprox_button = QtWidgets.QPushButton( "Approximate Warp" )
-    aprox_button.clicked.connect( lambda: approximateTimeWarp_ui( warp_list_widget ) )
-    # aprox_button.setStyleSheet( "background-color: darkgreen" )
-    #
-    select_button = QtWidgets.QPushButton( "Select Objects" )
-    select_button.clicked.connect( lambda: selectTimeWarpMembers_ui( warp_list_widget ) )
-    #
-    delete_button = QtWidgets.QPushButton( "Delete Warp" )
-    delete_button.clicked.connect( lambda: deleteTimeWarp_ui( warp_list_widget, members_list_widget ) )
-    delete_button.setStyleSheet( "background-color: darkred" )
-    #
-    refresh_button = QtWidgets.QPushButton( "Refresh UI" )
-    refresh_button.clicked.connect( lambda: getWarps_ui( warp_list_widget, members_list_widget ) )
     #
     # layouts
     bottom_layout.addWidget( refresh_button )
-    bottom_layout.addWidget( select_button )
-    bottom_layout.addWidget( bake_button )
-    bottom_layout.addWidget( aprox_button )
+    # col1
+    create_layout = QtWidgets.QHBoxLayout()
+    col1_layout.addLayout( create_layout )
+    create_layout.addWidget( create_warp_button )
+    create_layout.addWidget( delete_button )
+    col1_layout.addWidget( col1_label1 )
+    col1_layout.addWidget( warp_list_widget )
+    col1_layout.addWidget( col1_label2 )
+    col1_layout.addWidget( animLayers_list_widget )
+    col1_layout.addWidget( connectLayer_button )
+    col1_layout.addWidget( refresh_button )
+    # col2
+    connection_layout = QtWidgets.QHBoxLayout()
+    col2_layout.addLayout( connection_layout )
+    connection_layout.addWidget( select_button )
+    connection_layout.addWidget( connect_button )
+    connection_layout.addWidget( disconnect_button )
+    col2_layout.addLayout( col2_row1Label0_layout )
+    col2_layout.addWidget( members_list_widget )
+    col2_layout.addLayout( col2_row2Label0_layout )
+    # col2_layout.addWidget( col2_label11 )
+    col2_layout.addWidget( animLayerMembers_list_widget )
+    col2_layout.addWidget( disconnectLayer_button )
+    bake_layout = QtWidgets.QHBoxLayout()
+    col2_layout.addLayout( bake_layout )
+    bake_layout.addWidget( bake_button )
+    bake_layout.addWidget( aprox_button )
     #
-    top_layout.addWidget( create_warp_button )
-    top_layout.addWidget( connect_button )
-    top_layout.addWidget( disconnect_button )
-    top_layout.addWidget( delete_button )
     #
-    #
-    getWarps_ui( warp_list_widget, members_list_widget, animLayers_list_widget )
+    getWarps_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 )
     #
     # parse current scene
     # get_current( project_list_widget, members_list_widget, tasks_list_widget, scene_list_widget )
@@ -128,16 +193,18 @@ def init_ui():
     return main_window
 
 
-def getWarps_ui( warp_list_widget, members_list_widget, animLayers_list_widget ):
+def getWarps_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ):
     '''
-    
+    clears all lists, populates timewarps and anim layers in scene
     '''
     print( 'getwarpsui' )
-    # clear
+    # clear columns
     warp_list_widget.clear()
-    members_list_widget.clear()
     animLayers_list_widget.clear()
+    members_list_widget.clear()
+    animLayerMembers_list_widget.clear()
     #
+    getMemberCount( None, col2_label2, col2_label4, col2_label12, col2_label14 )
     # populate
     timewarps = getTimeWarps()
     if timewarps:
@@ -148,27 +215,71 @@ def getWarps_ui( warp_list_widget, members_list_widget, animLayers_list_widget )
     if animLayers:
         for a in animLayers:
             animLayers_list_widget.addItem( a )
+        animLayers_list_widget.selectAll()
 
 
-def getMembers_ui( warp_list_widget, members_list_widget ):
+def getMembers_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget , col2_label2, col2_label4, col2_label12, col2_label14 ):
     '''
+    import webrImport as web
+    ar = web.mod("animRetime_lib_DEVS")
+    sel = cmds.ls(sl=1, fl=1)[0] 
+    members = ar.getTimeWarpMembers2( sel )
     
+    populates members of timewarp selected: controls and anim layers
+    will add labels for number of members in list
     '''
     print( 'membersui' )
+    timewarp = ''
     timewarp = warp_list_widget.currentItem().text()
     members_list_widget.clear()
+    animLayerMembers_list_widget.clear()
     if cmds.objExists( timewarp ):
         # print( timewarp )
-        members = getTimeWarpMembers2( timewarp )
+        # members = getTimeWarpMembers2( timewarp )
+        members = getTimeWarpMembers3( timewarp )
         if members:
             for m in members:
                 members_list_widget.addItem( m )
+        # members = getTimeWarpMembers2( timewarp )
+        layerMembers = getTimeWarpAnimLayerMembers( timewarp )
+        if layerMembers:
+            for m in layerMembers:
+                animLayerMembers_list_widget.addItem( m )
+        getMemberCount( timewarp, col2_label2, col2_label4, col2_label12, col2_label14 )
     else:
         # redraw
-        getWarps_ui( warp_list_widget, members_list_widget )
+        getWarps_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 )
 
 
-def createTimeWarp_ui( warp_list_widget, members_list_widget, suffix = '' ):
+def getMemberCount( timeWarp, col2_label2, col2_label4, col2_label12, col2_label14 ):
+    '''
+    
+    '''
+    if timeWarp:
+        # control
+        n = cmds.sets( setControlName( timeWarp ), q = True, s = True )
+        col2_label2.setText( str( n ) )
+        # curve
+        n = cmds.sets( setCurveName( timeWarp ), q = True, s = True )
+        col2_label4.setText( str( n ) )
+        # layers
+        n = cmds.sets( setLayerName( timeWarp ), q = True, s = True )
+        col2_label12.setText( str( n ) )
+        # layer curves
+        n = cmds.sets( setLayerCurveName( timeWarp ), q = True, s = True )
+        col2_label14.setText( str( n ) )
+    else:
+        # control
+        col2_label2.setText( str( '' ) )
+        # curve
+        col2_label4.setText( str( '' ) )
+        # layers
+        col2_label12.setText( str( '' ) )
+        # layer curves
+        col2_label14.setText( str( '' ) )
+
+
+def createTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 , suffix = '' ):
     '''
     
     '''
@@ -177,11 +288,18 @@ def createTimeWarp_ui( warp_list_widget, members_list_widget, suffix = '' ):
     #
     sel = cmds.ls( sl = 1 )
     timewarp = createTimeWarp( suffix )
-    # print( sel )
-    # print( timewarp )
-    connectTimeWarp( sel, timewarp )
+    #
+    layers = []
+    qLayers = animLayers_list_widget.selectedItems()
+    for q in qLayers:
+        layers.append( q.text() )
+    #
+    setCreate( timewarp )
+    #
+    connectToTimeWarp( sel, timewarp, layers )  # objects
+    connectToTimeWarp( layers, timewarp, layers )  # layers
     # redraw
-    getWarps_ui( warp_list_widget, members_list_widget )
+    getWarps_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 )
     # select new timewarp
     item = warp_list_widget.findItems( timewarp, QtCore.Qt.MatchExactly )
     if item:
@@ -190,38 +308,45 @@ def createTimeWarp_ui( warp_list_widget, members_list_widget, suffix = '' ):
     cmds.undoInfo( closeChunk = True )
 
 
-def connectTimeWarp_ui( warp_list_widget, members_list_widget, connect = True ):
+def connectToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14, connect = True ):
     '''
     
     '''
     print( 'connectui' )
     chunkName = ''
     if connect:
-        chunkName = 'connectTimeWarp_ui'
+        chunkName = 'connectToTimeWarp_ui'
     else:
-        chunkName = 'disconnectTimeWarp_ui'
+        chunkName = 'disconnectToTimeWarp_ui'
     #
     # cmds.undoInfo( openChunk = True, chunkName = chunkName )
     #
     go = True
-    timewarp = warp_list_widget.currentItem().text()  # get selected warp
+    layers = []
+    #
+    timewarp = ''
+    qtimewarp = warp_list_widget.currentItem()  # get selected warp
+    if qtimewarp:
+        timewarp = qtimewarp.text()
+    #
     sel = cmds.ls( sl = 1 )
-    if sel:
-        for s in sel:
-            if cmds.objectType( s ) != 'transform':
-                go = False
-                break
+    if not sel:
+        go = False
+
     if go:
         if timewarp and sel:  #
-            # selectTimeWarpMembers_ui( warp_list_widget ) # turned off, doesnt seem to be needed
+            # get currently connected layers
+            layers = cmds.sets( setLayerName( timewarp ), q = True )
             # sel = cmds.ls( sl = 1 )
             if timewarp not in sel:
                 if connect:
-                    connectTimeWarp( sel, timewarp )
+                    connectToTimeWarp( sel, timewarp, layers )
+                    connectToTimeWarp( layers, timewarp, layers )  # layers
                 else:
-                    connectTimeWarp( sel, timewarp, connect )
+                    connectToTimeWarp( sel, timewarp, layers, connect )
+                    connectToTimeWarp( layers, timewarp, layers, connect )  # layers
                 # redraw ui
-                getMembers_ui( warp_list_widget, members_list_widget )
+                getMembers_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 )
                 #
             else:
                 message( 'Remove ___timeWarpNode___ node from selection of objects to connect.', warning = True )
@@ -229,22 +354,70 @@ def connectTimeWarp_ui( warp_list_widget, members_list_widget, connect = True ):
             message( ' select a timewarp in the ui and objects in the scene.', warning = True )
     #
     else:
-        message( 'everything in the selection has to be a transform.', warning = True )
+        message( 'Nothing selected.', warning = True )
     # cmds.undoInfo( closeChunk = True, chunkName = chunkName )
+
+
+def connectLayerToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14, connectLayers = True ):
+    '''
+    
+    '''
+    #
+    go = True
+    members = []
+    layers = []
+    timewarp = ''
+    qtimewarp = warp_list_widget.currentItem()  # get selected warp
+    if qtimewarp:
+        timewarp = qtimewarp.text()
+    #
+    if timewarp:
+        members = getTimeWarpMembers3( timewarp )
+        #
+        if connectLayers:
+            qLayers = animLayers_list_widget.selectedItems()
+            if qLayers:
+                for q in qLayers:
+                    layers.append( q.text() )
+            else:
+                message( 'Select a layer', warning = True )
+                go = False
+        else:
+            qLayers = animLayerMembers_list_widget.selectedItems()
+            if qLayers:
+                for q in qLayers:
+                    layers.append( q.text() )
+            else:
+                message( 'Select a layer', warning = True )
+                go = False
+        #
+        if go:
+            connectToTimeWarp( members, timewarp, layers, connect = True, connectLayers = connectLayers )  # objects
+            connectToTimeWarp( layers, timewarp, layers, connect = True, connectLayers = connectLayers )  # layer
+            getMembers_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 )
+        else:
+            print( layers )
+            message( 'No layers selected', warning = True )
+    else:
+        message( 'Select a timewarp', warning = True )
 
 
 def bakeTimeWarp_ui( warp_list_widget ):
     # pass
     cmds.undoInfo( openChunk = True, chunkName = 'bakeTimeWarp_ui' )
     #
-    go = selectTimeWarpMembers_ui( warp_list_widget )
-    # getKeyedFramesList()
-    if go:
-        pass
-        bakeTimeWarp( sparseKeys = True, sim = False, sampleBy = 1 )
+    members = None
+    timeWarp = getTimeWarpNode( warp_list_widget )
+    if timeWarp:
+        # members = getTimeWarpMembers2( timeWarp, select = True )
+        members = getTimeWarpMembers3( timeWarp )
+        # layers = getTimeWarpAnimLayerMembers( timeWarp )
+        if members:
+            bakeTimeWarp( timeWarp, members, sparseKeys = True, sim = False, sampleBy = 1 )
+        else:
+            message( 'No members connected to timeWarp node', warning = True )
     else:
-        pass
-        # print( 'no go' )
+        message( 'Select a timeWarp node in the left column', warning = True )
     #
     cmds.undoInfo( closeChunk = True, chunkName = 'bakeTimeWarp_ui' )
 
@@ -256,9 +429,11 @@ def approximateTimeWarp_ui( warp_list_widget ):
     members = None
     timeWarp = getTimeWarpNode( warp_list_widget )
     if timeWarp:
-        members = getTimeWarpMembers2( timeWarp, select = True )
+        # members = getTimeWarpMembers2( timeWarp, select = True )
+        members = getTimeWarpMembers3( timeWarp )
+        layers = getTimeWarpAnimLayerMembers( timeWarp )
         if members:
-            approximateTimeWarp( timeWarp )
+            approximateTimeWarp( timeWarp, members, layers )
         else:
             message( 'No members connected to timeWarp node', warning = True )
     else:
@@ -274,22 +449,26 @@ def selectTimeWarpMembers_ui( warp_list_widget ):
     print( 'selectui' )
     cmds.undoInfo( openChunk = True, chunkName = 'selectTimeWarpMembers_ui' )
     #
-    try:
-        timewarp = warp_list_widget.currentItem().text()
-        members = getTimeWarpMembers2( timewarp, select = True )
-        # cmds.select( members )
-        if members:
-            return True
-        else:
-            message( 'No members for given TimeWarp', warning = True )
-    except:
+    timewarp = ''
+    qtimewarp = warp_list_widget.currentItem()  # get selected warp
+    if qtimewarp:
+        timewarp = qtimewarp.text()
+        if timewarp:
+            # members = getTimeWarpMembers2( timewarp, select = True )
+            members = getTimeWarpMembers3( timewarp, select = True )
+            # cmds.select( members )
+            if members:
+                return True
+            else:
+                message( 'No members for given TimeWarp', warning = True )
+    else:
         message( 'Select a timewarp node in the left column', warning = True )
         return False
     #
     cmds.undoInfo( closeChunk = True, chunkName = 'selectTimeWarpMembers_ui' )
 
 
-def deleteTimeWarp_ui( warp_list_widget, members_list_widget ):
+def deleteTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ):
     '''
     
     '''
@@ -302,11 +481,22 @@ def deleteTimeWarp_ui( warp_list_widget, members_list_widget ):
         twarp = warp_list_widget.currentItem().text()
         deleteWarp( twarp )
         # redraw
-        getWarps_ui( warp_list_widget, members_list_widget )
+        getWarps_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 )
     else:
         message( ' No TimeWarp node selected in UI list' , warning = 1 )
     #
     cmds.undoInfo( closeChunk = True, chunkName = 'deleteTimeWarp_ui' )
+
+
+def onTopToggle( w ):
+    '''
+    window always on top toggle
+    '''
+    w.setWindowFlags( w.windowFlags() ^ QtCore.Qt.WindowStaysOnTopHint )
+    # w.setWindowFlags( w.windowFlags() | QtCore.Qt.WindowStaysOnTopHint ) # enable
+    # window.setWindowFlags(window.windowFlags() & ~QtCore.Qt.WindowStaysOnTopHint) # disable
+    w.show()
+    pass
 
 
 def ____MISC____():
@@ -314,6 +504,10 @@ def ____MISC____():
 
 
 def warpAttrStr():
+    return 'warpedFrame'
+
+
+def warpTimeAttrStr():
     return 'timeWarpedFrame'
 
 
@@ -327,13 +521,21 @@ def createTimeWarp( suffix = '' ):
     '''
     print( 'create' )
     attr = warpAttrStr()
-    name = warpNodeStr() + suffix
+    if suffix:
+        name = warpNodeStr() + suffix + '___'
+    else:
+        name = warpNodeStr()
+    name = getUniqueName( name )
     if not cmds.objExists( name ):
         loc = cmds.spaceLocator( n = name )[0]
         # attr
-        cmds.addAttr( loc, ln = attr, h = False, at = 'time' )  # time attr !!!
+        cmds.addAttr( loc, ln = attr, h = False, at = 'float' )  # fake time attr !!!
         cmds.setAttr( ( loc + '.' + attr ), cb = True )
         cmds.setAttr( ( loc + '.' + attr ), k = True )
+        cmds.addAttr( loc, ln = warpTimeAttrStr(), h = False, at = 'time' )  # time attr !!!
+        cmds.setAttr( ( loc + '.' + warpTimeAttrStr() ), cb = True )
+        cmds.setAttr( ( loc + '.' + warpTimeAttrStr() ), k = False )
+        cmds.connectAttr( loc + '.' + attr, loc + '.' + warpTimeAttrStr() )  # try this to see if problems with values gets fixed with export/import animations
         # range
         ast = cmds.playbackOptions( q = True, ast = True )
         aet = cmds.playbackOptions( q = True, aet = True )
@@ -343,13 +545,13 @@ def createTimeWarp( suffix = '' ):
         cmds.setInfinity( pri = 'linear' )
         cmds.setInfinity( poi = 'linear' )
         # lock - [lock, keyable], [visible, lock, keyable]
-        place.setChannels( loc, [True, False], [True, False], [True, False], [True, False, False] )
+        place.setChannels( loc, [True, False], [True, False], [True, False], [False, False, False] )
         return loc
     else:
         print( 'choose different prefix, object already exists', name )
 
 
-def connectTimeWarp( objects = [], timeWarp = '', connect = True ):
+def connectToTimeWarp( objects = [], timeWarp = '', layers = [], connect = True, connectLayers = True ):
     '''
     objects and timewarp loc
     add support for character sets and anim layers
@@ -358,56 +560,70 @@ def connectTimeWarp( objects = [], timeWarp = '', connect = True ):
     # start timer
     start = time.time()
     allAnimCurves = []
-    warpAttr = '_' + warpAttrStr()
+    warpAttr = '_' + warpTimeAttrStr()
     warpCurve = None
     #
+    # return
 
     #
-    if objects and timeWarp:
-        '''
-        warpCurve = cmds.listConnections( timewarp + '.' + warpAttrStr() )
-        #
-        if warpCurve:
-            warpCurve = warpCurve[0]
-            print( warpCurve )
-            '''
-        for obj in objects:
-            # print( 'conn obj', obj )
-            # animCurves = cmds.findKeyframe( obj, c = True )
-            animCurves = getAnimCurves( object = obj, max_recursion = 1 )  # character sets cause problems, also animLayers also cause problems
-            # print( 'connect', obj, animCurves )
+    if timeWarp:
+        if objects:
             # return
-            if animCurves:
-                for curve in animCurves:
-                    # print( 'conn curve', curve )
-                    allAnimCurves.append( curve )
+            for obj in objects:  # anim curve connections
+                # print( 'conn obj', obj )
+                # animCurves = cmds.findKeyframe( obj, c = True )
+                # animCurves = getAnimCurves( object = obj, max_recursion = 1 )  # character sets cause problems, also animLayers also cause problems
+                animCurves = getAnimCurves2( object = obj, layers = layers )
+                # return
+                # print( 'connect', obj, animCurves )
+                # return
+                if animCurves:
+                    for curve in animCurves:
+                        # print( 'conn curve', curve )
+                        allAnimCurves.append( curve )
+                        if connect and connectLayers:
+                            # add check to already connected retimeNode, if exists, disconnect first
+                            # cmds.connectAttr( warpCurve + '.output', curve + '.input', f = True ) # skips attr control, only connects to animcurve
+                            cmds.connectAttr( timeWarp + '.' + warpTimeAttrStr(), curve + '.input', f = True )
+                            if cmds.objectType( obj ) == 'animLayer':
+                                cmds.sets( curve , add = setLayerCurveName( timeWarp ), e = True )
+                            else:
+                                cmds.sets( curve , add = setCurveName( timeWarp ), e = True )
+                            # return
+                            # break
+                        else:
+                            # cmds.disconnectAttr( warpCurve + '.output', curve + '.input', f = True ) # skips attr control, only connects to animcurve
+                            # connections = getConnections( timeWarp + '.' + warpTimeAttrStr(), direction = 'out', find = cmds.objectType( curve ), find_through = [] )  # cant use this, really slow and finds too many anim curves
+                            connections = cmds.listConnections( timeWarp + '.' + warpTimeAttrStr(), s = 0, d = 1 )
+                            # print( 'connections: ', connections )
+                            # print( 'curve: ', curve )
+                            if connections:
+                                if curve in connections:
+                                    cmds.disconnectAttr( timeWarp + '.' + warpTimeAttrStr(), curve + '.input' )
+                                    if cmds.objectType( obj ) == 'animLayer':
+                                        cmds.sets( curve , remove = setLayerCurveName( timeWarp ), e = True )
+                                    else:
+                                        cmds.sets( curve , remove = setCurveName( timeWarp ), e = True )
+                else:
+                    # print( 'No animCurves connected to object:', obj )
+                    pass
+                # object connections
+                if cmds.objectType( obj ) != 'animLayer':
                     if connect:
-                        # add check to already connected retimeNode, if exists, disconnect first
-                        # cmds.connectAttr( warpCurve + '.output', curve + '.input', f = True ) # skips attr control, only connects to animcurve
-                        cmds.connectAttr( timeWarp + '.' + warpAttrStr(), curve + '.input', f = True )
+                        setAddMembers( [obj] , setControlName( timeWarp ) )
                     else:
-                        # cmds.disconnectAttr( warpCurve + '.output', curve + '.input', f = True ) # skips attr control, only connects to animcurve
-                        # connections = getConnections( timeWarp + '.' + warpAttrStr(), direction = 'out', find = cmds.objectType( curve ), find_through = [] )  # cant use this, really slow and finds too many anim curves
-                        connections = cmds.listConnections( timeWarp + '.' + warpAttrStr(), s = 0, d = 1 )
-                        # print( 'connections: ', connections )
-                        # print( 'curve: ', curve )
-                        if connections:
-                            if curve in connections:
-                                cmds.disconnectAttr( timeWarp + '.' + warpAttrStr(), curve + '.input' )
-            else:
-                # print( 'No animCurves connected to object:', obj )
-                pass
-            # print( animCurves )
-        if not connect:
-            # clean up
-            cleanConversionNodes( timeWarp + '.' + warpAttrStr() )
-        # print allAnimCurves
-        '''
+                        setRemoveMembers( [obj] , setControlName( timeWarp ) )
+            #
+            cleanConversionNodes( timeWarp + '.' + warpTimeAttrStr() )
         else:
-            print( timeWarp + '.' + warpAttrStr(), 'has no keys' )
-            '''
-    else:
-        message( 'Select objects to connect / disconnect', warning = True )
+            message( 'Select objects to connect / disconnect', warning = True )
+        # anim layer connections
+        if connectLayers:
+            if layers:
+                setAddMembers( layers , setLayerName( timeWarp ) )
+        else:
+            if layers:
+                setRemoveMembers( layers , setLayerName( timeWarp ) )
 
     # end timer
     end = time.time()
@@ -415,27 +631,53 @@ def connectTimeWarp( objects = [], timeWarp = '', connect = True ):
     print( 'Connect time: ' + str( elapsed / 60 ) + ' min', connect )
 
 
-def bakeTimeWarp( sparseKeys = True, sim = False, sampleBy = 1.0 ):
+def bakeTimeWarp( timeWarp = '', members = [], sparseKeys = True, sim = False, sampleBy = 1.0 ):
     '''
     
     '''
     #
-    result = getBakeRange()
-    start = result[0]
-    end = result[1]
+    result = []
+    start = 0.0
+    end = 0.0
+    animCurveMembers = getAnimCurveMembers( timeWarp, select = False )
+    layerCurveMembers = getLayerCurveMembers( timeWarp, select = False )
     #
-    objs = cmds.ls( sl = 1 )
+    animCurves = getAnimCurves( object = timeWarp, max_recursion = 1, direction = 'out' )
+    #
+    if animCurves:
+        result = getBakeRange( animCurves = animCurves )
+        start = result[0]
+        end = result[1]
+    else:
+        message( 'No anim curves provided to derive at bake range.' )
+    #
     cmds.refresh( suspend = 1 )
     #
     # print( 'sparseKeys: ', sparseKeys )
     # print( 'simulation: ', sim )
     # print( 'sampleBy: ', sampleBy )
-    cmds.bakeResults( objs, t = ( start, end ), simulation = sim, pok = True, sac = sparseKeys, sampleBy = sampleBy )
+    if members:
+        cmds.bakeResults( members, t = ( start, end ), simulation = sim, pok = True, sac = sparseKeys, sampleBy = sampleBy )
+    else:
+        message( 'No members given to bake' )
+
+    connections = cmds.listConnections( timeWarp + '.' + warpTimeAttrStr(), s = 0, d = 1 )
+    if connections:
+        for curve in animCurves:
+            if curve in connections:
+                cmds.disconnectAttr( timeWarp + '.' + warpTimeAttrStr(), curve + '.input' )
+                if animCurveMembers:
+                    if curve in animCurveMembers:
+                        setRemoveMembers( [curve], setCurveName( timeWarp ) )
+                if layerCurveMembers:
+                    if curve in layerCurveMembers:
+                        setRemoveMembers( [curve], setLayerCurveName( timeWarp ) )
+
     cmds.refresh( suspend = 0 )
-    message( str( len( objs ) ) + ' curves baked --' + str( objs ), maya = 1 )
+    message( str( len( members ) ) + ' curves baked --' + str( members ), maya = 1 )
 
 
-def approximateTimeWarp( timeWarp = '' ):
+def approximateTimeWarp( timeWarp = '', members = [], layers = [] ):
     '''
     
     '''
@@ -444,14 +686,24 @@ def approximateTimeWarp( timeWarp = '' ):
     # ui off
     uiEnable()
     #
-    members = cmds.ls( sl = 1 )  # members are selected
+    # members = cmds.ls( sl = 1 )  # members are selected
     # print(members)
+    '''
+    cmds.select( members )
+    cmds.select( layers, add = 1 )
     frames = getKeyedFramesList()
     frames.reverse()
     # print('reversed: ', frames)
     remap_frames_dict = remapFrames( timeWarp = timeWarp, frames = frames, step = 30.0 )
-    animCurves = getAnimCurves( object = timeWarp, max_recursion = 1, direction = 'out' )
-    sel = cmds.ls( sl = 1 )  # members are selected
+    '''
+    animCurveMembers = getAnimCurveMembers( timeWarp, select = False )
+    layerCurveMembers = getLayerCurveMembers( timeWarp, select = False )
+    #
+    animCurves = getAnimCurves( object = timeWarp, max_recursion = 1, direction = 'out' )  # safe, shouldnt need getAnimCurves2(), dif use case
+    frames = getKeyedFrames2( animCurves )
+    frames.reverse()
+    remap_frames_dict = remapFrames( timeWarp = timeWarp, frames = frames, step = 30.0 )
+    # sel = cmds.ls( sl = 1 )  # members are selected
     # print(sel)
     # print( animCurves )
     # return
@@ -464,9 +716,23 @@ def approximateTimeWarp( timeWarp = '' ):
                 # print( f, remap_frames_dict[f] )
                 cmds.keyframe( edit = 1, absolute = 1, timeChange = remap_frames_dict[f], time = ( f, f ), option = 'over' )  # only works for active animLayer
         # disconnect timeWarp
-        cmds.select( members )
+        # cmds.select( members )
         if timeWarp not in members:
-                connectTimeWarp( members, timeWarp, False )
+            '''
+            connectToTimeWarp( members, timeWarp, layers, connect = False )  # objects
+            connectToTimeWarp( layers, timeWarp, layers, connect = False )  # layers'''
+            connections = cmds.listConnections( timeWarp + '.' + warpTimeAttrStr(), s = 0, d = 1 )
+            #
+            if connections:
+                for curve in animCurves:
+                    if curve in connections:
+                        cmds.disconnectAttr( timeWarp + '.' + warpTimeAttrStr(), curve + '.input' )
+                        if animCurveMembers:
+                            if curve in animCurveMembers:
+                                setRemoveMembers( [curve], setCurveName( timeWarp ) )
+                        if layerCurveMembers:
+                            if curve in layerCurveMembers:
+                                setRemoveMembers( [curve], setLayerCurveName( timeWarp ) )
 
     #
     end = time.time()
@@ -509,7 +775,7 @@ def seekWardpedFrame( timeWarp = '', frame = 1, step = 1.0 ):
     direction = step
     #
     # cmds.currentTime( frame )
-    warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttrStr(), time = frame )
+    warpedFrame = cmds.getAttr( timeWarp + '.' + warpTimeAttrStr(), time = frame )
     #
     if warpedFrame > frame:
         forward = False  # warped frame is earlier in timeline, step back
@@ -526,7 +792,7 @@ def seekWardpedFrame( timeWarp = '', frame = 1, step = 1.0 ):
     current = frame
     for k in range( steps ):
         #
-        warpedFrame = cmds.getAttr( timeWarp + '.' + warpAttrStr(), time = current )
+        warpedFrame = cmds.getAttr( timeWarp + '.' + warpTimeAttrStr(), time = current )
         # heading backward
         if warpedFrame < frame and not forward:  # moved backward past frame
             dif = frame - warpedFrame
@@ -608,7 +874,8 @@ def deleteWarp( timewarp ):
     print( 'delete' )
     objects = getTimeWarpMembers( timewarp )
     if objects:
-        connectTimeWarp( objects, timewarp, connect = False )
+        connectToTimeWarp( objects, timewarp, connect = False )
+    cmds.delete( [setMasterName( timewarp ), setControlName( timewarp ), setLayerName( timewarp ), setCurveName( timewarp ), setLayerCurveName( timewarp )] )
     cmds.delete( timewarp )
 
 
@@ -617,7 +884,7 @@ def cleanConversionNodes( object = '' ):
     find conversion nodes connected to object with no output connection and delete them
     leftovers form disconnect objects from timewarp node
     '''
-    sel = cmds.ls( sl = 1 )[0]
+    # sel = cmds.ls( sl = 1 )[0]
     # out
     s = 0
     d = 1
@@ -685,13 +952,112 @@ def manuallyDisconnectAnimLayer( timeWarp = '' ):
         for curve in result:
             # pass
             try:
-                cmds.disconnectAttr( timeWarp + '.' + warpAttrStr(), curve + '.input' )
+                cmds.disconnectAttr( timeWarp + '.' + warpTimeAttrStr(), curve + '.input' )
             except:
                 print( 'No connection or error: ', curve )
         # reselect
         cmds.select( timeWarp )
     else:
         print( 'Selection is not a timewarp node' )
+
+
+def ___SETS___():
+    pass
+
+
+def setStr():
+    return 'set'
+
+
+def setControlStr():
+    return 'anim_controls___'
+
+
+def setLayerStr():
+    return 'layers___'
+
+
+def setCurveStr():
+    return 'anim_curves___'
+
+
+def setLayerCurveStr():
+    return 'layer_curves___'
+
+
+def setMasterName( name = '' ):
+    return name + setStr()
+
+
+def setControlName( name = '' ):
+    return name + setControlStr() + setStr()
+
+
+def setLayerName( name = '' ):
+    return name + setLayerStr() + setStr()
+
+
+def setCurveName( name = '' ):
+    return name + setCurveStr() + setStr()
+
+
+def setLayerCurveName( name = '' ):
+    return name + setLayerCurveStr() + setStr()
+
+
+def setCreate( name = '', hide = False ):
+    '''
+    
+    '''
+    sel = cmds.ls( sl = 1 )
+    cmds.select( clear = 1 )
+    # create
+    control_set = cmds.sets( name = setControlName( name = name ) )
+    layer_set = cmds.sets( name = setLayerName( name = name ) )
+    curve_set = cmds.sets( name = setCurveName( name = name ) )
+    layerCurve_set = cmds.sets( name = setLayerCurveName( name = name ) )
+    master = cmds.sets( name = setMasterName( name = name ) )
+    # add
+    cmds.sets( [name, control_set, layer_set, curve_set, layerCurve_set] , add = master, e = True )
+    # hide
+    if hide:
+        cmds.setAttr( control_set + '.hiddenInOutliner', True )
+        cmds.setAttr( layer_set + '.hiddenInOutliner', True )
+        cmds.setAttr( curve_set + '.hiddenInOutliner', True )
+        cmds.setAttr( layerCurve_set + '.hiddenInOutliner', True )
+        cmds.setAttr( master + '.hiddenInOutliner', True )
+    #
+    cmds.select( sel )
+
+
+def setAddMembers( members = [], set = '' ):
+    '''
+    
+    '''
+    # print( members )
+    # print( set )
+    if members:
+        cmds.sets( members , add = set, e = True )
+    else:
+        message( 'No members to add' )
+
+
+def setRemoveMembers( members = [], set = '' ):
+    '''
+    
+    '''
+    # print( members )
+    # print( set )
+    if members:
+        current_members = cmds.sets( set, q = True )
+        if current_members:
+            for member in members:
+                if member in current_members:
+                    cmds.sets( member , remove = set, e = True )
+        else:
+            message( 'No current members' )
+    else:
+        message( 'No members to remove' )
 
 
 def ____GET____():
@@ -712,6 +1078,30 @@ def getTimeWarpNode( warp_list_widget ):
         return False
 
 
+def getObjectsAnimLayers( object = '' ):
+    '''
+    
+    '''
+    #
+    animLayers = []
+    isAnimLayer = False
+    sel = cmds.ls( sl = 1 )
+    #
+    t = cmds.objectType( object )
+    if t == 'animLayer':
+        isAnimLayer = True
+    #
+    if isAnimLayer:
+        cmds.select( object )
+        animLayers = cmds.animLayer( q = 1, afl = 1 )
+    else:
+        con = cmds.listConnections( object, s = 0, d = 1, t = 'animLayer' )
+        if con:
+            animLayers = list( set( con ) )
+    cmds.select( sel )
+    return animLayers
+
+
 def getAnimCurves( object = '', max_recursion = 0, direction = 'in' ):
     '''
     find animCurves, 3 types
@@ -729,23 +1119,6 @@ def getAnimCurves( object = '', max_recursion = 0, direction = 'in' ):
         if animCrvs:
             for c in animCrvs:
                 result.append( c )
-        '''
-        # if only one type gets queried it works, if alll breaks !!!!
-        print( '___TL' )
-        tl = getConnections( object = obj, direction = 'in', find = 'animCurveTL', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'] )
-        if tl:
-            for t in tl:
-                result.append( t )
-        print( '___TA' )
-        ta = getConnections( object = obj, direction = 'in', find = 'animCurveTA', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'] )
-        if ta:
-            for t in ta:
-                result.append( t )
-        print( '___TU' )
-        tu = getConnections( object = obj, direction = 'in', find = 'animCurveTU', find_through = [], skip = [object], max_recursion = max_recursion, ignore_types = ['transform', 'animLayer'] )
-        if tu:
-            for t in tu:
-                result.append( t )'''
         # print( '___T*', result )
     # clean, remove plugs
     result_clean = []
@@ -759,6 +1132,82 @@ def getAnimCurves( object = '', max_recursion = 0, direction = 'in' ):
     return result_clean
 
 
+def getAnimCurves2( object = '', layers = [] ):
+    '''
+    list of objects
+    if no layers are given assume all layers are in scope
+    '''
+    print( 'getanimcurves2 beta' )
+    #
+    mel.eval( 'source "buildSetAnimLayerMenu.mel";' )
+    # find layers
+    active_layer = getActiveLayer()
+    found_layers = cmds.ls( type = 'animLayer' )
+    member_of_layers = getObjectsAnimLayers( object )
+    attrs = cmds.listAttr( object, k = 1 )
+    crvs = []
+    #
+    if attrs:
+        t = cmds.objectType( object )
+        if t != 'animLayer':
+            if member_of_layers:
+                # print( 'member: ', member_of_layers )
+                if found_layers and layers:  # specific layers
+                    for found_layer in found_layers:
+                        if found_layer in layers:
+                            if found_layer in member_of_layers:
+                                #
+                                mel.eval( 'selectLayer(\"' + found_layer + '\");' )
+                                for attr in attrs:
+                                    crv = cmds.findKeyframe( object, at = attr, c = 1 )
+                                    if crv:
+                                        crvs.append( crv[0] )
+                            else:
+                                # no curves to grab, not a member of layer
+                                pass
+                        else:
+                            # curves not queried for this layer
+                            pass
+            elif found_layers and not member_of_layers:
+                # print( 'not a member of any existing layers' )
+                # not a member of any layer,
+                # need BaseAnimation curves, despite no connection to BaseAnimation layer
+                if layers:
+                    if 'BaseAnimation' in layers:
+                        mel.eval( 'selectLayer(\"' + 'BaseAnimation' + '\");' )
+                        for attr in attrs:
+                            crv = cmds.findKeyframe( object, at = attr, c = 1 )
+                            if crv:
+                                crvs.append( crv[0] )
+            elif not found_layers:  # no layers exist, ask for curves
+                # print( 'no layers in scene' )
+                for attr in attrs:
+                    crv = cmds.findKeyframe( object, at = attr, c = 1 )
+                    if crv:
+                        crvs.append( crv[0] )
+            else:
+                pass
+                # message('No anim layer scenario was used')
+        else:
+            # print( 'is anim layer' )
+            # is animLayer, need BaseAnimation curves, only supports animLayers with BaseAnimation curves, not layered
+            if 'BaseAnimation' in found_layers:
+                mel.eval( 'selectLayer(\"' + 'BaseAnimation' + '\");' )
+                for attr in attrs:
+                    crv = cmds.findKeyframe( object, at = attr, c = 1 )
+                    if crv:
+                        crvs.append( crv[0] )
+    # restore active layer
+    if active_layer:
+        mel.eval( 'selectLayer(\"' + active_layer + '\");' )
+    else:
+        mel.eval( 'animLayerEditorOnSelect \"' + 'BaseAnimation' + '\" 0;' )
+    #
+    crvs = list( set( crvs ) )
+    # print( crvs )
+    return crvs
+
+
 def getAnimCurvesList():
     '''
     list of objects
@@ -769,7 +1218,8 @@ def getAnimCurvesList():
     print( sel )
     for s in sel:
         # print( s )
-        crvs = getAnimCurves( object = s, max_recursion = 1 )
+        # crvs = getAnimCurves( object = s, max_recursion = 1 )
+        crvs = getAnimCurves2( object = s )
         # print( crvs )
         if crvs:
             for c in crvs:
@@ -789,7 +1239,7 @@ def getTimeWarpMembers( timeWarp, select = False, typ = 'transform' ):
     '''
     objects = []
     #
-    warpCurve = cmds.listConnections( timeWarp + '.' + warpAttrStr() )
+    warpCurve = cmds.listConnections( timeWarp + '.' + warpTimeAttrStr() )
     if warpCurve:
         warpCurve = warpCurve[0]
         # print( warpCurve )
@@ -812,9 +1262,9 @@ def getTimeWarpMembers( timeWarp, select = False, typ = 'transform' ):
         else:
             print( 'no members' )
     else:
-        print( timeWarp + '.' + warpAttrStr(), 'has no keys' )
+        print( timeWarp + '.' + warpTimeAttrStr(), 'has no keys' )
     #
-    print( objects )
+    # print( objects )
     return objects
 
     '''
@@ -864,7 +1314,8 @@ def getTimeWarpMembers2( timeWarp, select = False ):
     objects = []
     #
     skip = [timeWarp ]
-    found = getConnections( timeWarp + '.' + warpAttrStr(), direction = 'out', find = 'transform', find_through = [], skip = skip, results = [] )  # had to add results value, app wasnt clearing its state for some reason
+    # found = getConnections( timeWarp + '.' + warpTimeAttrStr(), direction = 'out', find = 'transform', find_through = [], skip = skip, results = [] )  # had to add results value, app wasnt clearing its state for some reason
+    found = getConnections( timeWarp + '.' + warpTimeAttrStr(), direction = 'out', find = '', find_through = [], skip = skip, results = [] )  #
     # print( 'found', found )
     # return None
     if found:
@@ -886,6 +1337,46 @@ def getTimeWarpMembers2( timeWarp, select = False ):
         cmds.select( clean_objects )
     # return list with plugs
     return objects
+
+
+def getTimeWarpMembers3( timeWarp, select = False ):
+    '''
+    find via set
+    '''
+    controls = cmds.sets( setControlName( timeWarp ), q = True )
+    if select:
+        cmds.select( controls )
+    return controls
+
+
+def getTimeWarpAnimLayerMembers( timeWarp, select = False ):
+    '''
+    find via set
+    '''
+    animLayers = cmds.sets( setLayerName( timeWarp ), q = True )
+    if select:
+        cmds.select( animLayers )
+    return animLayers
+
+
+def getAnimCurveMembers( timeWarp, select = False ):
+    '''
+    find via set
+    '''
+    curves = cmds.sets( setCurveName( timeWarp ), q = True )
+    if select:
+        cmds.select( curves )
+    return curves
+
+
+def getLayerCurveMembers( timeWarp, select = False ):
+    '''
+    find via set
+    '''
+    curves = cmds.sets( setLayerCurveName( timeWarp ), q = True )
+    if select:
+        cmds.select( curves )
+    return curves
 
 
 def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_through = [], skip = [], max_recursion = 5, recursion = 0, ignore_types = [], plugs = True, results = [] ):
@@ -936,6 +1427,12 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
         'animCurveTA',
         'pairBlend'  # PROBLEM, CANT FIND PROPER PLUG ROUTE, INCLUDES ALL ATTRS AS CONNECTED (LIKELY CUZ PLUGS ARENT USED)
         ]
+    dead_end = [
+        'nodeGraphEditorInfo',
+        'animLayer'
+        ]
+    for d in dead_end:
+        ignore_types.append( d )
     #
     found = False
     localSkip = []
@@ -1020,24 +1517,33 @@ def getConnections( object = '', direction = 'in', find = 'animCurveTU', find_th
             #
             x = []
             for c in clean_connections:
-                if find in cmds.objectType( c ):  # find = abbreviated ie. animCurveTL = animCurve
-                    if c not in results:
-                        results.append( c )
-                    if c not in x:
-                        x.append( c )  # death loop with out this
-                    found = True
-                    # print( 'found', c, find, cmds.objectType( c ) )
-                    # print( 'skip', skip )
-                else:
-                    if cmds.objectType( c ) not in find_through:  # has to be in find_through, or same as find
-                        x.append( c )
-                    # print( c, 'is wrong type: ', cmds.objectType( c ), ' ... looking for: ', find )
-                    if direction == 'in':
-                        # print( 'search for incoming connection to: ', object, 'through: ', c )
-                        pass
+                if find:
+                    if find in cmds.objectType( c ):  # find = abbreviated ie. animCurveTL = animCurve
+                        if c not in results:
+                            results.append( c )
+                        if c not in x:
+                            x.append( c )  # death loop with out this
+                        found = True
+                        # print( 'found', c, find, cmds.objectType( c ) )
+                        # print( 'skip', skip )
                     else:
-                        # print( 'search for outgoing connection from: ', object, 'through: ', c )
-                        pass
+                        if cmds.objectType( c ) not in find_through:  # has to be in find_through, or same as find
+                            x.append( c )
+                        # print( c, 'is wrong type: ', cmds.objectType( c ), ' ... looking for: ', find )
+                        if direction == 'in':
+                            # print( 'search for incoming connection to: ', object, 'through: ', c )
+                            pass
+                        else:
+                            # print( 'search for outgoing connection from: ', object, 'through: ', c )
+                            pass
+                else:
+                    if cmds.objectType( c ) not in find_through and cmds.objectType( c ) not in non_pass_through:  # find = abbreviated ie. animCurveTL = animCurve
+                        if c not in results:
+                            results.append( c )
+                        if c not in x:
+                            x.append( c )  # death loop with out this
+                        found = True
+                        print( 'found: ', c, find )
             # remove wrong type, again
             for j in x:
                 # print( 'removed: ', j, cmds.objectType( c ) )
@@ -1169,7 +1675,8 @@ def getKeyedFrames( obj ):
     # print( 'getframes' )
     # animCurves = cmds.findKeyframe( obj, c = True )  # may have to use getAnimCurves(), this command seems tonly get active animlayer curves
     # print(len(animCurves), animCurves)
-    animCurves = getAnimCurves( object = obj, max_recursion = 1 )
+    # animCurves = getAnimCurves( object = obj, max_recursion = 1 )
+    animCurves = getAnimCurves2( object = obj )
     # print(len(animCurves),animCurves)
     frames = []
     if animCurves:
@@ -1181,7 +1688,25 @@ def getKeyedFrames( obj ):
         frames.sort()
         return frames
     else:
-        message( '-- Object given has no keys --' )
+        message( ' Object given has no keys ' + obj )
+        return frames
+
+
+def getKeyedFrames2( animCurves = [] ):
+    '''
+    
+    '''
+    frames = []
+    if animCurves:
+        for crv in animCurves:
+            framesTmp = cmds.keyframe( crv, q = True )
+            for frame in framesTmp:
+                frames.append( frame )
+        frames = list( set( frames ) )
+        frames.sort()
+        return frames
+    else:
+        message( 'No anim curves provided' )
         return frames
 
 
@@ -1207,7 +1732,7 @@ def getKeyedFramesList():
     return frames
 
 
-def getBakeRange( keyRange = True ):
+def getBakeRange( animCurves = [], keyRange = True ):
     '''
     keyRange = expand bake range if keys are outside playbackOptions
     '''
@@ -1216,7 +1741,8 @@ def getBakeRange( keyRange = True ):
     end = cmds.playbackOptions( q = True, maxTime = True )
     #
     if keyRange:
-        frames = getKeyedFramesList()
+        # frames = getKeyedFramesList()
+        frames = getKeyedFrames2( animCurves )
         if frames:
             if frames[0] < start:
                 start = frames[0]
@@ -1226,16 +1752,34 @@ def getBakeRange( keyRange = True ):
     return [start, end]
 
 
+def getUniqueName( name = '' ):
+    # print( name )
+    if '|' in name:
+        name = name.split( '|' )[-1]
+    if not cmds.objExists( name ):
+        return name
+    else:
+        i = 1
+        while cmds.objExists( name + str( i ) + '___' ):
+            i = i + 1
+        return name + str( i ) + '___'
+
+
+def getActiveLayer():
+    '''
+    return current active anim layer
+    '''
+    layerNames = cmds.ls( type = 'animLayer' )
+    # rootLayer = cmds.animLayer( q = True, root = True )
+    for layer in layerNames:
+        if cmds.animLayer( layer, q = True, selected = True ):
+            return layer
+    return None
+
+
 if __name__ == '__main__':
-    app = QtWidgets.QApplication.instance()
-    main_window = init_ui()
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
-    main_window.show()
-    app.exec_()
+    print( 'run only in maya' )
 else:
-    print( 'nah' )
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )

@@ -285,8 +285,8 @@ class Key():
                           inTangentType = 'auto',
                           outTangentType = 'auto',
                           shape = False,
-                          nr = False,
-                          mr = True )
+                          nr = True,
+                          minimizeRotation = False )  # needs to be False, or rotate values dont apply correctly
         # operates on anim curve, set value relative to active anim layer
         cmds.keyframe( self.obj,
                        at = self.attr,
