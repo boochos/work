@@ -22,6 +22,21 @@ def pad_number( i = 1, pad = 2 ):
     return str( ( '%0' + str( pad ) + 'd' ) % ( i ) )
 
 
+def clstrOnVrts( poly, clstrSuffix = '' ):
+    '''
+    
+    '''
+    clstr = []
+    i = 0
+    vrts = cmds.ls( '{}.vtx[:]'.format( poly ), fl = True )
+    for v in vrts:
+        c = cmds.cluster( 
+            v, n = ( clstrSuffix + pad_number( i ) ), envelope = True )[1]
+        i = i + 1
+        clstr.append( c )
+    return clstr
+
+
 def clstrOnCV( curve, clstrSuffix ):
     clstr = []
     i = 0
@@ -1854,6 +1869,7 @@ def rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True,
         cmds.delete( world )
         cmds.parent( MasterCt[0], CONTROLS )
         result.append( MasterCt )
+        hijackVis( GEO[0], MasterCt[2], name = 'geo', suffix = True, default = 1, mode = 'visibility' )
 
     # OLSKOOL #
     if OlSkool == True:
@@ -1986,7 +2002,7 @@ def breakConnection( obj = '', attr = '', lock = False ):
         cmds.setAttr( obj + '.' + attr, l = True )
 
 
-def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False ):
+def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False, preserveDefault = False, minmax = [] ):
     '''\n
     hijacks attribute with weight effect\n
     obj1   = master
@@ -2000,6 +2016,7 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
     blendAttrExisting = use preexisting attr as weight
     '''
     #
+    nodes = []
     name = 'smartBlend'
     rev = None
     addDL = None
@@ -2010,12 +2027,13 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
         # cmds.connectAttr( master + '.' + masterAttr, rev + '.inputX' )
         # mltp node instead
         rev = cmds.shadingNode( 'multDoubleLinear', name = master + '___' + slave + '___' + name + '_mltpNeg', asUtility = True )
+        nodes.append( rev )
         cmds.setAttr( rev + '.input2', -1 )
         cmds.connectAttr( master + '.' + masterAttr, rev + '.input1' )
 
     # weight node
     blendN = cmds.shadingNode( 'multDoubleLinear', name = master + '___' + slave + '___' + name + '_mltp', asUtility = True )
-
+    nodes.append( blendN )
     # connect master/rev attr to weight node
     if reverse:
         cmds.connectAttr( rev + '.output', blendN + '.input1' )
@@ -2028,8 +2046,12 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
         if not blendAttrExisting:
             optEnum( blendAttrObj, 'additive' )
             hijackAttrs( blendN, blendAttrObj, 'input2', blendAttrString + 'Weight', set = True, default = blendWeight )
-            cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, min = 0 )
-            cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, max = 1 )
+            if minmax:
+                cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, min = minmax[0] )
+                cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, max = minmax[1] )
+            else:
+                cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, min = 0 )
+                cmds.addAttr( blendAttrObj + '.' + blendAttrString + 'Weight', e = True, max = 1 )
         else:
             hijackAttrs( blendN, blendAttrObj, 'input2', blendAttrString, set = True, default = blendWeight )
     else:
@@ -2043,13 +2065,25 @@ def smartAttrBlend( master = '', slave = '', masterAttr = '', slaveAttr = '', bl
         # add addition node
         existingMaster = con[0]
         addDL = cmds.shadingNode( 'addDoubleLinear', name = master + '___' + slave + '___' + name + '_add', asUtility = True )
+        nodes.append( addDL )
         cmds.connectAttr( existingMaster, addDL + '.input1' )
         cmds.connectAttr( blendN + '.output', addDL + '.input2' )
         # connect out blend
         cmds.connectAttr( addDL + '.output', slave + '.' + slaveAttr, force = True )  # force
     else:
-        # connect out blend
-        cmds.connectAttr( blendN + '.output', slave + '.' + slaveAttr )
+        if preserveDefault:  # only on first time connection
+            addDL = cmds.shadingNode( 'addDoubleLinear', name = master + '___' + slave + '___' + name + '___preserveDefault___' + slaveAttr + '_add', asUtility = True )
+            nodes.append( addDL )
+            default_value = cmds.getAttr( slave + '.' + slaveAttr )
+            cmds.setAttr( addDL + '.input1', default_value )
+            cmds.connectAttr( blendN + '.output', addDL + '.input2' )
+            # connect out blend
+            cmds.connectAttr( addDL + '.output', slave + '.' + slaveAttr, force = True )  # force
+        else:
+            # connect out blend
+            cmds.connectAttr( blendN + '.output', slave + '.' + slaveAttr )
+
+    return nodes
 
 
 def attrBlend( obj1, obj2, objOpt, pos = False, rot = False, scale = False, specific = [[None], None], skip = 2, default = 1 ):
@@ -2282,3 +2316,20 @@ def assetParent( obj = '', query = False ):
         return asset
     else:
         return asset
+
+
+def averagePosition( objects = [] ):
+    '''
+    
+    '''
+    count = len( objects )
+    sums = [0, 0, 0]
+    for item in objects:
+        pos = cmds.xform( item, ws = True, q = True, rp = True )
+        sums[0] += pos[0]
+        sums[1] += pos[1]
+        sums[2] += pos[2]
+        print( sums )
+    center = [sums[0] / count, sums[1] / count, sums[2] / count]
+    # print( center )
+    return center
