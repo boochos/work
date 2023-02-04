@@ -613,7 +613,9 @@ def connectToTimeWarp( objects = [], timeWarp = '', layers = [], connect = True,
     print( 'connect ANIMCURVES______________', connect )
     # start timer
     start = time.time()
-    num = len( objects )
+    num = 0
+    if objects:
+        num = len( objects )
     i = 1
     allAnimCurves = []
     warpAttr = '_' + warpTimeAttrStr()
@@ -681,7 +683,7 @@ def connectToTimeWarp( objects = [], timeWarp = '', layers = [], connect = True,
             # cleanup
             cleanConversionNodes( timeWarp + '.' + warpTimeAttrStr() )
         else:
-            message( 'Select objects to connect / disconnect', warning = True )
+            message( 'No objects to connect / disconnect', warning = True )
         # anim layer set membership
         '''
         if connectLayers:
