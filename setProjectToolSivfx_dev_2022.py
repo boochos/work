@@ -26,12 +26,22 @@ if a:
 if 'PROJ_ROOT' not in os.environ:
     os.environ['PROJ_ROOT'] = 'P:\\'
 
+global setProject_window
+try:
+    setProject_window.close()
+except:
+    pass
+
 # print os.environ
 
 
 def message( what = '' ):
     maya.mel.eval( 'print \"' + '-- ' + what + ' --' + '\";' )
     # print "\n"
+
+
+def ____UI():
+    pass
 
 
 def init_ui():
@@ -72,10 +82,10 @@ def init_ui():
     ref_button.clicked.connect( lambda: ref_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
     explore_button = QtWidgets.QPushButton( "Explore" )
     explore_button.clicked.connect( lambda: explore_path( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
-    range_button = QtWidgets.QPushButton( "Set Scene Range" )
-    range_button.clicked.connect( lambda: frameRangeFromMaFile( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
-    sync_button = QtWidgets.QPushButton( "Sync File" )
-    sync_button.clicked.connect( lambda: sync_file( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    range_button = QtWidgets.QPushButton( "Import Range" )
+    range_button.clicked.connect( lambda: rangeFromMaFile( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, handles = 0 ) )
+    sync_button = QtWidgets.QPushButton( "Import FPS" )
+    sync_button.clicked.connect( lambda: fpsFromMaFile( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
     #
     bottom_layout.addWidget( set_project_button )
     bottom_layout.addWidget( create_button )
@@ -94,12 +104,16 @@ def init_ui():
     shots_and_assets_list_widget.itemSelectionChanged.connect( lambda: get_tasks( tasks_list_widget, project_list_widget.currentItem().text(), shots_and_assets_list_widget.currentItem().text(), scene_list_widget ) )
     tasks_list_widget.itemSelectionChanged.connect( lambda: get_scenes( scene_list_widget, project_list_widget.currentItem().text(), shots_and_assets_list_widget.currentItem().text(), tasks_list_widget ) )
     scene_list_widget.itemDoubleClicked.connect( lambda: set_project( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, True ) )
-    main_window.resize( 900, 400 )
+    main_window.resize( 1600, 800 )
 
     # parse current scene
     get_current( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget )
 
     return main_window
+
+
+def ____GET_CONTENTS():
+    pass
 
 
 def get_projects():
@@ -308,6 +322,10 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None )
                     scenes.setCurrentItem( item[0] )
 
 
+def ____ACTIONS():
+    pass
+
+
 def no_path( path ):
     """Error dialog."""
     pass
@@ -502,8 +520,6 @@ def incrementalSave( basepath, basename, extension ):
                     if phile is not False:
                         file_info = splitEndNumFromString( phile[1] )
                         if string_info[0] == file_info[0]:
-                            print( file_info )
-                            print( file_info[1], num )
                             if int( file_info[1] ) > int( num ):
                                 num = file_info[1]
         # increment the suffix
@@ -559,6 +575,193 @@ def parseSceneFilePath( path ):
         else:
             print( 'no .' )
             return False
+
+
+def rangeFromMaFile( project, entity, task, scene, handles = 0 ):
+    '''
+    
+    '''
+    go = True
+    if project.selectedItems():
+        project = project.selectedItems()[0].text()
+    else:
+        go = False
+    if entity.selectedItems():
+        entity = entity.selectedItems()[0].text()
+    else:
+        go = False
+    if task.selectedItems():
+        task = task.selectedItems()[0].text()
+    else:
+        go = False
+    if scene.selectedItems():
+        scene = scene.selectedItems()[0].text()
+    else:
+        go = False
+
+    if go:
+        path = 'P:/XMAG/075/XMAG_075_035/anim/maya/scenes/XMAG_075_035_anim_v003.ma'
+        path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
+        play_start = 0
+        play_end = 0
+        all_start = 0
+        all_end = 0
+        # print path
+        if os.path.isfile( path ) and '.ma' in path:
+            inFile = open( path, 'r' )
+            for line in inFile.readlines():
+                cvLine = line.strip( '\n' )
+                if 'playbackOptions' in line:
+                    print( line )
+                    line_parts = line.split( ' ' )
+                    i = 0
+                    for part in line_parts:
+                        if part == '-min':
+                            play_start = int( line_parts[i + 1] )
+                        if part == '-max':
+                            play_end = int( line_parts[i + 1] )
+                        if part == '-ast':
+                            all_start = int( line_parts[i + 1] )
+                        if part == '-aet':
+                            all_end = int( line_parts[i + 1] )
+                        i = i + 1
+                    print( play_start )
+                    print( play_end )
+                    print( all_start )
+                    print( all_end )
+                    cmds.playbackOptions( animationStartTime = all_start )
+                    cmds.playbackOptions( animationEndTime = all_end )
+                    if handles:
+                        cmds.playbackOptions( minTime = play_start + handles )
+                        cmds.playbackOptions( maxTime = play_end - handles )
+                    else:
+                        cmds.playbackOptions( minTime = play_start )
+                        cmds.playbackOptions( maxTime = play_end )
+                    inFile.close()
+                    return None
+            inFile.close()
+            return None
+        else:
+            maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
+            # print 'not a directory'
+    else:
+        maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
+
+
+def fpsFromMaFile( project, entity, task, scene ):
+    '''
+    currentUnit -l centimeter -a degree -t film;
+    '''
+    go = True
+    all_start = cmds.playbackOptions( animationStartTime = True, q = True )
+    all_end = cmds.playbackOptions( animationEndTime = True, q = True )
+    play_start = cmds.playbackOptions( minTime = True, q = True )
+    play_end = cmds.playbackOptions( maxTime = True, q = True )
+    fps = ''
+    if project.selectedItems():
+        project = project.selectedItems()[0].text()
+    else:
+        go = False
+    if entity.selectedItems():
+        entity = entity.selectedItems()[0].text()
+    else:
+        go = False
+    if task.selectedItems():
+        task = task.selectedItems()[0].text()
+    else:
+        go = False
+    if scene.selectedItems():
+        scene = scene.selectedItems()[0].text()
+    else:
+        go = False
+
+    if go:
+        path = 'P:/XMAG/075/XMAG_075_035/anim/maya/scenes/XMAG_075_035_anim_v003.ma'
+        path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
+
+        # print path
+        if os.path.isfile( path ) and '.ma' in path:
+            inFile = open( path, 'r' )
+            for line in inFile.readlines():
+                cvLine = line.strip( '\n' )
+                if 'currentUnit' in line:  # currentUnit -l centimeter -a degree -t film;
+                    print( line )
+                    fps = line.split( ' ' )[-1]
+                    fps = fps.split( ';' )[0]
+                    print( fps )
+                    cmds.currentUnit( time = fps, updateAnimation = False )
+                    # reset range
+                    cmds.playbackOptions( animationStartTime = all_start )
+                    cmds.playbackOptions( animationEndTime = all_end )
+                    cmds.playbackOptions( minTime = play_start )
+                    cmds.playbackOptions( maxTime = play_end )
+                    # exit
+                    inFile.close()
+                    return None
+            inFile.close()
+            return None
+        else:
+            maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
+            # print 'not a directory'
+    else:
+        maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
+
+
+def setRateRange( project, entity, task, scene, handles ):
+    '''
+    
+    '''
+    fpsFromMaFile( project, entity, task, scene )
+    rangeFromMaFile( project, entity, task, scene, handles )
+    # fpsFromMaFile( project, entity, task, scene )
+
+
+def sync_file( project, entity, task, scene ):
+    '''
+    
+    '''
+    go = True
+    if project.selectedItems():
+        project = project.selectedItems()[0].text()
+    else:
+        go = False
+    if entity.selectedItems():
+        entity = entity.selectedItems()[0].text()
+    else:
+        go = False
+    if task.selectedItems():
+        task = task.selectedItems()[0].text()
+    else:
+        go = False
+    if scene.selectedItems():
+        scene = scene.selectedItems()[0].text()
+    else:
+        go = False
+
+    if go:
+        # sync file
+        prefs = Prefs()
+        sync_roots = prefs.sync_roots
+        for k in sync_roots.keys():
+            if k == project:
+                project_root = sync_roots[k]
+                destination_path = os.path.join( project_root, entity, task, 'maya', 'scenes' )
+                if os.path.isdir( destination_path ):
+                    working_path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
+                    sync_path = os.path.join( project_root, entity, task, 'maya', 'scenes', scene )
+                    copyfile( working_path, sync_path )
+                    # subprocess.Popen( r'explorer /open, ' + destination_path )
+                    print( sync_path )
+                else:
+                    print( 'Destination path doesnt exist' )
+            else:
+                print( 'Project sync path not defined' )
+    else:
+        maya.mel.eval( 'print \" -- Cant build sync path, select more variables -- \";' )
+
+
+def ____PREFS():
+    pass
 
 
 def pref_window( path ):
@@ -677,6 +880,9 @@ class Prefs():
     def __init__( self, projects = None, entities = None, assets = None, assettypes = None, tasks = None, sync = None ):
         '''
         '''
+        self.global_prefs_path = ''
+        self.local_prefs_path = ''
+        self.default_prefs = ''
         self.prefs = {'p_str':[], 'e_str':[], 'at_str':[], 't_str':[], 'a_str':[], 'prj_sync_str':[]}
         self.sync_roots = {}
         # qt objects
@@ -776,7 +982,7 @@ class Prefs():
                 else:
                     c = ''
                 self.prj_sync_str = self.prj_sync_str + c + self.prefs['prj_sync_str'][i]
-                print( 'parse sync roots' )
+                # print( 'parse sync roots' )
                 self.prefSync()
 
     def prefPath( self, *args ):
@@ -817,117 +1023,55 @@ class Prefs():
         # print( self.sync_roots )
 
 
-def frameRangeFromMaFile( project, entity, task, scene, handles = 0 ):
+def prefs_dict_default():
     '''
-    
+    if files dont exist, use this
     '''
-    go = True
-    if project.selectedItems():
-        project = project.selectedItems()[0].text()
-    else:
-        go = False
-    if entity.selectedItems():
-        entity = entity.selectedItems()[0].text()
-    else:
-        go = False
-    if task.selectedItems():
-        task = task.selectedItems()[0].text()
-    else:
-        go = False
-    if scene.selectedItems():
-        scene = scene.selectedItems()[0].text()
-    else:
-        go = False
-
-    if go:
-        path = 'P:/XMAG/075/XMAG_075_035/anim/maya/scenes/XMAG_075_035_anim_v003.ma'
-        path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
-        play_start = 0
-        play_end = 0
-        all_start = 0
-        all_end = 0
-        # print path
-        if os.path.isfile( path ) and '.ma' in path:
-            inFile = open( path, 'r' )
-            for line in inFile.readlines():
-                cvLine = line.strip( '\n' )
-                if 'playbackOptions' in line:
-                    print( line )
-                    line_parts = line.split( ' ' )
-                    i = 0
-                    for part in line_parts:
-                        if part == '-min':
-                            play_start = int( line_parts[i + 1] )
-                        if part == '-max':
-                            play_end = int( line_parts[i + 1] )
-                        if part == '-ast':
-                            all_start = int( line_parts[i + 1] )
-                        if part == '-aet':
-                            all_end = int( line_parts[i + 1] )
-                        i = i + 1
-                    print( play_start )
-                    print( play_end )
-                    print( all_start )
-                    print( all_end )
-                    cmds.playbackOptions( animationStartTime = all_start )
-                    cmds.playbackOptions( animationEndTime = all_end )
-                    if handles:
-                        cmds.playbackOptions( minTime = play_start + handles )
-                        cmds.playbackOptions( maxTime = play_end - handles )
-                    else:
-                        cmds.playbackOptions( minTime = play_start )
-                        cmds.playbackOptions( maxTime = play_end )
-            inFile.close()
-            return None
-        else:
-            maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
-            # print 'not a directory'
-    else:
-        maya.mel.eval( 'print \" -- Select a .ma file  -- \";' )
-
-
-def sync_file( project, entity, task, scene ):
-    '''
-    
-    '''
-    go = True
-    if project.selectedItems():
-        project = project.selectedItems()[0].text()
-    else:
-        go = False
-    if entity.selectedItems():
-        entity = entity.selectedItems()[0].text()
-    else:
-        go = False
-    if task.selectedItems():
-        task = task.selectedItems()[0].text()
-    else:
-        go = False
-    if scene.selectedItems():
-        scene = scene.selectedItems()[0].text()
-    else:
-        go = False
-
-    if go:
-        # sync file
-        prefs = Prefs()
-        sync_roots = prefs.sync_roots
-        for k in sync_roots.keys():
-            if k == project:
-                project_root = sync_roots[k]
-                destination_path = os.path.join( project_root, entity, task, 'maya', 'scenes' )
-                if os.path.isdir( destination_path ):
-                    working_path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
-                    sync_path = os.path.join( project_root, entity, task, 'maya', 'scenes', scene )
-                    copyfile( working_path, sync_path )
-                    # subprocess.Popen( r'explorer /open, ' + destination_path )
-                    print( sync_path )
-                else:
-                    print( 'Destination path doesnt exist' )
-            else:
-                print( 'Project sync path not defined' )
-    else:
-        maya.mel.eval( 'print \" -- Cant build sync path, select more variables -- \";' )
+    prefs_default = {
+     "e_str": [
+      "global",
+      "transfer",
+      "_transfer",
+      "admin",
+      "pipe",
+      ".DS_Store",
+      "Thumbs.db",
+      "plates",
+      "proxy"
+     ],
+     "prj_sync_str": [
+      "SGW:G:\\Shared drives\\SGW"
+     ],
+     "at_str": [
+      "asset_old",
+      "lightkit",
+      "renderpass"
+     ],
+     "a_str": [
+      "pipeline"
+     ],
+     "t_str": [
+      "anim",
+      "model",
+      "rig",
+      "layout",
+      "assets",
+      "previs"
+     ],
+     "p_str": [
+      ".DS_Store",
+      "cockroach999",
+      "Thumbs.db",
+      "_library",
+      "EDITORIAL",
+      "STUDIO",
+      "pipeline",
+      "$RECYCLE.BIN",
+      "VFX_Animation",
+      "projects"
+     ]
+    }
+    return prefs_default
 
 
 if __name__ == '__main__':
@@ -939,58 +1083,16 @@ if __name__ == '__main__':
     main_window.show()
     app.exec_()
 else:
-    print( 'nah' )
+    #
     app = QtWidgets.QApplication.instance()
-    main_window = init_ui()
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
-    main_window.show()
+    setProject_window = init_ui()
+    setProject_window.setWindowFlags( setProject_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    setProject_window.setWindowFlags( setProject_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
+    setProject_window.setWindowFlags( setProject_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
+    # move
+    centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
+    setProject_window.move( centerPoint.x() * 0.5, centerPoint.y() * 0.25 )
+    # show
+    setProject_window.show()
     app.exec_()
 
-'''
-{
- "e_str": [
-  "global", 
-  "transfer", 
-  "_transfer", 
-  "admin", 
-  "pipe", 
-  ".DS_Store", 
-  "Thumbs.db", 
-  "plates", 
-  "proxy"
- ], 
- "prj_sync_str": [
-  "SGW:G:\\Shared drives\\SGW"
- ], 
- "at_str": [
-  "asset_old", 
-  "lightkit", 
-  "renderpass"
- ], 
- "a_str": [
-  "pipeline"
- ], 
- "t_str": [
-  "anim", 
-  "model", 
-  "rig", 
-  "layout", 
-  "assets", 
-  "previs"
- ], 
- "p_str": [
-  ".DS_Store", 
-  "cockroach999", 
-  "Thumbs.db", 
-  "_library", 
-  "EDITORIAL", 
-  "STUDIO", 
-  "pipeline", 
-  "$RECYCLE.BIN", 
-  "VFX_Animation", 
-  "projects"
- ]
-} 
-'''

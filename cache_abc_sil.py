@@ -56,6 +56,7 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
     mel sample:
     AbcExport -j "-frameRange 1001 1100 -step 0.02 -attr vrayUserString_id -attr vrayUserScalar_shaderId -uvWrite -worldSpace -writeVisibility -writeUVSets -dataFormat ogawa -root |cam_grp|trackGeo|SceneSolvedpoints -file P:/fov/fov100/FOV_099_290/layout/maya/cache/alembic/blah.abc";
     '''
+    print( '____START' )
     # assumed directories
     assets = 'assets'
     cameras = 'cameras'
@@ -149,9 +150,16 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
         sel_name = sel.replace( ':', '_' )
     else:
         sel_name = sel
+    # pipe removal
+    if '|' in sel:
+        sel_name = sel_name.replace( '|', '_' )
+    print( sel_name, 'HERE' )
+    # return
     #
     version_name = shot + '_' + dpt + '_' + sel_name + '_' + version
     version_dir = shot + '_' + dpt + '_' + version
+    print( version_name )
+    # return
     #
     path = os.path.join( path, version_dir )
     # print( path )
@@ -161,7 +169,8 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
         os.mkdir( path )
     path = os.path.join( path, version_name + '.abc' )
     path = path.replace( '\\', '/' )
-    # print( path )
+    print( path, '________here' )
+    # return
 
     # check if version exists
     version_qualified = False

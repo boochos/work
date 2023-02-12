@@ -7,14 +7,18 @@ import subprocess
 import time
 
 from PySide2 import QtCore, QtGui, QtWidgets
-import maya
-
 import cache_abc_sil as cas
+import maya
 import maya.cmds as cmds
 import maya.mel as mel
 
 imp.reload( cas )
 
+global cache_window
+try:
+    cache_window.close()
+except:
+    pass
 # print os.environ
 
 
@@ -47,7 +51,7 @@ def init_ui():
     alwaysOnTop_layout = QtWidgets.QHBoxLayout()
     alwaysOnTop_label = QtWidgets.QLabel( 'Always On Top:  ' )
     alwaysOnTop_check = QtWidgets.QCheckBox()
-    alwaysOnTop_check.setChecked( False )
+    alwaysOnTop_check.setChecked( True )
     alwaysOnTop_check.clicked.connect( lambda:onTopToggle( main_window ) )
     #
     alwaysOnTop_layout.addWidget( alwaysOnTop_label, 0 )
@@ -255,10 +259,27 @@ def create_alembic( pad, step, overwrite, forceTyp, cam, eulerFltr ):
         message( 'Select an object', warning = True )
 
 
+def show_window():
+    '''
+    
+    '''
+    app = QtWidgets.QApplication.instance()
+    main_window = init_ui()
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
+    # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
+    #
+    centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
+    main_window.move( centerPoint - main_window.frameGeometry().center() * 3 )
+    #
+    main_window.show()
+    app.exec_()
+
+
 if __name__ == '__main__':
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
-    # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
     # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
     #
@@ -268,15 +289,15 @@ if __name__ == '__main__':
     main_window.show()
     app.exec_()
 else:
-    print( 'nah' )
+    # print( 'nah' )
     app = QtWidgets.QApplication.instance()
-    main_window = init_ui()
-    # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
-    # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
+    cache_window = init_ui()
+    cache_window.setWindowFlags( cache_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    cache_window.setWindowFlags( cache_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
+    # cache_window.setWindowFlags( cache_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
     #
     centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
-    main_window.move( centerPoint - main_window.frameGeometry().center() * 3 )
+    cache_window.move( centerPoint.x() * 0.5, centerPoint.y() * 0.25 )
     #
-    main_window.show()
+    cache_window.show()
     app.exec_()

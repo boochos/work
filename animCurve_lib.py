@@ -366,6 +366,7 @@ def smoothKeys( weight = 0.5 ):
 def subframe():
     frames = None
     animCurves = cmds.keyframe( q = True, name = True, sl = True )
+    cmds.selectKey( clear = True )
     # print animCurves
     if animCurves:
         for crv in animCurves:
@@ -378,13 +379,19 @@ def subframe():
                     if rnd != frame:
                         message( 'removing: ' + 'key' + ' -- ' + str( frame ) )
                         cmds.refresh( f = 1 )
+                        if rnd not in frames:
+                            cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = rnd )
+                        else:
+                            cmds.cutKey( animCurves, time = ( frame, frame ) )
+                        '''
                         if cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 ) == 0:
                             cmds.cutKey( animCurves, time = ( frame, frame ) )
                         else:
                             cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 )
-                            cmds.cutKey( animCurves, time = ( frame, frame ) )
+                            cmds.cutKey( animCurves, time = ( frame, frame ) )'''
             else:
                 message( 'no keys' )
+        cmds.selectKey( animCurves )
     else:
         message( 'no curves selected' )
 
