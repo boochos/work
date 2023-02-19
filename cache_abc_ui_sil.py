@@ -3,6 +3,7 @@ from shutil import copyfile
 import imp
 import json
 import os
+import random
 import subprocess
 import time
 
@@ -15,9 +16,28 @@ import maya.mel as mel
 imp.reload( cas )
 
 global cache_window
+
+# cache_window = None
+'''
+if cache_window:
+    if not cache_window.main_window.isHidden():
+        cache_window.store_session()
+        cache_window.main_window.close()
+    else:
+        # print( 'none' )
+        cache_window = None
+'''
 try:
-    cache_window.close()
+    #
+    if cache_window:
+        if not cache_window.main_window.isHidden():
+            cache_window.store_session()
+            cache_window.main_window.close()
+        else:
+            # print( 'none' )
+            cache_window = None
 except:
+    # print( 'no variable' )
     pass
 # print os.environ
 
@@ -35,43 +55,129 @@ def message( what = '', maya = True, warning = False ):
             print( what )
 
 
+def UI____():
+    pass
+
+
+class CustomQDialog( QtWidgets.QDialog ):
+    '''
+    
+    '''
+
+    def __init__( self ):
+        super().__init__()
+
+    def closeEvent( self, event ):
+        '''
+        
+        '''
+        #
+        p_d = Prefs_dynamic()
+        p_d.prefs[p_d.session_window_pos_x] = self.geometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.geometry().y()
+        p_d.prefs[p_d.session_window_width] = self.geometry().width()
+        p_d.prefs[p_d.session_window_height] = self.geometry().height()
+        # setProject_window = None
+        p_d.prefSave()
+        #
+        event.accept()
+        # print( 'Window closed' )
+
+
+class SessionElements():
+
+    def __init__( self, main_window = None, on_top = None, frame_pad = None, frame_step = None ):
+        '''
+        
+        '''
+
+        self.main_window = main_window
+        self.on_top = on_top
+        self.frame_pad = frame_pad
+        self.frame_step = frame_step
+        self.color = None
+
+    def store_session( self ):
+        '''
+        
+        '''
+        #
+        p_d = Prefs_dynamic()
+        #
+        p_d.prefs[p_d.session_window_pos_x] = self.main_window.geometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.main_window.geometry().y()
+        p_d.prefs[p_d.session_window_width] = self.main_window.geometry().width()
+        p_d.prefs[p_d.session_window_height] = self.main_window.geometry().height()
+        p_d.prefs[p_d.frame_pad] = self.frame_pad.text()
+        p_d.prefs[p_d.frame_step] = self.frame_step.text()
+        #
+        p_d.prefSave()
+
+
 def init_ui():
+    '''
+    
+    '''
+    win = SessionElements()
     # main
-    main_window = QtWidgets.QDialog()
-    main_window.setWindowTitle( 'Cache ABC' )
+    win.main_window = CustomQDialog()
+    win.main_window.setWindowTitle( 'Cache ABC' )
     main_layout = QtWidgets.QVBoxLayout()
-    main_window.setLayout( main_layout )
-    # width, height
-    # main_window.setFixedSize( 250, 200 )
-    main_window.resize( 320, 200 )
-    # main_window.setMaximumHeight( 150 )
-    # main_window.setMaximumWidth( 200 )
+    win.main_window.setLayout( main_layout )
+    # size
+    w = 320
+    h = 200
+    p_d = Prefs_dynamic()
+    if p_d.prefs[p_d.session_window_width]:
+        w = int( p_d.prefs[p_d.session_window_width] )
+        h = int( p_d.prefs[p_d.session_window_height] )
+        win.main_window.resize( w, h )
+    else:
+        win.main_window.resize( w, h )
+    # color tag
+    row1_layout = QtWidgets.QHBoxLayout()
+    s = 25
+    tag_button = QtWidgets.QPushButton( '' )
+    tag_button.setMaximumWidth( s )
+    tag_button.setMinimumWidth( s )
+    tag_button.setToolTip( "Maya session" )
+    color = get_tag_color()
+    tag_button.setStyleSheet( "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");" )  # QtGui.QColor( 1, 0.219, 0.058 )
 
     # always on top
     alwaysOnTop_layout = QtWidgets.QHBoxLayout()
     alwaysOnTop_label = QtWidgets.QLabel( 'Always On Top:  ' )
     alwaysOnTop_check = QtWidgets.QCheckBox()
-    alwaysOnTop_check.setChecked( True )
-    alwaysOnTop_check.clicked.connect( lambda:onTopToggle( main_window ) )
+    if p_d.prefs[p_d.on_top]:
+        alwaysOnTop_check.setChecked( True )
+    else:
+        alwaysOnTop_check.setChecked( False )
+    win.on_top = alwaysOnTop_check
+    alwaysOnTop_check.clicked.connect( lambda:onTopToggle( win.main_window, alwaysOnTop_check ) )
     #
     alwaysOnTop_layout.addWidget( alwaysOnTop_label, 0 )
     alwaysOnTop_layout.addWidget( alwaysOnTop_check, 0 )
-    alwaysOnTop_layout.setAlignment( QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter )
-    main_layout.addLayout( alwaysOnTop_layout )
+    alwaysOnTop_layout.setAlignment( QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter )
+    #
+    row1_layout.addWidget( tag_button, alignment = QtCore.Qt.AlignLeft )
+    row1_layout.addLayout( alwaysOnTop_layout )
+    main_layout.addLayout( row1_layout )
 
     # tggl button
     tggl_layout = QtWidgets.QHBoxLayout()
     tggl_button = QtWidgets.QPushButton( 'TOGGLE VIEWPORTS' )
     tggl_button.clicked.connect( lambda:cas.uiEnable() )
-    #
     tggl_layout.addWidget( tggl_button, 0 )
-    #
     main_layout.addLayout( tggl_layout )
 
     # frame pad
     framePad_layout = QtWidgets.QHBoxLayout()
     framePad_label = QtWidgets.QLabel( 'Frame Range Pad:' )
-    framePad_line_edit = QtWidgets.QLineEdit( '5' )
+    f_pad = '5'
+    if p_d.prefs[p_d.frame_pad]:
+        f_pad = p_d.prefs[p_d.frame_pad]
+    framePad_line_edit = QtWidgets.QLineEdit( f_pad )
+    win.frame_pad = framePad_line_edit
     #
     framePad_layout.addWidget( framePad_label, 0 )
     framePad_layout.addWidget( framePad_line_edit, 0 )
@@ -80,7 +186,11 @@ def init_ui():
     # frame step
     frameStep_layout = QtWidgets.QHBoxLayout()
     frameStep_label = QtWidgets.QLabel( 'Frame Step:' )
-    frameStep_line_edit = QtWidgets.QLineEdit( '1.0' )
+    f_step = '1.0'
+    if p_d.prefs[p_d.frame_step]:
+        f_step = p_d.prefs[p_d.frame_step]
+    frameStep_line_edit = QtWidgets.QLineEdit( f_step )
+    win.frame_step = frameStep_line_edit
     #
     frameStep_layout.addWidget( frameStep_label, 0 )
     frameStep_layout.addWidget( frameStep_line_edit, 0 )
@@ -144,16 +254,18 @@ def init_ui():
     #
     main_layout.addLayout( cache_layout )
 
-    return main_window
+    return win
 
 
-def onTopToggle( w ):
+def onTopToggle( w, check_box ):
     '''
     window always on top toggle
     '''
     w.setWindowFlags( w.windowFlags() ^ QtCore.Qt.WindowStaysOnTopHint )
-    # w.setWindowFlags( w.windowFlags() | QtCore.Qt.WindowStaysOnTopHint ) # enable
-    # window.setWindowFlags(window.windowFlags() & ~QtCore.Qt.WindowStaysOnTopHint) # disable
+    p = Prefs_dynamic()
+    p.prefs[p.on_top] = check_box.isChecked()
+    p.prefSave()
+    #
     w.show()
     pass
 
@@ -200,6 +312,25 @@ def warning( objects = [] ):
     msgBox.setText( 'Objects with existing versions not CACHED: ' + '\n\n' + mes )
     print( 'here' )
     msgBox.exec_()
+
+
+def show_window():
+    '''
+    
+    '''
+    app = QtWidgets.QApplication.instance()
+    main_window = init_ui()
+    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    #
+    centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
+    main_window.move( centerPoint - main_window.frameGeometry().center() * 3 )
+    #
+    main_window.show()
+    app.exec_()
+
+
+def ____CACHE():
+    pass
 
 
 def create_alembic( pad, step, overwrite, forceTyp, cam, eulerFltr ):
@@ -259,24 +390,149 @@ def create_alembic( pad, step, overwrite, forceTyp, cam, eulerFltr ):
         message( 'Select an object', warning = True )
 
 
-def show_window():
+def ____TAGS():
+    pass
+
+
+def tag_name():
+    return 'SIL'
+
+
+def tag_ui_parent():
+    return 'ToolBox|MainToolboxLayout|frameLayout5|flowLayout2'
+
+
+def toggle_maya_ui_tag():
+    '''
+    add color button to ui so tools can color code with same color
+    for use in multi maya session use cases
+    '''
+    ui = tag_ui_parent()
+    name = tag_name()
+    color = get_color()
+    #
+    if cmds.control( ui, ex = True ):
+        cmds.setParent( ui )
+        if cmds.control( name, ex = True ):
+            cmds.deleteUI( name )
+        else:
+            cmds.button( name, bgc = color, label = '', h = 32, w = 32 )
+            # cmds.flowLayout( ui, edit = True, bgc = color )
+    else:
+        message( 'Maya Color Tag Failed --- Hard coded maya UI element doesnt exist: ' + ui, warning = True )
+
+
+def get_tag_color():
     '''
     
     '''
-    app = QtWidgets.QApplication.instance()
-    main_window = init_ui()
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
-    # main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
+    color = None
+    if cmds.control( tag_name(), ex = True ):
+        color = cmds.button( tag_name(), q = True, bgc = True )
+    else:
+        toggle_maya_ui_tag()
+        color = cmds.button( tag_name(), q = True, bgc = True )
+    # print( color )
+    return color
+
+
+def get_color():
+    '''
+    red = QtGui.QColor( 1, 0.219, 0.058 )
+    '''
+    red = [1, 0.219, 0.058 ]
+    green = [ 0.152, 0.627, 0.188 ]
+    blue = [ 0.152, 0.403, 0.627 ]
+    orange = [ 0.850, 0.474, 0.090 ]
+    l_grey = [ 0.701, 0.690, 0.678 ]
+    grey = [ 0.701, 0.690, 0.678 ]
+    purple = [ 0.564, 0.121, 0.717 ]
+    yellow = [ 0.870, 0.811, 0.090 ]
+    brown = [ 0.552, 0.403, 0.164 ]
+    aqua = [ 0.192, 0.647, 0.549 ]
+    white = [ 1.0, 1.0, 1.0 ]
+    black = [ 0.0, 0.0, 0.0 ]
     #
-    centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
-    main_window.move( centerPoint - main_window.frameGeometry().center() * 3 )
-    #
-    main_window.show()
-    app.exec_()
+    c = [red, green, blue, orange, l_grey, grey, purple, yellow, brown, aqua, white, black]
+
+    color = random.randint( 0, len( c ) - 1 )
+    # print( c[color] )
+    return c[color]
+
+
+def ____PREFS():
+    pass
+
+
+class Prefs_dynamic():
+    '''
+    
+    '''
+
+    def __init__( self, *args ):
+        '''
+        prefs that are persistent next time ui starts.
+        '''
+        self.on_top = 'on_top'
+        self.frame_pad = 'frame_pad'
+        self.frame_step = 'frame_step'
+        #
+        self.session_window_pos_x = 'session_window_pos_x'
+        self.session_window_pos_y = 'session_window_pos_y'
+        self.session_window_width = 'session_window_width'
+        self.session_window_height = 'session_window_height'
+        #
+        self.prefs = {
+            self.on_top: False,
+            self.frame_pad: 5,
+            self.frame_step: 1,
+            self.session_window_pos_x: None,
+            self.session_window_pos_y: None,
+            self.session_window_width: None,
+            self.session_window_height: None
+        }
+        #
+        self.prefLoad()
+
+    def prefFileName( self ):
+        return 'CacheDynamicPrefs.json'
+
+    def prefPath( self, *args ):
+        varPath = cmds.internalVar( userAppDir = True )
+        path = os.path.join( varPath, 'scripts' )
+        path = os.path.join( path, self.prefFileName() )
+        return path
+
+    def prefSave( self, *args ):
+        # save
+        fileObjectJSON = open( self.prefPath(), 'w' )
+        json.dump( self.prefs, fileObjectJSON, indent = 4 )
+        fileObjectJSON.close()
+
+    def prefLoad( self, *args ):
+        # load
+        prefs_temp = {}
+        if os.path.isfile( self.prefPath() ):
+            try:
+                fileObjectJSON = open( self.prefPath(), 'r' )
+                prefs_temp = json.load( fileObjectJSON )
+                fileObjectJSON.close()
+            except:
+                message( 'Pref file not compatible. Using defaults.', warning = 1 )
+            # load state
+            if prefs_temp:
+                if self.on_top in prefs_temp:
+                    for key in self.prefs:
+                        if key in prefs_temp:
+                            self.prefs[key] = prefs_temp[key]
+                        else:
+                            pass
+                            # message( 'Missing attribute in file. Skipping: ' + key, warning = 1 )
 
 
 if __name__ == '__main__':
+    pass
+    '''
     app = QtWidgets.QApplication.instance()
     main_window = init_ui()
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
@@ -287,17 +543,22 @@ if __name__ == '__main__':
     main_window.move( centerPoint - main_window.frameGeometry().center() * 3 )
     #
     main_window.show()
-    app.exec_()
+    app.exec_()'''
 else:
     # print( 'nah' )
     app = QtWidgets.QApplication.instance()
-    cache_window = init_ui()
-    cache_window.setWindowFlags( cache_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
-    cache_window.setWindowFlags( cache_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
-    # cache_window.setWindowFlags( cache_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
+    cache_window = init_ui()  # returns class
+    # prefs
+    p_d = Prefs_dynamic()
+    if p_d.prefs[p_d.on_top]:
+        cache_window.main_window.setWindowFlags( cache_window.main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
     #
     centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
-    cache_window.move( centerPoint.x() * 0.5, centerPoint.y() * 0.25 )
+    _offset = [1, 31]  # framed window has border, position query is not accounting for the border
+    if p_d.prefs[p_d.session_window_pos_x]:
+        cache_window.main_window.move( p_d.prefs[p_d.session_window_pos_x] - _offset[0], p_d.prefs[p_d.session_window_pos_y] - _offset[1] )
+    else:
+        cache_window.main_window.move( centerPoint.x() * 0.5, centerPoint.y() * 0.25 )
     #
-    cache_window.show()
+    cache_window.main_window.show()
     app.exec_()
