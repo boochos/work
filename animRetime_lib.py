@@ -1,12 +1,35 @@
+import json
+import os
+import random
 import time
 
 from PySide2 import QtCore, QtGui, QtWidgets
-
 import maya.cmds as cmds
 import maya.mel as mel
 import webrImport as web
 
 place = web.mod( "atom_place_lib" )
+global timewarp_window
+
+# print os.environ
+# close if open
+'''
+if timewarp_window:
+    if not timewarp_window.main_window.isHidden():
+        timewarp_window.store_session()
+        timewarp_window.main_window.close()
+    else:
+        cache_window = None'''
+try:
+    if timewarp_window:
+        if not timewarp_window.main_window.isHidden():
+            timewarp_window.store_session()
+            timewarp_window.main_window.close()
+        else:
+            timewarp_window = None
+except:
+    print( 'failed' )
+    pass
 
 
 def message( what = '', maya = True, warning = False ):
@@ -26,9 +49,50 @@ def ____UI____():
     pass
 
 
+class SessionElements():
+
+    def __init__( self, main_window = None, on_top = None, warps = None, layers = None, layerMembers = None ):
+        '''
+        
+        '''
+
+        self.main_window = main_window
+        self.on_top = on_top
+        self.warps = warps
+        self.layers = layers
+        self.layerMembers = layerMembers
+        self.color = None
+
+    def store_session( self ):
+        '''
+        
+        '''
+        #
+        p_d = Prefs_dynamic()
+        #
+        p_d.prefs[p_d.session_window_pos_x] = self.main_window.frameGeometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.main_window.frameGeometry().y()
+        p_d.prefs[p_d.session_window_width] = self.main_window.geometry().width()
+        p_d.prefs[p_d.session_window_height] = self.main_window.geometry().height()
+        #
+        if self.warps.selectedItems():
+            p_d.prefs[p_d.selected_warp] = self.warps.selectedItems()[0].text()
+        if self.layers.selectedItems():
+            p_d.prefs[p_d.selected_layers] = self.layers.selectedItems()[0].text()
+        if self.layerMembers.selectedItems():
+            p_d.prefs[p_d.selected_layerMembers] = self.layerMembers.selectedItems()[0].text()
+        #
+        #
+        p_d.prefSave()
+
+
 def init_ui():
+    #
+    p_d = Prefs_dynamic()
+    win = SessionElements()
     # main
     main_window = QtWidgets.QDialog()
+    win.main_window = main_window
     main_layout = QtWidgets.QVBoxLayout()
     top_layout = QtWidgets.QHBoxLayout()
     bottom_layout = QtWidgets.QHBoxLayout()
@@ -36,8 +100,12 @@ def init_ui():
     # always on top
     alwaysOnTop_label = QtWidgets.QLabel( 'Window On Top:  ' )
     alwaysOnTop_check = QtWidgets.QCheckBox()
-    alwaysOnTop_check.setChecked( True )
-    alwaysOnTop_check.clicked.connect( lambda:onTopToggle_ui( main_window ) )
+    if p_d.prefs[p_d.on_top]:
+        alwaysOnTop_check.setChecked( True )
+    else:
+        alwaysOnTop_check.setChecked( False )
+    win.on_top = alwaysOnTop_check
+    alwaysOnTop_check.clicked.connect( lambda:onTopToggle_ui( win.main_window, alwaysOnTop_check ) )
     # suffix layout
     sffx_line_layout = QtWidgets.QHBoxLayout()
     sffx_label = QtWidgets.QLabel( 'Warp node suffix option:  ' )
@@ -96,8 +164,10 @@ def init_ui():
     col1_layout = QtWidgets.QVBoxLayout()
     col1_label1 = QtWidgets.QLabel( 'Time Warp Nodes :' )
     warp_list_widget = QtWidgets.QListWidget()
+    win.warps = warp_list_widget
     col1_label2 = QtWidgets.QLabel( 'Anim Layers :' )
     animLayers_list_widget = QtWidgets.QListWidget()
+    win.layers = animLayers_list_widget
     animLayers_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.ExtendedSelection )
     # col 2
     col2_layout = QtWidgets.QVBoxLayout()
@@ -138,6 +208,7 @@ def init_ui():
     col2_row2Label2_layout.addWidget( col2_label13 )
     col2_row2Label2_layout.addWidget( col2_label14 )
     animLayerMembers_list_widget = QtWidgets.QListWidget()
+    win.layerMembers = animLayers_list_widget
     animLayerMembers_list_widget.setSelectionMode( QtWidgets.QAbstractItemView.ExtendedSelection )
     # attach columns
     lists_layout.addLayout( col1_layout )  # attach col 1
@@ -147,9 +218,17 @@ def init_ui():
     main_layout.addLayout( lists_layout )
     main_layout.addLayout( bottom_layout )
     #
-    main_window.setLayout( main_layout )
-    main_window.setWindowTitle( 'Time Warp Tool' )
-    main_window.resize( 450, 500 )
+    win.main_window.setLayout( main_layout )
+    win.main_window.setWindowTitle( 'Time Warp Tool' )
+    # size
+    w = 320
+    h = 200
+    if p_d.prefs[p_d.session_window_width]:
+        w = int( p_d.prefs[p_d.session_window_width] )
+        h = int( p_d.prefs[p_d.session_window_height] )
+        win.main_window.resize( w, h )
+    else:
+        win.main_window.resize( w, h )
     #
     warp_list_widget.itemSelectionChanged.connect( lambda: getMembers_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
     # members_list_widget.itemSelectionChanged.connect( lambda: get_tasks( warp_list_widget.currentItem().text(), members_list_widget.currentItem().text() ) )
@@ -191,7 +270,7 @@ def init_ui():
     # parse current scene
     # get_current( project_list_widget, members_list_widget, tasks_list_widget, scene_list_widget )
 
-    return main_window
+    return win
 
 
 def getWarps_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ):
@@ -492,13 +571,15 @@ def deleteTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_wi
     cmds.undoInfo( closeChunk = True, chunkName = 'deleteTimeWarp_ui' )
 
 
-def onTopToggle_ui( w ):
+def onTopToggle_ui( w, check_box ):
     '''
     window always on top toggle
     '''
     w.setWindowFlags( w.windowFlags() ^ QtCore.Qt.WindowStaysOnTopHint )
-    # w.setWindowFlags( w.windowFlags() | QtCore.Qt.WindowStaysOnTopHint ) # enable
-    # window.setWindowFlags(window.windowFlags() & ~QtCore.Qt.WindowStaysOnTopHint) # disable
+    p = Prefs_dynamic()
+    p.prefs[p.on_top] = check_box.isChecked()
+    p.prefSave()
+    #
     w.show()
     pass
 
@@ -2029,13 +2110,164 @@ def getDeadCurves( timeWarp = '' ):
     return deadCurves
 
 
+def ____TAGS():
+    pass
+
+
+def tag_name():
+    return 'SIL'
+
+
+def tag_ui_parent():
+    return 'ToolBox|MainToolboxLayout|frameLayout5|flowLayout2'
+
+
+def toggle_maya_ui_tag():
+    '''
+    add color button to ui so tools can color code with same color
+    for use in multi maya session use cases
+    '''
+    ui = tag_ui_parent()
+    name = tag_name()
+    color = get_color()
+    #
+    if cmds.control( ui, ex = True ):
+        cmds.setParent( ui )
+        if cmds.control( name, ex = True ):
+            cmds.deleteUI( name )
+        else:
+            cmds.button( name, bgc = color, label = '', h = 32, w = 32 )
+            # cmds.flowLayout( ui, edit = True, bgc = color )
+    else:
+        message( 'Maya Color Tag Failed --- Hard coded maya UI element doesnt exist: ' + ui, warning = True )
+
+
+def get_tag_color():
+    '''
+    
+    '''
+    color = None
+    if cmds.control( tag_name(), ex = True ):
+        color = cmds.button( tag_name(), q = True, bgc = True )
+    else:
+        toggle_maya_ui_tag()
+        color = cmds.button( tag_name(), q = True, bgc = True )
+    # print( color )
+    return color
+
+
+def get_color():
+    '''
+    red = QtGui.QColor( 1, 0.219, 0.058 )
+    '''
+    red = [1, 0.219, 0.058 ]
+    green = [ 0.152, 0.627, 0.188 ]
+    blue = [ 0.152, 0.403, 0.627 ]
+    orange = [ 0.850, 0.474, 0.090 ]
+    l_grey = [ 0.701, 0.690, 0.678 ]
+    grey = [ 0.701, 0.690, 0.678 ]
+    purple = [ 0.564, 0.121, 0.717 ]
+    yellow = [ 0.870, 0.811, 0.090 ]
+    brown = [ 0.552, 0.403, 0.164 ]
+    aqua = [ 0.192, 0.647, 0.549 ]
+    white = [ 1.0, 1.0, 1.0 ]
+    black = [ 0.0, 0.0, 0.0 ]
+    #
+    c = [red, green, blue, orange, l_grey, grey, purple, yellow, brown, aqua, white, black]
+
+    color = random.randint( 0, len( c ) - 1 )
+    # print( c[color] )
+    return c[color]
+
+
+def ____PREFS():
+    pass
+
+
+class Prefs_dynamic():
+    '''
+    
+    '''
+
+    def __init__( self, *args ):
+        '''
+        prefs that are persistent next time ui starts.
+        '''
+        self.on_top = 'on_top'
+        self.selected_warp = 'selected_warp'
+        self.selected_layers = 'selected_layers'
+        self.selected_layerMembers = 'selected_layerMembers'
+        #
+        self.session_window_pos_x = 'session_window_pos_x'
+        self.session_window_pos_y = 'session_window_pos_y'
+        self.session_window_width = 'session_window_width'
+        self.session_window_height = 'session_window_height'
+        #
+        self.prefs = {
+            self.on_top: False,
+            self.selected_warp: None,
+            self.selected_layers: None,
+            self.selected_layerMembers: None,
+            self.session_window_pos_x: None,
+            self.session_window_pos_y: None,
+            self.session_window_width: None,
+            self.session_window_height: None
+        }
+        #
+        self.prefLoad()
+
+    def prefFileName( self ):
+        return 'TimewarpDynamicPrefs.json'
+
+    def prefPath( self, *args ):
+        varPath = cmds.internalVar( userAppDir = True )
+        path = os.path.join( varPath, 'scripts' )
+        path = os.path.join( path, self.prefFileName() )
+        return path
+
+    def prefSave( self, *args ):
+        # save
+        fileObjectJSON = open( self.prefPath(), 'w' )
+        json.dump( self.prefs, fileObjectJSON, indent = 4 )
+        fileObjectJSON.close()
+
+    def prefLoad( self, *args ):
+        # load
+        prefs_temp = {}
+        if os.path.isfile( self.prefPath() ):
+            try:
+                fileObjectJSON = open( self.prefPath(), 'r' )
+                prefs_temp = json.load( fileObjectJSON )
+                fileObjectJSON.close()
+            except:
+                message( 'Pref file not compatible. Using defaults.', warning = 1 )
+            # load state
+            if prefs_temp:
+                if self.on_top in prefs_temp:
+                    for key in self.prefs:
+                        if key in prefs_temp:
+                            self.prefs[key] = prefs_temp[key]
+                        else:
+                            pass
+                            # message( 'Missing attribute in file. Skipping: ' + key, warning = 1 )
+        else:
+            self.prefSave()
+
+
 if __name__ == '__main__':
     print( 'run only in maya' )
 else:
+    # open
     app = QtWidgets.QApplication.instance()
-    main_window = init_ui()
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint )
-    main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint )
-    main_window.show()
+    timewarp_window = init_ui()  # class
+    print( timewarp_window.main_window )
+    # prefs
+    p_d = Prefs_dynamic()
+    if p_d.prefs[p_d.on_top]:
+        timewarp_window.main_window.setWindowFlags( timewarp_window.main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    #
+    if p_d.prefs[p_d.session_window_pos_x]:
+        timewarp_window.main_window.move( p_d.prefs[p_d.session_window_pos_x], p_d.prefs[p_d.session_window_pos_y] )
+
+    timewarp_window.main_window.show()
     app.exec_()

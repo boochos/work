@@ -72,13 +72,16 @@ class CustomQDialog( QtWidgets.QDialog ):
         
         '''
         #
+        cache_window.store_session()
+        '''
         p_d = Prefs_dynamic()
-        p_d.prefs[p_d.session_window_pos_x] = self.geometry().x()
-        p_d.prefs[p_d.session_window_pos_y] = self.geometry().y()
+        p_d.prefs[p_d.session_window_pos_x] = self.frameGeometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.frameGeometry().y()
         p_d.prefs[p_d.session_window_width] = self.geometry().width()
         p_d.prefs[p_d.session_window_height] = self.geometry().height()
         # setProject_window = None
         p_d.prefSave()
+        '''
         #
         event.accept()
         # print( 'Window closed' )
@@ -104,8 +107,8 @@ class SessionElements():
         #
         p_d = Prefs_dynamic()
         #
-        p_d.prefs[p_d.session_window_pos_x] = self.main_window.geometry().x()
-        p_d.prefs[p_d.session_window_pos_y] = self.main_window.geometry().y()
+        p_d.prefs[p_d.session_window_pos_x] = self.main_window.frameGeometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.main_window.frameGeometry().y()
         p_d.prefs[p_d.session_window_width] = self.main_window.geometry().width()
         p_d.prefs[p_d.session_window_height] = self.main_window.geometry().height()
         p_d.prefs[p_d.frame_pad] = self.frame_pad.text()
@@ -176,7 +179,7 @@ def init_ui():
     f_pad = '5'
     if p_d.prefs[p_d.frame_pad]:
         f_pad = p_d.prefs[p_d.frame_pad]
-    framePad_line_edit = QtWidgets.QLineEdit( f_pad )
+    framePad_line_edit = QtWidgets.QLineEdit( str( f_pad ) )
     win.frame_pad = framePad_line_edit
     #
     framePad_layout.addWidget( framePad_label, 0 )
@@ -189,7 +192,7 @@ def init_ui():
     f_step = '1.0'
     if p_d.prefs[p_d.frame_step]:
         f_step = p_d.prefs[p_d.frame_step]
-    frameStep_line_edit = QtWidgets.QLineEdit( f_step )
+    frameStep_line_edit = QtWidgets.QLineEdit( str( f_step ) )
     win.frame_step = frameStep_line_edit
     #
     frameStep_layout.addWidget( frameStep_label, 0 )
@@ -528,6 +531,8 @@ class Prefs_dynamic():
                         else:
                             pass
                             # message( 'Missing attribute in file. Skipping: ' + key, warning = 1 )
+        else:
+            self.prefSave()
 
 
 if __name__ == '__main__':
@@ -554,7 +559,7 @@ else:
         cache_window.main_window.setWindowFlags( cache_window.main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
     #
     centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
-    _offset = [1, 31]  # framed window has border, position query is not accounting for the border
+    _offset = [0, 0]  # [1, 31]  # framed window has border, position query is not accounting for the border
     if p_d.prefs[p_d.session_window_pos_x]:
         cache_window.main_window.move( p_d.prefs[p_d.session_window_pos_x] - _offset[0], p_d.prefs[p_d.session_window_pos_y] - _offset[1] )
     else:

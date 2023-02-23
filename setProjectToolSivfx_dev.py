@@ -81,11 +81,9 @@ class CustomQDialog( QtWidgets.QDialog ):
         '''
         # do stuff, figure out how to get session info and save it
         #
-        print( 'Add feature cleanup - remove button from maya UI.... or not. maybe leave it for the whole session' )
-        #
         p_d = Prefs_dynamic()
-        p_d.prefs[p_d.session_window_pos_x] = self.geometry().x()
-        p_d.prefs[p_d.session_window_pos_y] = self.geometry().y()
+        p_d.prefs[p_d.session_window_pos_x] = self.frameGeometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.frameGeometry().y()
         p_d.prefs[p_d.session_window_width] = self.geometry().width()
         p_d.prefs[p_d.session_window_height] = self.geometry().height()
         # setProject_window = None
@@ -201,10 +199,13 @@ class CustomListView( QtWidgets.QListWidget ):
         elif self._selected == self._t:
             self.path = os.path.join( self.root, self._p, self._e, self._t )
         elif self._selected == self._s:
-            if directory_only:
-                self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes' )
+            if 'asset' in self._e:
+                self.path = os.path.join( self.root, self._p, self._e, self._t )
             else:
-                self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes', self._s )
+                if directory_only:
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes' )
+                else:
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes', self._s )
 
     def clipboard_item( self, e ):
         # only selection text
@@ -252,16 +253,24 @@ class SessionElements():
         p_d = Prefs_dynamic()
         #
         if self.projects.selectedItems():
-            p_d.prefs[p_d.session_project] = self.projects.selectedItems()[0].text()
+            p_d.prefs[p_d.last_selected_project] = self.projects.selectedItems()[0].text()
+        else:
+            p_d.prefs[p_d.last_selected_project] = ''
         if self.entities.selectedItems():
-            p_d.prefs[p_d.session_entity] = self.entities.selectedItems()[0].text()
+            p_d.prefs[p_d.last_selected_entity] = self.entities.selectedItems()[0].text()
+        else:
+            p_d.prefs[p_d.last_selected_entity] = ''
         if self.tasks.selectedItems():
-            p_d.prefs[p_d.session_task] = self.tasks.selectedItems()[0].text()
+            p_d.prefs[p_d.last_selected_task] = self.tasks.selectedItems()[0].text()
+        else:
+            p_d.prefs[p_d.last_selected_task] = ''
         if self.scenes.selectedItems():
-            p_d.prefs[p_d.session_scene] = self.scenes.selectedItems()[0].text()
+            p_d.prefs[p_d.last_selected_scene] = self.scenes.selectedItems()[0].text()
+        else:
+            p_d.prefs[p_d.last_selected_scene] = ''
         #
-        p_d.prefs[p_d.session_window_pos_x] = self.main_window.geometry().x()
-        p_d.prefs[p_d.session_window_pos_y] = self.main_window.geometry().y()
+        p_d.prefs[p_d.session_window_pos_x] = self.main_window.frameGeometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.main_window.frameGeometry().y()
         p_d.prefs[p_d.session_window_width] = self.main_window.geometry().width()
         p_d.prefs[p_d.session_window_height] = self.main_window.geometry().height()
         p_d.prefSave()
@@ -399,9 +408,15 @@ def init_ui():
     ref_button = QtWidgets.QPushButton( "Reference" )
     ref_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
     ref_button.clicked.connect( lambda: ref_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    '''
     explore_button = QtWidgets.QPushButton( "File Browser" )
     explore_button.clicked.connect( lambda: explore_path( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
     explore_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px; background-color: grey;" )
+    '''
+    navigate_button = QtWidgets.QPushButton( "Navigate to Scene" )
+    navigate_button.clicked.connect( lambda: get_current( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    navigate_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px; background-color: grey;" )
+
     range_button = QtWidgets.QPushButton( "Import Range" )
     range_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
     range_button.clicked.connect( lambda: rangeFromMaFile( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, handles = 0 ) )
@@ -422,7 +437,7 @@ def init_ui():
     col4_layout.addWidget( set_open_button )
     col4_layout.addWidget( ref_button )
     col4_layout.addWidget( pub_button )
-    col4_layout.addWidget( explore_button )
+    col4_layout.addWidget( navigate_button )
     #
     projects = get_projects()
     for project in projects:
@@ -452,16 +467,13 @@ def init_ui():
     scene_list_widget.itemSelectionChanged.connect( lambda: scenes_click_event( scene_list_widget ) )
 
     # size
-    w = 0
-    h = 0
+    w = 900
+    h = 800
     p = Prefs()
     p_d = Prefs_dynamic()
     if p_d.prefs[p_d.session_window_width]:
         w = int( p_d.prefs[p_d.session_window_width] )
         h = int( p_d.prefs[p_d.session_window_height] )
-    else:
-        w = int( p.prefs[p.window_width] )
-        h = int( p.prefs[p.window_height] )
     main_window.resize( w, h )
     # main_window.resize( 900, 800 )
 
@@ -516,14 +528,15 @@ def get_shots_assets( list_widget, project, tasks, search_edit, scenes = None ):
         # message( 'no current entity', warning = 1 )
         pass
     #
+    p_d = Prefs_dynamic()
     if project.selectedItems():
         project = project.selectedItems()[0].text()
-        p_d = Prefs_dynamic()
         p_d.prefs[p_d.last_selected_project] = project
         p_d.prefSave()
     else:
         # message( 'Select a project' )  # too much feedback
-        return
+        p_d.prefs[p_d.last_selected_project] = ''
+        p_d.prefSave()
 
     #
     #
@@ -619,6 +632,8 @@ def get_tasks( list_widget, project, entity, scenes, search_task_edit ):
     p_d = Prefs_dynamic()
     if entity.selectedItems():
         p_d.prefs[p_d.last_selected_entity] = entity.selectedItems()[0].text()
+    else:
+        p_d.prefs[p_d.last_selected_entity] = ''
     p_d.prefs[p_d.task_search] = search_task_edit.text()
     p_d.prefSave()
     #
@@ -776,6 +791,8 @@ def get_scenes( list_widget = None, project = None, entity = None, task = None )
     p_d = Prefs_dynamic()
     if task.selectedItems():
         p_d.prefs[p_d.last_selected_task] = task.selectedItems()[0].text()
+    else:
+        p_d.prefs[p_d.last_selected_task] = ''
     p_d.prefSave()
     # qualify
     if project.selectedItems() and entity.selectedItems():
@@ -862,19 +879,29 @@ def get_caches( project = '', entity = '', task = '' ):
 
 def get_current( projects = None, entities = None, tasks = None, scenes = None ):
     '''
+    only good for last project and current scene, 
+    maya spits back forward slash paths and back slashs stored in prefs are not compatible
+    path.split() breaks with prefs paths
     inputs are QListWidget objects
     parse current scene path, load and set project
-    select_item_in_list( p_d.prefs[p_d.last_navigated_project] , project_list_widget )
+
     '''
-    path = cmds.file( query = True, sn = True )
-    if not path:
-        p = Prefs_dynamic()
-        path = p.prefs[p.last_project]
+    path = ''
+    p_d = Prefs_dynamic()
+    if p_d.prefs[p_d.navigate_to_current_scene]:
+        path = cmds.file( query = True, sn = True )  # scene path
+    elif p_d.prefs[p_d.navigate_to_last_project]:
+        path = p_d.prefs[p_d.last_project]
+    else:
+        get_last_selected( projects , entities, tasks , scenes )
+        return
+
+    #
     if path:
         # print( path )
         parts = path.split( '/' )
         if parts:
-            # print parts
+            print( parts )
             # project
             item = projects.findItems( parts[1], QtCore.Qt.MatchExactly )
             if item:
@@ -914,6 +941,42 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None )
                         scenes.setCurrentItem( item[0] )
 
 
+def get_last_selected( projects = None, entities = None, tasks = None, scenes = None ):
+    '''
+    
+    '''
+    p_d = Prefs_dynamic()
+    path = ''
+    root = get_root()
+    '''
+    project = p_d.prefs[p_d.session_project]
+    entity = p_d.prefs[p_d.session_entity]
+    task = p_d.prefs[p_d.session_task]
+    scene = p_d.prefs[p_d.session_scene]
+    '''
+    _p = p_d.prefs[p_d.last_selected_project]
+    _e = p_d.prefs[p_d.last_selected_entity]
+    _t = p_d.prefs[p_d.last_selected_task]
+    _s = p_d.prefs[p_d.last_selected_scene]
+    # project
+    item = projects.findItems( _p, QtCore.Qt.MatchExactly )
+    if item:
+        projects.setCurrentItem( item[0] )
+    item = entities.findItems( _e, QtCore.Qt.MatchExactly )
+    if item:
+        entities.setCurrentItem( item[0] )
+    item = tasks.findItems( _t, QtCore.Qt.MatchExactly )
+    if item:
+        tasks.setCurrentItem( item[0] )
+    item = scenes.findItems( _s, QtCore.Qt.MatchExactly )
+    if item:
+        scenes.setCurrentItem( item[0] )
+
+
+def get_root():
+    return os.environ["PROJ_ROOT"]
+
+
 def ____MISC():
     pass
 
@@ -925,6 +988,8 @@ def scenes_click_event( scenes = None ):
     p_d = Prefs_dynamic()
     if scenes.selectedItems():
         p_d.prefs[p_d.last_selected_scene] = scenes.selectedItems()[0].text()
+    else:
+        p_d.prefs[p_d.last_selected_scene] = ''
     p_d.prefSave()
 
 
@@ -1418,7 +1483,7 @@ def toggle_maya_ui_tag():
         if cmds.control( name, ex = True ):
             cmds.deleteUI( name )
         else:
-            cmds.button( name, bgc = color, label = '', h = 32, w = 32 )
+            cmds.button( name, bgc = color, label = '', h = 36, w = 36 )
             # cmds.flowLayout( ui, edit = True, bgc = color )
     else:
         message( 'Maya Color Tag Failed --- Hard coded maya UI element doesnt exist: ' + ui, warning = True )
@@ -1731,7 +1796,7 @@ def fps_start_timer():
     '''
     # qualify
     global fps_start
-    print( 'fps____', fps_start )
+    # print( 'fps____', fps_start )
     go = False
     #
     new_start = time.time()
@@ -1951,8 +2016,9 @@ def pref_window( win ):
     a_str = p.list_to_string( p.prefs[p.asset_blacklist] )
     at_str = p.list_to_string( p.prefs[p.asset_type_blacklist] )
     t_str = p.list_to_string( p.prefs[p.task_whitelist] )
+    ''''
     w_str = str( p.prefs[p.window_width] )
-    h_str = str( p.prefs[p.window_height] )
+    h_str = str( p.prefs[p.window_height] )'''
     #
     w = 150
     main_window = QtWidgets.QDialog()
@@ -2016,15 +2082,23 @@ def pref_window( win ):
 
     # restore navigation
     radio_layout = QtWidgets.QHBoxLayout()
-    radio_label = QtWidgets.QLabel( 'Navigation:' )
+    radio_label = QtWidgets.QLabel( 'At Launch Navigate to:' )
     radio_label.setMinimumWidth( w )
-    sel_radio = QtWidgets.QRadioButton( 'To Previous Selection' )
-    sel_radio.setChecked( True )
+    sel_radio = QtWidgets.QRadioButton( 'Previous Selection' )
+    # sel_radio.setChecked( True )
     sel_radio.toggled.connect( lambda: store_navigation_type( sel_radio, project_radio, scene_radio ) )
-    project_radio = QtWidgets.QRadioButton( 'To Previous Project' )
+    project_radio = QtWidgets.QRadioButton( 'Previous Project' )
     project_radio.toggled.connect( lambda: store_navigation_type( sel_radio, project_radio, scene_radio ) )
-    scene_radio = QtWidgets.QRadioButton( 'To Current Scene' )
+    scene_radio = QtWidgets.QRadioButton( 'Current Scene' )
     scene_radio.toggled.connect( lambda: store_navigation_type( sel_radio, project_radio, scene_radio ) )
+    p_d = Prefs_dynamic()
+    if p_d.prefs[p_d.navigate_to_last_selection]:
+        sel_radio.setChecked( True )
+    if p_d.prefs[p_d.navigate_to_last_project]:
+        project_radio.setChecked( True )
+    if p_d.prefs[p_d.navigate_to_current_scene]:
+        scene_radio.setChecked( True )
+
     #
     radio_layout.addWidget( radio_label )
     radio_layout.addWidget( sel_radio )
@@ -2033,7 +2107,7 @@ def pref_window( win ):
     main_layout.addLayout( radio_layout )
 
     # window size
-
+    '''
     widnow_size_layout = QtWidgets.QHBoxLayout()
     window_size_label = QtWidgets.QLabel( 'WILL BE REMOVED - Window Size w/h :' )
     window_size_x_edit = QtWidgets.QLineEdit( w_str )
@@ -2046,12 +2120,12 @@ def pref_window( win ):
     widnow_size_layout.addWidget( window_size_x_edit )
     widnow_size_layout.addWidget( window_size_y_edit )
     widnow_size_layout.addWidget( current_size_button )
-    main_layout.addLayout( widnow_size_layout )
+    main_layout.addLayout( widnow_size_layout )'''
 
     # save and close
     buttons_layout = QtWidgets.QHBoxLayout()
     save_button = QtWidgets.QPushButton( "Save" )
-    save_button.clicked.connect( lambda: Prefs( main_window, prj_edit, entity_edit, assets_edit, assettype_edit, task_edit, window_size_x_edit, window_size_y_edit ) )
+    save_button.clicked.connect( lambda: Prefs( main_window, prj_edit, entity_edit, assets_edit, assettype_edit, task_edit ) )
     close_button = QtWidgets.QPushButton( "Close" )
     close_button.clicked.connect( lambda: main_window.close() )
 
@@ -2088,7 +2162,7 @@ def store_navigation_type( sel_radio, project_radio, scene_radio ):
 
 class Prefs():
 
-    def __init__( self, main_window = None, projects = None, entities = None, assets = None, assettypes = None, tasks = None, win_x = None, win_y = None ):
+    def __init__( self, main_window = None, projects = None, entities = None, assets = None, assettypes = None, tasks = None ):
         '''
         '''
         self.main_window = main_window
@@ -2101,8 +2175,6 @@ class Prefs():
         self.asset_blacklist = 'asset_blacklist'
         self.asset_type_blacklist = 'asset_type_blacklist'
         self.task_whitelist = 'task_whitelist'
-        self.window_width = 'window_width'
-        self.window_height = 'window_height'
         self.remote_pref_path = 'remote_pref_path'
         #
         self.prefs = {
@@ -2111,8 +2183,6 @@ class Prefs():
             self.asset_blacklist:[],
             self.asset_type_blacklist:[],
             self.task_whitelist:[],
-            self.window_width: 900,
-            self.window_height: 800,
             self.remote_pref_path: ''
             }
         #
@@ -2123,8 +2193,6 @@ class Prefs():
             self.string_to_list( assets, self.asset_blacklist )
             self.string_to_list( assettypes, self.asset_type_blacklist )
             self.string_to_list( tasks, self.task_whitelist )
-            self.prefs[self.window_width] = win_x.text()
-            self.prefs[self.window_height] = win_y.text()
             # print( self.prefs[self.window_width], self.prefs[self.window_height] )
             # save
             self.prefSave()
@@ -2197,6 +2265,9 @@ class Prefs():
                 else:
                     self.prefs = prefs_dict_default()
                     self.prefSave()
+        else:
+            self.prefs = prefs_dict_default()
+            self.prefSave()
 
 
 def prefs_dict_default():
@@ -2243,8 +2314,6 @@ def prefs_dict_default():
       "VFX_Animation",
       "projects"
      ],
-     "window_width": "900",
-     "window_height": "800",
      "remote_pref_path": ""
     }
     return prefs_default
@@ -2274,6 +2343,7 @@ class Prefs_dynamic():
         self.navigate_to_last_project = 'navigate_to_last_project'  # last project set before window was closed
         self.navigate_to_last_selection = 'navigate_to_last_selection'  # restore exact selection before window was closed
         #
+        self.session_window_pos_y = 'session_window_pos_y'
         self.session_window_pos_x = 'session_window_pos_x'
         self.session_window_pos_y = 'session_window_pos_y'
         self.session_window_width = 'session_window_width'
@@ -2341,6 +2411,8 @@ class Prefs_dynamic():
                         else:
                             pass
                             # message( 'Missing attribute in file. Skipping: ' + key, warning = 1 )
+        else:
+            self.prefSave()
 
 
 if __name__ == '__main__':
@@ -2359,7 +2431,7 @@ else:
         setProject_window.main_window.setWindowFlags( setProject_window.main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
     # move
     centerPoint = QtGui.QGuiApplication.screens()[0].geometry().center()
-    _offset = [1, 31]
+    _offset = [0, 0]  # [1, 31]
     if p_d.prefs[p_d.session_window_pos_x]:
         setProject_window.main_window.move( p_d.prefs[p_d.session_window_pos_x] - _offset[0], p_d.prefs[p_d.session_window_pos_y] - _offset[1] )
     else:
