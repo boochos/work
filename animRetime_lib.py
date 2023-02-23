@@ -97,6 +97,15 @@ def init_ui():
     top_layout = QtWidgets.QHBoxLayout()
     bottom_layout = QtWidgets.QHBoxLayout()
     #
+    # color tag
+    row1_layout = QtWidgets.QHBoxLayout()
+    s = 25
+    tag_button = QtWidgets.QPushButton( '' )
+    tag_button.setMaximumWidth( s )
+    tag_button.setMinimumWidth( s )
+    tag_button.setToolTip( "Maya session" )
+    color = get_tag_color()
+    tag_button.setStyleSheet( "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");" )  # QtGui.QColor( 1, 0.219, 0.058 )
     # always on top
     alwaysOnTop_label = QtWidgets.QLabel( 'Window On Top:  ' )
     alwaysOnTop_check = QtWidgets.QCheckBox()
@@ -108,13 +117,14 @@ def init_ui():
     alwaysOnTop_check.clicked.connect( lambda:onTopToggle_ui( win.main_window, alwaysOnTop_check ) )
     # suffix layout
     sffx_line_layout = QtWidgets.QHBoxLayout()
-    sffx_label = QtWidgets.QLabel( 'Warp node suffix option:  ' )
+    sffx_label = QtWidgets.QLabel( 'Add Suffix:  ' )
     sffx_edit = QtWidgets.QLineEdit()
     sffx_label.setMinimumWidth( 50 )
     #
     # sffx_line_layout.addWidget( alwaysOnTop_label )
     # sffx_line_layout.addWidget( alwaysOnTop_check )
     #
+    sffx_line_layout.addWidget( tag_button )
     sffx_line_layout.addWidget( sffx_label )
     sffx_line_layout.addWidget( sffx_edit )
     sffx_line_layout.addWidget( alwaysOnTop_label )
@@ -124,7 +134,7 @@ def init_ui():
     # buttons
     create_warp_button = QtWidgets.QPushButton( "Create Warp" )
     create_warp_button.clicked.connect( lambda: createTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 , sffx_edit.text() ) )
-    create_warp_button.setStyleSheet( "background-color: darkgreen" )
+    create_warp_button.setStyleSheet( "background-color: grey" )
     #
     connect_button = QtWidgets.QPushButton( "Add Controls" )
     connect_button.clicked.connect( lambda: connectToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
@@ -145,11 +155,11 @@ def init_ui():
     #
     delete_button = QtWidgets.QPushButton( "Delete Warp" )
     delete_button.clicked.connect( lambda: deleteTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
-    delete_button.setStyleSheet( "background-color: darkred" )
+    delete_button.setStyleSheet( "background-color: grey" )
     #
-    refresh_button = QtWidgets.QPushButton( "Refresh UI" )
+    refresh_button = QtWidgets.QPushButton( "Refresh" )
     refresh_button.clicked.connect( lambda: refresh_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14 ) )
-    refresh_button.setStyleSheet( "background-color: darkcyan" )
+    # refresh_button.setStyleSheet( "background-color: darkcyan" )
     #
     connectLayer_button = QtWidgets.QPushButton( "Add Layers" )
     connectLayer_button.clicked.connect( lambda: connectLayerToTimeWarp_ui( warp_list_widget, animLayers_list_widget, members_list_widget, animLayerMembers_list_widget, col2_label2, col2_label4, col2_label12, col2_label14, connect = True, connectLayers = True ) )
@@ -175,7 +185,7 @@ def init_ui():
     col2_row1Label1_layout = QtWidgets.QHBoxLayout()
     col2_row1Label0_layout.addLayout( col2_row1Label1_layout )
     col2_row1Label1_layout.setAlignment( QtCore.Qt.AlignLeft )
-    col2_label1 = QtWidgets.QLabel( 'Controls in scope:' )
+    col2_label1 = QtWidgets.QLabel( 'Controls in Scope:' )
     col2_label2 = QtWidgets.QLabel( '' )
     col2_label2.setStyleSheet( "color: " + feedback_color + ";" "font-weight: bold" )
     col2_row1Label2_layout = QtWidgets.QHBoxLayout()
@@ -194,7 +204,7 @@ def init_ui():
     col2_row2Label1_layout = QtWidgets.QHBoxLayout()
     col2_row2Label0_layout.addLayout( col2_row2Label1_layout )
     col2_row2Label1_layout.setAlignment( QtCore.Qt.AlignLeft )
-    col2_label11 = QtWidgets.QLabel( 'Anim Layers in scope:' )
+    col2_label11 = QtWidgets.QLabel( 'Anim Layers in Scope:' )
     col2_label12 = QtWidgets.QLabel( '' )
     col2_label12.setStyleSheet( "color: " + feedback_color + ";" "font-weight: bold" )
     col2_row2Label2_layout = QtWidgets.QHBoxLayout()

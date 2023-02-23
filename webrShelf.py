@@ -189,7 +189,7 @@ def shelfAddButtons( *args ):
                      h = wh, imageOverlayLabel = '', image = 'animUI.png', command = 'import webrImport as web\ncpui = web.mod("clipPickleUI_macro_lib")\ncpui.CPUI()' )
 
     cmds.shelfButton( label = 'warp time ui', annotation = 'warp time ui', w = wh, h = wh,
-                     image = 'warpTimeUI.png', command = 'import webrImport as web\nar = web.mod("animRetime_lib")' )
+                     image = 'warpTimeUI.png', command = 'import imp\nimport animRetime_lib as ar\nimp.reload(ar)' )
 
     cmds.shelfButton( label = 'speed attribute is added', annotation = 'speed attribute is added', w = wh,
                      h = wh, image = 'kmh.png', command = 'import webrImport as web\nds = web.mod("display_lib")\nds.speed(local=0)' )
