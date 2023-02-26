@@ -414,7 +414,7 @@ def init_ui():
     explore_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px; background-color: grey;" )
     '''
     navigate_button = QtWidgets.QPushButton( "Navigate to Scene" )
-    navigate_button.clicked.connect( lambda: get_current( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    navigate_button.clicked.connect( lambda: get_current( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, navigate_to_scene = True ) )
     navigate_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px; background-color: grey;" )
 
     range_button = QtWidgets.QPushButton( "Import Range" )
@@ -676,11 +676,12 @@ def get_tasks( list_widget, project, entity, scenes, search_task_edit ):
     raw_tasks = os.listdir( raw_tasks_directory )
     tasks = []
     for task in raw_tasks:
-        if default_tasks:
+        if default_tasks != ['']:
             if task in default_tasks and task not in skips:  # check against white list
                 tasks.append( task )
-        elif task not in skips:
-            tasks.append( task )  # white list is empty, include all
+        else:
+            if task not in skips:
+                tasks.append( task )  # white list is empty, include all
     tasks.sort()
     cam_versions = get_cam_cache_versions( raw_tasks_directory )
     tasks.extend( cam_versions )
@@ -877,7 +878,7 @@ def get_caches( project = '', entity = '', task = '' ):
     return scenes
 
 
-def get_current( projects = None, entities = None, tasks = None, scenes = None ):
+def get_current( projects = None, entities = None, tasks = None, scenes = None, navigate_to_scene = False ):
     '''
     only good for last project and current scene, 
     maya spits back forward slash paths and back slashs stored in prefs are not compatible
@@ -886,22 +887,38 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None )
     parse current scene path, load and set project
 
     '''
-    path = ''
     p_d = Prefs_dynamic()
-    if p_d.prefs[p_d.navigate_to_current_scene]:
-        path = cmds.file( query = True, sn = True )  # scene path
-    elif p_d.prefs[p_d.navigate_to_last_project]:
-        path = p_d.prefs[p_d.last_project]
+    path = ''
+    scene_path = ''
+    try:
+        s_path = cmds.file( query = True, exn = True )
+        if s_path:
+            if s_path[-8:] != 'untitled':
+                scene_path = s_path
+            else:
+                scene_path = p_d.prefs[p_d.last_project]
+
+    except:
+        print( 'fail' )
+        pass
+    #
+    if navigate_to_scene:
+        path = scene_path
     else:
-        get_last_selected( projects , entities, tasks , scenes )
-        return
+        if p_d.prefs[p_d.navigate_to_current_scene]:
+            path = scene_path  # scene path
+        elif p_d.prefs[p_d.navigate_to_last_project]:
+            path = p_d.prefs[p_d.last_project]
+        else:
+            get_last_selected( projects , entities, tasks , scenes )
+            return
 
     #
     if path:
         # print( path )
         parts = path.split( '/' )
         if parts:
-            print( parts )
+            # print( parts )
             # project
             item = projects.findItems( parts[1], QtCore.Qt.MatchExactly )
             if item:
@@ -939,6 +956,8 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None )
                     item = scenes.findItems( parts[7], QtCore.Qt.MatchExactly )
                     if item:
                         scenes.setCurrentItem( item[0] )
+    else:
+        print( 'path : ', path )
 
 
 def get_last_selected( projects = None, entities = None, tasks = None, scenes = None ):
