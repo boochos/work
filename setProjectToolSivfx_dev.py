@@ -1113,7 +1113,11 @@ def set_project( project, entity, task, scene, opn = False, create = None, suffi
                     sfx = suffix_edit.text()
                     result = filename( pth, entity_txt, task_txt + '_' + sfx )
                 else:
-                    result = filename( pth, entity_txt, task_txt )
+                    sfx = filename_getSuffix( pth, entity_txt, task_txt )
+                    if sfx:
+                        result = filename( pth, entity_txt, task_txt + '_' + sfx )
+                    else:
+                        result = filename( pth, entity_txt, task_txt )
                 if result:
                     # print( project, entity )
                     get_scenes( refresh_scenes[0], project, entity, refresh_scenes[3] )
@@ -1176,6 +1180,25 @@ def nmspc( entity = '', task = '' ):
         return ns + str( i )
 
 
+def filename_getSuffix( path = '', entity = '', task = '' ):
+    '''
+    
+    '''
+    suffix = ''
+    s_path = cmds.file( query = True, exn = True )
+    if s_path:
+        if s_path[-8:] != 'untitled':
+            if 'v' == s_path[-7]:
+                s_path = s_path.split( '/' )[-1]
+                sfx = s_path.split( task )[1]
+                # print( sfx )
+                sfx = sfx[1:-8]  # excludes '_' on either side
+                # print( 'sfx__', sfx )
+                if sfx:
+                    suffix = sfx
+    return suffix
+
+
 def filename( path, entity, task ):
     '''
     
@@ -1230,6 +1253,7 @@ def incrementalSave( basepath, basename, extension ):
         # add the file about to be saved to the recent files menu
         maya.mel.eval( 'addRecentFile "' + name + '" ' + fileType[0] + ';' )
         # rename the current file
+        message( name )
         cmds.file( name, rn = name )
         # save it
         cmds.file( save = True, typ = fileType[0] )
