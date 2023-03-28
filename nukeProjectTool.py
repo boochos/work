@@ -1,29 +1,26 @@
 # run to list unknown plugins
-from distutils.command.check import check
-from shutil import copyfile
+# from distutils.command.check import check
+# from shutil import copyfile
+# from python import new_script
+'''
+print( "This is the name of the program:", sys.argv[0] )
+print( "Argument List:", str( sys.argv ) )'''
+# sys.path.append( 'C:\\Program Files\\Nuke14.0v3\\pythonextensions\\site-packages' )
+#
+
 import json
 import os
 import random
+import shutil
 import subprocess
+import sys
 import time
 
 from PySide2 import QtCore, QtGui, QtWidgets
-import maya
-import maya.cmds as cmds
 
-# from PyQt4 import QtCore, QtGui, QtWidgets
-a = cmds.unknownPlugin( q = True, l = True )
-if a:
-    for i in a:
-        print( i )
-    # run to remove unknown plugins
-    for i in a:
-        try:
-            cmds.unknownPlugin( i, r = True )
-        except:
-            print( 'cant remove plugin ', i )
+import nuke
+import nukescripts as ns  # ns.script_version_up()
 
-# import sys
 if 'PROJ_ROOT' not in os.environ:
     os.environ['PROJ_ROOT'] = 'P:\\'
 
@@ -54,13 +51,14 @@ pub_start = None
 
 
 def message( what = '', warning = False ):
+
     what = '-- ' + what + ' --'
     if '\\' in what:
         what = what.replace( '\\', '/' )
     if warning:
-        cmds.warning( what )
+        nuke.warning( what )
     else:
-        maya.mel.eval( 'print \"' + what + '\";' )
+        nuke.warning( what )
 
 
 def ____UI():
@@ -203,9 +201,9 @@ class CustomListView( QtWidgets.QListWidget ):
                 self.path = os.path.join( self.root, self._p, self._e, self._t )
             else:
                 if directory_only:
-                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes' )
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'nuke' )
                 else:
-                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes', self._s )
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'nuke', self._s )
 
     def clipboard_item( self, e ):
         # only selection text
@@ -312,9 +310,9 @@ def init_ui():
     tag_button = QtWidgets.QPushButton( '' )
     tag_button.setMaximumWidth( s )
     tag_button.setMinimumWidth( s )
-    tag_button.setToolTip( "Maya session" )
+    tag_button.setToolTip( "Nuke session" )
     color = get_tag_color()
-    tag_button.setStyleSheet( "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");" )  # QtGui.QColor( 1, 0.219, 0.058 )
+    # tag_button.setStyleSheet( "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");" )  # QtGui.QColor( 1, 0.219, 0.058 )
     # always on top
     ontop_layout = QtWidgets.QHBoxLayout()
     alwaysOnTop_label = QtWidgets.QLabel( 'Always On Top:  ' )
@@ -353,7 +351,7 @@ def init_ui():
     col1_layout.addWidget( project_list_widget )
     # column 2 - assets, shots
     col2_layout = QtWidgets.QVBoxLayout()
-    new_scene_button = QtWidgets.QPushButton( "New Scene" )
+    new_scene_button = QtWidgets.QPushButton( "Clear Script" )
     new_scene_button.clicked.connect( lambda:new_scene_detect() )
     new_scene_button.setMaximumWidth( min_width * 2 )
     shots_and_assets_list_widget = CustomListView()  # QtWidgets.QListWidget()
@@ -400,43 +398,57 @@ def init_ui():
     suffix_layout_col4.addWidget( suffix_label_col4 )
     suffix_layout_col4.addWidget( suffix_edit )
     #
-    create_button = QtWidgets.QPushButton( "Save Scene +" )
+    create_button = QtWidgets.QPushButton( "Save Script +" )
     create_button.clicked.connect( lambda: save_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene = None, opn = False, create = scene_list_widget, suffix_edit = suffix_edit ) )
     set_open_button = QtWidgets.QPushButton( "Open" )
     set_open_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
     set_open_button.clicked.connect( lambda: open_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, True ) )
+    '''
     ref_button = QtWidgets.QPushButton( "Reference" )
     ref_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
     ref_button.clicked.connect( lambda: ref_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    '''
     '''
     explore_button = QtWidgets.QPushButton( "File Browser" )
     explore_button.clicked.connect( lambda: explore_path( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
     explore_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px; background-color: grey;" )
     '''
-    navigate_button = QtWidgets.QPushButton( "Navigate to Scene" )
+    navigate_button = QtWidgets.QPushButton( "Navigate to Open Script" )
     navigate_button.clicked.connect( lambda: get_current( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, navigate_to_scene = True ) )
     navigate_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px; background-color: grey;" )
-
+    '''
     range_button = QtWidgets.QPushButton( "Import Range" )
     range_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
     range_button.clicked.connect( lambda: rangeFromMaFile( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, handles = 0 ) )
     fps_button = QtWidgets.QPushButton( "Import FPS" )
     fps_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
     fps_button.clicked.connect( lambda: fpsFromMaFile( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    '''
+    '''
     pub_button = QtWidgets.QPushButton( "Publish" )
     pub_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
     pub_button.clicked.connect( lambda: publish_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget ) )
+    '''
+    reads_button = QtWidgets.QPushButton( "Set Read Nodes to Latest" )
+    reads_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
+    reads_button.clicked.connect( lambda: version_up_all_reads() )
+    build_button = QtWidgets.QPushButton( "Build From Template" )
+    build_button.setStyleSheet( "padding-top: " + pad + "px; padding-bottom: " + pad + "px;" )
+    build_button.clicked.connect( lambda: save_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene = None, opn = False, create = scene_list_widget, suffix_edit = suffix_edit, template = True ) )
+
     # qframe1 = QtWidgets.QFrame()
     #
     col4_layout.addWidget( create_button )
     col4_layout.addLayout( suffix_layout_col4 )
     col4_layout.addWidget( scene_list_widget )
     # col4_layout.addWidget( qframe1 )
-    col4_layout.addWidget( fps_button )
-    col4_layout.addWidget( range_button )
     col4_layout.addWidget( set_open_button )
-    col4_layout.addWidget( ref_button )
-    col4_layout.addWidget( pub_button )
+    col4_layout.addWidget( build_button )
+    # col4_layout.addWidget( fps_button )
+    # col4_layout.addWidget( range_button )
+    # col4_layout.addWidget( ref_button )
+    # col4_layout.addWidget( pub_button )
+    col4_layout.addWidget( reads_button )
     col4_layout.addWidget( navigate_button )
     #
     projects = get_projects()
@@ -455,7 +467,7 @@ def init_ui():
 
     main_window.setLayout( main_layout )
 
-    main_window.setWindowTitle( 'Set Project Tool' )
+    main_window.setWindowTitle( 'Nuke Project Tool' )
     project_list_widget.itemSelectionChanged.connect( lambda: get_shots_assets( shots_and_assets_list_widget, project_list_widget, tasks_list_widget, search_edit, scene_list_widget ) )
     project_list_widget.itemDoubleClicked.connect( lambda: explore_path( project_list_widget ) )
     # project_list_widget.itemSelectionChanged.connect( lambda: tasks_list_widget.clear() )
@@ -682,11 +694,12 @@ def get_tasks( list_widget, project, entity, scenes, search_task_edit ):
         else:
             if task not in skips:
                 tasks.append( task )  # white list is empty, include all
+
     tasks.sort()
-    cam_versions = get_cam_cache_versions( raw_tasks_directory )
-    tasks.extend( cam_versions )
-    geo_versions = get_geo_cache_versions( raw_tasks_directory )
-    tasks.extend( geo_versions )
+    # cam_versions = get_cam_cache_versions( raw_tasks_directory )
+    # tasks.extend( cam_versions )
+    # geo_versions = get_geo_cache_versions( raw_tasks_directory )
+    # tasks.extend( geo_versions )
 
     # make sure tasks isnt empty
     if not tasks:
@@ -826,7 +839,7 @@ def get_scenes( list_widget = None, project = None, entity = None, task = None )
     if task[:6] == 'assets':  # alembics
         scenes = get_caches( project, entity, task )
     else:  # maya scenes
-        raw_scene_directory = os.path.join( os.environ['PROJ_ROOT'], project, entity, task, 'maya', 'scenes' )
+        raw_scene_directory = os.path.join( os.environ['PROJ_ROOT'], project, entity, task, 'nuke' )
         # qualify
         if not os.path.isdir( raw_scene_directory ):
             list_widget.clear()
@@ -835,7 +848,7 @@ def get_scenes( list_widget = None, project = None, entity = None, task = None )
         raw_scene = os.listdir( raw_scene_directory )
         scenes = []
         for scene in raw_scene:
-            if scene[-3:] == '.ma'  or scene[-3:] == '.mb':
+            if scene[-3:] == '.nk'  or scene[-6:] == '.nkind':
                 scenes.append( scene )
         scenes.sort()
     if not scenes:
@@ -891,15 +904,7 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None, 
     path = ''
     scene_path = ''
     try:
-        '''
-        s_path = cmds.file( query = True, exn = True )
-        if s_path:
-            if s_path[-8:] != 'untitled':
-                scene_path = s_path
-            else:
-                scene_path = p_d.prefs[p_d.last_project]
-                '''
-        s_path = cmds.file( query = True, sn = True )
+        s_path = nuke.scriptName()
         if s_path:
             scene_path = s_path
         else:
@@ -924,6 +929,7 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None, 
     if path:
         # print( path )
         parts = path.split( '/' )
+        # print( path )
         if parts:
             # print( parts )
             # project
@@ -959,8 +965,9 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None, 
                     if item:
                         tasks.setCurrentItem( item[0] )
                 # scene
-                if len( parts ) > 6:
-                    item = scenes.findItems( parts[7], QtCore.Qt.MatchExactly )
+                if len( parts ) > 5:
+                    # print( parts )
+                    item = scenes.findItems( parts[6], QtCore.Qt.MatchExactly )
                     if item:
                         scenes.setCurrentItem( item[0] )
     else:
@@ -1053,7 +1060,7 @@ def no_path( path ):
     msg_box.exec_()'''
 
 
-def set_project( project, entity, task, scene, opn = False, create = None, suffix_edit = None ):
+def set_project( project, entity, task, scene, opn = False, create = None, suffix_edit = None, template = False ):
     """
     sets project
     opens scenes
@@ -1080,51 +1087,50 @@ def set_project( project, entity, task, scene, opn = False, create = None, suffi
         else:
             scene_txt = None
     #
+
     project_path = False
     if go:
-        project_dir = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'maya' ).replace( '\\', '/' )
+        project_dir = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'nuke' ).replace( '\\', '/' )
         if not os.path.exists( project_dir ):
             message( 'Cant set project in this location: ' + project_dir, warning = 1 )
             no_path( project_dir )
         else:
             project_path = True
-            mel_command = ( 'setProject "' + project_dir + '";' )
-            maya.mel.eval( mel_command )
             # store in prefs
             p = Prefs_dynamic()
             p.prefs[p.last_project] = project_dir
             p.prefSave()
             #
-            message( 'Project set to: ' + project_dir )
+            # message( 'Project set to: ' + project_dir )
 
         if opn:
             if scene_txt:
                 if task_txt[:6] != 'assets':  # alembics:
-                    pth = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'maya', 'scenes', scene_txt )
-                    changes = cmds.file( q = True, modified = True )
+                    pth = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'nuke', scene_txt )
+                    changes = nuke.root().modified()
                     if changes:
                         open_prompt( path = pth )
                     else:
-                        cmds.file( pth, open = True, force = False )
+                        # cmds.file( pth, open = True, force = False )
+                        nuke.scriptClose()
+                        nuke.scriptOpen( pth )
                 else:
                     message( 'Alembic cannot be opened. Reference only', warning = 1 )
             else:
-                pth = cmds.fileDialog2( fileMode = 1, startingDirectory = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'maya', 'scenes' ) )
+                nuke.scriptOpen( os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'nuke' ) )
+                '''
+                pth = cmds.fileDialog2( fileMode = 1, startingDirectory = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'nuke' ) )
                 if pth:
-                    cmds.file( pth, open = True, force = False )
+                    cmds.file( pth, open = True, force = False )'''
         if create:
             if project_path:
-                pth = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'maya', 'scenes' )
+                pth = os.path.join( os.environ["PROJ_ROOT"], project_txt, entity_txt, task_txt, 'nuke' )
                 result = None
                 if suffix_edit.text():
                     sfx = suffix_edit.text()
-                    result = filename( pth, entity_txt, task_txt + '_' + sfx )
+                    result = filename( pth, entity_txt, task_txt + '_' + sfx, template )
                 else:
-                    sfx = filename_getSuffix( pth, entity_txt, task_txt )
-                    if sfx:
-                        result = filename( pth, entity_txt, task_txt + '_' + sfx )
-                    else:
-                        result = filename( pth, entity_txt, task_txt )
+                    result = filename( pth, entity_txt, task_txt, template )
                 if result:
                     # print( project, entity )
                     get_scenes( refresh_scenes[0], project, entity, refresh_scenes[3] )
@@ -1136,7 +1142,7 @@ def set_project( project, entity, task, scene, opn = False, create = None, suffi
 
 def explore_path( project, entity = None, task = None, scene = None ):
     '''
-    os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
+    os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'nuke', scene )
     '''
     path = None
     # must have
@@ -1151,75 +1157,39 @@ def explore_path( project, entity = None, task = None, scene = None ):
     if task:
         if task.selectedItems():
             task = task.selectedItems()[0].text()
-            path = os.path.join( path, task, 'maya', 'scenes' )
+            path = os.path.join( path, task, 'nuke' )
     # open file browser
     if os.path.isdir( path ):
         subprocess.Popen( r'explorer /open, ' + path )
 
 
-def nmspc( entity = '', task = '' ):
+def filename( path, entity, task, template ):
     '''
-    iterate namespace string unttil namespace is unused
-    for referencing same file multiple times
+    if no file exists, create from template, otherwise iterate from currently open file
     '''
-    #
-    # print( entity )
-    ns = ''
+    result = ''
+    suffix = 'precomp'  # force, for now
     e = entity.split( '\\' )
     if e:
         e = e[-1]
-    #
-    if 'assets' in entity:
-        ns = e[:3]
-    else:
-        if task[:6] == 'assets':  # alembic
-            ns = task.split( '\\' )[1]
-            # print( ns )
-        else:
-            ns = task  # wait for Dmitry to change his mind
-    #
-    if not cmds.namespace( ex = ns ):
-        return ns
-    else:
-        i = 1
-        while cmds.namespace( ex = ns + str( i ) ):
-            i = i + 1
-        return ns + str( i )
-
-
-def filename_getSuffix( path = '', entity = '', task = '' ):
-    '''
-    
-    '''
-    suffix = ''
-    # s_path = cmds.file( query = True, exn = True )
-    s_path = cmds.file( query = True, sn = True )
-    if s_path:
-        if s_path[-8:] != 'untitled':
-            if 'v' == s_path[-7]:
-                s_path = s_path.split( '/' )[-1]
-                sfx = s_path.split( task )[1]
-                # print( sfx )
-                sfx = sfx[1:-8]  # excludes '_' on either side
-                # print( 'sfx__', sfx )
-                if sfx:
-                    suffix = sfx
-    return suffix
-
-
-def filename( path, entity, task ):
-    '''
-    
-    '''
-    e = entity.split( '\\' )
-    if e:
-        e = e[-1]
+    if suffix not in task:
+        task = task + '_' + suffix
     fl = e + '_' + task + '_v001'
-    result = incrementalSave( path, fl, 'ma' )
+    initial_name = os.path.join( path, fl + '.nkind' )
+    if template:
+        result = create_from_template( initial_name )
+    else:
+        result = incrementalSave( path, fl, 'nkind' )
+    '''
+    if not os.path.isfile( initial_name ):
+        result = create_from_template( initial_name )
+    else:
+        result = incrementalSave( path, fl, 'nkind' )
+        '''
     return result
 
 
-def incrementalSave( basepath, basename, extension ):
+def incrementalSave( basepath, basename, extension, resultOnly = False ):
     '''
     return [basepath, basename, extension]
     ['P:\\SANDBOX\\001\\SANDBOX_001_001\\rig\\maya\\scenes', 'SANDBOX_001_001_rig__v001', 'ma']
@@ -1254,6 +1224,21 @@ def incrementalSave( basepath, basename, extension ):
         name = os.path.join( scene_info[0], string_info[0] ) + str( version ) + '.' + scene_info[2]
         name = name.replace( '\\', '/' )
         # get the current file type
+        # nuke version
+        if not resultOnly:
+            nuke.scriptSaveAs( name )
+        '''
+        n = '"C:\\Program Files\\Nuke14.0v3\\Nuke14.0.exe" --indie'
+        code = 'C:\\Users\\s.weber\\.nuke\\python\\new_script.py'
+        cmd = [n, "-t", code, name ]
+        print( '__________', cmd )
+        p = subprocess.Popen( cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT )
+        out, err = p.communicate()
+        print( 'err ---------', err )
+        print( 'out ---------', out )'''
+        #############
+        '''
+        # maya version
         if cmds.file( sn = True , q = True ):
             fileType = cmds.file( query = True, typ = True )
         else:
@@ -1261,11 +1246,11 @@ def incrementalSave( basepath, basename, extension ):
         # add the file about to be saved to the recent files menu
         maya.mel.eval( 'addRecentFile "' + name + '" ' + fileType[0] + ';' )
         # rename the current file
-        message( name )
         cmds.file( name, rn = name )
         # save it
         cmds.file( save = True, typ = fileType[0] )
-        return True
+        '''
+        return name
 
 
 def splitEndNumFromString( name ):
@@ -1279,9 +1264,9 @@ def splitEndNumFromString( name ):
             rName += num + i
             num = ''
     if num == '':
-        extracted = '%04d' % ( 0000 )
+        extracted = '%03d' % ( 000 )
     else:
-        extracted = '%04d' % ( int( num ) )
+        extracted = '%03d' % ( int( num ) )
 
     return rName, extracted
 
@@ -1309,6 +1294,8 @@ def rangeFromMaFile( project, entity, task, scene, handles = 0 ):
     '''
     
     '''
+    pass
+'''
     go = range_start_timer()
     if not go:
         print( 'range - accidental click' )
@@ -1376,12 +1363,14 @@ def rangeFromMaFile( project, entity, task, scene, handles = 0 ):
             message( 'Select a .ma file', warning = 1 )
             # print 'not a directory'
     else:
-        message( 'Select a .ma file', warning = 1 )
+        message( 'Select a .ma file', warning = 1 )'''
 
 
 def fpsFromMaFile( project, entity, task, scene ):
     '''
     currentUnit -l centimeter -a degree -t film;
+    '''
+    pass
     '''
     go = fps_start_timer()
     if not go:
@@ -1441,7 +1430,7 @@ def fpsFromMaFile( project, entity, task, scene ):
             message( 'Select a .ma file', warning = 1 )
             # print 'not a directory'
     else:
-        message( 'Select a .ma file', warning = 1 )
+        message( 'Select a .ma file', warning = 1 )'''
 
 
 def setRateRange( project, entity, task, scene, handles ):
@@ -1453,59 +1442,287 @@ def setRateRange( project, entity, task, scene, handles ):
     # fpsFromMaFile( project, entity, task, scene )
 
 
-def sync_file( project, entity, task, scene ):
+def get_root_path():
+    return os.environ['PROJ_ROOT']
+
+
+def get_precomp_template( project = '' ):
     '''
     
     '''
+    latest = ''
+    root = get_root_path()
+    name = 'comp_template_v001.nkind'
+    path = os.path.join( root, project, 'assets', 'util', 'comp_template', 'model', 'nuke' )
+    if os.path.isdir( path ):
+        latest = get_highest_iteration_file( path, name )
+    return latest
+
+
+def get_highest_iteration_file( path = '', name = '' ):
+    '''
+    from python import nukeProjectTool as np
+    import imp
+    imp.reload(np)
+    
+    np.get_precomp_template('RUS')
+    '''
+    #
+    ex = name.split( '.' )[1]
+    name_versionless = name[0:-9]
+    # print( 'name_versionless: ', name_versionless )
+    # files = os.listdir( path )
+    num = 1
+    # name_version = name[-9:-6]
+    # print( 'name_version: ', name_version )
+    # qualify template, v001
+    version = '%03d' % ( int( num ) )
+    latest_name = os.path.join( path, name_versionless + str( version ) + '.' + ex )
+    go = False
+    if os.path.isfile( latest_name ):
+        go = True
+    else:
+        message( 'File doesnt exist' )
+
+    while go:
+        version = '%03d' % ( int( num ) + 1 )
+        candidate_name = os.path.join( path, name_versionless + str( version ) + '.' + ex )
+        if not os.path.isfile( candidate_name ):
+            go = False
+        else:
+            version = '%03d' % ( int( num ) )
+            latest_name = os.path.join( path, name_versionless + str( version ) + '.' + ex )
+        num += 1
+    # increment the suffix
+
+    print( 'latest:', os.path.join( path, latest_name ) )
+    return( os.path.join( path, latest_name ) )
+
+
+def get_highest_iteration_directory( path = '', existing = True ):
+    '''
+    assumes last part of directory is versioned '...\...\..._v001'
+    pay attention to which slash is used in the string
+    '''
+    #
+    if not os.path.isdir( path ):
+        # print( 'still good' )
+        return path  # this version is empty
+    else:
+        # print( 'find' )
+        # print( 'find', path )
+        # print( path.split( '\\' ) )
+        part = path.split( '\\' )[-1]
+        if part.count( '_v' ) == 1:
+            # parse
+            s = part.rfind( '_v' )
+            s += 2
+            e = s + 3
+            current_version = part[s:e]
+            # print( 'here', current_version, s, e, part )
+            path_versionless = path.split( current_version )[0]
+            num = int( current_version ) + 1  # start 1 iteration higher, established current version exists
+            #
+            go = True
+            while go:
+                version = '%03d' % ( int( num ) )
+                candidate_path = path_versionless + str( version )
+                if not os.path.isdir( candidate_path ):
+                    if existing:
+                        version = '%03d' % ( int( num - 1 ) )
+                        latest_path = path_versionless + str( version )
+                    else:
+                        version = '%03d' % ( int( num ) )
+                        latest_path = path_versionless + str( version )
+                    return latest_path
+                num += 1
+
+
+def get_version_string( name = '' ):
+    '''
+    find version portion of string
+    bce100_021_010_light_precomp_v007 ==> "_v007"
+    '''
+    if name.count( '_v' ) == 1:
+        s = name.rfind( '_v' )
+        s += 2
+        e = s + 3
+        return name[s:e]
+    elif name.count( '_v' ) > 1:
+        message( 'Key version string "_v" appears multiple times in name: ' + name + ' -- Skipping.', warning = True )
+        return False
+    else:
+        return None
+
+
+def create_from_template( path = '' ):
+    '''
+    path = file out
+    '''
+    project = path.split( '\\' )[1]
+    template_path = get_precomp_template( project = project )
+    if template_path:
+        # parse path, find latest version number
+        path_no_file = 'P:\\RUS\\100\\rus100_001_001\\layout\\nuke\\'
+        path_no_file = path.rpartition( '\\' )[0] + path.rpartition( '\\' )[1]
+        file_name = path.rpartition( '\\' )[2].split( '.' )[0]
+        result = incrementalSave( path_no_file, file_name, 'nkind' )
+        # copy
+        shutil.copyfile( template_path, result )
+        # open, check ifcurrent needs saving
+        changes = nuke.root().modified()
+        if changes:
+            open_prompt( path = result )
+        else:
+            # cmds.file( pth, open = True, force = False )
+            nuke.scriptClose()
+            nuke.scriptOpen( result )
+        #
+        remap_all_writes( result )
+        #
+        return  result
+    return ''
+
+
+def set_read_write( path = '' ):
+    '''
+    [join [lrange [split [value [topnode].file] .] 0 end-2] .].mov
+    '''
+    pass
+
+
+def version_up_all_reads():
+    '''
+    version every read node to newest available path
+    '''
+    name = 'Read'
+    i = 1
+    mx = 30  # max iterations, shouldnt have more than 30 read nodes
     go = True
-    if project.selectedItems():
-        project = project.selectedItems()[0].text()
-    else:
-        go = False
-    if entity.selectedItems():
-        entity = entity.selectedItems()[0].text()
-    else:
-        go = False
-    if task.selectedItems():
-        task = task.selectedItems()[0].text()
-    else:
-        go = False
-    if scene.selectedItems():
-        scene = scene.selectedItems()[0].text()
-    else:
-        go = False
 
-    if go:
-        # sync file
-        prefs = Prefs()
-        sync_roots = prefs.sync_roots
-        for k in sync_roots.keys():
-            if k == project:
-                project_root = sync_roots[k]
-                destination_path = os.path.join( project_root, entity, task, 'maya', 'scenes' )
-                if os.path.isdir( destination_path ):
-                    working_path = os.path.join( os.environ["PROJ_ROOT"], project, entity, task, 'maya', 'scenes', scene )
-                    sync_path = os.path.join( project_root, entity, task, 'maya', 'scenes', scene )
-                    copyfile( working_path, sync_path )
-                    # subprocess.Popen( r'explorer /open, ' + destination_path )
-                    print( sync_path )
-                else:
-                    print( 'Destination path doesnt exist' )
+    while go and i < mx:
+        node = nuke.toNode( name + str( i ) )
+        if node:
+            version_up_read( node )
+        if i == mx:
+            go = False
+        i += 1
+
+
+def version_up_read( node = None ):
+    '''
+    version up read node
+    # increment node
+    nuke.toNode('Read1').setSelected(True)
+    ns.version_up()
+    ns.version_down()
+    '''
+    blacklist = ['tracking', 'plates', 'pipeline', 'precomp']
+    path = node.knob( 'file' ).getValue()
+    for b in blacklist:
+        if b in path:
+            return None
+    # print( 'name: ', node.name() )
+    # print( 'Qualified: ', path )
+    parts = path.split( '/' )
+    versionless_path = os.path.join( parts[0], '\\' + parts[1], parts[2], parts[3], parts[4], parts[5] )
+    current_version_path = os.path.join( parts[0], '\\' + parts[1], parts[2], parts[3], parts[4], parts[5], parts[6] )
+    next_version_path = get_highest_iteration_directory( current_version_path )
+    # print( 'current version: ', current_version_path )
+    # print( 'next    version: ', next_version_path )
+    next_version_string = get_version_string( next_version_path )
+    #
+    if os.path.isdir( next_version_path ):
+        parts_versionable = parts[6:]
+        parts_versioned = []
+        # print( 'versionable parts: ', parts_versionable )
+        for part in parts_versionable:
+            if part.count( '_v' ) == 1:
+                # print( part, part[-4:] )
+                s = part.rfind( '_v' )
+                s += 2
+                e = s + 3
+                new_part = part.replace( part[s:e], next_version_string )
+                # print( 'original', part )
+                # print( 'new     ', new_part )
+                parts_versioned.append( new_part )
             else:
-                print( 'Project sync path not defined' )
+                message( 'Key version string "_v" appears multiple times in name: ' + part + ' -- Skipping node.', warning = True )
+        if parts_versioned:
+            new_path = versionless_path
+            for part in parts_versioned:
+                new_path = os.path.join( new_path, part )
+            # print( os.path.join( parts[0], '/' + parts[1] ) )
+            # print( 'original path: ', path )
+            # print( 'new      path: ', new_path )
+            # print( 'new      path: ', new_path.replace( '\\', '/' ) )
+            # format
+            new_path = new_path.replace( '\\', '/' )
+            node.knob( 'file' ).setValue( new_path )
     else:
-        maya.mel.eval( 'print \" -- Cant build sync path, select more variables -- \";' )
+        message( 'Current version is empty, skipping: ' + node.name() + ' -- ' + current_version_path, warning = True )
 
 
-def delete_renderLayers():
+def remap_all_writes( path = '' ):
     '''
-
+    path = P:\RUS\100\rus100_001_001\light\nuke\rus100_001_001_light_precomp_v001.nkind
+    2 write nodes
     '''
-    rlayers = cmds.ls( type = 'renderLayer' )
+    nodes = nuke.allNodes( 'Write' )
+    for n in nodes:
+        if 'writePrecompFrames' in n.name():
+            result = convert_path_to_write_precomp_frames( path )
+            n.knob( 'file' ).setValue( result )
 
-    for l in rlayers:
-        if 'defaultRenderLayer' not in l:
-            cmds.delete( l )
+
+def remap_write( node = '', path = '' ):
+    '''
+    path = P:\RUS\100\rus100_001_001\light\nuke\rus100_001_001_light_precomp_v001.nkind
+    remap to new location, correcting template path
+    parse path from file location
+    project / entity / task / name(suffix)
+    '''
+    pass
+
+
+def set_write_to_latest( node = '', path = '' ):
+    '''
+    path = P:\RUS\100\rus100_001_001\light\nuke\rus100_001_001_light_precomp_v001.nkind
+    result = [project, entity, task, file]
+    '''
+    pass
+
+
+def convert_path_to_write_precomp_frames( path = '' ):
+    '''
+    precomp path = P:/BCE/100/bce100_021_010/light/precomp/bce100_021_010_light_precomp_v001/bce100_021_010_light_precomp_v001.####.jpg
+    script  path = P:\RUS\100\rus100_001_001\light\nuke\rus100_001_001_light_precomp_v001.nkind
+    initial v001
+    '''
+    #
+    # print( 'path: ', path )
+    if path:
+        if '\\' in path:
+            path = path.replace( '\\', '/' )
+    else:
+        pass
+    #
+    parts = path.split( '/' )
+    # print( parts )
+    #
+    _r = parts[0]
+    _p = parts[1]
+    _e = parts[2] + '/' + parts[3]
+    _t = parts[4]
+    #
+    name = parts[6].split( '.' )[0]
+    _s = 'precomp/' + name + '/' + name + '.####.jpg'
+
+    result = _r + '/' + _p + '/' + _e + '/' + _t + '/' + _s
+    # print( 'P:/BCE/100/bce100_021_010/light/precomp/bce100_021_010_light_precomp_v001/bce100_021_010_light_precomp_v001.####.jpg' )
+    # print( result )
+
+    return result
 
 
 def ____TAGS():
@@ -1525,6 +1742,8 @@ def toggle_maya_ui_tag():
     add color button to ui so tools can color code with same color
     for use in multi maya session use cases
     '''
+    pass
+    '''
     ui = tag_ui_parent()
     name = tag_name()
     color = get_color()
@@ -1537,12 +1756,14 @@ def toggle_maya_ui_tag():
             cmds.button( name, bgc = color, label = '', h = 36, w = 36 )
             # cmds.flowLayout( ui, edit = True, bgc = color )
     else:
-        message( 'Maya Color Tag Failed --- Hard coded maya UI element doesnt exist: ' + ui, warning = True )
+        message( 'Maya Color Tag Failed --- Hard coded maya UI element doesnt exist: ' + ui, warning = True )'''
 
 
 def get_tag_color():
     '''
     
+    '''
+    pass
     '''
     color = None
     if cmds.control( tag_name(), ex = True ):
@@ -1551,7 +1772,7 @@ def get_tag_color():
         toggle_maya_ui_tag()
         color = cmds.button( tag_name(), q = True, bgc = True )
     # print( color )
-    return color
+    return color'''
 
 
 def get_color():
@@ -1582,7 +1803,7 @@ def ____SCENES():
     pass
 
 
-def save_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene = None, opn = False, create = None, suffix_edit = None ):
+def save_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene = None, opn = False, create = None, suffix_edit = None, template = False ):
     '''
     
     '''
@@ -1591,7 +1812,7 @@ def save_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_wi
     if not go:
         print( 'save - accidental click' )
         return
-    set_project( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene = scene, opn = opn, create = create, suffix_edit = suffix_edit )
+    set_project( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene = scene, opn = opn, create = create, suffix_edit = suffix_edit, template = template )
 
 
 def open_scene( project_list_widget, shots_and_assets_list_widget, tasks_list_widget, scene_list_widget, opn = True ):
@@ -1610,6 +1831,8 @@ def ref_scene( project, entity, task, scene = None ):
     """
     reference scene
     """
+    pass
+    '''
     # qualify
     go = ref_start_timer()
     if not go:
@@ -1659,7 +1882,7 @@ def ref_scene( project, entity, task, scene = None ):
         else:
             message( 'No task or file selected', warning = 1 )
     else:
-        message( 'Cant build reference path, select more variables', warning = 1 )
+        message( 'Cant build reference path, select more variables', warning = 1 )'''
     #
     # end timer
     '''
@@ -1678,8 +1901,9 @@ def save_open_scene( main_window, path = '' ):
     '''
     save then open
     '''
-    cmds.SaveScene()
-    cmds.file( path, open = True, force = True )
+    nuke.scriptSave()
+    nuke.scriptClose()
+    nuke.scriptOpen( path )
     main_window.close()
 
 
@@ -1687,7 +1911,8 @@ def dont_save_open_scene( main_window, path = '' ):
     '''
     part of save before open, is actually dont save, just open
     '''
-    cmds.file( path, open = True, force = True )
+    nuke.scriptClose()
+    nuke.scriptOpen( path )
     main_window.close()
 
 
@@ -1695,19 +1920,19 @@ def new_scene_detect():
     '''
     
     '''
-    changes = cmds.file( q = True, modified = True )
+    changes = nuke.root().modified()
     if changes:
         new_prompt()
     else:
-        cmds.file( new = True, force = True )
+        nuke.scriptClear()
 
 
 def save_new_scene( main_window ):
     '''
     save then open
     '''
-    cmds.SaveScene()
-    cmds.file( new = True, force = True )
+    nuke.scriptSave()
+    nuke.scriptClear()
     main_window.close()
 
 
@@ -1715,12 +1940,15 @@ def new_scene( main_window ):
     '''
     
     '''
-    cmds.file( new = True, force = True )
+    nuke.scriptClear()
     main_window.close()
 
 
 def save_plus():
-
+    '''
+    '''
+    pass
+    '''
     scene = cmds.file( query = True, sn = True )
     scene_info = parseSceneFilePath( scene )
     current_version = scene_info[1][-3:]
@@ -1755,7 +1983,7 @@ def save_plus():
         # rename the current file
         cmds.file( name, rn = name )
         # save it
-        cmds.file( save = True, typ = fileType[0] )
+        cmds.file( save = True, typ = fileType[0] )'''
 
 
 def overwrite_scene( project = None, entity = None, task = None, scenes = None, scene_info = [], main_window = None ):
@@ -1764,10 +1992,14 @@ def overwrite_scene( project = None, entity = None, task = None, scenes = None, 
     '''
     # print( 'save' )
     #
+    '''
     fileType = cmds.file( query = True, typ = True )
     path = os.path.join( scene_info[0], scene_info[1] + '.' + scene_info[2] )
     cmds.file( path, rn = path )
     cmds.file( save = True, typ = fileType[0] )
+    '''
+    path = os.path.join( scene_info[0], scene_info[1] + '.' + scene_info[2] )
+    nuke.scriptSaveAs( path, overwrite = True )
     # refresh
     get_scenes( scenes, project, entity, task )
     # close prompt
@@ -1778,6 +2010,8 @@ def overwrite_scene( project = None, entity = None, task = None, scenes = None, 
 def publish_scene( project = None, entity = None, task = None, scenes = None ):
     '''
     input vars are all list widgets, except scenes
+    '''
+    pass
     '''
     go = pub_start_timer()
     if not go:
@@ -1812,7 +2046,7 @@ def publish_scene( project = None, entity = None, task = None, scenes = None ):
         else:
             message( 'Current scene is already a publish. It contains _PUB_ string in the filename.', warning = True )
     else:
-        message( 'Cant parse scene name', warning = 1 )
+        message( 'Cant parse scene name', warning = 1 )'''
 
 
 def ___TIMERS():
@@ -1960,7 +2194,7 @@ def open_prompt( path = '' ):
     '''
     save before opening
     '''
-    w = 150
+    w = 350
     main_window = QtWidgets.QDialog()
     main_layout = QtWidgets.QVBoxLayout()
     # project
@@ -1983,8 +2217,9 @@ def open_prompt( path = '' ):
     cancel_button.clicked.connect( lambda: main_window.close() )
     # draw window
     main_window.setLayout( main_layout )
-    main_window.setWindowTitle( "Confirm Open Scene" )
+    main_window.setWindowTitle( "Confirm Open Script" )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setMinimumWidth( w )
     main_window.exec_()
 
 
@@ -1992,7 +2227,7 @@ def new_prompt():
     '''
     save before new scene
     '''
-    w = 150
+    w = 350
     main_window = QtWidgets.QDialog()
     main_layout = QtWidgets.QVBoxLayout()
     # project
@@ -2015,8 +2250,9 @@ def new_prompt():
     cancel_button.clicked.connect( lambda: main_window.close() )
     # draw window
     main_window.setLayout( main_layout )
-    main_window.setWindowTitle( "Confirm New Scene" )
+    main_window.setWindowTitle( "Confirm New Script" )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setMinimumWidth( w )
     main_window.exec_()
 
 
@@ -2024,7 +2260,7 @@ def overwrite_prompt( project = None, entity = None, task = None, scenes = None,
     '''
     save before new scene
     '''
-    w = 150
+    w = 350
     main_window = QtWidgets.QDialog()
     main_layout = QtWidgets.QVBoxLayout()
     # project
@@ -2047,8 +2283,9 @@ def overwrite_prompt( project = None, entity = None, task = None, scenes = None,
     cancel_button.clicked.connect( lambda: main_window.close() )
     # draw window
     main_window.setLayout( main_layout )
-    main_window.setWindowTitle( "Confirm Overwrite Scene" )
+    main_window.setWindowTitle( "Confirm Overwrite Script" )
     main_window.setWindowFlags( main_window.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    main_window.setMinimumWidth( w )
     main_window.exec_()
 
 
@@ -2274,15 +2511,21 @@ class Prefs():
             self.prefs[pref_list].append( i )
 
     def prefPath( self, *args ):
-        varPath = cmds.internalVar( userAppDir = True )
-        path = os.path.join( varPath, 'scripts' )
-        path = os.path.join( path, 'SetProjectToolPrefs.json' )
+        '''
+        not sure what happens with OS other than windows
+        '''
+        varPath = os.path.expanduser( "~" )
+        path = os.path.join( varPath, '.nuke' )
+        path = os.path.join( path, 'nukeProjectToolPrefs.json' )
         return path
 
     def prefPathRemote( self ):
-        varPath = cmds.internalVar( userAppDir = True )
-        path = os.path.join( varPath, 'scripts' )
-        path = os.path.join( path, 'SetProjectToolPrefs.json' )
+        '''
+        not sure what happens with OS other than windows
+        '''
+        varPath = os.path.expanduser( "~" )
+        path = os.path.join( varPath, '.nuke' )
+        path = os.path.join( path, 'nukeProjectToolPrefs.json' )
         return path
 
     def prefSave( self, *args ):
@@ -2429,11 +2672,14 @@ class Prefs_dynamic():
         self.prefLoad()
 
     def prefFileName( self ):
-        return 'SetProjectDynamicPrefs.json'
+        return 'nukeProjectDynamicPrefs.json'
 
     def prefPath( self, *args ):
-        varPath = cmds.internalVar( userAppDir = True )
-        path = os.path.join( varPath, 'scripts' )
+        '''
+        not sure what happens with OS other than windows
+        '''
+        varPath = os.path.expanduser( "~" )
+        path = os.path.join( varPath, '.nuke' )
         path = os.path.join( path, self.prefFileName() )
         return path
 

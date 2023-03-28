@@ -64,6 +64,7 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
     path_front = ''
     path_back = ''
     result = None
+    suffix = ''
 
     # cache range
     start = cmds.playbackOptions ( ast = True, q = True )
@@ -100,11 +101,17 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
     # print( path_back )
 
     # build path_front
+    scene_path = cmds.file( query = True, sn = True )
     project = cmds.workspace( rd = True, q = True )
+    if project not in scene_path:
+        message( 'Scene path and Project path dont match. --- Parsing project path from Scene path', warning = True )
+        project = scene_path.split( 'scenes' )[0]
     parts = project.split( '/' )
+    scene_name_raw = parts[-1]
     shot = parts[-4]  # isolate shot name
     task = parts[-3]
-    suffix = filename_getSuffix( task )
+    if shot in scene_name_raw and task in scene_name_raw:  # assume name is standardized, go look for suffix
+        suffix = filename_getSuffix( task )
     path_front = project.split( shot )[0]
     path_front = os.path.join( path_front, shot )
     # print( path_front )
@@ -235,16 +242,17 @@ def filename_getSuffix( task = '' ):
     
     '''
     suffix = ''
-    s_path = cmds.file( query = True, exn = True )
+    s_path = cmds.file( query = True, sn = True )
     if s_path:
         if s_path[-8:] != 'untitled':
             if 'v' == s_path[-7]:
                 s_path = s_path.split( '/' )[-1]
-                sfx = s_path.split( task )[1]
-                # print( sfx )
-                sfx = sfx[1:-8]  # excludes '_' on either side
-                # print( 'sfx__', sfx )
-                if sfx:
-                    suffix = sfx
+                if task in s_path:
+                    sfx = s_path.split( task )[1]
+                    # print( sfx )
+                    sfx = sfx[1:-8]  # excludes '_' on either side
+                    # print( 'sfx__', sfx )
+                    if sfx:
+                        suffix = sfx
     # print( 'suffix___', suffix )
     return suffix
