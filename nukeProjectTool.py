@@ -198,7 +198,11 @@ class CustomListView( QtWidgets.QListWidget ):
             self.path = os.path.join( self.root, self._p, self._e, self._t )
         elif self._selected == self._s:
             if 'asset' in self._e:
-                self.path = os.path.join( self.root, self._p, self._e, self._t )
+                # self.path = os.path.join( self.root, self._p, self._e, self._t )
+                if directory_only:
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'nuke' )
+                else:
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'nuke', self._s )
             else:
                 if directory_only:
                     self.path = os.path.join( self.root, self._p, self._e, self._t, 'nuke' )
@@ -911,7 +915,7 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None, 
             scene_path = p_d.prefs[p_d.last_project]
 
     except:
-        print( 'fail' )
+        print( 'No current script found' )
         pass
     #
     if navigate_to_scene:
@@ -950,7 +954,7 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None, 
                         tasks.setCurrentItem( item[0] )
                 # scene
                 if len( parts ) > 7:
-                    item = scenes.findItems( parts[8], QtCore.Qt.MatchExactly )
+                    item = scenes.findItems( parts[7], QtCore.Qt.MatchExactly )
                     if item:
                         scenes.setCurrentItem( item[0] )
             else:
@@ -1700,6 +1704,9 @@ def convert_path_to_write_precomp_frames( path = '' ):
     initial v001
     '''
     #
+    _e = ''
+    _t = ''
+    name = ''
     # print( 'path: ', path )
     if path:
         if '\\' in path:
@@ -1710,12 +1717,19 @@ def convert_path_to_write_precomp_frames( path = '' ):
     parts = path.split( '/' )
     # print( parts )
     #
+
     _r = parts[0]
     _p = parts[1]
-    _e = parts[2] + '/' + parts[3]
-    _t = parts[4]
+    if parts[2] == 'assets':
+        _e = parts[2] + '/' + parts[3] + '/' + parts[4]
+        _t = parts[5]
+        name = parts[7].split( '.' )[0]
+    else:
+        _e = parts[2] + '/' + parts[3]
+        _t = parts[4]
+        name = parts[6].split( '.' )[0]
     #
-    name = parts[6].split( '.' )[0]
+    # name = parts[6].split( '.' )[0]
     _s = 'precomp/' + name + '/' + name + '.####.jpg'
 
     result = _r + '/' + _p + '/' + _e + '/' + _t + '/' + _s

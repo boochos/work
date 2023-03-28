@@ -200,7 +200,11 @@ class CustomListView( QtWidgets.QListWidget ):
             self.path = os.path.join( self.root, self._p, self._e, self._t )
         elif self._selected == self._s:
             if 'asset' in self._e:
-                self.path = os.path.join( self.root, self._p, self._e, self._t )
+                # self.path = os.path.join( self.root, self._p, self._e, self._t )
+                if directory_only:
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes' )
+                else:
+                    self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes', self._s )
             else:
                 if directory_only:
                     self.path = os.path.join( self.root, self._p, self._e, self._t, 'maya', 'scenes' )
