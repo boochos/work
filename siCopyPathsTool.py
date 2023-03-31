@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 
 from PySide2 import QtCore, QtGui, QtWidgets
 
@@ -81,9 +82,13 @@ class UI():
         self.source_row()
         self.daily_row()
         self.copy_row()
+        self.message_row()
 
         #
         # self.main_window.show()
+
+        self.threadpool = QtCore.QThreadPool()
+        print( "Multithreading with maximum %d threads" % self.threadpool.maxThreadCount() )
 
     def add_source_row( self ):
         '''
@@ -160,16 +165,19 @@ class UI():
         
         '''
         #
+        source_group = []
         source_label = QtWidgets.QLabel( 'Source Path:  ' )
         source_edit = QtWidgets.QLineEdit()
         source_edit.textChanged.connect( lambda: self.source_validate( source_edit ) )
-        self.sources_ui_list.append( source_edit )
+        source_group.append( source_edit )
         #
         browse_file_button = QtWidgets.QPushButton( "F i l e" )
         browse_file_button.clicked.connect( lambda:self.source_file_select( source_edit ) )
+        source_group.append( browse_file_button )
         #
         browse_dir_button = QtWidgets.QPushButton( "D i r" )
         browse_dir_button.clicked.connect( lambda:self.source_dir_select( source_edit ) )
+        source_group.append( browse_dir_button )
         #
         source_layout = QtWidgets.QHBoxLayout()
         source_layout.addWidget( source_label )
@@ -179,6 +187,7 @@ class UI():
         #
         self.add_sources_layout.addLayout( source_layout )
         #
+        self.sources_ui_list.append( source_group )
         # self.source_validate( source_edit )
 
     def source_validate( self, source_edit = None ):
@@ -199,6 +208,62 @@ class UI():
                 source_edit.setStyleSheet( "border: 1px solid lightgreen;" )
             else:
                 source_edit.setStyleSheet( "border: 1px solid red;" )
+
+    def source_remap_qualify( self, source_edit = None ):
+        '''
+        fix entire function to qualify a given source path to a given destination, without creating any files or directories
+        '''
+        self.copy_busy_color()
+        destination_path = self.destination_edit.text()
+        # print( 'destination: ', destination_path )
+        #
+        if os.path.isdir( destination_path ):
+            #
+            if self.daily_check.isChecked():
+                if self.final_directory not in destination_path:
+                    destination_path = os.path.join( destination_path, self.final_directory )
+                self.make_final_directory( destination_path )
+            #
+            source_path = source_edit.text()
+            if source_path:
+                print( 'source: ', source_path )
+                go = False
+                _dir = False
+                if os.path.isdir( source_path ):
+                    go = True
+                    _dir = True
+                elif os.path.isfile( source_path ):
+                    go = True
+                if go:
+                    #
+                    name = ''
+                    if '\\' in source_path:
+                        name = source_path.split( '\\' )[-1]
+                    elif '/' in source_path:
+                        name = source_path.split( '/' )[-1]
+                    print( 'name: ', name )
+                    #
+                    final_destination = os.path.join( destination_path, name )
+                    final_destination = final_destination.replace( '\\', '/' )
+
+                    print( 'final destination:', final_destination )
+                    #
+                    result = ''
+                    if os.path.isdir( destination_path ):
+                        if _dir:
+                            if os.path.isdir( final_destination ):
+                                self.ui_message( 'Directory already exists --- ' + final_destination )  # need to format properly
+                            else:
+                                result = shutil.copytree( source_path, os.path.join( destination_path, name ), symlinks = True, ignore = None )
+                        else:
+                            result = shutil.copyfile( source_path, os.path.join( destination_path, name ) )
+                    else:
+                        self.ui_message( 'Destination doesnt exist --- ' + destination_path )
+                    print( 'result: ', result )
+                else:
+                    self.ui_message( 'Source doesnt exist --- ' + source_path )
+        else:
+            self.ui_message( 'Destination doesnt exist --- ' + destination_path )
 
     def source_file_select( self, source_edit = None ):
         '''
@@ -271,48 +336,6 @@ class UI():
         #
         self.main_window.show()
 
-    def copy_row( self ):
-        '''
-        
-        '''
-        #
-        self.copy_button = QtWidgets.QPushButton( "C O P Y" )
-        self.copy_idle_color()
-        # self.copy_button.setStyleSheet( "background-color: red" )
-        self.copy_button.clicked.connect( lambda:self.start_copy_thread() )
-        #
-        self.copy_layout = QtWidgets.QHBoxLayout()
-        self.copy_layout.addWidget( self.copy_button )
-        #
-        self.main_layout.addLayout( self.copy_layout )
-
-    def copy_idle_color( self ):
-        '''
-        
-        '''
-        print( '___idle' )
-        color = [ 0.192, 0.647, 0.549 ]  # aqua
-        bg = "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border = "border: 4px solid;"
-        border_color_top = "border-top-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_left = "border-left-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_right = "border-right-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_bottom = "border-bottom-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        self.copy_button.setStyleSheet( bg + border + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
-
-    def copy_busy_color( self ):
-        '''
-        
-        '''
-        print( '___busy' )
-        bg = "background-color: lightgreen;"
-        border = "border: 4px solid;"
-        border_color_top = "border-top-color: lightgreen;"
-        border_color_left = "border-left-color: lightgreen;"
-        border_color_right = "border-right-color: lightgreen;"
-        border_color_bottom = "border-bottom-color: lightgreen;"
-        self.copy_button.setStyleSheet( bg + border + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
-
     def daily_row( self ):
         '''
         
@@ -335,27 +358,60 @@ class UI():
         #
         self.main_layout.addLayout( self.daily_layout )
 
-    def message( self, what = '', warning = False ):
+    def copy_row( self ):
         '''
-        add message to UI
+        
         '''
-        pass
+        #
+        self.copy_button = QtWidgets.QPushButton( "C O P Y" )
+        self.copy_idle_color()
+        # self.copy_button.setStyleSheet( "background-color: red" )
+        self.copy_button.clicked.connect( lambda:self.start_worker_thread() )
+        #
+        self.copy_layout = QtWidgets.QHBoxLayout()
+        self.copy_layout.addWidget( self.copy_button )
+        #
+        self.main_layout.addLayout( self.copy_layout )
+
+    def copy_idle_color( self ):
         '''
-        what = '-- ' + what + ' --'
-        if '\\' in what:
-            what = what.replace( '\\', '/' )
-        if warning:
-            nuke.warning( what )
-        else:
-            nuke.warning( what )'''
+        
+        '''
+        # print( '___idle' )
+        color = [ 0.192, 0.647, 0.549 ]  # aqua
+        bg = "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
+        border = "border: 4px solid;"
+        border_color_top = "border-top-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
+        border_color_left = "border-left-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
+        border_color_right = "border-right-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
+        border_color_bottom = "border-bottom-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
+        self.copy_button.setStyleSheet( bg + border + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
+
+    def copy_busy_color( self ):
+        '''
+        
+        '''
+        # print( '___busy' )
+        bg = "background-color: lightgreen;"
+        border = "border: 4px solid;"
+        border_color_top = "border-top-color: lightgreen;"
+        border_color_left = "border-left-color: lightgreen;"
+        border_color_right = "border-right-color: lightgreen;"
+        border_color_bottom = "border-bottom-color: lightgreen;"
+        self.copy_button.setStyleSheet( bg + border + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
 
     def copy_sources( self ):
         '''
         
         '''
+        #
+        self.qualified_dir = []
+        self.qualified_files = []
+        self.ui_disable()
+        #
         self.copy_busy_color()
         destination_path = self.destination_edit.text()
-        print( destination_path )
+        # print( 'destination: ', destination_path )
         #
         if os.path.isdir( destination_path ):
             #
@@ -366,24 +422,46 @@ class UI():
             #
             for source in self.sources_ui_list:
                 #
-                source_path = source.text()
-                print( source_path )
-                go = False
-                if os.path.isdir( source_path ):
-                    go = True
-                elif os.path.isfile( source_path ):
-                    go = True
-                if go:
-                    name = ''
-                    if '\\' in source_path:
-                        name = source_path.split( '\\' )[-1]
-                    elif '/' in source_path:
-                        name = source_path.split( '/' )[-1]
-                    shutil.copytree( source_path, os.path.join( destination_path, name ), symlinks = True, ignore = None )
-                else:
-                    print( 'source is not a path' )
+                source_path = source[0].text()
+                if source_path:
+                    print( 'source: ', source_path )
+                    go = False
+                    _dir = False
+                    if os.path.isdir( source_path ):
+                        go = True
+                        _dir = True
+                    elif os.path.isfile( source_path ):
+                        go = True
+                    if go:
+                        #
+                        name = ''
+                        if '\\' in source_path:
+                            name = source_path.split( '\\' )[-1]
+                        elif '/' in source_path:
+                            name = source_path.split( '/' )[-1]
+                        print( 'name: ', name )
+                        #
+                        final_destination = os.path.join( destination_path, name )
+                        final_destination = final_destination.replace( '\\', '/' )
+
+                        print( 'final destination:', final_destination )
+                        #
+                        result = ''
+                        if os.path.isdir( destination_path ):
+                            if _dir:
+                                if os.path.isdir( final_destination ):
+                                    self.ui_message( 'Directory already exists --- ' + final_destination )  # need to format properly
+                                else:
+                                    result = shutil.copytree( source_path, os.path.join( destination_path, name ), symlinks = True, ignore = None )
+                            else:
+                                result = shutil.copyfile( source_path, os.path.join( destination_path, name ) )
+                        else:
+                            self.ui_message( 'Destination doesnt exist --- ' + destination_path )
+                        print( 'result: ', result )
+                    else:
+                        self.ui_message( 'Source doesnt exist --- ' + source_path )
         else:
-            print( 'destination is not a path' )
+            self.ui_message( 'Destination doesnt exist --- ' + destination_path )
 
     def make_final_directory( self, destination_path = '' ):
         '''
@@ -392,46 +470,54 @@ class UI():
         if not os.path.isdir( destination_path ):
             os.mkdir( destination_path )
 
-    def start_copy_thread( self ):
+    def message_row( self ):
         '''
         
         '''
+        # message
+        self.message_label = QtWidgets.QLabel( 'M E S S A G E  ' )
+        self.message_content = QtWidgets.QLabel( '' )
 
-        print( 't1' )
-        # start thread, will be used to pass update function
-        self.copy_thread = QtCore.QThread()
-        print( 't2' )
-        # This causes trading_worker.run() to eventually execute in trading_thread:
-        self.copy_worker = GenericWorker( self.copy_sources )
-        print( 't3' )
-        # move function to thread
-        self.copy_worker.moveToThread( self.copy_thread )
-        print( 't4' )
         #
-        self.copy_worker.finished.connect( self.copy_idle_color )
-        print( 't5' )
+        self.message_layout = QtWidgets.QHBoxLayout()
+        self.message_layout.addWidget( self.message_label )
+        self.message_layout.addWidget( self.message_content )
+        self.message_layout.setAlignment( QtCore.Qt.AlignLeft )
         #
-        self.copy_thread.start()
-        print( 't6' )
-        self.copy_worker.start.emit( 'hello' )
-        print( 't7' )
+        self.main_layout.addLayout( self.message_layout )
 
+    def ui_message( self, message = '' ):
+        '''
+        ui feedback
+        '''
+        self.message_content.setText( message )
 
-class GenericWorker( QtCore.QObject ):
+    def start_worker_thread( self ):
+        '''
+        
+        '''
+        # Pass the function to execute
+        worker = Worker( self.copy_sources )  # Any other args, kwargs are passed to the run function
+        # worker.signals.result.connect(self.print_output)
+        worker.signals.finished.connect( self.copy_idle_color )
+        # worker.signals.progress.connect(self.progress_fn)
 
-    start = QtCore.Signal( str )
-    finished = QtCore.Signal( str )
+        # Execute
+        self.threadpool.start( worker )
 
-    def __init__( self, function, *args, **kwargs ):
-        super( GenericWorker, self ).__init__()
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
-        self.start.connect( self.run )
-
-    @QtCore.Slot()
-    def run( self, *args, **kwargs ):
-        self.function()
+    def ui_disable( self ):
+        '''
+        on copy disable editing
+        '''
+        self.alwaysOnTop_check.setDisabled( True )
+        self.destination_edit.setDisabled( True )
+        self.destination_dir_button.setDisabled( True )
+        self.add_source_button.setDisabled( True )
+        for _source in self.sources_ui_list:
+            for _s in _source:
+                _s.setDisabled( True )
+        self.daily_check.setDisabled( True )
+        self.copy_button.setDisabled( True )  # should be replaced with cancel
 
 
 def source_file_select( source_edit = None ):
@@ -484,6 +570,69 @@ def todays_directory_name():
     name = e.strftime( "%Y_%m_%d" )
     # print ( name )
     return name
+
+
+def ____THREAD():
+    pass
+
+
+class Worker( QtCore.QRunnable ):
+
+    start = QtCore.Signal( str )
+    finished = QtCore.Signal( str )
+
+    def __init__( self, function, *args, **kwargs ):
+        super( Worker, self ).__init__()
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        # self.start.connect( self.run )
+        self.signals = WorkerSignals()
+
+    '''
+    #QtCore.Slot()
+    def run( self, *args, **kwargs ):
+        self.function()'''
+
+    @QtCore.Slot()
+    def run( self ):
+        '''
+        Initialise the runner function with passed args, kwargs.
+        '''
+
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.function( *self.args, **self.kwargs )
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit( ( exctype, value, traceback.format_exc() ) )
+        else:
+            self.signals.result.emit( result )  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()  # Done
+
+
+class WorkerSignals( QtCore.QObject ):
+    '''
+    Defines the signals available from a running worker thread.
+
+    Supported signals are:
+
+    finished
+        No data
+
+    error
+        tuple (exctype, value, traceback.format_exc() )
+
+    result
+        object data returned from processing, anything
+
+    '''
+    finished = QtCore.Signal()  # QtCore.Signal
+    error = QtCore.Signal( tuple )
+    result = QtCore.Signal( object )
+    progress = QtCore.Signal( int )
 
 
 def ____PREFS():
