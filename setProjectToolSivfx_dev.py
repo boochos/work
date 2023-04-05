@@ -959,14 +959,20 @@ def get_current( projects = None, entities = None, tasks = None, scenes = None, 
                     entities.setCurrentItem( item[0] )
                 # task
                 if len( parts ) > 3:
-                    item = tasks.findItems( parts[4], QtCore.Qt.MatchExactly )
-                    if item:
-                        tasks.setCurrentItem( item[0] )
+                    try:
+                        item = tasks.findItems( parts[4], QtCore.Qt.MatchExactly )
+                        if item:
+                            tasks.setCurrentItem( item[0] )
+                    except:
+                        message( 'getting current scene error', True )
                 # scene
                 if len( parts ) > 6:
-                    item = scenes.findItems( parts[7], QtCore.Qt.MatchExactly )
-                    if item:
-                        scenes.setCurrentItem( item[0] )
+                    try:
+                        item = scenes.findItems( parts[7], QtCore.Qt.MatchExactly )
+                        if item:
+                            scenes.setCurrentItem( item[0] )
+                    except:
+                        message( 'getting current scene error', True )
     else:
         print( 'path : ', path )
 
@@ -1199,15 +1205,18 @@ def filename_getSuffix( path = '', entity = '', task = '' ):
     # s_path = cmds.file( query = True, exn = True )
     s_path = cmds.file( query = True, sn = True )
     if s_path:
-        if s_path[-8:] != 'untitled':
-            if 'v' == s_path[-7]:
-                s_path = s_path.split( '/' )[-1]
-                sfx = s_path.split( task )[1]
-                # print( sfx )
-                sfx = sfx[1:-8]  # excludes '_' on either side
-                # print( 'sfx__', sfx )
-                if sfx:
-                    suffix = sfx
+        if task in s_path:  # likely scene is from another shot or has unconventional name
+            if s_path[-8:] != 'untitled':
+                if 'v' == s_path[-7]:
+                    s_path = s_path.split( '/' )[-1]
+                    sfx = s_path.split( task )[1]
+                    # print( sfx )
+                    sfx = sfx[1:-8]  # excludes '_' on either side
+                    # print( 'sfx__', sfx )
+                    if sfx:
+                        suffix = sfx
+        else:
+            message( 'unconventional name', warning = True )
     return suffix
 
 

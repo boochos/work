@@ -28,6 +28,7 @@ def findControl( ann = '', panelTyp = '', split = 3 ):
             string = cmds.control( con, q = 1, ann = 1 )
             if ann in string:
                 qualified.append( con )
+    print( qualified )
     for item in qualified:
         path = cmds.control( item, q = 1, fpn = 1 )
         if panelTyp in path:

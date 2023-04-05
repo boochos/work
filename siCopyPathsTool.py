@@ -22,6 +22,7 @@ class CustomQDialog( QtWidgets.QDialog ):
 
     def __init__( self ):
         super().__init__()
+        self.validate = True
 
     def closeEvent( self, event ):
         '''
@@ -29,6 +30,7 @@ class CustomQDialog( QtWidgets.QDialog ):
         '''
         # do stuff, figure out how to get session info and save it
         #
+        self.validate = False
         p_d = Prefs_dynamic()
         p_d.prefs[p_d.session_window_pos_x] = self.frameGeometry().x()
         p_d.prefs[p_d.session_window_pos_y] = self.frameGeometry().y()
@@ -47,14 +49,18 @@ class UI():
         '''
         
         '''
-
+        self.kill = False
+        self.copying = False
+        self.all_valid = True
         # self.p = Prefs()
         self.p_d = Prefs_dynamic()
         self.final_directory = todays_directory_name()
         self.sources_ui_list = []
+        self.sources_ui_layouts = []
         # main
         # self.main_window = QtWidgets.QDialog()
         self.main_window = CustomQDialog()  # close event altered
+
         self.main_window.setWindowTitle( 'SI Copy Sources' )
         #
         w = 600
@@ -88,7 +94,8 @@ class UI():
         # self.main_window.show()
 
         self.threadpool = QtCore.QThreadPool()
-        print( "Multithreading with maximum %d threads" % self.threadpool.maxThreadCount() )
+        # print( "Multithreading with maximum %d threads" % self.threadpool.maxThreadCount() )
+        self.start_validation_thread()
 
     def add_source_row( self ):
         '''
@@ -133,8 +140,8 @@ class UI():
         #
         self.main_layout.addLayout( self.destination_layout )
         #
-        self.separate_0 = QtWidgets.QFrame()
-        self.main_layout.addWidget( self.separate_0 )
+        # self.separate_0 = QtWidgets.QFrame()
+        # self.main_layout.addWidget( self.separate_0 )
         #
         self.destination_validate()
 
@@ -165,11 +172,29 @@ class UI():
         
         '''
         #
+        self.exists = 2
+        self.overwrite = 3
+        self.invalid = 4
+        #
+        source_layout = QtWidgets.QHBoxLayout()  # need this to already exist
+        #
         source_group = []
         source_label = QtWidgets.QLabel( 'Source Path:  ' )
         source_edit = QtWidgets.QLineEdit()
-        source_edit.textChanged.connect( lambda: self.source_validate( source_edit ) )
+        source_edit.textChanged.connect( lambda: self.source_validate( source_edit, source_layout ) )
         source_group.append( source_edit )
+        #
+        exists_label = QtWidgets.QLabel( ' Destination exists' )
+        exists_label.setStyleSheet( "color:  red;" "font-weight: bold" )
+        exists_label.setVisible( False )
+        #
+        overwrite_label = QtWidgets.QLabel( ' File overwrite' )
+        overwrite_label.setStyleSheet( "color:  green;" "font-weight: bold" )
+        overwrite_label.setVisible( False )
+        #
+        invalid_label = QtWidgets.QLabel( ' Source invalid' )
+        invalid_label.setStyleSheet( "color:  red;" "font-weight: bold" )
+        invalid_label.setVisible( False )
         #
         browse_file_button = QtWidgets.QPushButton( "F i l e" )
         browse_file_button.clicked.connect( lambda:self.source_file_select( source_edit ) )
@@ -179,41 +204,105 @@ class UI():
         browse_dir_button.clicked.connect( lambda:self.source_dir_select( source_edit ) )
         source_group.append( browse_dir_button )
         #
-        source_layout = QtWidgets.QHBoxLayout()
         source_layout.addWidget( source_label )
         source_layout.addWidget( source_edit )
+        source_layout.addWidget( exists_label )
+        source_layout.addWidget( overwrite_label )
+        source_layout.addWidget( invalid_label )
         source_layout.addWidget( browse_file_button )
         source_layout.addWidget( browse_dir_button )
         #
         self.add_sources_layout.addLayout( source_layout )
         #
         self.sources_ui_list.append( source_group )
-        # self.source_validate( source_edit )
+        self.sources_ui_layouts.append( source_layout )
 
-    def source_validate( self, source_edit = None ):
+    def source_validate( self, source_edit = None, source_layout = None ):
         '''
         
         '''
-        if source_edit.text() == '':
-            source_edit.setStyleSheet( "border: 1px solid gray;" )
-        else:
-            go = False
-            if os.path.isdir( source_edit.text() ):
-                go = True
-                # source_edit.setStyleSheet( "border: 1px solid red;" )
-            elif os.path.isfile( source_edit.text() ):
-                go = True
-            #
-            if go:
-                source_edit.setStyleSheet( "border: 1px solid lightgreen;" )
+        #
+
+        #
+        valid = True
+        if not self.copying:
+            if source_edit.text() == '':
+                # source_edit.setStyleSheet( "border: 1px solid gray;" )
+                if self.all_valid:
+                    # self.copy_button.setDisabled( False )
+                    pass
+                #
+                source_layout.itemAt( self.exists ).widget().setVisible( False )
+                source_layout.itemAt( self.overwrite ).widget().setVisible( False )
+                source_layout.itemAt( self.invalid ).widget().setVisible( False )
+                valid = True
             else:
-                source_edit.setStyleSheet( "border: 1px solid red;" )
+                go = False
+                if os.path.isdir( source_edit.text() ):
+                    go = True
+                    # source_edit.setStyleSheet( "border: 1px solid red;" )
+                elif os.path.isfile( source_edit.text() ):
+                    go = True
+                #
+                if go:
+                    qualified = self.source_remap_qualify( source_edit )
+                    if qualified:
+                        if qualified == 'exists':
+                            source_layout.itemAt( self.exists ).widget().setVisible( False )
+                            source_layout.itemAt( self.overwrite ).widget().setVisible( True )
+                            source_layout.itemAt( self.invalid ).widget().setVisible( False )
+                            valid = True
+                        elif qualified == 'error':
+
+                            source_layout.itemAt( self.exists ).widget().setVisible( False )
+                            source_layout.itemAt( self.overwrite ).widget().setVisible( False )
+                            source_layout.itemAt( self.invalid ).widget().setText( 'Destination error' )
+                            # source_layout.itemAt( self.invalid ).widget().setStyleSheet( "color:  green;" "font-weight: bold" )
+                            source_layout.itemAt( self.invalid ).widget().setVisible( True )
+                        else:
+                            # source_edit.setStyleSheet( "border: 1px solid lightgreen;" )
+                            # if self.all_valid:
+                                # self.copy_button.setDisabled( False )
+                                # pass
+                            #
+                            # '''
+                            source_layout.itemAt( self.exists ).widget().setVisible( False )
+                            source_layout.itemAt( self.overwrite ).widget().setVisible( False )
+                            source_layout.itemAt( self.invalid ).widget().setVisible( False )
+                            valid = True
+                        # '''
+                    else:
+                        # source_edit.setStyleSheet( "border: 1px solid orange;" )
+                        # self.copy_button.setDisabled( True )
+                        #
+                        # '''
+                        source_layout.itemAt( self.exists ).widget().setVisible( True )
+                        source_layout.itemAt( self.overwrite ).widget().setVisible( False )
+                        source_layout.itemAt( self.invalid ).widget().setVisible( False )
+                        valid = False
+                        # '''
+                else:
+                    # source_edit.setStyleSheet( "border: 1px solid red;" )
+                    # self.copy_button.setDisabled( True )
+                    #
+                    # '''
+                    source_layout.itemAt( self.exists ).widget().setVisible( False )
+                    source_layout.itemAt( self.overwrite ).widget().setVisible( False )
+                    source_layout.itemAt( self.invalid ).widget().setVisible( True )
+                    valid = False
+
+        return valid
+                # '''
+        # itm = source_layout.itemAt( self.invalid ).widget()
+        # itm.setVisible( True )
+        # print( source_layout.itemAt( self.invalid ) )
 
     def source_remap_qualify( self, source_edit = None ):
         '''
         fix entire function to qualify a given source path to a given destination, without creating any files or directories
         '''
-        self.copy_busy_color()
+        qualified = False
+        final_destination = ''
         destination_path = self.destination_edit.text()
         # print( 'destination: ', destination_path )
         #
@@ -226,7 +315,7 @@ class UI():
             #
             source_path = source_edit.text()
             if source_path:
-                print( 'source: ', source_path )
+                # print( 'source: ', source_path )
                 go = False
                 _dir = False
                 if os.path.isdir( source_path ):
@@ -241,29 +330,37 @@ class UI():
                         name = source_path.split( '\\' )[-1]
                     elif '/' in source_path:
                         name = source_path.split( '/' )[-1]
-                    print( 'name: ', name )
+                    # print( 'name: ', name )
                     #
                     final_destination = os.path.join( destination_path, name )
                     final_destination = final_destination.replace( '\\', '/' )
 
-                    print( 'final destination:', final_destination )
+                    # print( 'final destination:', final_destination )
                     #
                     result = ''
                     if os.path.isdir( destination_path ):
                         if _dir:
                             if os.path.isdir( final_destination ):
-                                self.ui_message( 'Directory already exists --- ' + final_destination )  # need to format properly
+                                pass
+                                # self.ui_message( 'Directory already exists --- ' + final_destination )  # need to format properly
                             else:
-                                result = shutil.copytree( source_path, os.path.join( destination_path, name ), symlinks = True, ignore = None )
+                                qualified = True
                         else:
-                            result = shutil.copyfile( source_path, os.path.join( destination_path, name ) )
+                            if  os.path.isfile( os.path.join( destination_path, name ) ):
+                                qualified = 'exists'
+                            else:
+                                qualified = True
                     else:
-                        self.ui_message( 'Destination doesnt exist --- ' + destination_path )
-                    print( 'result: ', result )
+                        pass
+                        # self.ui_message( 'Destination doesnt exist --- ' + destination_path )
+                    # print( 'result: ', result )
                 else:
-                    self.ui_message( 'Source doesnt exist --- ' + source_path )
+                    pass
+                    # self.ui_message( 'Source doesnt exist --- ' + source_path )
         else:
-            self.ui_message( 'Destination doesnt exist --- ' + destination_path )
+            qualified = 'error'
+            # self.ui_message( 'Destination doesnt exist --- ' + destination_path )
+        return qualified
 
     def source_file_select( self, source_edit = None ):
         '''
@@ -281,6 +378,8 @@ class UI():
         # print( path )
         if path[0]:
             source_edit.setText( path[0] )
+        #
+        self.ui_message( '' )
 
     def source_dir_select( self, source_edit = None ):
         '''
@@ -298,6 +397,8 @@ class UI():
         # print( path )
         if path:
             source_edit.setText( path )
+        #
+        self.ui_message( '' )
 
     def source_default( self ):
         '''
@@ -318,12 +419,36 @@ class UI():
             self.alwaysOnTop_check.setChecked( False )
         self.alwaysOnTop_check.clicked.connect( lambda:self.onTopToggle_ui() )
         #
+        '''
+        self.legend_label = QtWidgets.QLabel( 'Legend:  ' )
+        self.valid_edit = QtWidgets.QLineEdit( 'path valid' )
+        self.valid_edit.setReadOnly( True )
+        self.valid_edit.setStyleSheet( "border: 1px solid lightgreen;" )
+        self.doesnt_edit = QtWidgets.QLineEdit( 'path invalid' )
+        self.doesnt_edit.setReadOnly( True )
+        self.doesnt_edit.setStyleSheet( "border: 1px solid red;" )
+        self.exists_edit = QtWidgets.QLineEdit( 'path already copied, copying will stop.' )
+        self.exists_edit.setReadOnly( True )
+        self.exists_edit.setStyleSheet( "border: 1px solid orange;" )
+        '''
+        #
         self.ontop_layout = QtWidgets.QHBoxLayout()
+        #
+        '''
+        self.ontop_layout.addWidget( self.legend_label )
+        self.ontop_layout.addWidget( self.valid_edit )
+        self.ontop_layout.addWidget( self.doesnt_edit )
+        self.ontop_layout.addWidget( self.exists_edit )
+        '''
+        #
         self.ontop_layout.addWidget( self.alwaysOnTop_label )
         self.ontop_layout.addWidget( self.alwaysOnTop_check )
         self.ontop_layout.setAlignment( QtCore.Qt.AlignRight )
         #
         self.main_layout.addLayout( self.ontop_layout )
+        #
+        self.separate_1 = QtWidgets.QFrame()
+        self.main_layout.addWidget( self.separate_1 )
 
     def onTopToggle_ui( self ):
         '''
@@ -362,14 +487,20 @@ class UI():
         '''
         
         '''
-        #
+        # copy
         self.copy_button = QtWidgets.QPushButton( "C O P Y" )
         self.copy_idle_color()
         # self.copy_button.setStyleSheet( "background-color: red" )
         self.copy_button.clicked.connect( lambda:self.start_worker_thread() )
+        # cancel
+        self.quit_button = QtWidgets.QPushButton( "C A N C E L" )
+        self.quit_button.clicked.connect( lambda:self.quit_worker_thread() )
+        self.quit_button.setDisabled( True )
+        # self.quit_button.setStyleSheet( "background-color: red" )
         #
         self.copy_layout = QtWidgets.QHBoxLayout()
         self.copy_layout.addWidget( self.copy_button )
+        self.copy_layout.addWidget( self.quit_button )
         #
         self.main_layout.addLayout( self.copy_layout )
 
@@ -378,33 +509,46 @@ class UI():
         
         '''
         # print( '___idle' )
+        pad = str( 3 )
         color = [ 0.192, 0.647, 0.549 ]  # aqua
+        open = "QPushButton {"
         bg = "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border = "border: 4px solid;"
+        border = "border: 1px solid;"
+        padding = "padding-top: " + pad + "px; padding-bottom: " + pad + "px;"
         border_color_top = "border-top-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
         border_color_left = "border-left-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
         border_color_right = "border-right-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
         border_color_bottom = "border-bottom-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        self.copy_button.setStyleSheet( bg + border + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
+        close = "}"
+        #
+        pressed_color = "QPushButton:pressed{background-color : lightgreen;}"
+        hover_color = "QPushButton:hover{background-color : lightgreen;}"
+        #
+        self.copy_button.setStyleSheet( open + bg + border + padding + border_color_top + border_color_left + border_color_right + border_color_bottom + close + pressed_color + hover_color )  # QtGui.QColor( 1, 0.219, 0.058 )
 
     def copy_busy_color( self ):
         '''
         
         '''
         # print( '___busy' )
+        pad = str( 3 )
         bg = "background-color: lightgreen;"
-        border = "border: 4px solid;"
+        border = "border: 1px solid;"
+        padding = "padding-top: " + pad + "px; padding-bottom: " + pad + "px;"
         border_color_top = "border-top-color: lightgreen;"
         border_color_left = "border-left-color: lightgreen;"
         border_color_right = "border-right-color: lightgreen;"
         border_color_bottom = "border-bottom-color: lightgreen;"
-        self.copy_button.setStyleSheet( bg + border + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
+        self.copy_button.setStyleSheet( bg + border + padding + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
 
     def copy_sources( self ):
         '''
         
         '''
         #
+        i = 0
+        self.copying = True
+        self.ui_message( ' --- Copying Sources --- ' )
         self.qualified_dir = []
         self.qualified_files = []
         self.ui_disable()
@@ -420,48 +564,64 @@ class UI():
                     destination_path = os.path.join( destination_path, self.final_directory )
                 self.make_final_directory( destination_path )
             #
-            for source in self.sources_ui_list:
-                #
-                source_path = source[0].text()
-                if source_path:
-                    print( 'source: ', source_path )
-                    go = False
-                    _dir = False
-                    if os.path.isdir( source_path ):
-                        go = True
-                        _dir = True
-                    elif os.path.isfile( source_path ):
-                        go = True
-                    if go:
-                        #
-                        name = ''
-                        if '\\' in source_path:
-                            name = source_path.split( '\\' )[-1]
-                        elif '/' in source_path:
-                            name = source_path.split( '/' )[-1]
-                        print( 'name: ', name )
-                        #
-                        final_destination = os.path.join( destination_path, name )
-                        final_destination = final_destination.replace( '\\', '/' )
+            for source_group in self.sources_ui_list:
+                if not self.kill:
+                    #
+                    source_path = source_group[0].text()
+                    if source_path:
+                        # print( 'source: ', source_path )
+                        go = False
+                        _dir = False
+                        if os.path.isdir( source_path ):
+                            go = True
+                            _dir = True
+                        elif os.path.isfile( source_path ):
+                            go = True
+                        if go:
+                            #
+                            name = ''
+                            if '\\' in source_path:
+                                name = source_path.split( '\\' )[-1]
+                            elif '/' in source_path:
+                                name = source_path.split( '/' )[-1]
+                            # print( 'name: ', name )
+                            #
+                            final_destination = os.path.join( destination_path, name )
+                            final_destination = final_destination.replace( '\\', '/' )
 
-                        print( 'final destination:', final_destination )
-                        #
-                        result = ''
-                        if os.path.isdir( destination_path ):
-                            if _dir:
-                                if os.path.isdir( final_destination ):
-                                    self.ui_message( 'Directory already exists --- ' + final_destination )  # need to format properly
+                            # print( 'final destination:', final_destination )
+                            #
+                            result = ''
+                            if os.path.isdir( destination_path ):
+                                if _dir:
+                                    if os.path.isdir( final_destination ):
+                                        self.ui_message( 'Directory already exists --- ' + final_destination )  # need to format properly
+                                        break
+                                    else:
+                                        result = shutil.copytree( source_path, os.path.join( destination_path, name ), symlinks = True, ignore = None )
+                                        self.ui_disable_source( source_group, False )
                                 else:
-                                    result = shutil.copytree( source_path, os.path.join( destination_path, name ), symlinks = True, ignore = None )
+                                    result = shutil.copyfile( source_path, os.path.join( destination_path, name ) )
+                                    self.ui_disable_source( source_group, False )
+                                i += 1
                             else:
-                                result = shutil.copyfile( source_path, os.path.join( destination_path, name ) )
+                                self.ui_message( 'Destination doesnt exist --- ' + destination_path )
+                            # print( 'result: ', result )
                         else:
-                            self.ui_message( 'Destination doesnt exist --- ' + destination_path )
-                        print( 'result: ', result )
-                    else:
-                        self.ui_message( 'Source doesnt exist --- ' + source_path )
+                            self.ui_message( 'Source doesnt exist --- ' + source_path )
+                else:
+                    break
         else:
             self.ui_message( 'Destination doesnt exist --- ' + destination_path )
+        #
+        processed = 'copied ' + str( i ) + ' sources'
+        if self.kill:
+            self.ui_message( '--- Canceled, ' + processed + ' ---' )
+        else:
+            self.ui_message( '--- Finished, ' + processed + ' ---' )
+        self.kill = False
+        self.copying = False
+        self.ui_disable( False )
 
     def make_final_directory( self, destination_path = '' ):
         '''
@@ -496,28 +656,83 @@ class UI():
         '''
         
         '''
+        if self.all_valid:
+            # Pass the function to execute
+            self.worker = Worker( self.copy_sources )  # Any other args, kwargs are passed to the run function
+            # worker.signals.result.connect(self.print_output)
+            self.worker.signals.finished.connect( self.copy_idle_color )
+            # worker.signals.progress.connect(self.progress_fn)
+
+            # Execute
+            self.threadpool.start( self.worker )
+        else:
+            self.ui_message( '--- Resolve conflicts before copying ---' )
+
+    def quit_worker_thread( self ):
+        '''
+        kill thread, will finish current iteration
+        '''
+        self.ui_message( ' --- Copying will stop after current source is finished. --- ' )
+        self.kill = True
+
+    def start_validation_thread( self ):
+        '''
+        
+        '''
         # Pass the function to execute
-        worker = Worker( self.copy_sources )  # Any other args, kwargs are passed to the run function
-        # worker.signals.result.connect(self.print_output)
-        worker.signals.finished.connect( self.copy_idle_color )
-        # worker.signals.progress.connect(self.progress_fn)
-
+        self.v_worker = Worker( self.sources_validation, sources_ui_list = self.sources_ui_list, sources_ui_layouts = self.sources_ui_layouts )  # Any other args, kwargs are passed to the run function
         # Execute
-        self.threadpool.start( worker )
+        self.threadpool.start( self.v_worker )
 
-    def ui_disable( self ):
+    def sources_validation( self, sources_ui_list = None, sources_ui_layouts = None ):
+        '''
+        
+        '''
+        loops = 0
+        while self.main_window.validate:
+            print( 'loop', loops )
+            # sources_ui_list = self.sources_ui_list
+            # sources_ui_layouts = self.sources_ui_layouts
+            self.all_valid = True
+            i = 0
+            for source_group in sources_ui_list:
+                # print( 'before valid' )
+                valid = self.source_validate( source_group[0], sources_ui_layouts[i] )
+                if not valid:
+                    self.all_valid = False
+                # print( 'after valid' )
+                i += 1
+            # print( 'sleep' )
+            time.sleep( 0.1 )
+
+            loops += 1
+        print( 'quit' )
+        return False
+
+    def ui_disable( self, disable = True ):
         '''
         on copy disable editing
         '''
-        self.alwaysOnTop_check.setDisabled( True )
-        self.destination_edit.setDisabled( True )
-        self.destination_dir_button.setDisabled( True )
-        self.add_source_button.setDisabled( True )
-        for _source in self.sources_ui_list:
-            for _s in _source:
-                _s.setDisabled( True )
-        self.daily_check.setDisabled( True )
-        self.copy_button.setDisabled( True )  # should be replaced with cancel
+        if disable:
+            self.quit_button.setDisabled( False )
+        else:
+            self.quit_button.setDisabled( True )
+        self.alwaysOnTop_check.setDisabled( disable )
+        self.destination_edit.setDisabled( disable )
+        self.destination_dir_button.setDisabled( disable )
+        self.add_source_button.setDisabled( disable )
+        for source_group in self.sources_ui_list:
+            for s in source_group:
+                s.setDisabled( disable )
+        self.daily_check.setDisabled( disable )
+        self.copy_button.setDisabled( disable )  # should be replaced with cancel
+
+    def ui_disable_source( self, source_group = [], disable = True ):
+        '''
+        
+        '''
+        for s in source_group:
+            s.setDisabled( disable )
 
 
 def source_file_select( source_edit = None ):
@@ -597,7 +812,7 @@ class Worker( QtCore.QRunnable ):
     @QtCore.Slot()
     def run( self ):
         '''
-        Initialise the runner function with passed args, kwargs.
+        Initialize the runner function with passed args, kwargs.
         '''
 
         # Retrieve args/kwargs here; and fire processing using them
@@ -607,10 +822,17 @@ class Worker( QtCore.QRunnable ):
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit( ( exctype, value, traceback.format_exc() ) )
+            print( 'exept' )
         else:
-            self.signals.result.emit( result )  # Return the result of the processing
+            try:
+                self.signals.result.emit( result )  # Return the result of the processing
+            except:
+                print( 'else except' )
         finally:
-            self.signals.finished.emit()  # Done
+            try:
+                self.signals.finished.emit()  # Done
+            except:
+                print( 'finally except' )
 
 
 class WorkerSignals( QtCore.QObject ):
