@@ -1098,7 +1098,10 @@ def hijackAttrs( obj1, obj2, attrOrig, attrNew, set = False, default = None, for
     if MAX != None:
         if not cmds.attributeQuery( attrNew, node = obj2, exists = True ):
             cmds.addAttr( obj2 + '.' + attrNew, e = True, max = MAX )
-    cmds.setAttr( obj2 + '.' + attrNew, l = L )
+    try:
+        cmds.setAttr( obj2 + '.' + attrNew, l = L )
+    except:
+        pass
     if K == False:
         cmds.setAttr( obj2 + '.' + attrNew, cb = CB )
     cmds.setAttr( obj2 + '.' + attrNew, V )

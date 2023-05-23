@@ -508,20 +508,28 @@ class CSUI( object ):
         # TODO: slow, should simply try to select objects in file, not auto detect
         '''
         select highlighted sets in browse column
+        
         '''
+        current_sel = cmds.ls( sl = 1 )
         selAdd = []
+        print( sets )
         for s in sets:
             setDict = ss.loadDict( os.path.join( ss.defaultPath(), s + self.ext ) )
-            selection = ss.remapMultiNs( sel = '', assets = ss.splitSetToAssets( setDict = setDict ) )
-            for sel in selection:
-                selAdd.append( sel )
+            if current_sel:
+                selection = ss.remapMultiNs( sel = '', assets = ss.splitSetToAssets( setDict = setDict ) )
+                for sel in selection:
+                    selAdd.append( sel )
+            else:
+                if setDict:
+                    # print( 'here' )
+                    for key in setDict:
+                        if cmds.objExists( key ):
+                            selAdd.append( key )
+                        else:
+                            pass
+                            # print( 'not added', key )
         if selAdd:
-            try:
-                cmds.select( selAdd )
-                print( 'fine', selAdd )
-            except:
-                message( 'Selection conflict with: ' )
-                print( selAdd )
+            cmds.select( selAdd )
         else:
             message( 'Nothing to select.' )
 

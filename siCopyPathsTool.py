@@ -15,6 +15,61 @@ def ____UI():
     pass
 
 
+class CustomQPushButton( QtWidgets.QPushButton ):
+    '''
+    
+    '''
+
+    def __init__( self ):
+        super().__init__()
+
+        self._animation = QtCore.QVariantAnimation( 
+            startValue = QtGui.QColor( "#4CAF50" ),
+            endValue = QtGui.QColor( "white" ),
+            valueChanged = self._on_value_changed,
+            duration = 400,
+        )
+        self._update_stylesheet( QtGui.QColor( "white" ), QtGui.QColor( "black" ) )
+        # self.setCursor( QtGui.QCursor( QtCore.Qt.PointingHandCursor ) )
+
+    def _on_value_changed( self, color ):
+        foreground = ( 
+            QtGui.QColor( "black" )
+            if self._animation.direction() == QtCore.QAbstractAnimation.Forward
+            else QtGui.QColor( "white" )
+        )
+        self._update_stylesheet( color, foreground )
+
+    def _update_stylesheet( self, background, foreground ):
+
+        self.setStyleSheet( 
+            """
+        QPushButton{
+            background-color: %s;
+            border: none;
+            color: %s;
+            padding: 16px 32px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            margin: 4px 2px;
+            border: 2px solid #4CAF50;
+        }
+        """
+            % ( background.name(), foreground.name() )
+        )
+
+    def enterEvent( self, event ):
+        self._animation.setDirection( QtCore.QAbstractAnimation.Backward )
+        self._animation.start()
+        super().enterEvent( event )
+
+    def leaveEvent( self, event ):
+        self._animation.setDirection( QtCore.QAbstractAnimation.Forward )
+        self._animation.start()
+        super().leaveEvent( event )
+
+
 class CustomQDialog( QtWidgets.QDialog ):
     '''
     
@@ -52,6 +107,8 @@ class UI():
         self.kill = False
         self.copying = False
         self.all_valid = True
+        self.daily_check = None
+        self.message_content = None
         # self.p = Prefs()
         self.p_d = Prefs_dynamic()
         self.final_directory = todays_directory_name()
@@ -89,6 +146,8 @@ class UI():
         self.daily_row()
         self.copy_row()
         self.message_row()
+        #
+        self.destination_validate()
 
         #
         # self.main_window.show()
@@ -104,21 +163,41 @@ class UI():
         #
         self.add_source_layout = QtWidgets.QHBoxLayout()
         self.add_source_button = QtWidgets.QPushButton( "A D D   S O U R C E " )
+        # self.add_source_button = CustomQPushButton()
         self.add_source_button.clicked.connect( lambda:self.source_row() )
-        color = [ 0.701, 0.690, 0.678 ]
-        bg = "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border = "border: 4px solid;"
-        border_color_top = "border-top-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_left = "border-left-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_right = "border-right-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_bottom = "border-bottom-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        self.add_source_button.setStyleSheet( bg + border + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
-
+        self.source_color( self.add_source_button )
         #
         self.add_source_layout = QtWidgets.QHBoxLayout()
         self.add_source_layout.addWidget( self.add_source_button )
         #
         self.main_layout.addLayout( self.add_source_layout )
+
+    def source_color( self, btn = None ):
+        '''
+        
+        '''
+        print( '___add source' )
+        '''
+        pad = str( 3 )
+        color = [148, 148, 148 ]  # grey
+        open = "QPushButton {"
+        bg = "background-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border = "border: 1px solid;"
+        padding = "padding-top: " + pad + "px; padding-bottom: " + pad + "px;"
+        border_color_top = "border-top-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_left = "border-left-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_right = "border-right-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_bottom = "border-bottom-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        close = "}"
+        #
+        pad = str( 2 )
+        h_color = [178, 178, 178 ]  #
+        h_bg = "background-color: rgb(" + str( h_color[0] ) + "," + str( h_color[1] ) + "," + str( h_color[2] ) + ");"
+        pressed_color = "QPushButton:pressed{" + h_bg + " border: 2px solid; ""padding-top: " + pad + "px; padding-bottom: " + pad + "px;" "}"
+        hover_color = "QPushButton:hover{" + h_bg + "}"
+        #
+        btn.setStyleSheet( open + bg + border + padding + border_color_top + border_color_left + border_color_right + border_color_bottom + close + pressed_color + hover_color )  # QtGui.QColor( 1, 0.219, 0.058 )
+        '''
 
     def destination_row( self ):
         '''
@@ -129,14 +208,21 @@ class UI():
         self.destination_edit = QtWidgets.QLineEdit( self.p_d.prefs[self.p_d.last_destination] )
         self.destination_edit.textChanged.connect( lambda: self.destination_validate() )
         #
+        self.destination_invalid_label = QtWidgets.QLabel( '' )
+        self.destination_invalid_label.setVisible( False )
         #
         self.destination_dir_button = QtWidgets.QPushButton( "D i r" )
         self.destination_dir_button.clicked.connect( lambda:self.source_dir_select( self.destination_edit ) )
         #
+        self.browse_button = QtWidgets.QPushButton( "B r o w s e" )
+        self.browse_button.clicked.connect( lambda:self.destination_browse() )
+        #
         self.destination_layout = QtWidgets.QHBoxLayout()
         self.destination_layout.addWidget( self.destination_label )
         self.destination_layout.addWidget( self.destination_edit )
+        self.destination_layout.addWidget( self.destination_invalid_label )
         self.destination_layout.addWidget( self.destination_dir_button )
+        self.destination_layout.addWidget( self.browse_button )
         #
         self.main_layout.addLayout( self.destination_layout )
         #
@@ -159,22 +245,61 @@ class UI():
         '''
         if self.destination_edit.text() == '':
             self.destination_edit.setStyleSheet( "border: 1px solid gray;" )
+            self.destination_invalid_label.setVisible( False )
+            if self.message_content:
+                self.ui_message( '' )
         else:
             if not os.path.isdir( self.destination_edit.text() ):
                 self.destination_edit.setStyleSheet( "border: 1px solid red;" )
+                #
+                self.destination_invalid_label.setText( 'invalid destination' )
+                self.destination_invalid_label.setStyleSheet( "color:  red;" "font-weight: bold" )
+                self.destination_invalid_label.setVisible( True )
+                '''
+                if self.message_content:
+                    self.ui_message( '--- " Destination Path " doesnt exist ---', color = "red" )
+                    '''
             else:
-                self.destination_edit.setStyleSheet( "border: 1px solid lightgreen;" )
+                if self.daily_check:
+                    if self.final_directory in self.destination_edit.text() and self.daily_check.isChecked():
+                        #
+                        self.ui_message( '---  Conflict :  Daily directory is already in " Destination path "  :  "Create Daily Directory" check box will be ignored. ---' )
+                        self.destination_edit.setStyleSheet( "border: 1px solid orange;" )
+                        #
+                        self.destination_invalid_label.setText( 'conflict' )
+                        self.destination_invalid_label.setStyleSheet( "color:  orange;" "font-weight: bold" )
+                        self.destination_invalid_label.setVisible( True )
+                    else:
+                        self.destination_edit.setStyleSheet( "border: 1px solid lightgreen;" )
+                        self.destination_invalid_label.setVisible( False )
+                        self.ui_message( '' )
+
         #
         self.destination_save()
+
+    def destination_browse( self ):
+        #
+        # open file browser
+        path = self.destination_edit.text()
+        if os.path.isdir( path ):
+            # print( path )
+            if self.daily_check.isChecked():
+                if self.final_directory not in path:
+                    _path = os.path.join( path, self.final_directory )
+                    if os.path.isdir( _path ):
+                        path = _path
+
+            #
+            if '/' in path:
+                path = path.replace( '/', '\\' )
+            subprocess.Popen( r'explorer /open, ' + path )
 
     def source_row( self ):
         '''
         
         '''
         #
-        self.exists = 2
-        self.overwrite = 3
-        self.invalid = 4
+        self.invalid = 2
         #
         source_layout = QtWidgets.QHBoxLayout()  # need this to already exist
         #
@@ -184,16 +309,7 @@ class UI():
         source_edit.textChanged.connect( lambda: self.source_validate( source_edit, source_layout ) )
         source_group.append( source_edit )
         #
-        exists_label = QtWidgets.QLabel( ' Destination exists' )
-        exists_label.setStyleSheet( "color:  red;" "font-weight: bold" )
-        exists_label.setVisible( False )
-        #
-        overwrite_label = QtWidgets.QLabel( ' File overwrite' )
-        overwrite_label.setStyleSheet( "color:  green;" "font-weight: bold" )
-        overwrite_label.setVisible( False )
-        #
-        invalid_label = QtWidgets.QLabel( ' Source invalid' )
-        invalid_label.setStyleSheet( "color:  red;" "font-weight: bold" )
+        invalid_label = QtWidgets.QLabel( '' )
         invalid_label.setVisible( False )
         #
         browse_file_button = QtWidgets.QPushButton( "F i l e" )
@@ -204,18 +320,58 @@ class UI():
         browse_dir_button.clicked.connect( lambda:self.source_dir_select( source_edit ) )
         source_group.append( browse_dir_button )
         #
+        '''
+        remove_button = QtWidgets.QPushButton( "  X  " )
+        remove_button.clicked.connect( lambda:self.remove_row( source_layout ) )
+        self.remove_color( btn = remove_button )
+        '''
+        #
         source_layout.addWidget( source_label )
         source_layout.addWidget( source_edit )
-        source_layout.addWidget( exists_label )
-        source_layout.addWidget( overwrite_label )
         source_layout.addWidget( invalid_label )
         source_layout.addWidget( browse_file_button )
         source_layout.addWidget( browse_dir_button )
+        # source_layout.addWidget( remove_button )
         #
         self.add_sources_layout.addLayout( source_layout )
         #
         self.sources_ui_list.append( source_group )
         self.sources_ui_layouts.append( source_layout )
+
+    def remove_row( self, layout = None ):
+        '''
+        remove items in layout, then delete layout
+        '''
+        children = []
+        for i in range( layout.count() ):
+            child = layout.itemAt( i ).widget()
+            if child:
+                children.append( child )
+        for child in children:
+            child.deleteLater()
+
+    def remove_color( self, btn = None ):
+        '''
+        
+        '''
+        # print( '___idle' )
+        pad = str( 3 )
+        color = [204, 0, 0 ]  # red
+        open = "QPushButton {"
+        bg = "background-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border = "border: 1px solid;"
+        padding = "padding-top: " + pad + "px; padding-bottom: " + pad + "px;"
+        border_color_top = "border-top-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_left = "border-left-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_right = "border-right-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_bottom = "border-bottom-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        close = "}"
+        #
+        pad = str( 2 )
+        pressed_color = "QPushButton:pressed{background-color : red; border: 2px solid; ""padding-top: " + pad + "px; padding-bottom: " + pad + "px;" "}"
+        hover_color = "QPushButton:hover{background-color : red;}"
+        #
+        btn.setStyleSheet( open + bg + border + padding + border_color_top + border_color_left + border_color_right + border_color_bottom + close + pressed_color + hover_color )  # QtGui.QColor( 1, 0.219, 0.058 )
 
     def source_validate( self, source_edit = None, source_layout = None ):
         '''
@@ -227,13 +383,10 @@ class UI():
         valid = True
         if not self.copying:
             if source_edit.text() == '':
-                # source_edit.setStyleSheet( "border: 1px solid gray;" )
                 if self.all_valid:
                     # self.copy_button.setDisabled( False )
                     pass
                 #
-                source_layout.itemAt( self.exists ).widget().setVisible( False )
-                source_layout.itemAt( self.overwrite ).widget().setVisible( False )
                 source_layout.itemAt( self.invalid ).widget().setVisible( False )
                 valid = True
             else:
@@ -248,54 +401,44 @@ class UI():
                     qualified = self.source_remap_qualify( source_edit )
                     if qualified:
                         if qualified == 'exists':
-                            source_layout.itemAt( self.exists ).widget().setVisible( False )
-                            source_layout.itemAt( self.overwrite ).widget().setVisible( True )
-                            source_layout.itemAt( self.invalid ).widget().setVisible( False )
+                            source_layout.itemAt( self.invalid ).widget().setText( 'destination file will be overwritten' )
+                            source_layout.itemAt( self.invalid ).widget().setStyleSheet( "color:  green;" "font-weight: bold" )
+                            source_layout.itemAt( self.invalid ).widget().setVisible( True )
+                            # self.ui_message( '' )
                             valid = True
                         elif qualified == 'error':
-
-                            source_layout.itemAt( self.exists ).widget().setVisible( False )
-                            source_layout.itemAt( self.overwrite ).widget().setVisible( False )
-                            source_layout.itemAt( self.invalid ).widget().setText( 'Destination error' )
-                            # source_layout.itemAt( self.invalid ).widget().setStyleSheet( "color:  green;" "font-weight: bold" )
+                            source_layout.itemAt( self.invalid ).widget().setText( 'destination error' )
+                            source_layout.itemAt( self.invalid ).widget().setStyleSheet( "color:  red;" "font-weight: bold" )
                             source_layout.itemAt( self.invalid ).widget().setVisible( True )
+                            # self.ui_message( '' )
                         else:
                             # source_edit.setStyleSheet( "border: 1px solid lightgreen;" )
                             # if self.all_valid:
                                 # self.copy_button.setDisabled( False )
                                 # pass
-                            #
-                            # '''
-                            source_layout.itemAt( self.exists ).widget().setVisible( False )
-                            source_layout.itemAt( self.overwrite ).widget().setVisible( False )
                             source_layout.itemAt( self.invalid ).widget().setVisible( False )
                             valid = True
-                        # '''
+                            # self.ui_message( '' )
                     else:
                         # source_edit.setStyleSheet( "border: 1px solid orange;" )
                         # self.copy_button.setDisabled( True )
                         #
-                        # '''
-                        source_layout.itemAt( self.exists ).widget().setVisible( True )
-                        source_layout.itemAt( self.overwrite ).widget().setVisible( False )
-                        source_layout.itemAt( self.invalid ).widget().setVisible( False )
+                        source_layout.itemAt( self.invalid ).widget().setText( 'delete destination copy of directory first' )
+                        source_layout.itemAt( self.invalid ).widget().setStyleSheet( "color:  red;" "font-weight: bold" )
+                        source_layout.itemAt( self.invalid ).widget().setVisible( True )
                         valid = False
-                        # '''
+                        # self.ui_message( '' )
+                        # self.ui_message( '--- Precaution: The source is a directory and already exists in the destination. It will not be overwritten. Delete it manually to proceed. ---' )
                 else:
                     # source_edit.setStyleSheet( "border: 1px solid red;" )
                     # self.copy_button.setDisabled( True )
                     #
-                    # '''
-                    source_layout.itemAt( self.exists ).widget().setVisible( False )
-                    source_layout.itemAt( self.overwrite ).widget().setVisible( False )
+                    source_layout.itemAt( self.invalid ).widget().setText( 'invalid source' )
+                    source_layout.itemAt( self.invalid ).widget().setStyleSheet( "color:  red;" "font-weight: bold" )
                     source_layout.itemAt( self.invalid ).widget().setVisible( True )
                     valid = False
-
+                    # self.ui_message( '' )
         return valid
-                # '''
-        # itm = source_layout.itemAt( self.invalid ).widget()
-        # itm.setVisible( True )
-        # print( source_layout.itemAt( self.invalid ) )
 
     def source_remap_qualify( self, source_edit = None ):
         '''
@@ -311,7 +454,7 @@ class UI():
             if self.daily_check.isChecked():
                 if self.final_directory not in destination_path:
                     destination_path = os.path.join( destination_path, self.final_directory )
-                self.make_final_directory( destination_path )
+                self.make_final_directory( destination_path )  # have to make it for the later queries... or do more nuanced queries
             #
             source_path = source_edit.text()
             if source_path:
@@ -380,6 +523,7 @@ class UI():
             source_edit.setText( path[0] )
         #
         self.ui_message( '' )
+        self.destination_validate()
 
     def source_dir_select( self, source_edit = None ):
         '''
@@ -399,6 +543,7 @@ class UI():
             source_edit.setText( path )
         #
         self.ui_message( '' )
+        self.destination_validate()
 
     def source_default( self ):
         '''
@@ -469,8 +614,10 @@ class UI():
         self.separate_1 = QtWidgets.QFrame()
         self.main_layout.addWidget( self.separate_1 )
         #
-        self.daily_label = QtWidgets.QLabel( 'Create Daily Directory:  ' + todays_directory_name() )
+        self.daily_label = QtWidgets.QLabel( 'Create Daily Directory:  ' )
+        self.daily_dir = QtWidgets.QLabel( todays_directory_name() )
         self.daily_check = QtWidgets.QCheckBox()
+        self.daily_check.clicked.connect( lambda:self.destination_validate() )
         if self.p_d.prefs[self.p_d.daily_check]:
             self.daily_check.setChecked( True )
         else:
@@ -479,6 +626,7 @@ class UI():
         self.daily_layout = QtWidgets.QHBoxLayout()
         self.daily_layout.setAlignment( QtCore.Qt.AlignRight )
         self.daily_layout.addWidget( self.daily_label )
+        self.daily_layout.addWidget( self.daily_dir )
         self.daily_layout.addWidget( self.daily_check )
         #
         self.main_layout.addLayout( self.daily_layout )
@@ -508,29 +656,33 @@ class UI():
         '''
         
         '''
-        # print( '___idle' )
+        print( '___idle' )
+        '''
         pad = str( 3 )
-        color = [ 0.192, 0.647, 0.549 ]  # aqua
+        color = [95, 176, 130 ]  # green
         open = "QPushButton {"
-        bg = "background-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
+        bg = "background-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
         border = "border: 1px solid;"
         padding = "padding-top: " + pad + "px; padding-bottom: " + pad + "px;"
-        border_color_top = "border-top-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_left = "border-left-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_right = "border-right-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
-        border_color_bottom = "border-bottom-color: rgb(" + str( color[0] * 255 ) + "," + str( color[1] * 255 ) + "," + str( color[2] * 255 ) + ");"
+        border_color_top = "border-top-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_left = "border-left-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_right = "border-right-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
+        border_color_bottom = "border-bottom-color: rgb(" + str( color[0] ) + "," + str( color[1] ) + "," + str( color[2] ) + ");"
         close = "}"
         #
-        pressed_color = "QPushButton:pressed{background-color : lightgreen;}"
+        pad = str( 2 )
+        pressed_color = "QPushButton:pressed{background-color : lightgreen; border: 2px solid; ""padding-top: " + pad + "px; padding-bottom: " + pad + "px;" "}"
         hover_color = "QPushButton:hover{background-color : lightgreen;}"
         #
         self.copy_button.setStyleSheet( open + bg + border + padding + border_color_top + border_color_left + border_color_right + border_color_bottom + close + pressed_color + hover_color )  # QtGui.QColor( 1, 0.219, 0.058 )
+        '''
 
     def copy_busy_color( self ):
         '''
         
         '''
-        # print( '___busy' )
+        print( '___busy' )
+        '''
         pad = str( 3 )
         bg = "background-color: lightgreen;"
         border = "border: 1px solid;"
@@ -540,6 +692,7 @@ class UI():
         border_color_right = "border-right-color: lightgreen;"
         border_color_bottom = "border-bottom-color: lightgreen;"
         self.copy_button.setStyleSheet( bg + border + padding + border_color_top + border_color_left + border_color_right + border_color_bottom )  # QtGui.QColor( 1, 0.219, 0.058 )
+        '''
 
     def copy_sources( self ):
         '''
@@ -614,11 +767,11 @@ class UI():
         else:
             self.ui_message( 'Destination doesnt exist --- ' + destination_path )
         #
-        processed = 'copied ' + str( i ) + ' sources'
+        processed = 'copied ( ' + str( i ) + ' ) sources'
         if self.kill:
             self.ui_message( '--- Canceled, ' + processed + ' ---' )
         else:
-            self.ui_message( '--- Finished, ' + processed + ' ---' )
+            self.ui_message( '--- Finished, ' + processed + ' ---', color = "darkgreen" )
         self.kill = False
         self.copying = False
         self.ui_disable( False )
@@ -646,11 +799,16 @@ class UI():
         #
         self.main_layout.addLayout( self.message_layout )
 
-    def ui_message( self, message = '' ):
+    def ui_message( self, message = '', color = '' ):
         '''
         ui feedback
         '''
+        if color:
+            self.message_content.setStyleSheet( "color:  " + color + "; font-weight: bold" )
+        else:
+            self.message_content.setStyleSheet( "color:  gray;" )
         self.message_content.setText( message )
+        print( message )
 
     def start_worker_thread( self ):
         '''
@@ -666,7 +824,7 @@ class UI():
             # Execute
             self.threadpool.start( self.worker )
         else:
-            self.ui_message( '--- Resolve conflicts before copying ---' )
+            self.ui_message( '--- Resolve ( R E D ) conflicts before copying can proceed ---', color = "red" )
 
     def quit_worker_thread( self ):
         '''
@@ -690,7 +848,10 @@ class UI():
         '''
         loops = 0
         while self.main_window.validate:
-            print( 'loop', loops )
+            # daily
+            self.final_directory = todays_directory_name()
+            self.daily_dir.setText( self.final_directory )
+            # print( 'loop', loops )
             # sources_ui_list = self.sources_ui_list
             # sources_ui_layouts = self.sources_ui_layouts
             self.all_valid = True
@@ -734,11 +895,8 @@ class UI():
         for s in source_group:
             s.setDisabled( disable )
 
-
+'''
 def source_file_select( source_edit = None ):
-    '''
-    
-    '''
     # path = QtWidgets.QFileDialog.getOpenFileName( self, QtCore.QObject.tr( "Load Image" ), QtCore.QObject.tr( "~/Desktop/" ), QtCore.QObject.tr( "Images (*.jpg)" ) )
     # source_edit.setText( path )
     path = source_edit.text()
@@ -753,9 +911,6 @@ def source_file_select( source_edit = None ):
 
 
 def source_dir_select( source_edit = None ):
-    '''
-    
-    '''
     # path = QtWidgets.QFileDialog.getOpenFileName( self, QtCore.QObject.tr( "Load Image" ), QtCore.QObject.tr( "~/Desktop/" ), QtCore.QObject.tr( "Images (*.jpg)" ) )
     # source_edit.setText( path )
     path = source_edit.text()
@@ -767,6 +922,7 @@ def source_dir_select( source_edit = None ):
         path = QtWidgets.QFileDialog.getExistingDirectory( None, None, path )
     print( path )
     source_edit.setText( path )
+'''
 
 
 def source_default():
@@ -1020,12 +1176,18 @@ def get_color():
     '''
     red = QtGui.QColor( 1, 0.219, 0.058 )
     '''
+    red = [1, 0.219, 0.058 ]
     green = [ 0.152, 0.627, 0.188 ]
     blue = [ 0.152, 0.403, 0.627 ]
     orange = [ 0.850, 0.474, 0.090 ]
+    l_grey = [ 0.701, 0.690, 0.678 ]
     grey = [ 0.701, 0.690, 0.678 ]
+    purple = [ 0.564, 0.121, 0.717 ]
+    yellow = [ 0.870, 0.811, 0.090 ]
     brown = [ 0.552, 0.403, 0.164 ]
     aqua = [ 0.192, 0.647, 0.549 ]
+    white = [ 1.0, 1.0, 1.0 ]
+    black = [ 0.0, 0.0, 0.0 ]
     #
     c = [aqua]
 

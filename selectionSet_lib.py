@@ -118,7 +118,7 @@ def outputDict( sel = [] ):
             if ':' in s:
                 val = s.split( ':' )[1]
                 val = s.rsplit( ':', 1 )[1]  # nested ref
-                print( val )
+                # print( val )
             else:
                 val = s
             dic[s] = val
@@ -231,6 +231,23 @@ def splitSetToAssets( setDict = {} ):
     return assetDict
 
 
+def selectExplicitSet( sets = [], ns = '' ):
+    '''
+    not working, not sure this is the right way, should have other functions that do most of the work
+    '''
+    selAdd = []
+    for s in sets:
+        setDict = loadDict( os.path.join( defaultPath(), s + '.sel' ) )
+        setList = list( setDict.keys() )
+        # print( setList )
+        members = remapGivenNs( ns, setList )
+        for m in members:
+            if cmds.objExists( m ):
+                selAdd.append( m )
+
+    cmds.select( selAdd, add = True )
+
+
 def selectSet():
     remapped = findSet()
     if remapped:
@@ -330,6 +347,19 @@ def remapSet( sel = '', setDict = {} ):
                 if cmds.objExists( obj ):
                     remappedSet.append( obj )
     return remappedSet
+
+
+def remapGivenNs( ns = '', setList = [] ):
+    '''
+    
+    '''
+    remapped = []
+    # iterate keys in dict
+    for member in setList:
+        obj = ns + ':' + member.rsplit( ':', 1 )[1]
+        if cmds.objExists( obj ):
+            remapped.append( obj )
+    return remapped
 
 
 def remapExplicit( sel = '', setList = [] ):
