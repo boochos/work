@@ -1098,10 +1098,7 @@ def hijackAttrs( obj1, obj2, attrOrig, attrNew, set = False, default = None, for
     if MAX != None:
         if not cmds.attributeQuery( attrNew, node = obj2, exists = True ):
             cmds.addAttr( obj2 + '.' + attrNew, e = True, max = MAX )
-    try:
-        cmds.setAttr( obj2 + '.' + attrNew, l = L )
-    except:
-        pass
+    cmds.setAttr( obj2 + '.' + attrNew, l = L )
     if K == False:
         cmds.setAttr( obj2 + '.' + attrNew, cb = CB )
     cmds.setAttr( obj2 + '.' + attrNew, V )
@@ -1872,7 +1869,10 @@ def rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True,
         cmds.delete( world )
         cmds.parent( MasterCt[0], CONTROLS )
         result.append( MasterCt )
-        hijackVis( GEO[0], MasterCt[2], name = 'geo', suffix = True, default = 1, mode = 'visibility' )
+        try:
+            hijackVis( GEO[0], MasterCt[2], name = 'geo', suffix = True, default = 1, mode = 'visibility' )
+        except:
+            print( 'no geo group, ignoring' )
 
     # OLSKOOL #
     if OlSkool == True:

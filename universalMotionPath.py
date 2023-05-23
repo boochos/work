@@ -88,6 +88,7 @@ def path2( length = 10, layers = 3, X = 2.0 ):
         return None'''
     #
     PreBuild = place.rigPrebuild( Top = 4, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 10 * X )
+    # return
     #
     CHARACTER = PreBuild[0]
     CONTROLS = PreBuild[1]
@@ -130,6 +131,9 @@ def path2( length = 10, layers = 3, X = 2.0 ):
             j = 0
         else:
             j = j + 1
+
+    print( 'Below not setup for cars yet.' )
+    return
     '''
     lyrs = layer( master = MasterCt, length = length, cvs = 2, layer = 0, attachToCurve = '', color = colors[0], up = upCntCt[4], X = X )
     layers_built.append( lyrs )

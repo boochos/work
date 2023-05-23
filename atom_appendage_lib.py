@@ -79,6 +79,35 @@ def createVerticalScapRig( shoulder, shoulder_dbl, shoulder_grp, scapula, contro
     cmds.connectAttr( mult + '.outputY', adl + '.input2' )
 
 
+def aimRig( name = '', obj = '', aimObj = '', upParent = '', distance = 5, aim = [0, 0, 1], up = [0, 1, 0] ):
+    #
+    pyObj = ls( obj )[0]
+    objPos = pyObj.getTranslation( space = 'world' )
+    objRot = pyObj.getRotation( space = 'world' )
+    # clavical child
+    pyChild = pyObj.getChildren()[0]
+    childPos = pyChild.getTranslation( space = 'world' )
+    childRot = pyChild.getRotation( space = 'world' )
+
+    # aim loc
+    aimLoc = spaceLocator( name = 'aimLoc' + name )
+    aimLoc.setTranslation( childPos )
+    aimLoc.setRotation( childRot )
+    # aimLoc.setParent( upParent )
+    aimLoc.visibility.set( 0 )
+
+    # up loc
+    upLoc = spaceLocator( name = 'upLoc' + name )
+    upLoc.setTranslation( objPos )
+    upLoc.setRotation( objRot )
+    upLoc.setParent( obj )
+    upLoc.setTranslation( [0, distance, 0], space = 'object' )
+    upLoc.setParent( upParent )
+    upLoc.visibility.set( 0 )
+    print( 'aim: ', aimObj, obj )
+    aimConstraint( aimObj, obj, mo = True, wuo = upLoc, wut = 'object', aim = aim, u = up )
+
+
 def createClavicleRig( obj, aimObj, upParent, suffix, aim, up ):
     # clavical
     pyObj = ls( obj )[0]

@@ -321,9 +321,9 @@ def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt
         cmds.parentConstraint( splineEnd, splineName + '_E_IK_PrntGrp', mo = True )
     place.hijackCustomAttrs( splineName + '_IK_CtrlGrp', splineAttr )
     # set options
-    cmds.setAttr( splineAttr + '.' + splineName + 'Vis', 0 )
-    cmds.setAttr( splineAttr + '.' + splineName + 'Root', 0 )
-    cmds.setAttr( splineAttr + '.' + splineName + 'Stretch', 1 )
+    cmds.setAttr( splineAttr + '.' + 'Vis', 0 )
+    cmds.setAttr( splineAttr + '.' + 'Root', 0 )
+    cmds.setAttr( splineAttr + '.' + 'Stretch', 1 )
     cmds.setAttr( splineAttr + '.ClstrVis', 1 )
     cmds.setAttr( splineAttr + '.ClstrMidIkBlend', 1.0 )
     cmds.setAttr( splineAttr + '.ClstrMidIkSE_W', 0.5 )
