@@ -1,9 +1,11 @@
 import os
 
+# from atom_placement_lib import loc
 import maya.OpenMaya as OpenMaya
 import maya.cmds as cmds
 import maya.mel as mel
 import webrImport as web
+
 #
 # web
 ui = web.mod( 'atom_ui_lib' )
@@ -482,7 +484,7 @@ class Controller2():
 
     def __init__( self, name = '', obj = '', orient = True, shape = 'diamond_ctrl',
                  size = 1, color = 8, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True,
-                 groups = False, orientCt = False, colorName = None ):
+                 groups = False, orientCt = False, colorName = None, dynamic = True ):
         #
         self.name = name
         self.obj = obj
@@ -491,6 +493,7 @@ class Controller2():
         self.size = size
         self.color = color
         self.colorName = colorName
+        self.dynamic = dynamic
         self.sections = sections
         self.degree = degree
         self.normal = normal
@@ -498,6 +501,7 @@ class Controller2():
         self.groups = groups
         self.orientCt = orientCt
         self.result = None
+        self.result_dyn = None
         #
         self.colors = colorDict()
         self.createController()
@@ -581,12 +585,101 @@ class Controller2():
         cmds.setAttr( ct + '.rotateOrder', k = False, cb = True )
         cmds.setAttr( ctO + '.rotateOrder', k = False, cb = True )
         #
+        if self.dynamic:
+            self.result_dyn = [ ct, ctO, gp]
+            self.add_dynamics()
+        #
         if self.groups == True:
             self.result = [ topgp, ctgp, ct, ctO, gp]
             return topgp, ctgp, ct, ctO, gp
         else:
             self.result = [ ct, ctO, gp]
             return ct, ctO, gp
+
+    def add_dynamics( self ):
+        '''
+        
+        '''
+        # groups
+        dynamic_master_name = 'dynamicJiggle_TopGrp'
+        if not cmds.objExists( dynamic_master_name ):
+            cmds.group( name = dynamic_master_name, em = True )
+            try:
+                cleanUp( dynamic_master_name, World = True )
+            except:
+                pass
+
+        dyngp = cmds.group( name = self.name + '_DynGrp', em = True )
+        cmds.parent( dyngp, dynamic_master_name )
+
+        # plane
+        plane = cmds.polyPlane( n = self.name + '_planeGoal', sx = 1, sy = 1 )[0]
+        con = cmds.parentConstraint( self.result_dyn[1], plane , mo = False )
+        cmds.delete( con )
+        cmds.parent( plane, dyngp )
+        cmds.setAttr( plane + '.lodVisibility', 0 )
+        '''
+        # rivet goal
+        rivetGoal = loc( self.name + 'goalRivet', plane )[0]
+        con = cmds.pointOnPolyConstraint( plane + '.vtx[1]', rivetGoal )[0]
+        '''
+        # dynamic plane
+        mel.eval( 'dynCreateNSoft 0 0 1 0.5 1;' )
+        plane_dy = cmds.rename( 'copyOf' + plane, self.name + '_planeDynamic' )
+        # cmds.setAttr( plane_dy + '.visibility', 1 )
+        cmds.setAttr( 'nucleus1' + '.visibility', 0 )
+        cmds.setAttr( 'nucleus1' + '.startFrame', 1001 )
+        cmds.parent( plane_dy, dyngp )
+        # rivet dynamic
+        rivetDyn = loc( self.name + 'dynamicRivet', plane )[0]
+        cmds.setAttr( rivetDyn + '.lodVisibility', 0 )
+        cmds.parent( rivetDyn, dyngp )
+        con = cmds.pointOnPolyConstraint( plane_dy + '.vtx[1]', rivetDyn )[0]
+        # constrain control lowest group to rivets, add restWeight attr
+        #
+        # rest weight attr
+        #
+        #
+        cmds.parentConstraint( rivetDyn, self.result_dyn[2] , mo = True )
+        cmds.parentConstraint( self.result_dyn[1], self.result_dyn[2] , mo = True )
+        # goal to control
+        con = cmds.parentConstraint( self.result_dyn[1], plane , mo = False )
+        try:
+            cleanUp( 'nucleus1', World = True )
+            # pass
+        except:
+            pass
+        c = cmds.listRelatives( plane_dy, children = True )
+        plane_particle = cmds.rename( c[1], plane_dy + '_particle' )
+        plane_particle = cmds.listRelatives( plane_particle, shapes = True )[0]
+        cmds.setAttr( plane_particle + '.lodVisibility', 0 )
+        # control
+        # con = cmds.pointOnPolyConstraint( plane_dy + '.vtx[1]', self.result_dyn[2] )[0] #not needed
+        # cmds.setAttr( con + '.' + plane_dy + 'U0', 2 ) # doesnt work if changed
+        # hijack attrs
+        optEnum( self.result_dyn[0], attr = 'Dynamic', enum = 'CONTROL' )
+        # dynamic enable attr connection
+        en_attr = 'isDynamic'
+        hijackAttrs( plane_particle, self.result_dyn[0], en_attr, en_attr, set = False, default = 0, force = True )
+        cmds.setAttr( self.result_dyn[0] + '.' + en_attr, k = False )
+        cmds.setAttr( self.result_dyn[0] + '.' + en_attr, cb = True )
+        #
+        s_attr = 'startFrame'
+        cmds.addAttr( self.result_dyn[0], ln = s_attr, at = 'long', h = False )
+        cmds.setAttr( self.result_dyn[0] + '.' + s_attr, cb = True )
+        cmds.setAttr( self.result_dyn[0] + '.' + s_attr, k = False )
+        cmds.setAttr( self.result_dyn[0] + '.' + s_attr, 1001 )
+        cmds.connectAttr( self.result_dyn[0] + '.' + s_attr, plane_particle + '.' + s_attr, force = True )
+        #
+        goal_attr = 'goalWeight'
+        cmds.addAttr( self.result_dyn[0], ln = goal_attr, at = 'float', h = False )
+        cmds.setAttr( self.result_dyn[0] + '.' + goal_attr, cb = True )
+        cmds.setAttr( self.result_dyn[0] + '.' + goal_attr, k = True )
+        cmds.setAttr( self.result_dyn[0] + '.' + goal_attr, 0.25 )
+        cmds.connectAttr( self.result_dyn[0] + '.' + goal_attr, plane_particle + '.' + goal_attr + '[0]', force = True )
+        #
+        damp_attr = 'damp'
+        hijackAttrs( plane_particle, self.result_dyn[0], damp_attr, damp_attr, set = False, default = 0.04, force = True )
 
 
 def twoJointPV( name, ik, distance = 1, constrain = True, size = 1 ):
@@ -1870,6 +1963,7 @@ def rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True,
         cmds.parent( MasterCt[0], CONTROLS )
         result.append( MasterCt )
         try:
+            optEnum( MasterCt[2], attr = 'Geo', enum = 'CONTROL' )
             hijackVis( GEO[0], MasterCt[2], name = 'geo', suffix = True, default = 1, mode = 'visibility' )
         except:
             print( 'no geo group, ignoring' )

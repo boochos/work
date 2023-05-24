@@ -10,6 +10,7 @@ place = web.mod( 'atom_place_lib' )
 apg = web.mod( 'atom_appendage_lib' )
 vhc = web.mod( 'vehicle_lib' )
 ump = web.mod( 'universalMotionPath' )
+misc = web.mod( 'atom_miscellaneous_lib' )
 
 
 def ____PREBUILD():
@@ -183,3 +184,52 @@ def pathIk( *args ):
     cmds.connectAttr( EndCt[2] + '.' + attr, MD + '.input1X' )
     cmds.setAttr( MD + '.input2X', 0.1 )
     cmds.connectAttr( MD + '.outputX', ikhandle + '.offset' )
+
+
+def dynamicJiggle():
+    '''
+    
+    '''
+    name = 'control'
+    # plane
+    plane = cmds.polyPlane( n = name + '_planeGoal', sx = 2, sy = 2 )[0]
+    place.cleanUp( plane, World = True )
+    cmds.setAttr( plane + '.visibility', 0 )
+    # dynamic plane
+    mm.eval( 'dynCreateNSoft 0 0 1 0.5 1;' )
+    plane_dy = cmds.rename( 'copyOf' + plane, name + '_planeDynamic' )
+    cmds.setAttr( plane_dy + '.visibility', 1 )
+    place.cleanUp( plane_dy, World = True )
+    c = cmds.listRelatives( plane_dy, children = True )
+    plane_particle = cmds.rename( c[1], plane_dy + '_particle' )
+    plane_particle = cmds.listRelatives( plane_particle, shapes = True )[0]
+    # control
+    _Ct = place.Controller2( name, plane, True, 'boxZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    place.cleanUp( _Ct[0], Ctrl = True )
+    cmds.parentConstraint( _Ct[3], plane )
+    cmds.pointOnPolyConstraint( plane_dy + '.vtx[4]', _Ct[4] )
+    # hijack attrs
+    misc.optEnum( _Ct[2], attr = 'Dynamic', enum = 'CONTROL' )
+    # dynamic enable attr connection
+    en_attr = 'isDynamic'
+    place.hijackAttrs( plane_particle, _Ct[2], en_attr, en_attr, set = False, default = 0, force = True )
+    cmds.setAttr( _Ct[2] + '.' + en_attr, k = False )
+    cmds.setAttr( _Ct[2] + '.' + en_attr, cb = True )
+    #
+    s_attr = 'startFrame'
+    cmds.addAttr( _Ct[2], ln = s_attr, at = 'long', h = False )
+    cmds.setAttr( _Ct[2] + '.' + s_attr, cb = True )
+    cmds.setAttr( _Ct[2] + '.' + s_attr, k = False )
+    cmds.setAttr( _Ct[2] + '.' + s_attr, 1001 )
+    cmds.connectAttr( _Ct[2] + '.' + s_attr, plane_particle + '.' + s_attr, force = True )
+    # connectAttr -f control.startFrame control_planeDynamic_particleShape.goalWeight[0];
+    goal_attr = 'goalWeight'
+    cmds.addAttr( _Ct[2], ln = goal_attr, at = 'float', h = False )
+    cmds.setAttr( _Ct[2] + '.' + goal_attr, cb = True )
+    cmds.setAttr( _Ct[2] + '.' + goal_attr, k = True )
+    cmds.setAttr( _Ct[2] + '.' + goal_attr, 0.25 )
+    cmds.connectAttr( _Ct[2] + '.' + goal_attr, plane_particle + '.' + goal_attr + '[0]', force = True )
+    # place.hijackAttrs( plane_particle, _Ct[2], goal_attr, goal_attr, set = False, default = 0.25, force = True )
+    #
+    damp_attr = 'damp'
+    place.hijackAttrs( plane_particle, _Ct[2], damp_attr, damp_attr, set = False, default = 0.04, force = True )
