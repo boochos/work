@@ -634,6 +634,12 @@ class Controller2():
         rivetDyn = loc( self.name + 'dynamicRivet', plane )[0]
         cmds.setAttr( rivetDyn + '.lodVisibility', 0 )
         cmds.parent( rivetDyn, dyngp )
+        #
+        '''
+        #  add these settings, get rid of the extra rivet, finish adding rest weight directly to bottom group
+        setAttr "jawTipdynamicRivet_pointOnPolyConstraint1.jawTip_planeDynamicU0" 0.5;
+        setAttr "jawTipdynamicRivet_pointOnPolyConstraint1.jawTip_planeDynamicV0" 0.5;
+        '''
         con = cmds.pointOnPolyConstraint( plane_dy + '.vtx[1]', rivetDyn )[0]
         # constrain control lowest group to rivets, add restWeight attr
         #
