@@ -13,6 +13,7 @@ ump = web.mod( 'universalMotionPath' )
 misc = web.mod( 'atom_miscellaneous_lib' )
 sfk = web.mod( 'atom_splineFk_lib' )
 stage = web.mod( 'atom_splineStage_lib' )
+krl = web.mod( "key_rig_lib" )
 
 
 def ____PREBUILD():
@@ -27,8 +28,30 @@ def prebuild():
     GEO = PreBuild[3]
     WORLD_SPACE = PreBuild[4]
     MasterCt = PreBuild[5]
+    # weights
+    weights_meshImport()
     #
     cmds.parentConstraint( 'master_Grp', 'root_jnt', mo = True )
+    place.cleanUp( 'root_jnt', SknJnts = True )
+    cmds.deltaMush( low_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+
+    #
+    # scale
+    mstr = 'master'
+    uni = 'uniformScale'
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    #
+    misc.addAttribute( [mstr], [uni], 0.1, 100.0, True, 'float' )
+    cmds.setAttr( mstr + '.' + uni, 1.0 )
+    # misc.addAttribute( [mstr], [uni], 0.1, 10.0, True, 'float' )
+    scl = ['.scaleX', '.scaleY', '.scaleZ']
+    misc.scaleUnlock( '___CONTROLS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___CONTROLS' + s )
+    misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
+    for s in scl:
+        cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
+        cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
 
 
 def ____FACE():
@@ -37,7 +60,7 @@ def ____FACE():
 
 def tongue():
     # tongue
-    TongueCt = place.Controller2( 'Tongue', 'jaw_jnt', False, 'splineStart_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    # TongueCt = place.Controller2( 'Tongue', 'jaw_jnt', False, 'splineStart_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     tongueMicro = faceRig.snakeTongue( 'tongue', 0.50 )
 
 
@@ -56,7 +79,8 @@ def fangs():
 
 
 def jaw():
-    JawCt = place.Controller2( 'jaw', 'jaw_jnt', True, 'squareZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    JawCt = place.Controller2( 'jaw', 'jaw_jnt', True, 'neckMaster_ctrl', 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( JawCt[4], 'jaw_jnt', mo = True )
     cmds.parentConstraint( 'head_jnt', JawCt[0], mo = True )
     place.cleanUp( JawCt[0], Ctrl = True )
     JawTipCt = place.Controller2( 'jawTip', 'jawTip_jnt', True, 'squareZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
@@ -83,7 +107,11 @@ def head():
     X = 1
     #
     head_Ct = place.Controller2( 'head', 'head_jnt', True, 'squareZup_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( head_Ct[4], 'head_jnt', mo = True )
+    cmds.parentConstraint( 'neck_01_jnt', head_Ct[0], mo = True )
     place.cleanUp( head_Ct[0], Ctrl = True )
+    #
+    place.parentSwitch( head_Ct[2], head_Ct[2], head_Ct[1], head_Ct[0], 'master_Grp', 'neck_01_jnt', False, True, False, True, 'Neck', 0.0 )
     #
     tongue()
     fangs()
@@ -94,12 +122,13 @@ def body_spline():
     '''
     
     '''
+    # TODO: need to reverse chain so tail sticks, not head
     #
     master = 'master'
     layers = 6
-    ump.path2( length = 120, layers = layers, X = 12.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = True )
+    ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = True )
     #
-    position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 20, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 20, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     #
     pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl )
     #
@@ -111,20 +140,12 @@ def body_spline():
         cmds.setAttr( master + '.ctrlLayer' + str( i ), cb = False )
         i += 1
 
+    cmds.setAttr( position_ctrl[2] + '.ctrlLayer' + str( 3 ), 1 )
     #
     return
+    #
     pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\coralSnake_path_v001.ma'
     cmds.file( pth, reference = True, namespace = 'pth', force = True )
-
-    '''
-    #
-    start_Ct = place.Controller2( 'neck', 'neck_01_jnt', True, 'squareZup_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    place.cleanUp( start_Ct[0], Ctrl = True )
-    end_Ct = place.Controller2( 'tail', 'tail_11_jnt', True, 'squareZup_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    place.cleanUp( end_Ct[0], Ctrl = True )
-    #
-    vhc.spline( name = 'snake', start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', splinePrnt = 'master_Grp', splineStrt = start_Ct[4], splineEnd = end_Ct[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 1 )
-    '''
 
 
 def body_splineIk():
@@ -246,11 +267,29 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None ):
     # Create Ik Handle
     ikhandle = cmds.ikHandle( sj = startJnt, ee = endJnt, sol = 'ikSplineSolver', ccv = False, c = curve, pcv = False )[0]
     cmds.setAttr( ikhandle + '.dTwistControlEnable', 1 )
-    cmds.setAttr( ikhandle + '.dWorldUpType', 4 )
+    # cmds.setAttr( ikhandle + '.dWorldUpType', 4 )
+    cmds.setAttr( ikhandle + '.dWorldUpType', 7 )
     cmds.setAttr( ikhandle + '.dForwardAxis', 4 )
     cmds.setAttr( ikhandle + '.dWorldUpAxis', 0 )
-    cmds.connectAttr( endTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrix' )
-    cmds.connectAttr( startTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrixEnd' )
+    cmds.connectAttr( endTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrix' )  # likely wont use this
+    cmds.connectAttr( startTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrixEnd' )  # likely wont use this
+    #
+    # start up vecor ramp
+    #
+    cmds.setAttr( ikhandle + '.dTwistValueType', 2 )
+    cmds.setAttr( ikhandle + '.dTwistRampMult', -3.4 )  # guessing at multiplier
+    ramp = cmds.shadingNode( 'ramp', name = ikhandle + '_twistRamp', asTexture = True )
+    cmds.connectAttr( ramp + '.outColor', ikhandle + '.dTwistRamp', force = True )
+    #
+    cmds.connectAttr( 'head.rotateZ', ramp + '.colorEntryList[0].colorR', force = True )
+    #
+    # add twist controls that slide along curve connected to ramp 'position' attribute
+    # add color positions on ramp, cmds.setAttr(  'ramp1.colorEntryList[4].position', 0.7)
+    # connect rotations to colors,
+    # connect ramp color position to slide attribute
+    #
+    # end up vector ramp
+    #
 
     # Hide and Parent ikhandle
     cmds.setAttr( ikhandle + '.visibility', 0 )
@@ -406,3 +445,87 @@ def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt
     # scale
     cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_S_IK_curve_scale.input2Z' )
     cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_E_IK_curve_scale.input2Z' )
+
+
+def ____SKIN():
+    pass
+
+
+def weights_meshExport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = low_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, g )
+        cmds.select( geo )
+        krl.exportWeights02( ex_path )
+
+
+def weights_meshImport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = low_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        im_path = os.path.join( path, g )
+        cmds.select( geo )
+        # print( im_path )
+        krl.importWeights02( geo, im_path )
+
+
+def weights_path():
+    '''
+    make path if not present from current file
+    '''
+    # path
+    path = cmds.file( query = True, sceneName = True )
+    filename = cmds.file( query = True, sceneName = True , shortName = True )
+    path = path.split( filename )[0]
+    path = os.path.join( path, 'weights' )
+    if not os.path.isdir( path ):
+        os.mkdir( path )
+    return path
+
+
+def low_geo():
+    return ['cor:snake_anim_mesh']
+
+
+def high_geo():
+    return ['statue_man_model:Statue_man_High']
+
+'''
+import webrImport as web
+acs = web.mod( 'asset_coralSnake' )
+acs.prebuild()
+acs.head()
+acs.body_spline()
+#acs.dynamicJiggle()
+#acs.body_splineFk()
+#acs.body_splineIk()
+
+
+# weights
+acs.weights_meshExport()
+'''
