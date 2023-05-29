@@ -484,7 +484,7 @@ class Controller2():
 
     def __init__( self, name = '', obj = '', orient = True, shape = 'diamond_ctrl',
                  size = 1, color = 8, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True,
-                 groups = False, orientCt = False, colorName = None, dynamic = True ):
+                 groups = False, orientCt = False, colorName = None, dynamic = False ):
         #
         self.name = name
         self.obj = obj
@@ -1160,16 +1160,16 @@ def hijackAttrs( obj1, obj2, attrOrig, attrNew, set = False, default = None, for
     TYP = cmds.getAttr( obj1 + '.' + attrOrig, typ = True )
     if TYP == 'enum':
         ENM = cmds.attributeQuery( attrOrig, node = obj1, le = True )[0]
-    if cmds.attributeQuery( attrOrig, node = obj1, sme = True ) == 1:
+    if cmds.attributeQuery( attrOrig, node = obj1, sme = True ):
         SMIN = cmds.attributeQuery( attrOrig, node = obj1, smn = True )[0]
         # print SMIN
-    if cmds.attributeQuery( attrOrig, node = obj1, sme = True ) == 1:
+    if cmds.attributeQuery( attrOrig, node = obj1, sme = True ):
         SMAX = cmds.attributeQuery( attrOrig, node = obj1, smx = True )[0]
         # print SMAX
-    if cmds.attributeQuery( attrOrig, node = obj1, mne = True ) == 1:
+    if cmds.attributeQuery( attrOrig, node = obj1, mne = True ):
         MIN = cmds.attributeQuery( attrOrig, node = obj1, min = True )[0]
         # print MIN
-    if cmds.attributeQuery( attrOrig, node = obj1, mxe = True ) == 1:
+    if cmds.attributeQuery( attrOrig, node = obj1, mxe = True ):
         MAX = cmds.attributeQuery( attrOrig, node = obj1, max = True )[0]
         # print MAX
     L = cmds.getAttr( obj1 + '.' + attrOrig, l = True )
@@ -1186,16 +1186,16 @@ def hijackAttrs( obj1, obj2, attrOrig, attrNew, set = False, default = None, for
         if not cmds.attributeQuery( attrNew, node = obj2, exists = True ):
             cmds.addAttr( obj2, ln = attrNew, k = K, at = TYP )
     if SMIN != None:
-        if not cmds.attributeQuery( attrNew, node = obj2, exists = True ):
+        if cmds.attributeQuery( attrNew, node = obj2, exists = True ):
             cmds.addAttr( obj2 + '.' + attrNew, e = True, smn = SMIN )
     if SMAX != None:
-        if not cmds.attributeQuery( attrNew, node = obj2, exists = True ):
+        if cmds.attributeQuery( attrNew, node = obj2, exists = True ):
             cmds.addAttr( obj2 + '.' + attrNew, e = True, smx = SMAX )
     if MIN != None:
-        if not cmds.attributeQuery( attrNew, node = obj2, exists = True ):
+        if cmds.attributeQuery( attrNew, node = obj2, exists = True ):
             cmds.addAttr( obj2 + '.' + attrNew, e = True, min = MIN )
     if MAX != None:
-        if not cmds.attributeQuery( attrNew, node = obj2, exists = True ):
+        if cmds.attributeQuery( attrNew, node = obj2, exists = True ):
             cmds.addAttr( obj2 + '.' + attrNew, e = True, max = MAX )
     cmds.setAttr( obj2 + '.' + attrNew, l = L )
     if K == False:

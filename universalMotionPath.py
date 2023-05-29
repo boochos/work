@@ -34,11 +34,21 @@ def WORLD_SPACE():
     return '___WORLD_SPACE'
 
 
+def MASTERCT():
+    return [
+    'master_TopGrp',
+    'master_CtGrp',
+    'master',
+    'master_Offset',
+    'master_Grp'
+    ]
+
+
 def __________________PATH():
     pass
 
 
-def build_curve( length = 10, cvs = 2, layer = 0 ):
+def build_curve( length = 10, cvs = 2, layer = 0, reverse = False ):
     '''
     
     '''
@@ -50,6 +60,8 @@ def build_curve( length = 10, cvs = 2, layer = 0 ):
             p = p + ']'
             # print( p )
             crv = cmds.curve( n = pth + '_layer_' + pad_number( i = layer ), d = 1, p = eval( p ) )
+            if reverse:
+                cmds.setAttr( crv + '.scaleZ', -1 )
             return crv
         else:
             pnts = cvs
@@ -74,10 +86,12 @@ def build_curve( length = 10, cvs = 2, layer = 0 ):
             p = p + ']'
             # print( p )
             crv = cmds.curve( n = pth + '_layer_' + pad_number( i = layer ), d = 2, p = eval( p ) )
+            if reverse:
+                cmds.setAttr( crv + '.scaleZ', -1 )
             return crv
 
 
-def path2( length = 10, layers = 3, X = 2.0 ):
+def path2( length = 10, layers = 3, X = 2.0, prebuild = True, prebuild_type = 4, ctrl_shape = 'splineStart_ctrl', reverse = False, hijack_ctrl = '' ):
     '''
     path 2.0
     '''
@@ -87,18 +101,23 @@ def path2( length = 10, layers = 3, X = 2.0 ):
         message( 'Points variable should be higher than 3.' )
         return None'''
     #
-    PreBuild = place.rigPrebuild( Top = 4, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 10 * X )
-    # return
-    #
-    CHARACTER = PreBuild[0]
-    CONTROLS = PreBuild[1]
-    WORLD_SPACE = PreBuild[2]
-    MasterCt = PreBuild[3]
+    if prebuild:
+        PreBuild = place.rigPrebuild( Top = prebuild_type, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 10 * X )
+        # return
+        #
+        CHARACTER = PreBuild[0]
+        CONTROLS = PreBuild[1]
+        WORLD_SPACE = PreBuild[2]
+        MasterCt = PreBuild[3]
     #
     pathDeviate = 'pathDeviate'
-    misc.optEnum( MasterCt[2], attr = 'path', enum = 'OPTNS' )
-    misc.addAttribute( [MasterCt[2]], [pathDeviate], 0, 0.5, False, 'float' )
-    cmds.setAttr( MasterCt[2] + '.' + pathDeviate , cb = False )
+    if hijack_ctrl:
+        misc.optEnum( hijack_ctrl, attr = 'path', enum = 'OPTNS' )
+        misc.addAttribute( [hijack_ctrl], [pathDeviate], 0, 0.5, False, 'float' )
+    else:
+        misc.optEnum( MASTERCT()[2], attr = 'path', enum = 'OPTNS' )
+        misc.addAttribute( [MASTERCT()[2]], [pathDeviate], 0, 0.5, False, 'float' )
+    cmds.setAttr( MASTERCT()[2] + '.' + pathDeviate , cb = False )
     # cmds.setAttr( MasterCt[2] + '.' + pathDeviate, 0.2 )
     # cmds.setAttr( MasterCt[2] + '.overrideColor', 23 )
 
@@ -118,10 +137,10 @@ def path2( length = 10, layers = 3, X = 2.0 ):
     j = 0  # colors
     while i < layers:
         if i == 0:
-            lyrs = layer( master = MasterCt, length = length, cvs = cvs, layer = i, attachToCurve = '', color = colors[j], up = upCntCt[4], X = X )
+            lyrs = layer( master = MASTERCT(), length = length, cvs = cvs, layer = i, attachToCurve = '', color = colors[j], up = upCntCt[4], X = X, ctrl_shape = ctrl_shape, reverse = reverse, hijack_ctrl = hijack_ctrl )
             layers_built.append( lyrs )
         else:
-            lyrs = layer( master = MasterCt, length = length, cvs = cvs, layer = i, attachToCurve = layers_built[i - 1].curve, color = colors[j], up = upCntCt[4], X = X )
+            lyrs = layer( master = MASTERCT(), length = length, cvs = cvs, layer = i, attachToCurve = layers_built[i - 1].curve, color = colors[j], up = upCntCt[4], X = X, ctrl_shape = ctrl_shape, reverse = reverse, hijack_ctrl = hijack_ctrl )
             layers_built.append( lyrs )
         # counters
         print( i, cvs )
@@ -235,7 +254,7 @@ def path2( length = 10, layers = 3, X = 2.0 ):
     cmds.setAttr( opfCt[2] + '.' + sideTwist, 90 )
 
 
-def layer( master = [], length = 10, cvs = 2, layer = 0, attachToCurve = '', color = '', up = '', X = 1 ):
+def layer( master = [], length = 10, cvs = 2, layer = 0, attachToCurve = '', color = '', up = '', X = 1, ctrl_shape = 'splineStart_ctrl', reverse = False, hijack_ctrl = '' ):
     '''
     # points are the uValue used in motionPath
     degree 1 (linear)
@@ -252,7 +271,7 @@ def layer( master = [], length = 10, cvs = 2, layer = 0, attachToCurve = '', col
     xmlt = 0.1
     mo_path = ''
     # curve
-    curve = build_curve( length = length, cvs = cvs, layer = layer )
+    curve = build_curve( length = length, cvs = cvs, layer = layer, reverse = reverse )
     cmds.setAttr( curve + '.template', 1 )
     place.cleanUp( curve, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
     crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )
@@ -270,7 +289,10 @@ def layer( master = [], length = 10, cvs = 2, layer = 0, attachToCurve = '', col
         cmds.parentConstraint( master[4], layerGp, mo = True )  # layer 0 needs to move with master
     place.setChannels( layerGp, [True, False], [True, False], [True, False], [True, False, False] )
     # vis
-    place.hijackVis( layerGp, master[2], name = 'ctrlLayer' + str( layer ), suffix = False, default = 0, mode = 'visibility' )
+    if hijack_ctrl:
+        place.hijackVis( layerGp, hijack_ctrl, name = 'ctrlLayer' + str( layer ), suffix = False, default = 0, mode = 'visibility' )
+    else:
+        place.hijackVis( layerGp, master[2], name = 'ctrlLayer' + str( layer ), suffix = False, default = 0, mode = 'visibility' )
     i = 0
     j = 0
     step = 0.0
@@ -288,7 +310,7 @@ def layer( master = [], length = 10, cvs = 2, layer = 0, attachToCurve = '', col
         # print( 'pos: ', position, 'seg: ', seg )
         #
         name = 'layer_' + pad_number( i = layer ) + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) )
-        cnt = place.Controller( name, handle, orient = False, shape = 'splineStart_ctrl', size = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = color )
+        cnt = place.Controller( name, handle, orient = False, shape = ctrl_shape, size = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = color )
         cntCt = cnt.createController()
         place.rotationLock( cntCt[2], True )
         place.rotationLock( cntCt[3], True )
