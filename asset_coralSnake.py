@@ -14,6 +14,8 @@ misc = web.mod( 'atom_miscellaneous_lib' )
 sfk = web.mod( 'atom_splineFk_lib' )
 stage = web.mod( 'atom_splineStage_lib' )
 krl = web.mod( "key_rig_lib" )
+# jnt = web.mod( 'atom_joint_lib' )
+ac = web.mod( 'animCurve_lib' )
 
 
 def ____PREBUILD():
@@ -118,19 +120,23 @@ def head():
     jaw()
 
 
-def body_spline():
+def body_spline( tail_as_root = True ):
     '''
-    
+    fix hard coded names
     '''
     # TODO: need to reverse chain so tail sticks, not head
     #
+    reverse = True
+    if tail_as_root:
+        reverse = False
+    #
     master = 'master'
     layers = 6
-    ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = True )
+    returnsNothing_FixIt = ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = reverse )
     #
     position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 20, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     #
-    pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl )
+    pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root )
     #
     misc.optEnum( position_ctrl[2], attr = 'path', enum = 'CONTROL' )
     cmds.setAttr( master + '.path', cb = False )
@@ -198,10 +204,25 @@ def path():
     ump.path2( length = 116, layers = 6, X = 12.0 )
 
 
-def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None ):
+def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None, start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', tail_as_root = False ):
     '''
-    if head needs to be locked the joints need to be duplicated and reversed,
+    - if head needs to be locked the joints need to be duplicated and reversed,
     by default tail is locked
+    - assumed path and controls are already created, objects should be fed into this function, (they arent), they are hard coded
+    '''
+    path_jnts = get_joint_chain_hier( start_jnt = start_jnt, end_jnt = end_jnt )
+    # print( path_jnts )
+    # return
+    if tail_as_root:
+        # build reverse chain
+        path_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt )
+        path_jnts.reverse()  # reverse so start joint is first in list
+        print( 'path ik, as root' )
+        print( path_jnts )
+
+    # return
+
+    #
     '''
     ns = ''
     #
@@ -217,25 +238,26 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None ):
         newSpine = ns + 'neck_01_jnt'
         startJnt = newSpine
         endJnt = ns + 'tail_11_jnt'
+    '''
 
     # Create Path Position Controller
     CtVis = 'SpineCt_Vis'
     Vect = 'VectorVis'
     # fix parent, should be startTw
-    EndCt = None
+    PositionCt = None
     if not position_ctrl:
-        EndCt = place.Controller2( 'Position', newSpine, True, 'splineStart_ctrl', 20, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+        PositionCt = place.Controller2( 'Position', start_jnt, True, 'splineStart_ctrl', 20, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     else:
-        EndCt = position_ctrl
+        PositionCt = position_ctrl
     #
-    # place.addAttribute( EndCt[2], CtVis, 0, 1, True, 'float' )
-    # cmds.setAttr( EndCt[2] + '.' + CtVis, k = False, cb = True )
-    place.addAttribute( EndCt[2], Vect, 0, 1, True, 'float' )
-    cmds.setAttr( EndCt[2] + '.' + Vect, k = False, cb = True )
-    cmds.xform( EndCt[0], r = True, t = ( 0, path_ctrl_height, 0 ) )
-    cmds.parentConstraint( newSpine, EndCt[0], mo = True )
-    place.setChannels( EndCt[2], [False, False], [False, False], [False, False], [True, True, False] )
-    place.cleanUp( EndCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    # place.addAttribute( PositionCt[2], CtVis, 0, 1, True, 'float' )
+    # cmds.setAttr( PositionCt[2] + '.' + CtVis, k = False, cb = True )
+    place.addAttribute( PositionCt[2], Vect, 0, 1, True, 'float' )
+    cmds.setAttr( PositionCt[2] + '.' + Vect, k = False, cb = True )
+    cmds.xform( PositionCt[0], r = True, t = ( 0, path_ctrl_height, 0 ) )
+    cmds.parentConstraint( start_jnt, PositionCt[0], mo = True )
+    place.setChannels( PositionCt[2], [False, False], [False, False], [False, False], [True, True, False] )
+    place.cleanUp( PositionCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
 
     # create twist controls
     # cmds.select( Ctrls[0] )
@@ -247,7 +269,7 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None ):
     cmds.setAttr( startTw[0] + '.localScaleY', 30 )
     cmds.setAttr( startTw[0] + '.localScaleZ', 30 )
     cmds.parentConstraint( 'master_Grp', startTwParent, mo = True )
-    cmds.connectAttr( EndCt[2] + '.' + Vect, startTw[0] + '.visibility' )
+    cmds.connectAttr( PositionCt[2] + '.' + Vect, startTw[0] + '.visibility' )
     place.setChannels( startTw[0], [True, False], [False, True], [False, False], [True, True, False] )
     place.cleanUp( startTwParent, Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
 
@@ -260,12 +282,12 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None ):
     cmds.setAttr( endTw[0] + '.localScaleY', 30 )
     cmds.setAttr( endTw[0] + '.localScaleZ', 30 )
     cmds.parentConstraint( 'master_Grp', endTwParent, mo = True )
-    cmds.connectAttr( EndCt[2] + '.' + Vect, endTw[0] + '.visibility' )
+    cmds.connectAttr( PositionCt[2] + '.' + Vect, endTw[0] + '.visibility' )
     place.setChannels( endTw[0], [True, False], [False, True], [False, False], [True, True, False] )
     place.cleanUp( endTwParent, Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
 
     # Create Ik Handle
-    ikhandle = cmds.ikHandle( sj = startJnt, ee = endJnt, sol = 'ikSplineSolver', ccv = False, c = curve, pcv = False )[0]
+    ikhandle = cmds.ikHandle( sj = path_jnts[0], ee = path_jnts[-1], sol = 'ikSplineSolver', ccv = False, c = curve, pcv = False )[0]
     cmds.setAttr( ikhandle + '.dTwistControlEnable', 1 )
     # cmds.setAttr( ikhandle + '.dWorldUpType', 4 )
     cmds.setAttr( ikhandle + '.dWorldUpType', 7 )
@@ -274,36 +296,160 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None ):
     cmds.connectAttr( endTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrix' )  # likely wont use this
     cmds.connectAttr( startTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrixEnd' )  # likely wont use this
     #
-    # start up vecor ramp
+    # start up vector ramp
     #
     cmds.setAttr( ikhandle + '.dTwistValueType', 2 )
-    cmds.setAttr( ikhandle + '.dTwistRampMult', -3.4 )  # guessing at multiplier
+    twist_mlt = -3.4
+    if tail_as_root:
+        twist_mlt = twist_mlt * -1
+    cmds.setAttr( ikhandle + '.dTwistRampMult', twist_mlt )  # guessing at multiplier
     ramp = cmds.shadingNode( 'ramp', name = ikhandle + '_twistRamp', asTexture = True )
     cmds.connectAttr( ramp + '.outColor', ikhandle + '.dTwistRamp', force = True )
     #
     cmds.connectAttr( 'head.rotateZ', ramp + '.colorEntryList[0].colorR', force = True )
     #
+    # add twist controls
+    pathTwist( amount = 4, ramp = ramp, curve = curve )
+    '''
     # add twist controls that slide along curve connected to ramp 'position' attribute
-    # add color positions on ramp, cmds.setAttr(  'ramp1.colorEntryList[4].position', 0.7)
-    # connect rotations to colors,
-    # connect ramp color position to slide attribute
+    Twst00Ct = place.Controller2( 'Twist_00', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
+    cmds.setAttr( Twst00Ct[2] + '.position', 31 )
+    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
+    #
+    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
+    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
+    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[1].colorR', force = True )
+    # multiply ramp position to match travel along curve
+    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
+    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
+    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
+    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[1].position', force = True )
+
+    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
+
+    Twst00Ct = place.Controller2( 'Twist_01', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
+    cmds.setAttr( Twst00Ct[2] + '.position', 31 - ( 7.5 * 1 ) )
+    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
+    #
+    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
+    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
+    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[2].colorR', force = True )
+    # multiply ramp position to match travel along curve
+    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
+    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
+    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
+    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[2].position', force = True )
+
+    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
+
+    Twst00Ct = place.Controller2( 'Twist_02', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
+    cmds.setAttr( Twst00Ct[2] + '.position', 31 - ( 7.5 * 2 ) )
+    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
+    #
+    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
+    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
+    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[3].colorR', force = True )
+    # multiply ramp position to match travel along curve
+    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
+    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
+    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
+    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[3].position', force = True )
+
+    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
+
+    Twst00Ct = place.Controller2( 'Twist_03', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
+    cmds.setAttr( Twst00Ct[2] + '.position', 31 - ( 7.5 * 3 ) )
+    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
+    #
+    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
+    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
+    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[4].colorR', force = True )
+    # multiply ramp position to match travel along curve
+    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
+    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
+    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
+    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[4].position', force = True )
+
+    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
+    '''
     #
     # end up vector ramp
     #
 
     # Hide and Parent ikhandle
-    cmds.setAttr( ikhandle + '.visibility', 0 )
+    cmds.setAttr( ikhandle + '.lodVisibility', 0 )
     place.cleanUp( ikhandle, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
 
-    # create and connect attribute for IK Slide on 'end' control------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # create and connect attribute for IK Slide on 'end' control
 
-    attr = 'ikPos'
-    place.addAttribute( EndCt[2], attr, 0.0, 200.0, True, 'float' )  # max is number of points on curve 31 * 10 = 310 # multiplier, MD node
+    attr = 'Travel'
+    place.addAttribute( PositionCt[2], attr, 0.0, 200.0, True, 'float' )  # max is number of points on curve 31 * 10 = 310 # multiplier, MD node
 
-    MD = cmds.createNode( 'multiplyDivide', n = 'Speed_MD' )
-    cmds.connectAttr( EndCt[2] + '.' + attr, MD + '.input1X' )
-    cmds.setAttr( MD + '.input2X', 0.1 )
-    cmds.connectAttr( MD + '.outputX', ikhandle + '.offset' )
+    mlt = cmds.createNode( 'multiplyDivide', n = 'Travel_mlt' )
+    cmds.connectAttr( PositionCt[2] + '.' + attr, mlt + '.input1X' )
+    cmds.setAttr( mlt + '.input2X', 0.1 )
+    cmds.connectAttr( mlt + '.outputX', ikhandle + '.offset' )
+
+    #
+    cmds.select( ikhandle, ramp )
+    mm.eval( 'dgdirty;' )
+
+
+def pathTwist( amount = 4, ramp = '', curve = '' ):
+    '''
+    
+    '''
+    #
+    twist_c = []
+    mlts_n = []
+    rvrs_n = []
+    ramp_int = 1
+    cvs = cmds.getAttr( curve + '.cp', s = 1 )
+    print( 'cvs: ', cvs )
+    spans = cmds.getAttr( curve + '.spans' )
+    print( 'spans: ', spans )
+    distribute = spans / ( amount + 1 )
+    distribute = 1 / ( amount + 1 )
+    print( 'distribute: ', distribute )
+    i = 0
+    #
+    while i <= amount:
+        #
+        TwstCt = place.Controller2( 'Twist_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), curve, True, 'squareZup_ctrl', 16, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result  # use curve node for initial placement
+        twist_c.append( TwstCt )
+        place.addAttribute( TwstCt[2], 'position', 0.0, spans, True, 'float' )  # max is number of points in curve
+        v = spans - ( distribute * ramp_int )
+        v = distribute * ramp_int
+        print( 'set position: ', v )
+        cmds.setAttr( TwstCt[2] + '.position', v )
+        mo_path = cmds.pathAnimation( TwstCt[0], name = TwstCt[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+        cmds.setAttr( mo_path + '.fractionMode', True )
+        ac.deleteAnim2( mo_path, attrs = ['uValue'] )
+        #
+        rvrs = cmds.shadingNode( 'reverse', n = TwstCt[2] + '_rvrs', asUtility = True )
+        rvrs_n.append( rvrs )
+        cmds.connectAttr( TwstCt[2] + '.rotateZ', rvrs + '.inputZ', force = True )
+        cmds.connectAttr( rvrs + '.outputZ', ramp + '.colorEntryList[' + str( ramp_int ) + '].colorR', force = True )
+        # multiply ramp position to match travel along curve
+        mlt = cmds.shadingNode( 'multDoubleLinear', n = TwstCt[2] + '_mlt', asUtility = True )
+        mlts_n.append( mlt )
+        # cmds.setAttr( mlt + '.input2', 1 / spans )
+        cmds.setAttr( mlt + '.input2', 1 )
+        cmds.connectAttr( TwstCt[2] + '.position', mlt + '.input1', force = True )
+        cmds.connectAttr( mlt + '.output', ramp + '.colorEntryList[' + str( ramp_int ) + '].position', force = True )
+
+        cmds.connectAttr( TwstCt[2] + '.position', mo_path + '.uValue', force = True )
+
+        ramp_int += 1
+        i += 1
 
 
 def dynamicJiggle():
@@ -353,6 +499,116 @@ def dynamicJiggle():
     #
     damp_attr = 'damp'
     place.hijackAttrs( plane_particle, _Ct[2], damp_attr, damp_attr, set = False, default = 0.04, force = True )
+
+
+def ____JOINTS():
+    pass
+
+
+def path_joint_chain( start_jnt = '', end_jnt = '' ):
+    '''
+    duplicate skin joint chain and reverse hierarchy
+    skin joints will be in the middle of the body, path joints need to placed down to ground level
+    '''
+    #
+    skin_jnts = get_joint_chain_hier( start_jnt = start_jnt, end_jnt = end_jnt, chain = None )
+
+    # duplicate
+    dup = cmds.duplicate( start_jnt, rc = True )
+    cmds.parent( dup[0], w = True )  # unparent
+    #
+    cmds.delete( 'head_jnt1' )  # cleanup children, should automate this at some stage.
+
+    # rename
+    cmds.select( dup[0], hi = True )
+    names = cmds.ls( sl = True )
+    num = len( names )
+    i = num - 1
+    for jnt in names:
+        cmds.rename( jnt, 'path_jnt_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) )
+        i -= 1
+
+    # reroot chain and fix joint orients
+    path_jnts = cmds.ls( sl = True )
+    cmds.reroot( path_jnts[-1] )
+    for j in path_jnts:
+        if j == path_jnts[0]:  # first is the last joint(reversed list), needs manual correction, maya skips it
+            cmds.setAttr( j + '.jointOrientX', 0 )
+            cmds.setAttr( j + '.jointOrientY', 0 )
+            cmds.setAttr( j + '.jointOrientZ', 0 )
+        else:
+            cmds.select( j )
+            cmds.joint( e = True, oj = 'zyx', secondaryAxisOrient = 'yup', ch = True, zso = True )
+
+    # path_jnts.reverse()
+    print( 'duplicated' )
+    print( path_jnts )
+    # return
+    # to ground
+    path_joints_to_ground( path_jnts = path_jnts )
+    print( 'grounded' )
+    print( path_jnts )
+    # return
+
+    # constrain
+    skin_jnts_to_path_jnts( skin_jnts = skin_jnts, path_jnts = path_jnts )
+    print( 'constrained' )
+    print( path_jnts )
+    # return
+
+    place.cleanUp( path_jnts[-1], SknJnts = True )
+    return path_jnts
+
+
+def get_joint_chain_hier( start_jnt = '', end_jnt = '', chain = None ):
+    '''
+    cant find end joint if it encounters multiple children
+    '''
+    # list the children of the parent
+    if chain == None:
+        chain = []
+        chain.append( start_jnt )
+    # print( chain )
+    children = cmds.listRelatives( start_jnt, children = True )
+    # print( children )
+    if children:
+        for child in children:
+            # test the child count
+            if child != end_jnt:
+                chain.append( child )
+                return get_joint_chain_hier( child, end_jnt, chain )
+            else:
+                chain.append( child )
+                # print( '______YUP', child )
+                # break
+                return chain
+    # return None
+
+
+def path_joints_to_ground( path_jnts = [] ):
+    '''
+    unparent all joints and set tranlsateY to 0.0
+    reparent
+    '''
+    path_jnts.reverse()
+    cmds.parent( path_jnts, w = True )  # world is parent
+    for j in path_jnts:
+        cmds.setAttr( j + '.translateY', 0.0 )
+    for j in range( len( path_jnts ) ):
+        if j < len( path_jnts ) - 1:
+            cmds.parent( path_jnts[j + 1], path_jnts[j] )
+    path_jnts.reverse()  # for some reason i need to reverse the change as it effects the list outside this function
+
+
+def skin_jnts_to_path_jnts( skin_jnts = [], path_jnts = [] ):
+    '''
+    
+    '''
+    # path_jnts.reverse()
+    for i in range( len( skin_jnts ) ):
+        cmds.parentConstraint( path_jnts[i], skin_jnts[i], mo = True )
+        # print( i )
+    # path_jnts.reverse()
 
 
 def ____UTIL():
