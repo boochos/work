@@ -16,6 +16,7 @@ stage = web.mod( 'atom_splineStage_lib' )
 krl = web.mod( "key_rig_lib" )
 # jnt = web.mod( 'atom_joint_lib' )
 ac = web.mod( 'animCurve_lib' )
+# cn = web.mod( 'constraint_lib' )
 
 
 def ____PREBUILD():
@@ -68,10 +69,21 @@ def tongue():
 
 def fangs():
     # fangs
-    fangL = place.Controller( 'fang_L', 'fang_jnt_L', orient = True, shape = 'squareXup_ctrl', size = 2, color = 6, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
-    fangLCt = fangL.createController()
-    fangR = place.Controller( 'fang_R', 'fang_jnt_R', orient = True, shape = 'squareXup_ctrl', size = 2, color = 13, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
-    fangRCt = fangR.createController()
+    # fangL = place.Controller( 'fang_L', 'fang_jnt_L', orient = True, shape = 'squareXup_ctrl', size = 2, color = 6, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
+    # fangLCt = fangL.createController()
+    fangLCt = place.Controller2( 'fang_L', 'fang_jnt_L', True, 'squareXup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
+    cmds.setAttr( fangLCt[2] + '.showManipDefault', 2 )
+    place.translationLock( fangLCt[2], True )
+    place.rotationLock( fangLCt[2], True )
+    place.rotationXLock( fangLCt[2], False )
+    # fangR = place.Controller( 'fang_R', 'fang_jnt_R', orient = True, shape = 'squareXup_ctrl', size = 2, color = 13, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
+    # fangRCt = fangR.createController()
+    fangRCt = place.Controller2( 'fang_R', 'fang_jnt_R', True, 'squareXup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    cmds.setAttr( fangRCt[2] + '.showManipDefault', 2 )
+    place.translationLock( fangRCt[2], True )
+    place.rotationLock( fangRCt[2], True )
+    place.rotationXLock( fangRCt[2], False )
+    #
     cmds.parentConstraint( fangLCt[4], 'fang_jnt_L', mo = True )
     cmds.parentConstraint( fangRCt[4], 'fang_jnt_R', mo = True )
     cmds.parentConstraint( 'head_jnt', fangLCt[0], mo = True )
@@ -82,16 +94,30 @@ def fangs():
 
 def jaw():
     JawCt = place.Controller2( 'jaw', 'jaw_jnt', True, 'neckMaster_ctrl', 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.setAttr( JawCt[2] + '.showManipDefault', 2 )
+    place.translationLock( JawCt[2], True )
     cmds.parentConstraint( JawCt[4], 'jaw_jnt', mo = True )
     cmds.parentConstraint( 'head_jnt', JawCt[0], mo = True )
     place.cleanUp( JawCt[0], Ctrl = True )
-    JawTipCt = place.Controller2( 'jawTip', 'jawTip_jnt', True, 'squareZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    JawTipCt = place.Controller2( 'jawTip', 'jawTip_jnt', True, 'squareZup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.setAttr( JawTipCt[2] + '.showManipDefault', 2 )
+    place.translationLock( JawTipCt[2], True )
+    place.rotationLock( JawTipCt[2], True )
+    place.rotationZLock( JawTipCt[2], False )
     cmds.parentConstraint( 'jaw_jnt', JawTipCt[0], mo = True )
     place.cleanUp( JawTipCt[0], Ctrl = True )
     JawLCt = place.Controller2( 'jawTip_L', 'jawTip_jnt_L', True, 'squareZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
+    cmds.setAttr( JawLCt[2] + '.showManipDefault', 1 )
+    place.translationLock( JawLCt[2], True )
+    place.rotationLock( JawLCt[2], True )
+    place.translationYLock( JawLCt[2], False )
     cmds.parentConstraint( JawTipCt[4], JawLCt[0], mo = True )
     place.cleanUp( JawLCt[0], Ctrl = True )
     JawRCt = place.Controller2( 'jawTip_R', 'jawTip_jnt_R', True, 'squareZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    cmds.setAttr( JawRCt[2] + '.showManipDefault', 1 )
+    place.translationLock( JawRCt[2], True )
+    place.rotationLock( JawRCt[2], True )
+    place.translationYLock( JawRCt[2], False )
     cmds.parentConstraint( JawTipCt[4], JawRCt[0], mo = True )
     place.cleanUp( JawRCt[0], Ctrl = True )
     apg.aimRig( name = 'jaw_L', obj = 'jaw_jnt_L', aimObj = JawLCt[4], upParent = JawCt[4], distance = 5, aim = [0, 0, 1], up = [0, 1, 0] )
@@ -109,6 +135,8 @@ def head():
     X = 1
     #
     head_Ct = place.Controller2( 'head', 'head_jnt', True, 'squareZup_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.setAttr( head_Ct[2] + '.showManipDefault', 2 )
+    place.translationLock( head_Ct[2], lock = True )
     cmds.parentConstraint( head_Ct[4], 'head_jnt', mo = True )
     cmds.parentConstraint( 'neck_01_jnt', head_Ct[0], mo = True )
     place.cleanUp( head_Ct[0], Ctrl = True )
@@ -134,7 +162,7 @@ def body_spline( tail_as_root = True ):
     layers = 6
     returnsNothing_FixIt = ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = reverse )
     #
-    position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 20, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     #
     pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root )
     #
@@ -242,13 +270,19 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None, start_jnt = 
 
     # Create Path Position Controller
     CtVis = 'SpineCt_Vis'
-    Vect = 'VectorVis'
+    Vect = 'upVectorVis'
     # fix parent, should be startTw
     PositionCt = None
     if not position_ctrl:
-        PositionCt = place.Controller2( 'Position', start_jnt, True, 'splineStart_ctrl', 20, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+        PositionCt = place.Controller2( 'Position', start_jnt, True, 'splineStart_ctrl', 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     else:
         PositionCt = position_ctrl
+
+    # create attribute for IK Slide
+    attr = 'travel'
+    travel_max = 100.0
+    place.addAttribute( PositionCt[2], attr, 0.0, travel_max, True, 'float' )  # max is number of points on curve 31 * 10 = 310 # multiplier, MD node
+
     #
     # place.addAttribute( PositionCt[2], CtVis, 0, 1, True, 'float' )
     # cmds.setAttr( PositionCt[2] + '.' + CtVis, k = False, cb = True )
@@ -256,35 +290,10 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None, start_jnt = 
     cmds.setAttr( PositionCt[2] + '.' + Vect, k = False, cb = True )
     cmds.xform( PositionCt[0], r = True, t = ( 0, path_ctrl_height, 0 ) )
     cmds.parentConstraint( start_jnt, PositionCt[0], mo = True )
-    place.setChannels( PositionCt[2], [False, False], [False, False], [False, False], [True, True, False] )
+    place.setChannels( PositionCt[2], [True, False], [True, False], [True, False], [True, True, False] )
+    # place.translationLock( PositionCt[2], lock = True )
+    # place.rotationLock( PositionCt[2], lock = True )
     place.cleanUp( PositionCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-
-    # create twist controls
-    # cmds.select( Ctrls[0] )
-    cmds.select( 'layer_05_point_32' )
-    startTwParent = place.null( 'startTwist_Grp' )
-    startTw = place.loc( 'startTwist' )
-    cmds.parent( startTw[0], startTwParent )
-    cmds.setAttr( startTw[0] + '.localScaleX', 30 )
-    cmds.setAttr( startTw[0] + '.localScaleY', 30 )
-    cmds.setAttr( startTw[0] + '.localScaleZ', 30 )
-    cmds.parentConstraint( 'master_Grp', startTwParent, mo = True )
-    cmds.connectAttr( PositionCt[2] + '.' + Vect, startTw[0] + '.visibility' )
-    place.setChannels( startTw[0], [True, False], [False, True], [False, False], [True, True, False] )
-    place.cleanUp( startTwParent, Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-
-    # cmds.select( Ctrls[42] )
-    cmds.select( 'layer_05_point_00' )
-    endTwParent = place.null( 'endTwist_Grp' )
-    endTw = place.loc( 'endTwist' )
-    cmds.parent( endTw, endTwParent )
-    cmds.setAttr( endTw[0] + '.localScaleX', 30 )
-    cmds.setAttr( endTw[0] + '.localScaleY', 30 )
-    cmds.setAttr( endTw[0] + '.localScaleZ', 30 )
-    cmds.parentConstraint( 'master_Grp', endTwParent, mo = True )
-    cmds.connectAttr( PositionCt[2] + '.' + Vect, endTw[0] + '.visibility' )
-    place.setChannels( endTw[0], [True, False], [False, True], [False, False], [True, True, False] )
-    place.cleanUp( endTwParent, Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
 
     # Create Ik Handle
     ikhandle = cmds.ikHandle( sj = path_jnts[0], ee = path_jnts[-1], sol = 'ikSplineSolver', ccv = False, c = curve, pcv = False )[0]
@@ -293,8 +302,28 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None, start_jnt = 
     cmds.setAttr( ikhandle + '.dWorldUpType', 7 )
     cmds.setAttr( ikhandle + '.dForwardAxis', 4 )
     cmds.setAttr( ikhandle + '.dWorldUpAxis', 0 )
-    cmds.connectAttr( endTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrix' )  # likely wont use this
-    cmds.connectAttr( startTw[0] + '.worldMatrix', ikhandle + '.dWorldUpMatrixEnd' )  # likely wont use this
+    place.hijackAttrs( ikhandle, 'Position', 'dWorldUpType', 'upVectorType', set = True, default = 2, force = True )
+
+    # start twist
+    startCt = place.Controller2( 'startTwist', start_jnt, True, 'loc_ctrl', 30, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'pink' ).result
+    cmds.setAttr( startCt[0] + '.translateY', 75 )
+    cmds.parentConstraint( 'master_Grp', startCt[0], mo = True )
+    cmds.connectAttr( PositionCt[2] + '.' + Vect, startCt[0] + '.visibility' )
+    place.setChannels( startCt[2], [False, True], [True, False], [True, False], [True, True, False] )  # [lock, keyable]
+    place.cleanUp( startCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    guide_line_one_to_many( startCt[2], path_jnts )
+
+    # end twist
+    endCt = place.Controller2( 'endTwist', end_jnt, True, 'loc_ctrl', 30, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'pink' ).result
+    cmds.setAttr( endCt[0] + '.translateY', 75 )
+    cmds.parentConstraint( 'master_Grp', endCt[0], mo = True )
+    cmds.connectAttr( PositionCt[2] + '.' + Vect, endCt[0] + '.visibility' )
+    place.setChannels( endCt[2], [False, True], [True, False], [True, False], [True, True, False] )  # [lock, keyable]
+    place.cleanUp( endCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    guide_line_one_to_many( endCt[2], path_jnts )
+
+    cmds.connectAttr( startCt[4] + '.worldMatrix', ikhandle + '.dWorldUpMatrix' )  # likely wont use this
+    cmds.connectAttr( endCt[4] + '.worldMatrix', ikhandle + '.dWorldUpMatrixEnd' )  # likely wont use this
     #
     # start up vector ramp
     #
@@ -310,92 +339,16 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None, start_jnt = 
     #
     # add twist controls
     pathTwist( amount = 4, ramp = ramp, curve = curve )
-    '''
-    # add twist controls that slide along curve connected to ramp 'position' attribute
-    Twst00Ct = place.Controller2( 'Twist_00', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
-    cmds.setAttr( Twst00Ct[2] + '.position', 31 )
-    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
-    #
-    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
-    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
-    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[1].colorR', force = True )
-    # multiply ramp position to match travel along curve
-    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
-    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
-    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
-    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[1].position', force = True )
-
-    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
-
-    Twst00Ct = place.Controller2( 'Twist_01', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
-    cmds.setAttr( Twst00Ct[2] + '.position', 31 - ( 7.5 * 1 ) )
-    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
-    #
-    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
-    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
-    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[2].colorR', force = True )
-    # multiply ramp position to match travel along curve
-    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
-    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
-    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
-    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[2].position', force = True )
-
-    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
-
-    Twst00Ct = place.Controller2( 'Twist_02', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
-    cmds.setAttr( Twst00Ct[2] + '.position', 31 - ( 7.5 * 2 ) )
-    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
-    #
-    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
-    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
-    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[3].colorR', force = True )
-    # multiply ramp position to match travel along curve
-    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
-    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
-    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
-    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[3].position', force = True )
-
-    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
-
-    Twst00Ct = place.Controller2( 'Twist_03', start_jnt, True, 'squareZup_ctrl', 18, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    place.addAttribute( Twst00Ct[2], 'position', 0.0, 31.0, True, 'float' )  # max is number of points in curve
-    cmds.setAttr( Twst00Ct[2] + '.position', 31 - ( 7.5 * 3 ) )
-    mo_path = cmds.pathAnimation( Twst00Ct[0], name = Twst00Ct[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-    ac.deleteAnim2( mo_path, attrs = ['uValue'] )
-    #
-    twst00_rvrs = cmds.shadingNode( 'reverse', n = Twst00Ct[2] + '_rvrs', asUtility = True )
-    cmds.connectAttr( Twst00Ct[2] + '.rotateZ', twst00_rvrs + '.inputZ', force = True )
-    cmds.connectAttr( twst00_rvrs + '.outputZ', ramp + '.colorEntryList[4].colorR', force = True )
-    # multiply ramp position to match travel along curve
-    twst00_mlt = cmds.shadingNode( 'multDoubleLinear', n = Twst00Ct[2] + '_mlt', asUtility = True )
-    cmds.setAttr( twst00_mlt + '.input2', 1 / 31 )
-    cmds.connectAttr( Twst00Ct[2] + '.position', twst00_mlt + '.input1', force = True )
-    cmds.connectAttr( twst00_mlt + '.output', ramp + '.colorEntryList[4].position', force = True )
-
-    cmds.connectAttr( Twst00Ct[2] + '.position', mo_path + '.uValue', force = True )
-    '''
-    #
-    # end up vector ramp
-    #
 
     # Hide and Parent ikhandle
     cmds.setAttr( ikhandle + '.lodVisibility', 0 )
     place.cleanUp( ikhandle, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
 
-    # create and connect attribute for IK Slide on 'end' control
-
-    attr = 'Travel'
-    place.addAttribute( PositionCt[2], attr, 0.0, 200.0, True, 'float' )  # max is number of points on curve 31 * 10 = 310 # multiplier, MD node
-
-    mlt = cmds.createNode( 'multiplyDivide', n = 'Travel_mlt' )
+    # normalize travel to 100
+    spans = cmds.getAttr( curve + '.spans' )
+    mlt = cmds.createNode( 'multiplyDivide', n = 'travel_mlt' )
     cmds.connectAttr( PositionCt[2] + '.' + attr, mlt + '.input1X' )
-    cmds.setAttr( mlt + '.input2X', 0.1 )
+    cmds.setAttr( mlt + '.input2X', spans / travel_max )
     cmds.connectAttr( mlt + '.outputX', ikhandle + '.offset' )
 
     #
@@ -405,48 +358,79 @@ def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None, start_jnt = 
 
 def pathTwist( amount = 4, ramp = '', curve = '' ):
     '''
-    
+    could be missing connections to ramp texture, eval doesnt happen properly, check against manual build, with ramp texture... maybe 2d texture node
     '''
+    # math for changing path length, should keep twists at same spot from root
+    crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
+    arc_length = cmds.getAttr( crv_info + '.arcLength' )
+    # new length divide by original length
+    dvd_length = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve + '_lengthDvd' ) )
+    cmds.setAttr( ( dvd_length + '.operation' ), 2 )  # set operation: 2 = divide, 1 = multiply
+    cmds.connectAttr( ( crv_info + '.arcLength' ), ( dvd_length + '.input1Z' ) )
+    cmds.setAttr( dvd_length + '.input2Z', arc_length )
+    # create length change multiplier from above result
+    dvd_multiplier = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve + '_lockDvd' ) )  # create length change multiplier, locks control in place from curve length changes
+    cmds.setAttr( ( dvd_multiplier + '.operation' ), 2 )
+    cmds.setAttr( dvd_multiplier + '.input1Z', 1.0 )
+    cmds.connectAttr( ( dvd_length + '.outputZ' ), ( dvd_multiplier + '.input2Z' ) )
+
     #
     twist_c = []
     mlts_n = []
     rvrs_n = []
     ramp_int = 1
-    cvs = cmds.getAttr( curve + '.cp', s = 1 )
-    print( 'cvs: ', cvs )
-    spans = cmds.getAttr( curve + '.spans' )
-    print( 'spans: ', spans )
-    distribute = spans / ( amount + 1 )
+    # spans = cmds.getAttr( curve + '.spans' )
+    # print( 'spans: ', spans )
     distribute = 1 / ( amount + 1 )
-    print( 'distribute: ', distribute )
+    # print( 'distribute: ', distribute )
     i = 0
     #
     while i <= amount:
         #
-        TwstCt = place.Controller2( 'Twist_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), curve, True, 'squareZup_ctrl', 16, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result  # use curve node for initial placement
+        TwstCt = place.Controller2( 'Twist_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ), curve, True, 'facetZup_ctrl', 8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result  # use curve node for initial placement
+        cmds.setAttr( TwstCt[2] + '.showManipDefault', 2 )
+        place.cleanUp( TwstCt[0], Ctrl = True )
+        place.translationLock( TwstCt[2], lock = True )
+        place.rotationLock( TwstCt[2], lock = True )
+        place.rotationZLock( TwstCt[2], lock = False )
         twist_c.append( TwstCt )
-        place.addAttribute( TwstCt[2], 'position', 0.0, spans, True, 'float' )  # max is number of points in curve
-        v = spans - ( distribute * ramp_int )
-        v = distribute * ramp_int
-        print( 'set position: ', v )
+        place.addAttribute( TwstCt[2], 'position', 0.0, 100.0, True, 'float' )  # max is number of points in curve
+
+        # Normalize start position to 100, matches Travel attr
+        v = distribute * ramp_int * 100
+        # print( 'set position: ', v )
         cmds.setAttr( TwstCt[2] + '.position', v )
         mo_path = cmds.pathAnimation( TwstCt[0], name = TwstCt[2] + '_motionPath' , c = curve, startU = 0.5, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-        cmds.setAttr( mo_path + '.fractionMode', True )
+        cmds.setAttr( mo_path + '.fractionMode', True )  # turn off parametric, sets start/end range 0/1
         ac.deleteAnim2( mo_path, attrs = ['uValue'] )
-        #
-        rvrs = cmds.shadingNode( 'reverse', n = TwstCt[2] + '_rvrs', asUtility = True )
+
+        # reverse rotation
+        rvrs = cmds.shadingNode( 'reverse', n = TwstCt[2] + '_rvrs', asUtility = True )  # reverse rotation
         rvrs_n.append( rvrs )
         cmds.connectAttr( TwstCt[2] + '.rotateZ', rvrs + '.inputZ', force = True )
         cmds.connectAttr( rvrs + '.outputZ', ramp + '.colorEntryList[' + str( ramp_int ) + '].colorR', force = True )
-        # multiply ramp position to match travel along curve
-        mlt = cmds.shadingNode( 'multDoubleLinear', n = TwstCt[2] + '_mlt', asUtility = True )
-        mlts_n.append( mlt )
-        # cmds.setAttr( mlt + '.input2', 1 / spans )
-        cmds.setAttr( mlt + '.input2', 1 )
-        cmds.connectAttr( TwstCt[2] + '.position', mlt + '.input1', force = True )
-        cmds.connectAttr( mlt + '.output', ramp + '.colorEntryList[' + str( ramp_int ) + '].position', force = True )
 
-        cmds.connectAttr( TwstCt[2] + '.position', mo_path + '.uValue', force = True )
+        # multiply to merge length changes and position input form control, math prepped at start of funtion
+        mlt_merge_length = cmds.shadingNode( 'multDoubleLinear', n = TwstCt[2] + '_mergeLengthMlt', asUtility = True )
+        cmds.connectAttr( TwstCt[2] + '.position', mlt_merge_length + '.input1', force = True )
+        cmds.connectAttr( dvd_multiplier + '.outputZ', mlt_merge_length + '.input2', force = True )
+
+        # multiply ramp position to match travel along curve
+        mlt_ramp = cmds.shadingNode( 'multDoubleLinear', n = TwstCt[2] + '_rampMlt', asUtility = True )
+        mlts_n.append( mlt_ramp )
+        cmds.setAttr( mlt_ramp + '.input2', 0.01 )
+        cmds.connectAttr( TwstCt[2] + '.position', mlt_ramp + '.input1', force = True )
+        cmds.connectAttr( mlt_ramp + '.output', ramp + '.colorEntryList[' + str( ramp_int ) + '].position', force = True )
+
+        # add twist position attr and main travel attr values
+        dbl_path = cmds.createNode( 'addDoubleLinear', name = ( TwstCt[2] + '_DblLnr' ) )
+        cmds.connectAttr( mlt_merge_length + '.output', dbl_path + '.input1', force = True )
+        cmds.connectAttr( 'Position.travel', dbl_path + '.input2', force = True )  # hardcoded control, shouldnt be, fix it
+        # normalize result
+        mlt_path = cmds.shadingNode( 'multDoubleLinear', n = TwstCt[2] + '_pathMlt', asUtility = True )
+        cmds.setAttr( mlt_path + '.input2', 0.01 )
+        cmds.connectAttr( dbl_path + '.output', mlt_path + '.input1', force = True )
+        cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
 
         ramp_int += 1
         i += 1
@@ -454,7 +438,8 @@ def pathTwist( amount = 4, ramp = '', curve = '' ):
 
 def dynamicJiggle():
     '''
-    
+    should be added to main controller class
+    convert this to standalone so already existing controls can receive functionality
     '''
     name = 'control'
     # plane
@@ -613,6 +598,28 @@ def skin_jnts_to_path_jnts( skin_jnts = [], path_jnts = [] ):
 
 def ____UTIL():
     pass
+
+
+def guide_line_one_to_many( obj = '', many = [], offset = 1.5 ):
+    '''
+    
+    '''
+    n = cmds.group( name = obj + '_up_GuideGrp', em = True )
+    place.hijackVis( n, obj, name = 'guides', suffix = True, default = False, mode = 'visibility' )
+    place.cleanUp( n, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
+    for m in many:
+        g = cmds.group( name = obj + '___' + m, em = True )
+        result = place.guideLine( obj, m, Name = 'guide' )
+        #
+        cmds.select( result[1][1] )
+        cmds.pickWalk( d = 'down' )
+        cmds.pickWalk( d = 'left' )
+        c = cmds.ls( sl = True )[0]
+        cmds.setAttr( c + '.offsetY', offset )
+        #
+        cmds.parent( result[0], g )
+        cmds.parent( result[1], g )
+        cmds.parent( g, n )
 
 
 def CONTROLS():

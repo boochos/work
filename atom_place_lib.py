@@ -584,6 +584,7 @@ class Controller2():
         #
         cmds.setAttr( ct + '.rotateOrder', k = False, cb = True )
         cmds.setAttr( ctO + '.rotateOrder', k = False, cb = True )
+        cmds.setAttr( ct + '.showManipDefault', 6 )
         #
         if self.dynamic:
             self.result_dyn = [ ct, ctO, gp]

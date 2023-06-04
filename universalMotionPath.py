@@ -312,6 +312,7 @@ def layer( master = [], length = 10, cvs = 2, layer = 0, attachToCurve = '', col
         name = 'layer_' + pad_number( i = layer ) + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) )
         cnt = place.Controller( name, handle, orient = False, shape = ctrl_shape, size = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True, colorName = color )
         cntCt = cnt.createController()
+        cmds.setAttr( cntCt[2] + '.showManipDefault', 1 )
         place.rotationLock( cntCt[2], True )
         place.rotationLock( cntCt[3], True )
         cmds.parent( cntCt[0], layerGp )
