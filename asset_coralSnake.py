@@ -157,6 +157,7 @@ def body_spline( tail_as_root = True ):
     reverse = True
     if tail_as_root:
         reverse = False
+
     #
     master = 'master'
     layers = 6
@@ -164,7 +165,8 @@ def body_spline( tail_as_root = True ):
     #
     position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     #
-    pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root )
+    # pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root )
+    pathIk2( position_ctrl = position_ctrl, tail_as_root = tail_as_root )
     #
     misc.optEnum( position_ctrl[2], attr = 'path', enum = 'CONTROL' )
     cmds.setAttr( master + '.path', cb = False )
@@ -234,9 +236,14 @@ def path():
 
 def pathIk( curve = '', path_ctrl_height = 0, position_ctrl = None, start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', tail_as_root = False ):
     '''
-    - if head needs to be locked the joints need to be duplicated and reversed,
-    by default tail is locked
-    - assumed path and controls are already created, objects should be fed into this function, (they arent), they are hard coded
+    ---- 
+    DEAL BREAKER
+    spline ik has parametric curve travel, 
+    the span between each cv is the same value no matter the length, 
+    can have linear travel across entire length of curve
+    ----
+    if head needs to be locked the joints need to be duplicated and reversed, by default tail is locked
+    its assumed path and controls are already created, objects should be fed into this function, (they arent), they are hard coded
     '''
     path_jnts = get_joint_chain_hier( start_jnt = start_jnt, end_jnt = end_jnt )
     # print( path_jnts )
@@ -410,7 +417,7 @@ def pathTwist( amount = 4, ramp = '', curve = '' ):
         cmds.connectAttr( TwstCt[2] + '.rotateZ', rvrs + '.inputZ', force = True )
         cmds.connectAttr( rvrs + '.outputZ', ramp + '.colorEntryList[' + str( ramp_int ) + '].colorR', force = True )
 
-        # multiply to merge length changes and position input form control, math prepped at start of funtion
+        # multiply to merge length changes and position input form control, math prepped at start of function
         mlt_merge_length = cmds.shadingNode( 'multDoubleLinear', n = TwstCt[2] + '_mergeLengthMlt', asUtility = True )
         cmds.connectAttr( TwstCt[2] + '.position', mlt_merge_length + '.input1', force = True )
         cmds.connectAttr( dvd_multiplier + '.outputZ', mlt_merge_length + '.input2', force = True )
@@ -433,6 +440,119 @@ def pathTwist( amount = 4, ramp = '', curve = '' ):
         cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
 
         ramp_int += 1
+        i += 1
+
+
+def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', tail_as_root = False ):
+    '''
+    based on cmds.pathAnimation()
+    spline ik has parametric curve travel, the span between each cv is the same value no matter the length, can have linear travel across entire length of curve
+    '''
+    # travel control
+    PositionCt = None
+    if not position_ctrl:
+        PositionCt = place.Controller2( 'Position', start_jnt, True, 'splineStart_ctrl', 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    else:
+        PositionCt = position_ctrl
+    # create attribute
+    t_attr = 'travel'
+    travel_max = 100.0
+    place.addAttribute( PositionCt[2], t_attr, 0.0, travel_max, True, 'float' )  # max is number of points on curve 31 * 10 = 310 # multiplier, MD node
+    #
+    misc.optEnum( PositionCt[2], attr = 'extra', enum = 'CONTROL' )
+    #
+    v_attr = 'upVis'
+    place.addAttribute( PositionCt[2], v_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + v_attr, k = False, cb = True )
+    #
+    cmds.parentConstraint( start_jnt, PositionCt[0], mo = True )
+    place.setChannels( PositionCt[2], [True, False], [True, False], [True, False], [True, True, False] )
+    place.cleanUp( PositionCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    #
+    m_attr = 'microVis'
+    place.addAttribute( PositionCt[2], m_attr, 0, 1, True, 'long' )
+
+    #
+    crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
+    arc_length = cmds.getAttr( crv_info + '.arcLength' )  # original
+    # new length divide by original length
+    dvd_length = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve + '_lengthDvd' ) )
+    cmds.setAttr( ( dvd_length + '.operation' ), 2 )  # set operation: 2 = divide, 1 = multiply
+    cmds.connectAttr( ( crv_info + '.arcLength' ), ( dvd_length + '.input1Z' ) )
+    cmds.setAttr( dvd_length + '.input2Z', arc_length )
+    # create length change multiplier from above result
+    dvd_multiplier = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve + '_lockDvd' ) )  # create length change multiplier, locks control in place from curve length changes
+    cmds.setAttr( ( dvd_multiplier + '.operation' ), 2 )
+    cmds.setAttr( dvd_multiplier + '.input1Z', 1.0 )
+    cmds.connectAttr( ( dvd_length + '.outputZ' ), ( dvd_multiplier + '.input2Z' ) )
+
+    length = 0.0
+    arc_fraction = 0.0
+    # hierarchy
+    skin_jnts = get_joint_chain_hier( start_jnt = start_jnt, end_jnt = end_jnt )
+    attach_jnts = []
+    # create new set of joints at ground level
+    if tail_as_root:
+        # build reverse chain
+        attach_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt, reroot = True )
+    else:
+        attach_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt )
+    # return
+    # attachs
+    i = 0
+    for j in attach_jnts:
+        # position, startU value
+        if j == attach_jnts[0]:
+            length = 0.0
+        else:
+            _l = cmds.getAttr( j + '.translateZ' )  # assumes joint aim vector is translateZ
+            length = length + _l  # accumulated length
+            arc_fraction = length / arc_length  # accumulated arc length
+            # print( 'length: ', length, 'fraction: ', arc_fraction )
+
+        # control
+        name = 'micro_' + pad_number( i = i )
+        microCt = place.Controller2( name, j, True, 'loc_ctrl', 8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        place.cleanUp( microCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+        cmds.parentConstraint( microCt[4], j, mo = False )
+        # cmds.parentConstraint( 'master_Grp', microCt[0], mo = True )
+        place.addAttribute( microCt[2], 'position', 0.0, 100.0, True, 'float' )  # max is number of points in curve
+        cmds.setAttr( microCt[2] + '.position', arc_fraction * 100 )
+        cmds.setAttr( microCt[2] + '.position', lock = True )
+        #
+        cmds.connectAttr( PositionCt[2] + '.' + m_attr, microCt[0] + '.visibility', force = True )
+
+        mo_path = cmds.pathAnimation( microCt[0], name = microCt[2] + '_motionPath' , c = curve, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+        cmds.setAttr( mo_path + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+        ac.deleteAnim2( mo_path, attrs = ['uValue'] )
+
+        # travel and stretch nodes
+
+        # multiply to merge length changes and position input form control, math prepped at start of function
+        mlt_merge_length = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_mergeLengthMlt', asUtility = True )
+        cmds.connectAttr( microCt[2] + '.position', mlt_merge_length + '.input1', force = True )
+        cmds.connectAttr( dvd_multiplier + '.outputZ', mlt_merge_length + '.input2', force = True )
+
+        # multiply ramp position to match travel along curve
+        '''
+        mlt_ramp = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_rampMlt', asUtility = True )
+        # mlts_n.append( mlt_ramp )
+        cmds.setAttr( mlt_ramp + '.input2', 0.01 )
+        cmds.connectAttr( microCt[2] + '.position', mlt_ramp + '.input1', force = True )
+        cmds.connectAttr( mlt_ramp + '.output', ramp + '.colorEntryList[' + str( ramp_int ) + '].position', force = True )
+        '''
+
+        # add twist position attr and main travel attr values
+        dbl_path = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_DblLnr' ) )
+        cmds.connectAttr( mlt_merge_length + '.output', dbl_path + '.input1', force = True )
+        cmds.connectAttr( 'Position.travel', dbl_path + '.input2', force = True )  # hardcoded control, shouldnt be, fix it
+        # normalize result
+        mlt_path = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_pathMlt', asUtility = True )
+        cmds.setAttr( mlt_path + '.input2', 0.01 )
+        cmds.connectAttr( dbl_path + '.output', mlt_path + '.input1', force = True )
+        cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
+
+        #
         i += 1
 
 
@@ -490,7 +610,7 @@ def ____JOINTS():
     pass
 
 
-def path_joint_chain( start_jnt = '', end_jnt = '' ):
+def path_joint_chain( start_jnt = '', end_jnt = '', reroot = False ):
     '''
     duplicate skin joint chain and reverse hierarchy
     skin joints will be in the middle of the body, path joints need to placed down to ground level
@@ -507,30 +627,41 @@ def path_joint_chain( start_jnt = '', end_jnt = '' ):
     # rename
     cmds.select( dup[0], hi = True )
     names = cmds.ls( sl = True )
-    num = len( names )
-    i = num - 1
-    for jnt in names:
-        cmds.rename( jnt, 'path_jnt_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) )
-        i -= 1
+    if reroot:
+        num = len( names )
+        i = num - 1
+        for jnt in names:
+            cmds.rename( jnt, 'path_jnt_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) )
+            i -= 1
+    else:
+        # num = len( names )
+        i = 0
+        for jnt in names:
+            cmds.rename( jnt, 'path_jnt_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) )
+            i += 1
 
     # reroot chain and fix joint orients
     path_jnts = cmds.ls( sl = True )
-    cmds.reroot( path_jnts[-1] )
-    for j in path_jnts:
-        if j == path_jnts[0]:  # first is the last joint(reversed list), needs manual correction, maya skips it
-            cmds.setAttr( j + '.jointOrientX', 0 )
-            cmds.setAttr( j + '.jointOrientY', 0 )
-            cmds.setAttr( j + '.jointOrientZ', 0 )
-        else:
-            cmds.select( j )
-            cmds.joint( e = True, oj = 'zyx', secondaryAxisOrient = 'yup', ch = True, zso = True )
+    if reroot:
+        cmds.reroot( path_jnts[-1] )
+        for j in path_jnts:
+            if j == path_jnts[0]:  # first is the last joint(reversed list), needs manual correction, maya skips it
+                cmds.setAttr( j + '.jointOrientX', 0 )
+                cmds.setAttr( j + '.jointOrientY', 0 )
+                cmds.setAttr( j + '.jointOrientZ', 0 )
+            else:
+                cmds.select( j )
+                cmds.joint( e = True, oj = 'zyx', secondaryAxisOrient = 'yup', ch = True, zso = True )
 
     # path_jnts.reverse()
     print( 'duplicated' )
     print( path_jnts )
     # return
     # to ground
-    path_joints_to_ground( path_jnts = path_jnts )
+    if reroot:
+        path_joints_to_ground( path_jnts = path_jnts )
+    else:
+        cmds.setAttr( path_jnts[0] + '.translateY', 0 )
     print( 'grounded' )
     print( path_jnts )
     # return
@@ -541,7 +672,10 @@ def path_joint_chain( start_jnt = '', end_jnt = '' ):
     print( path_jnts )
     # return
 
-    place.cleanUp( path_jnts[-1], SknJnts = True )
+    if reroot:
+        place.cleanUp( path_jnts[-1], SknJnts = True )
+    else:
+        place.cleanUp( path_jnts[0], SknJnts = True )
     return path_jnts
 
 
@@ -570,7 +704,7 @@ def get_joint_chain_hier( start_jnt = '', end_jnt = '', chain = None ):
     # return None
 
 
-def path_joints_to_ground( path_jnts = [] ):
+def path_joints_to_ground( path_jnts = [], reroot = False ):
     '''
     unparent all joints and set tranlsateY to 0.0
     reparent
@@ -620,6 +754,13 @@ def guide_line_one_to_many( obj = '', many = [], offset = 1.5 ):
         cmds.parent( result[0], g )
         cmds.parent( result[1], g )
         cmds.parent( g, n )
+
+
+def pad_number( i = 1, pad = 2 ):
+    '''
+    given i and pad, return padded string
+    '''
+    return str( ( '%0' + str( pad ) + 'd' ) % ( i ) )
 
 
 def CONTROLS():
