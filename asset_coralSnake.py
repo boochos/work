@@ -161,12 +161,13 @@ def body_spline( tail_as_root = True ):
     #
     master = 'master'
     layers = 6
-    returnsNothing_FixIt = ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = reverse )
+    # returnsNothing_FixIt = ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = reverse )
+    curve, curve_up = ump.ribbon_path( name = '', layers = 6, length = 120, width = 3, X = 2.0, ctrl_shape = 'arrow_ctrl', reverse = True, prebuild = False, prebuild_type = 4 )
     #
     position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     #
     # pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root )
-    pathIk2( position_ctrl = position_ctrl, tail_as_root = tail_as_root )
+    pathIk2( curve = curve, position_ctrl = position_ctrl, tail_as_root = tail_as_root, curve_up = curve_up )
     #
     misc.optEnum( position_ctrl[2], attr = 'path', enum = 'CONTROL' )
     cmds.setAttr( master + '.path', cb = False )
@@ -443,7 +444,7 @@ def pathTwist( amount = 4, ramp = '', curve = '' ):
         i += 1
 
 
-def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', tail_as_root = False ):
+def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', tail_as_root = False, curve_up = '' ):
     '''
     based on cmds.pathAnimation()
     spline ik has parametric curve travel, the span between each cv is the same value no matter the length, can have linear travel across entire length of curve
@@ -472,6 +473,8 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     m_attr = 'microVis'
     place.addAttribute( PositionCt[2], m_attr, 0, 1, True, 'long' )
 
+    m_up_attr = 'microUpVis'
+    place.addAttribute( PositionCt[2], m_up_attr, 0, 1, True, 'long' )
     #
     crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
     arc_length = cmds.getAttr( crv_info + '.arcLength' )  # original
@@ -551,6 +554,24 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         cmds.setAttr( mlt_path + '.input2', 0.01 )
         cmds.connectAttr( dbl_path + '.output', mlt_path + '.input1', force = True )
         cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
+
+        if curve_up and i > 0:
+            '''
+            need to add head to twisting, first neck joint doesnt get an aim constraint
+            '''
+            # up vector control
+            name = 'micro_up_' + pad_number( i = i )
+            microUpCt = place.Controller2( name, j, True, 'loc_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+            cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, microUpCt[0] + '.visibility', force = True )
+            place.cleanUp( microUpCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+            # stick to path
+            mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+            cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+            ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
+            # connect travel, matching joint below
+            cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+            # add aim constraint
+            cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
 
         #
         i += 1

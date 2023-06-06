@@ -1195,18 +1195,20 @@ def _____________RIBBONS():
     pass
 
 
-def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_shape = 'diamond_ctrl', reverse = False, prebuild = True, prebuild_type = 4, ):
+def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_shape = 'diamond_ctrl', reverse = False, prebuild = False, prebuild_type = 4, ):
     '''
     
     '''
     if prebuild:
-        PreBuild = place.rigPrebuild( Top = prebuild_type, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 10 * X )
+        PreBuild = place.rigPrebuild( Top = prebuild_type, Ctrl = True, SknJnts = False, Geo = False, World = True, Master = True, OlSkool = False, Size = 20 * X )
         # return
         #
+        '''
         CHARACTER = PreBuild[0]
         CONTROLS = PreBuild[1]
         WORLD_SPACE = PreBuild[2]
         MasterCt = PreBuild[3]
+        '''
 
     # layers
     layers_built = []
@@ -1215,11 +1217,12 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     i = 0  # layer
     j = 0  # colors
     while i < layers:
+        _name = 'layer_' + pad_number( i = i )
         if i == 0:
-            lyrs = ribbon_layers( name = name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = None, master = MASTERCT(), layer = i )
+            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = None, master = MASTERCT(), layer = i )
             layers_built.append( lyrs )
         else:
-            lyrs = ribbon_layers( name = name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = layers_built[i], master = MASTERCT(), layer = i )
+            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = layers_built[i - 1], master = MASTERCT(), layer = i )
             layers_built.append( lyrs )
         # counters
         print( i, rows )
@@ -1230,20 +1233,70 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
         else:
             j = j + 1
 
-    # build path curve and up vector curve on last ribbon (could duplicate path curve create clusters and constrain to existing follicles)
-    # attach snake to path, attach clone of snake controls to up vector path
-    # aim child joints to parent joints, use up vector clones as up objects
-    # travel along path needs to match for both sets
+    #
+    path_grp = cmds.group( em = True, n = name + '_ribbon_path_rig_Grp' )
+    cmds.parent( path_grp, WORLD_SPACE() )
+    # path curve
+    curve = build_curve( length = length, cvs = len( layers_built[-1].controls ), layer = layers, reverse = reverse )
+    cmds.setAttr( curve + '.template', 1 )
+    cmds.parent( curve, path_grp )
+    #
+    clusters = place.clstrOnCV( curve, 'layer_' + pad_number( i = layers ) + '_Clstr' )
+    cGrp = 'clstr_' + pad_number( i = layers ) + '_Grp'
+    cmds.group( clusters, n = cGrp, w = True )
+    cmds.setAttr( cGrp + '.visibility', 0 )
+    cmds.parent( cGrp, path_grp )
+    # path curve_up, up vectors
+    curve_up = cmds.duplicate( curve, name = curve + '_up' )[0]
+    cmds.setAttr( curve_up + '.template', 1 )
+    cmds.setAttr( curve_up + '.ty', width * 2 )
+    #
+    clusters_up = place.clstrOnCV( curve_up, 'layer_' + pad_number( i = layers ) + '_up_Clstr' )
+    cGrpUp = 'clstrUp_' + pad_number( i = layers ) + '_Grp'
+    cmds.group( clusters_up, n = cGrpUp, w = True )
+    cmds.setAttr( cGrpUp + '.visibility', 0 )
+    cmds.parent( cGrpUp, path_grp )
 
-    return
+    f = 0
+    for control in layers_built[-1].controls:
+        cmds.parentConstraint( control[4], clusters[f], mo = True )
+        cmds.parentConstraint( control[4], clusters_up[f], mo = True )
+        f += 1
+
+    ##### non functional control, need to remove from coral snake reference   ######
+    # up
+    upCnt = place.Controller( place.getUniqueName( 'up' ), 'master', orient = True, shape = 'loc_ctrl', size = length * X, color = 17, setChannels = True, groups = True )
+    upCntCt = upCnt.createController()
+    place.cleanUp( upCntCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    cmds.setAttr( upCntCt[0] + '.ty', length * 100 )
+    cmds.setAttr( upCntCt[0] + '.visibility', 0 )
+    cmds.parentConstraint( 'master_Grp', upCntCt[0], mo = True )
+    #
+    #####
+
+    return curve, curve_up
 
 
-def ribbon_layers( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0 ):
+def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0, create_curve = False, create_up_curve = False ):
     '''
     follow formula for how control and follicles increase on layers. ie (controls * 2) -1 = follicles on the same layer. next layer controls match previous follicles
     '''
+    xmlt = 0.1
+    r_layer = None
     if not parent_layer:
-        ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X, ctrl_shape = ctrl_shape, reverse = reverse )
+        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse )
+    else:
+        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse )
+        i = 0
+        for control in r_layer.controls:
+            cmds.parentConstraint( parent_layer.follicles[i], control[0], mo = True )
+
+            #
+            i += 1
+    #
+    place.hijackVis( r_layer.controls_grp, master[2], name = 'ctrlLayer' + str( layer ), suffix = False, default = 0, mode = 'visibility' )
+
+    return r_layer
 
 
 class Ribbon():
@@ -1270,17 +1323,20 @@ class Ribbon():
         self.rows = rows
 
 
-def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False ):
+def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, create_curve = False, create_up_curve = False ):
     '''
     ribbon
+    maybe add a curve to each layer for visual reference
     '''
     # TODO: if rows == 2 aim at each end
     #
     length_ratio = length / width
     ribn = cmds.nurbsPlane( p = [0, 0, length / -2], ax = [0, 1, 0], w = width, lr = length_ratio , d = 3, u = 1, v = rows - 1, n = name + '_ribbon' )[0]
+    cmds.setAttr( ribn + '.v', 0 )
+    cmds.setAttr( ribn + '.template', 1 )
     cmds.select( ribn )
     mel.eval( 'DeleteHistory;' )
-    print( ribn )
+    # print( ribn )
     ribn_shape = cmds.listRelatives( ribn, s = True )[0]
     cmds.rotate( 0, 0, 90, ribn )
     # return
@@ -1290,10 +1346,14 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
     cmds.parent( f_grp, a_grp )
     cmds.parent( j_grp, a_grp )
     cmds.parent( ribn, a_grp )
+    cmds.setAttr( a_grp + '.v', 0 )
+    cmds.setAttr( f_grp + '.v', 0 )
+    cmds.setAttr( j_grp + '.v', 0 )
     #
     c_grp = cmds.group( em = True, n = name + '_ribbonControl_Grp' )
     try:
         cmds.parent( c_grp, CONTROLS() )
+        cmds.parent( a_grp, WORLD_SPACE() )
     except:
         pass
     #
@@ -1307,10 +1367,11 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
     step = step / length  # normalize to 0-1
     # print( step )
     follicle_only = False
-    i = 0
+    i = 0  # follicles
+    j = 0  # joints / controls
     for i in range( follicle_amount ):
         #
-        fol_shape = cmds.createNode( 'follicle', n = name + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_follicleShape' )
+        fol_shape = cmds.createNode( 'follicle', n = name + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_follicleShape' )
         follicle_shapes.append( fol_shape )
         fol = cmds.listRelatives( fol_shape, p = True )[0]
         follicles.append( fol )
@@ -1330,20 +1391,21 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
         if not follicle_only:
             # joints
             cmds.select( fol )
-            j = place.joint( order = 0, jntSuffix = 'tmp', pad = 2, rpQuery = True, radius = 1.0 )[0]
-            j = cmds.rename( j, name + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_follicleControlJnt' )
-            cmds.parent( j , j_grp )
-            joints.append( j )
+            jnt = place.joint( order = 0, jntSuffix = 'tmp', pad = 2, rpQuery = True, radius = 1.0 )[0]
+            jnt = cmds.rename( jnt, name + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( j ) ) + '_follicleControlJnt' )
+            cmds.parent( jnt , j_grp )
+            joints.append( jnt )
             # print( j )
 
             # controls
-            n = name + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) )
-            c_Ct = place.Controller2( n, j, True, ctrl_shape, X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+            n = name + '_point_' + str( ( '%0' + str( 2 ) + 'd' ) % ( j ) )
+            c_Ct = place.Controller2( n, jnt, True, ctrl_shape, X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
             cmds.parent( c_Ct[0], c_grp )
-            cmds.parentConstraint( c_Ct[4], j, mo = True )
+            cmds.parentConstraint( c_Ct[4], jnt, mo = True )
             controls.append( c_Ct )
             #
             follicle_only = True
+            j += 1
         else:
             follicle_only = False
 
