@@ -458,7 +458,9 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     # create attribute
     t_attr = 'travel'
     travel_max = 100.0
-    place.addAttribute( PositionCt[2], t_attr, 0.0, travel_max, True, 'float' )  # max is number of points on curve 31 * 10 = 310 # multiplier, MD node
+    place.addAttribute( PositionCt[2], t_attr, 0.0, travel_max, True, 'float' )
+    mlt_merge_travel_length = cmds.shadingNode( 'multDoubleLinear', n = PositionCt[2] + '_mergeLengthMlt', asUtility = True )  # connect below, twice
+    cmds.connectAttr( PositionCt[2] + '.' + t_attr, mlt_merge_travel_length + '.input1', force = True )
     #
     misc.optEnum( PositionCt[2], attr = 'extra', enum = 'CONTROL' )
     #
@@ -472,9 +474,11 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     #
     m_attr = 'microVis'
     place.addAttribute( PositionCt[2], m_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_attr, k = False, cb = True )
 
     m_up_attr = 'microUpVis'
     place.addAttribute( PositionCt[2], m_up_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_up_attr, k = False, cb = True )
     #
     crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
     arc_length = cmds.getAttr( crv_info + '.arcLength' )  # original
@@ -488,6 +492,7 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     cmds.setAttr( ( dvd_multiplier + '.operation' ), 2 )
     cmds.setAttr( dvd_multiplier + '.input1Z', 1.0 )
     cmds.connectAttr( ( dvd_length + '.outputZ' ), ( dvd_multiplier + '.input2Z' ) )
+    cmds.connectAttr( ( dvd_multiplier + '.outputZ' ), ( mlt_merge_travel_length + '.input2' ) )
 
     length = 0.0
     arc_fraction = 0.0
@@ -525,6 +530,7 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         #
         cmds.connectAttr( PositionCt[2] + '.' + m_attr, microCt[0] + '.visibility', force = True )
 
+        # use the first control on the up vector curve
         mo_path = cmds.pathAnimation( microCt[0], name = microCt[2] + '_motionPath' , c = curve, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
         cmds.setAttr( mo_path + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
         ac.deleteAnim2( mo_path, attrs = ['uValue'] )
@@ -548,31 +554,41 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         # add twist position attr and main travel attr values
         dbl_path = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_DblLnr' ) )
         cmds.connectAttr( mlt_merge_length + '.output', dbl_path + '.input1', force = True )
-        cmds.connectAttr( 'Position.travel', dbl_path + '.input2', force = True )  # hardcoded control, shouldnt be, fix it
+        cmds.connectAttr( mlt_merge_travel_length + '.output', dbl_path + '.input2', force = True )  # hardcoded control, shouldnt be, fix it
         # normalize result
-        mlt_path = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_pathMlt', asUtility = True )
+        mlt_path = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_normalizeMlt', asUtility = True )
         cmds.setAttr( mlt_path + '.input2', 0.01 )
         cmds.connectAttr( dbl_path + '.output', mlt_path + '.input1', force = True )
         cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
 
-        if curve_up and i > 0:
-            '''
-            need to add head to twisting, first neck joint doesnt get an aim constraint
-            '''
-            # up vector control
-            name = 'micro_up_' + pad_number( i = i )
-            microUpCt = place.Controller2( name, j, True, 'loc_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-            cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, microUpCt[0] + '.visibility', force = True )
-            place.cleanUp( microUpCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-            # stick to path
-            mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-            cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
-            ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
-            # connect travel, matching joint below
-            cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
-            # add aim constraint
-            cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
+        if curve_up:
+            if i > 0:
+                '''
+                need to add head to twisting, first neck joint doesnt get an aim constraint
+                '''
+                # up vector control
+                name = 'micro_up_' + pad_number( i = i )
+                microUpCt = place.Controller2( name, j, True, 'loc_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+                cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, microUpCt[0] + '.visibility', force = True )
+                place.cleanUp( microUpCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+                # stick to path
+                mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+                cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+                ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
+                # connect travel, matching joint below
+                cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+                # add aim constraint
+                cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
+            else:
+                '''
+                solve head / base neck controls.. they dont twist with ribbon
+                '''
+                pass
 
+        '''
+        add head / tail lock switch
+        add guides every few joints, for up vector visual
+        '''
         #
         i += 1
 
