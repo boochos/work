@@ -1249,7 +1249,7 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     # path curve_up, up vectors
     curve_up = cmds.duplicate( curve, name = curve + '_up' )[0]
     cmds.setAttr( curve_up + '.template', 1 )
-    cmds.setAttr( curve_up + '.ty', width * 2 )
+    cmds.setAttr( curve_up + '.ty', width * 3 )
     #
     clusters_up = place.clstrOnCV( curve_up, 'layer_' + pad_number( i = layers ) + '_up_Clstr' )
     cGrpUp = 'clstrUp_' + pad_number( i = layers ) + '_Grp'

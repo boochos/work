@@ -464,21 +464,37 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     #
     misc.optEnum( PositionCt[2], attr = 'extra', enum = 'CONTROL' )
     #
+    '''
     v_attr = 'upVis'
     place.addAttribute( PositionCt[2], v_attr, 0, 1, True, 'long' )
     cmds.setAttr( PositionCt[2] + '.' + v_attr, k = False, cb = True )
+    '''
     #
     cmds.parentConstraint( start_jnt, PositionCt[0], mo = True )
     place.setChannels( PositionCt[2], [True, False], [True, False], [True, False], [True, True, False] )
     place.cleanUp( PositionCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
     #
-    m_attr = 'microVis'
-    place.addAttribute( PositionCt[2], m_attr, 0, 1, True, 'long' )
-    cmds.setAttr( PositionCt[2] + '.' + m_attr, k = False, cb = True )
+    m_ground_attr = 'microGroundVis'
+    place.addAttribute( PositionCt[2], m_ground_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_ground_attr, k = False, cb = True )
+    m_ground_grp = cmds.group( em = True, n = 'microGround_Grp' )
+    place.cleanUp( m_ground_grp, Ctrl = True )
+    cmds.connectAttr( PositionCt[2] + '.' + m_ground_attr, m_ground_grp + '.visibility', force = True )
+
+    m_body_attr = 'microBodyVis'
+    place.addAttribute( PositionCt[2], m_body_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_body_attr, k = False, cb = True )
+    m_body_grp = cmds.group( em = True, n = 'microBody_Grp' )
+    place.cleanUp( m_body_grp, Ctrl = True )
+    cmds.connectAttr( PositionCt[2] + '.' + m_body_attr, m_body_grp + '.visibility', force = True )
 
     m_up_attr = 'microUpVis'
     place.addAttribute( PositionCt[2], m_up_attr, 0, 1, True, 'long' )
-    cmds.setAttr( PositionCt[2] + '.' + m_up_attr, k = False, cb = True )
+    cmds.setAttr( PositionCt[2] + '.' + m_up_attr, k = False, cb = False )
+    m_up_grp = cmds.group( em = True, n = 'microUp_Grp' )
+    place.cleanUp( m_up_grp, Ctrl = True )
+    cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, m_up_grp + '.visibility', force = True )
+
     #
     crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
     arc_length = cmds.getAttr( crv_info + '.arcLength' )  # original
@@ -505,8 +521,10 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         attach_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt, reroot = True )
     else:
         attach_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt )
+
     # return
     # attachs
+    upCts = []
     i = 0
     for j in attach_jnts:
         # position, startU value
@@ -518,20 +536,42 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
             arc_fraction = length / arc_length  # accumulated arc length
             # print( 'length: ', length, 'fraction: ', arc_fraction )
 
-        # control
-        name = 'micro_' + pad_number( i = i )
-        microCt = place.Controller2( name, j, True, 'loc_ctrl', 8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-        place.cleanUp( microCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+        #
+        microUpCt = None
+        if curve_up:
+            # up vector control
+            name = 'micro_up_' + pad_number( i = i )
+            microUpCt = place.Controller2( name, j, True, 'loc_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+            upCts.append( microUpCt[4] )
+            place.translationLock( microUpCt[2] )
+            place.rotationLock( microUpCt[2] )
+            place.translationYLock( microUpCt[2] )
+            # cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, microUpCt[0] + '.visibility', force = True )
+            cmds.parent( microUpCt[0], m_up_grp )
+            # stick to path
+            mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+            cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+            ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
+
+        # control for body
+        name = 'microBody_' + pad_number( i = i )
+        microBodyCt = place.Controller2( name, skin_jnts[i], False, 'facetZup_ctrl', 5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        cmds.parent( microBodyCt[0], m_body_grp )
+        cmds.parentConstraint( microBodyCt[4], skin_jnts[i], mo = True )
+        cmds.parentConstraint( j, microBodyCt[0], mo = True )
+
+        # control on ground
+        name = 'microGround_' + pad_number( i = i )
+        microCt = place.Controller2( name, j, True, 'rectangleWideYup_ctrl', 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        cmds.parent( microCt[0], m_ground_grp )
         cmds.parentConstraint( microCt[4], j, mo = False )
         # cmds.parentConstraint( 'master_Grp', microCt[0], mo = True )
         place.addAttribute( microCt[2], 'position', 0.0, 100.0, True, 'float' )  # max is number of points in curve
         cmds.setAttr( microCt[2] + '.position', arc_fraction * 100 )
         cmds.setAttr( microCt[2] + '.position', lock = True )
-        #
-        cmds.connectAttr( PositionCt[2] + '.' + m_attr, microCt[0] + '.visibility', force = True )
 
         # use the first control on the up vector curve
-        mo_path = cmds.pathAnimation( microCt[0], name = microCt[2] + '_motionPath' , c = curve, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+        mo_path = cmds.pathAnimation( microCt[0], name = microCt[2] + '_motionPath' , c = curve, startU = 0.0, follow = True, wut = 'object', wuo = microUpCt[4], fm = False, fa = 'z', ua = 'y' )
         cmds.setAttr( mo_path + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
         ac.deleteAnim2( mo_path, attrs = ['uValue'] )
 
@@ -561,36 +601,26 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         cmds.connectAttr( dbl_path + '.output', mlt_path + '.input1', force = True )
         cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
 
-        if curve_up:
-            if i > 0:
-                '''
-                need to add head to twisting, first neck joint doesnt get an aim constraint
-                '''
-                # up vector control
-                name = 'micro_up_' + pad_number( i = i )
-                microUpCt = place.Controller2( name, j, True, 'loc_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-                cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, microUpCt[0] + '.visibility', force = True )
-                place.cleanUp( microUpCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
-                # stick to path
-                mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-                cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
-                ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
-                # connect travel, matching joint below
-                cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
-                # add aim constraint
-                cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
-            else:
-                '''
-                solve head / base neck controls.. they dont twist with ribbon
-                '''
-                pass
+        cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+        # finish up vector travel and aim constraint for snake
+        # connect travel, matching joint below
+        if i > 0:
+            # cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+            # add aim constraint
+            cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
 
-        '''
-        add head / tail lock switch
-        add guides every few joints, for up vector visual
-        '''
         #
         i += 1
+
+    # guides
+    # guides_grp = guide_many_to_many( PositionCt[2], attach_jnts, upCts, 5 )
+    guides_grp = guide_many_to_many( prefix = 'many', vis_object = PositionCt[2], many1 = attach_jnts, many2 = upCts, offset = 0.0, every_nth = 5 )
+    '''
+    add head / tail lock switch, blending
+    add fk parent switches for ribbons
+    add fk parent switches for body micros
+    
+    '''
 
 
 def dynamicJiggle():
@@ -704,9 +734,12 @@ def path_joint_chain( start_jnt = '', end_jnt = '', reroot = False ):
     # return
 
     # constrain
-    skin_jnts_to_path_jnts( skin_jnts = skin_jnts, path_jnts = path_jnts )
+    '''
+    # skipping, will add controls instead of joint to joint constraint
+    skin_jnts_to_path_jnts( skin_jnts = skin_jnts, path_jnts = path_jnts, controls = True )
     print( 'constrained' )
     print( path_jnts )
+    '''
     # return
 
     if reroot:
@@ -756,7 +789,7 @@ def path_joints_to_ground( path_jnts = [], reroot = False ):
     path_jnts.reverse()  # for some reason i need to reverse the change as it effects the list outside this function
 
 
-def skin_jnts_to_path_jnts( skin_jnts = [], path_jnts = [] ):
+def skin_jnts_to_path_jnts( skin_jnts = [], path_jnts = [], controls = True ):
     '''
     
     '''
@@ -791,6 +824,40 @@ def guide_line_one_to_many( obj = '', many = [], offset = 1.5 ):
         cmds.parent( result[0], g )
         cmds.parent( result[1], g )
         cmds.parent( g, n )
+
+
+def guide_many_to_many( prefix = 'many', vis_object = '', many1 = [], many2 = [], offset = 0.0, every_nth = 4 ):
+    '''
+    
+    '''
+    grp = cmds.group( name = prefix + '_GuideGrp', em = True )
+    print( grp, vis_object )
+    place.hijackVis( grp, vis_object, name = 'guides', suffix = True, default = False, mode = 'visibility' )
+    place.cleanUp( grp, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
+    n = 0
+    for i in range( len( many1 ) ):
+        #
+        if n == 0:
+            g = cmds.group( name = prefix + '___' + many1[i] + '___' + many2[i], em = True )
+            result = place.guideLine( many1[i], many2[i], Name = 'guide' )
+            #
+            cmds.select( result[1][1] )
+            cmds.pickWalk( d = 'down' )
+            cmds.pickWalk( d = 'left' )
+            c = cmds.ls( sl = True )[0]
+            cmds.setAttr( c + '.offsetY', offset )
+            #
+            cmds.parent( result[0], g )
+            cmds.parent( result[1], g )
+            cmds.parent( g, grp )
+        #
+        if n == every_nth - 1:
+            n = 0
+        else:
+            n += 1
+
+    #
+    return grp
 
 
 def pad_number( i = 1, pad = 2 ):
