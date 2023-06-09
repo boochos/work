@@ -1404,6 +1404,24 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
             cmds.parentConstraint( c_Ct[4], jnt, mo = True )
             controls.append( c_Ct )
             #
+            if cmds.objExists( MASTERCT()[4] ):
+                if j > 0:
+                    place.parentSwitch( 
+                        name = c_Ct[2],
+                        Ct = c_Ct[2],
+                        CtGp = c_Ct[1],
+                        TopGp = c_Ct[0],
+                        ObjOff = c_Ct[0],
+                        ObjOn = controls[j - 1][4],
+                        Pos = False,
+                        Ornt = False,
+                        Prnt = True,
+                        OPT = True,
+                        attr = 'fk',
+                        w = 0.0 )
+                else:
+                    cmds.parentConstraint( MASTERCT()[4], c_Ct[0], mo = True )
+            #
             follicle_only = True
             j += 1
         else:

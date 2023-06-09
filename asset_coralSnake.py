@@ -170,7 +170,7 @@ def body_spline( tail_as_root = True ):
     pathIk2( curve = curve, position_ctrl = position_ctrl, tail_as_root = tail_as_root, curve_up = curve_up )
     #
     misc.optEnum( position_ctrl[2], attr = 'path', enum = 'CONTROL' )
-    cmds.setAttr( master + '.path', cb = False )
+    # cmds.setAttr( master + '.path', cb = False )
     i = 0
     while i <= layers - 1:
         place.hijackAttrs( master, position_ctrl[2], 'ctrlLayer' + str( i ), 'ctrlLayer' + str( i ), set = False, default = None, force = True )
@@ -462,6 +462,13 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     mlt_merge_travel_length = cmds.shadingNode( 'multDoubleLinear', n = PositionCt[2] + '_mergeLengthMlt', asUtility = True )  # connect below, twice
     cmds.connectAttr( PositionCt[2] + '.' + t_attr, mlt_merge_travel_length + '.input1', force = True )
     #
+    cmds.parentConstraint( start_jnt, PositionCt[0], mo = True )
+    place.setChannels( PositionCt[2], [True, False], [True, False], [True, False], [True, True, False] )
+    place.cleanUp( PositionCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    cmds.setAttr( PositionCt[2] + '.v', k = False, cb = False )
+    cmds.setAttr( PositionCt[2] + '.ro', k = False, cb = False )
+    cmds.setAttr( PositionCt[2] + '.Offset_Vis', k = False, cb = False )
+    #
     misc.optEnum( PositionCt[2], attr = 'extra', enum = 'CONTROL' )
     #
     '''
@@ -470,9 +477,12 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     cmds.setAttr( PositionCt[2] + '.' + v_attr, k = False, cb = True )
     '''
     #
-    cmds.parentConstraint( start_jnt, PositionCt[0], mo = True )
-    place.setChannels( PositionCt[2], [True, False], [True, False], [True, False], [True, True, False] )
-    place.cleanUp( PositionCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    m_body_attr = 'microBodyVis'
+    place.addAttribute( PositionCt[2], m_body_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_body_attr, k = False, cb = True )
+    m_body_grp = cmds.group( em = True, n = 'microBody_Grp' )
+    place.cleanUp( m_body_grp, Ctrl = True )
+    cmds.connectAttr( PositionCt[2] + '.' + m_body_attr, m_body_grp + '.visibility', force = True )
     #
     m_ground_attr = 'microGroundVis'
     place.addAttribute( PositionCt[2], m_ground_attr, 0, 1, True, 'long' )
@@ -480,14 +490,7 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     m_ground_grp = cmds.group( em = True, n = 'microGround_Grp' )
     place.cleanUp( m_ground_grp, Ctrl = True )
     cmds.connectAttr( PositionCt[2] + '.' + m_ground_attr, m_ground_grp + '.visibility', force = True )
-
-    m_body_attr = 'microBodyVis'
-    place.addAttribute( PositionCt[2], m_body_attr, 0, 1, True, 'long' )
-    cmds.setAttr( PositionCt[2] + '.' + m_body_attr, k = False, cb = True )
-    m_body_grp = cmds.group( em = True, n = 'microBody_Grp' )
-    place.cleanUp( m_body_grp, Ctrl = True )
-    cmds.connectAttr( PositionCt[2] + '.' + m_body_attr, m_body_grp + '.visibility', force = True )
-
+    #
     m_up_attr = 'microUpVis'
     place.addAttribute( PositionCt[2], m_up_attr, 0, 1, True, 'long' )
     cmds.setAttr( PositionCt[2] + '.' + m_up_attr, k = False, cb = False )
@@ -559,6 +562,21 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         cmds.parent( microBodyCt[0], m_body_grp )
         cmds.parentConstraint( microBodyCt[4], skin_jnts[i], mo = True )
         cmds.parentConstraint( j, microBodyCt[0], mo = True )
+        #
+        if i > 0:
+            place.parentSwitch( 
+                name = microBodyCt[2],
+                Ct = microBodyCt[2],
+                CtGp = microBodyCt[1],
+                TopGp = microBodyCt[0],
+                ObjOff = j,
+                ObjOn = skin_jnts[i - 1],
+                Pos = False,
+                Ornt = False,
+                Prnt = True,
+                OPT = True,
+                attr = 'fk',
+                w = 0.0 )
 
         # control on ground
         name = 'microGround_' + pad_number( i = i )
@@ -617,9 +635,7 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     guides_grp = guide_many_to_many( prefix = 'many', vis_object = PositionCt[2], many1 = attach_jnts, many2 = upCts, offset = 0.0, every_nth = 5 )
     '''
     add head / tail lock switch, blending
-    add fk parent switches for ribbons
-    add fk parent switches for body micros
-    
+    travel control has too many connection, slow to select, stick connections on offset. hijack controls after to filter out nodes from loading as inputs
     '''
 
 

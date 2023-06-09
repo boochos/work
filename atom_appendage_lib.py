@@ -90,11 +90,12 @@ def aimRig( name = '', obj = '', aimObj = '', upParent = '', distance = 5, aim =
     childRot = pyChild.getRotation( space = 'world' )
 
     # aim loc
+    '''
     aimLoc = spaceLocator( name = 'aimLoc' + name )
     aimLoc.setTranslation( childPos )
     aimLoc.setRotation( childRot )
     # aimLoc.setParent( upParent )
-    aimLoc.visibility.set( 0 )
+    aimLoc.visibility.set( 0 )'''
 
     # up loc
     upLoc = spaceLocator( name = 'upLoc' + name )
