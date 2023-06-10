@@ -1420,7 +1420,8 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
                         attr = 'fk',
                         w = 0.0 )
                 else:
-                    cmds.parentConstraint( MASTERCT()[4], c_Ct[0], mo = True )
+                    pass
+                    # gets constrained to follicle later in layer function
             #
             follicle_only = True
             j += 1

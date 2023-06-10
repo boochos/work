@@ -24,6 +24,11 @@ def ____PREBUILD():
 
 
 def prebuild():
+    '''
+    
+    '''
+    atom_ui()
+    #
     PreBuild = place.rigPrebuild( Top = 0, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = True, Size = 35 )
     CHARACTER = PreBuild[0]
     CONTROLS = PreBuild[1]
@@ -457,10 +462,15 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         PositionCt = position_ctrl
     # create attribute
     t_attr = 'travel'
-    travel_max = 100.0
-    place.addAttribute( PositionCt[2], t_attr, 0.0, travel_max, True, 'float' )
-    mlt_merge_travel_length = cmds.shadingNode( 'multDoubleLinear', n = PositionCt[2] + '_mergeLengthMlt', asUtility = True )  # connect below, twice
-    cmds.connectAttr( PositionCt[2] + '.' + t_attr, mlt_merge_travel_length + '.input1', force = True )
+    travel_max = 2000.0  # meant to be used as percent. length is 50%, 300% ,of original length
+    place.addAttribute( PositionCt[3], t_attr, 0.0, travel_max, True, 'float' )
+    mlt_merge_travel_length = cmds.shadingNode( 'multDoubleLinear', n = PositionCt[3] + '_mergeLengthMlt', asUtility = True )  # connect below, twice
+    cmds.connectAttr( PositionCt[3] + '.' + t_attr, mlt_merge_travel_length + '.input1', force = True )
+    place.hijackAttrs( position_ctrl[3], position_ctrl[2], t_attr, t_attr, set = False, default = None, force = True )
+    # root attr
+    root_attr = 'headAsRoot'
+    place.addAttribute( PositionCt[3], root_attr, 0.0, 1.0, True, 'float' )
+    place.hijackAttrs( position_ctrl[3], position_ctrl[2], root_attr, root_attr, set = True, default = 1.0, force = True )
     #
     cmds.parentConstraint( start_jnt, PositionCt[0], mo = True )
     place.setChannels( PositionCt[2], [True, False], [True, False], [True, False], [True, True, False] )
@@ -512,6 +522,16 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     cmds.setAttr( dvd_multiplier + '.input1Z', 1.0 )
     cmds.connectAttr( ( dvd_length + '.outputZ' ), ( dvd_multiplier + '.input2Z' ) )
     cmds.connectAttr( ( dvd_multiplier + '.outputZ' ), ( mlt_merge_travel_length + '.input2' ) )
+    #
+    '''
+    # create tail as root nodes
+    mlt_tail_length = cmds.shadingNode( 'multDoubleLinear', n = curve + '_tailLockMlt', asUtility = True )  # to negative, to percent
+    cmds.setAttr( mlt_tail_length + '.input2', -100 )
+    cmds.connectAttr( dvd_multiplier + '.outputZ', mlt_tail_length + '.input1' )
+    #
+    add_tail_shift = cmds.createNode( 'addDoubleLinear', name = ( curve + '_tailAddLnr' ) )  # percent to move, so distance remains the same at tail
+    cmds.connectAttr( mlt_tail_length + '.output', add_tail_shift + '.input2' )
+    cmds.setAttr( add_tail_shift + '.input1', 100 )'''
 
     length = 0.0
     arc_fraction = 0.0
@@ -609,14 +629,44 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         cmds.connectAttr( mlt_ramp + '.output', ramp + '.colorEntryList[' + str( ramp_int ) + '].position', force = True )
         '''
 
-        # add twist position attr and main travel attr values
+        # add twist position attr and main travel attr values, quickly growing into maze :(
         dbl_path = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_DblLnr' ) )
         cmds.connectAttr( mlt_merge_length + '.output', dbl_path + '.input1', force = True )
-        cmds.connectAttr( mlt_merge_travel_length + '.output', dbl_path + '.input2', force = True )  # hardcoded control, shouldnt be, fix it
+        cmds.connectAttr( mlt_merge_travel_length + '.output', dbl_path + '.input2', force = True )
         # normalize result
         mlt_path = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_normalizeMlt', asUtility = True )
         cmds.setAttr( mlt_path + '.input2', 0.01 )
-        cmds.connectAttr( dbl_path + '.output', mlt_path + '.input1', force = True )
+
+        # tail lock for stretch, tail as root
+        neg_tail_mlt = cmds.createNode( 'multDoubleLinear', name = microCt[2] + '_tailMakeNegative_Mlt' )
+        cmds.connectAttr( microCt[2] + '.position', neg_tail_mlt + '.input1', force = True )
+        cmds.setAttr( neg_tail_mlt + '.input2', -1.0 )
+        #
+        sub_tail_add = cmds.createNode( 'addDoubleLinear', name = microCt[2] + '_tailToEnd_Add' )
+        cmds.connectAttr( neg_tail_mlt + '.output', sub_tail_add + '.input2' )
+        cmds.setAttr( sub_tail_add + '.input1', 100.0 )
+        #
+        length_tail_mlt = cmds.createNode( 'multDoubleLinear', name = microCt[2] + '_tailLengthChange_Mlt' )
+        cmds.connectAttr( sub_tail_add + '.output', length_tail_mlt + '.input1' )
+        cmds.connectAttr( dvd_multiplier + '.outputZ', length_tail_mlt + '.input2' )
+        #
+        lengthNeg_tail_mlt = cmds.createNode( 'multDoubleLinear', name = microCt[2] + '_tailMakeLengthNeg_Mlt' )
+        cmds.connectAttr( length_tail_mlt + '.output', lengthNeg_tail_mlt + '.input1' )
+        cmds.setAttr( lengthNeg_tail_mlt + '.input2', -1.0 )
+        #
+        subNew_tail_add = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_subtractNew_Add' ) )
+        cmds.setAttr( subNew_tail_add + '.input1', 100.0 )
+        cmds.connectAttr( lengthNeg_tail_mlt + '.output', subNew_tail_add + '.input2' )
+
+        # NEED TO CONNECT TRAVEL TO TAIL LOCK
+
+        #
+        blnd_root_typs = cmds.shadingNode( 'blendColors', name = ( microCt[2] + '_rootTypeBlend' ), asUtility = True )
+        cmds.connectAttr( subNew_tail_add + '.output', blnd_root_typs + '.color2R' )  # # change
+        cmds.connectAttr( position_ctrl[3] + '.' + root_attr, blnd_root_typs + '.blender', force = True )
+        #
+        cmds.connectAttr( dbl_path + '.output', blnd_root_typs + '.color1R' )  # into blend before normalizing
+        cmds.connectAttr( blnd_root_typs + '.outputR', mlt_path + '.input1', force = True )
         cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
 
         cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
@@ -634,8 +684,9 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     # guides_grp = guide_many_to_many( PositionCt[2], attach_jnts, upCts, 5 )
     guides_grp = guide_many_to_many( prefix = 'many', vis_object = PositionCt[2], many1 = attach_jnts, many2 = upCts, offset = 0.0, every_nth = 5 )
     '''
-    add head / tail lock switch, blending
-    travel control has too many connection, slow to select, stick connections on offset. hijack controls after to filter out nodes from loading as inputs
+    add head / tail lock switch
+    tail lock working, need to add travel offset
+    
     '''
 
 
@@ -818,6 +869,15 @@ def skin_jnts_to_path_jnts( skin_jnts = [], path_jnts = [], controls = True ):
 
 def ____UTIL():
     pass
+
+
+def atom_ui():
+    '''
+    dumb legacy hack
+    splines dont build unless window is open, maybe other tools as well
+    '''
+    atom = web.mod( "atom_lib" )
+    atom.win()
 
 
 def guide_line_one_to_many( obj = '', many = [], offset = 1.5 ):
