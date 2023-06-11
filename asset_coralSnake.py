@@ -62,6 +62,18 @@ def prebuild():
         cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
 
 
+def build():
+    '''
+    
+    '''
+    prebuild()
+    head()
+    con = cmds.parentConstraint( 'neck_03_jnt', 'neckIk_base_jnt', mo = True )  # need micro body controls to exist, have to constraint to skin joint, and apply rig after body_spline
+    body_spline( tail_as_root = False )
+    cmds.delete( con )
+    neck()
+
+
 def ____FACE():
     pass
 
@@ -69,21 +81,48 @@ def ____FACE():
 def tongue():
     # tongue
     # TongueCt = place.Controller2( 'Tongue', 'jaw_jnt', False, 'splineStart_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    tongueMicro = faceRig.snakeTongue( 'tongue', 0.50 )
+    tongueMicro = faceRig.snakeTongue( 'tongue', 0.3 )
+
+
+def throat():
+    '''
+    
+    '''
+    #
+    baseCt = place.Controller2( 'throat', 'throat_base_jnt', True, 'facetXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( 'neck_02_jnt', baseCt[0], mo = True )
+    cmds.parentConstraint( baseCt[4], 'throat_base_jnt', mo = True )
+    place.cleanUp( baseCt[0], Ctrl = True )
+    #
+    tipCt = place.Controller2( 'throat_tip', 'throat_tip_jnt', True, 'facetXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( 'jawTip_jnt', tipCt[0], mo = True )
+    cmds.parentConstraint( tipCt[4], 'throat_tip_jnt', mo = True )
+    place.cleanUp( tipCt[0], Ctrl = True )
+
+    # spline
+    name = 'throatMicro'
+    spline( name = name, start_jnt = 'throat_01_jnt', end_jnt = 'throat_05_jnt', splinePrnt = 'neck_02_jnt', splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.1, splineFalloff = 1 )
+    #
+    cmds.setAttr( name + '.Stretch', 1 )
+    cmds.setAttr( name + '.ClstrMidIkBlend', 0.5 )
+    cmds.setAttr( name + '.VctrMidIkBlend', 0.5 )
+    #
+    place.hijackAttrs( baseCt[0], name, 'visibility', 'baseVis', set = True, default = 0.0, force = True )
+    place.hijackAttrs( tipCt[0], name, 'visibility', 'tipVis', set = True, default = 0.0, force = True )
 
 
 def fangs():
     # fangs
     # fangL = place.Controller( 'fang_L', 'fang_jnt_L', orient = True, shape = 'squareXup_ctrl', size = 2, color = 6, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
     # fangLCt = fangL.createController()
-    fangLCt = place.Controller2( 'fang_L', 'fang_jnt_L', True, 'squareXup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
+    fangLCt = place.Controller2( 'fang_L', 'fang_jnt_L', True, 'squareXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
     cmds.setAttr( fangLCt[2] + '.showManipDefault', 2 )
     place.translationLock( fangLCt[2], True )
     place.rotationLock( fangLCt[2], True )
     place.rotationXLock( fangLCt[2], False )
     # fangR = place.Controller( 'fang_R', 'fang_jnt_R', orient = True, shape = 'squareXup_ctrl', size = 2, color = 13, sections = 8, degree = 1, normal = ( 0, 0, 1 ), setChannels = True, groups = True )
     # fangRCt = fangR.createController()
-    fangRCt = place.Controller2( 'fang_R', 'fang_jnt_R', True, 'squareXup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    fangRCt = place.Controller2( 'fang_R', 'fang_jnt_R', True, 'squareXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
     cmds.setAttr( fangRCt[2] + '.showManipDefault', 2 )
     place.translationLock( fangRCt[2], True )
     place.rotationLock( fangRCt[2], True )
@@ -98,33 +137,41 @@ def fangs():
 
 
 def jaw():
-    JawCt = place.Controller2( 'jaw', 'jaw_jnt', True, 'neckMaster_ctrl', 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    #
+    JawCt = place.Controller2( 'jaw', 'jaw_jnt', True, 'rectangleZforward_ctrl', 2.45, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.setAttr( JawCt[2] + '.showManipDefault', 2 )
     place.translationLock( JawCt[2], True )
     cmds.parentConstraint( JawCt[4], 'jaw_jnt', mo = True )
     cmds.parentConstraint( 'head_jnt', JawCt[0], mo = True )
     place.cleanUp( JawCt[0], Ctrl = True )
-    JawTipCt = place.Controller2( 'jawTip', 'jawTip_jnt', True, 'squareZup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    #
+    JawTipCt = place.Controller2( 'jaw_tip', 'jawTip_jnt', True, 'rectangleWideZup_ctrl', 0.75, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     cmds.setAttr( JawTipCt[2] + '.showManipDefault', 2 )
     place.translationLock( JawTipCt[2], True )
     place.rotationLock( JawTipCt[2], True )
     place.rotationZLock( JawTipCt[2], False )
     cmds.parentConstraint( 'jaw_jnt', JawTipCt[0], mo = True )
+    cmds.parentConstraint( JawTipCt[4], 'jawTip_jnt', mo = True )
     place.cleanUp( JawTipCt[0], Ctrl = True )
-    JawLCt = place.Controller2( 'jawTip_L', 'jawTip_jnt_L', True, 'squareZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
+    #
+    JawLCt = place.Controller2( 'jaw_tip_L', 'jawTip_jnt_L', True, 'squareZup_ctrl', 0.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
     cmds.setAttr( JawLCt[2] + '.showManipDefault', 1 )
     place.translationLock( JawLCt[2], True )
     place.rotationLock( JawLCt[2], True )
     place.translationYLock( JawLCt[2], False )
     cmds.parentConstraint( JawTipCt[4], JawLCt[0], mo = True )
     place.cleanUp( JawLCt[0], Ctrl = True )
-    JawRCt = place.Controller2( 'jawTip_R', 'jawTip_jnt_R', True, 'squareZup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    cmds.setAttr( JawLCt[0] + '.v', 0 )
+    #
+    JawRCt = place.Controller2( 'jaw_tip_R', 'jawTip_jnt_R', True, 'squareZup_ctrl', 0.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
     cmds.setAttr( JawRCt[2] + '.showManipDefault', 1 )
     place.translationLock( JawRCt[2], True )
     place.rotationLock( JawRCt[2], True )
     place.translationYLock( JawRCt[2], False )
     cmds.parentConstraint( JawTipCt[4], JawRCt[0], mo = True )
     place.cleanUp( JawRCt[0], Ctrl = True )
+    cmds.setAttr( JawRCt[0] + '.v', 0 )
+    #
     apg.aimRig( name = 'jaw_L', obj = 'jaw_jnt_L', aimObj = JawLCt[4], upParent = JawCt[4], distance = 5, aim = [0, 0, 1], up = [0, 1, 0] )
     apg.aimRig( name = 'jaw_R', obj = 'jaw_jnt_R', aimObj = JawRCt[4], upParent = JawCt[4], distance = 5, aim = [0, 0, -1], up = [0, -1, 0] )
 
@@ -139,7 +186,7 @@ def head():
     '''
     X = 1
     #
-    head_Ct = place.Controller2( 'head', 'head_jnt', True, 'squareZup_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    head_Ct = place.Controller2( 'head', 'head_jnt', True, 'bedZforward_ctrl', X * 3.25, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.setAttr( head_Ct[2] + '.showManipDefault', 2 )
     place.translationLock( head_Ct[2], lock = True )
     cmds.parentConstraint( head_Ct[4], 'head_jnt', mo = True )
@@ -148,9 +195,45 @@ def head():
     #
     place.parentSwitch( head_Ct[2], head_Ct[2], head_Ct[1], head_Ct[0], 'master_Grp', 'neck_01_jnt', False, True, False, True, 'Neck', 0.0 )
     #
+    throat()
     tongue()
     fangs()
     jaw()
+
+
+def neck( micro_body_control = 'micro_body_02' ):
+    '''
+    need micro body control at base of neck
+    parent option for micro controls
+    should easily be able to change length of neck.... should be able to place spline joints, instead of having them pre-made
+    '''
+    #
+    baseCt = place.Controller2( 'neck_ik_base', 'neckIk_base_jnt', True, 'facetZup_ctrl', 4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( micro_body_control, baseCt[0], mo = True )
+    cmds.parentConstraint( baseCt[4], 'neckIk_base_jnt', mo = True )
+    place.cleanUp( baseCt[0], Ctrl = True )
+    #
+    tipCt = place.Controller2( 'neck_ik_tip', 'neckIk_tip_jnt', True, 'facetZup_ctrl', 5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.parentConstraint( micro_body_control, tipCt[0], mo = True )
+    cmds.parentConstraint( tipCt[4], 'neckIk_tip_jnt', mo = True )
+    place.cleanUp( tipCt[0], Ctrl = True )
+    '''
+    tip needs control rotating with world from base as a parent or fk. add switch
+    '''
+
+    # spline
+    name = 'neck_ik'
+    spline( name = name, start_jnt = 'neckIk_01_jnt', end_jnt = 'neckIk_03_jnt', splinePrnt = baseCt[4], splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.4, splineFalloff = 1 )
+    cmds.setAttr( name + '.ClstrMidIkBlend', 0.5 )
+    '''
+    need spline spline joint chain so microbody receive parent switches to ik neck
+    '''
+
+    #
+    '''
+    place.hijackAttrs( baseCt[0], name, 'visibility', 'baseVis', set = True, default = 0.0, force = True )
+    place.hijackAttrs( tipCt[0], name, 'visibility', 'tipVis', set = True, default = 0.0, force = True )
+    '''
 
 
 def body_spline( tail_as_root = True ):
@@ -167,9 +250,9 @@ def body_spline( tail_as_root = True ):
     master = 'master'
     layers = 6
     # returnsNothing_FixIt = ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = reverse )
-    curve, curve_up = ump.ribbon_path( name = '', layers = 6, length = 120, width = 3, X = 2.0, ctrl_shape = 'arrow_ctrl', reverse = True, prebuild = False, prebuild_type = 4 )
+    curve, curve_up = ump.ribbon_path( name = '', layers = 6, length = 120, width = 3, X = 2.0, ctrl_shape = 'halfPyramidZ_ctrl', reverse = True, prebuild = False, prebuild_type = 4 )
     #
-    position_ctrl = place.Controller2( 'Position', 'neck_01_jnt', True, 'splineStart_ctrl', 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    position_ctrl = place.Controller2( 'position', 'neck_01_jnt', True, 'pinYup_ctrl', 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     #
     # pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root )
     pathIk2( curve = curve, position_ctrl = position_ctrl, tail_as_root = tail_as_root, curve_up = curve_up )
@@ -457,7 +540,7 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
     # travel control
     PositionCt = None
     if not position_ctrl:
-        PositionCt = place.Controller2( 'Position', start_jnt, True, 'splineStart_ctrl', 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        PositionCt = place.Controller2( 'position', start_jnt, True, 'pinYup_ctrl', 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     else:
         PositionCt = position_ctrl
     # create attribute
@@ -546,6 +629,8 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         attach_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt )
 
     # return
+    # for parent switches up chain
+    microBodyCts = []
     # attachs
     upCts = []
     i = 0
@@ -577,13 +662,18 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
             ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
 
         # control for body
-        name = 'microBody_' + pad_number( i = i )
-        microBodyCt = place.Controller2( name, skin_jnts[i], False, 'facetZup_ctrl', 5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        fk_start = 50
+        color = 'brown'
+        if i >= fk_start:
+            color = 'yellow'
+        name = 'micro_body_' + pad_number( i = i )
+        microBodyCt = place.Controller2( name, skin_jnts[i], False, 'facetZup_ctrl', 3.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
         cmds.parent( microBodyCt[0], m_body_grp )
         cmds.parentConstraint( microBodyCt[4], skin_jnts[i], mo = True )
         cmds.parentConstraint( j, microBodyCt[0], mo = True )
-        #
-        if i > 0:
+        microBodyCts.append( microBodyCt )
+        # fk down chain
+        if i >= fk_start:  # old: if i > 0:
             place.parentSwitch( 
                 name = microBodyCt[2],
                 Ct = microBodyCt[2],
@@ -599,8 +689,8 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
                 w = 0.0 )
 
         # control on ground
-        name = 'microGround_' + pad_number( i = i )
-        microCt = place.Controller2( name, j, True, 'rectangleWideYup_ctrl', 3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        name = 'micro_ground_' + pad_number( i = i )
+        microCt = place.Controller2( name, j, True, 'rectangleWideYup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
         cmds.parent( microCt[0], m_ground_grp )
         cmds.parentConstraint( microCt[4], j, mo = False )
         # cmds.parentConstraint( 'master_Grp', microCt[0], mo = True )
@@ -680,13 +770,32 @@ def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01
         #
         i += 1
 
+    '''
+    # fk up chain, doesnt work. gonna use spline
+    i = 0
+    for ct  in microBodyCts:
+        if i < 10:
+            place.parentSwitch( 
+                name = ct[2],
+                Ct = ct[2],
+                CtGp = ct[1],
+                TopGp = ct[0],
+                ObjOff = attach_jnts[i],
+                ObjOn = microBodyCts[i + 1][4],
+                Pos = False,
+                Ornt = False,
+                Prnt = True,
+                OPT = True,
+                attr = 'fk',
+                w = 0.0 )
+        i += 1
+        '''
+
     # guides
     # guides_grp = guide_many_to_many( PositionCt[2], attach_jnts, upCts, 5 )
     guides_grp = guide_many_to_many( prefix = 'many', vis_object = PositionCt[2], many1 = attach_jnts, many2 = upCts, offset = 0.0, every_nth = 5 )
     '''
-    add head / tail lock switch
     tail lock working, need to add travel offset
-    
     '''
 
 
@@ -744,6 +853,13 @@ def ____JOINTS():
     pass
 
 
+def neck_joint_chain( start_jnt = '', end_jnt = '', reroot = False ):
+    '''
+    duplicate skin joint chain and reverse hierarchy
+    '''
+    pass
+
+
 def path_joint_chain( start_jnt = '', end_jnt = '', reroot = False ):
     '''
     duplicate skin joint chain and reverse hierarchy
@@ -757,6 +873,20 @@ def path_joint_chain( start_jnt = '', end_jnt = '', reroot = False ):
     cmds.parent( dup[0], w = True )  # unparent
     #
     cmds.delete( 'head_jnt1' )  # cleanup children, should automate this at some stage.
+
+    # to world
+    '''
+    print( dup )
+    for j in dup:
+        print( j )
+        if j != dup[0]:
+            cmds.parent( j, w = True )
+    # to ground
+    for j in dup:
+        cmds.setAttr( j + '.ty', 0.0 )
+    # reparent
+    for j in range( len( dup ) - 1 ):
+        cmds.parent( dup[j + 1], dup[j] )'''
 
     # rename
     cmds.select( dup[0], hi = True )
@@ -795,7 +925,8 @@ def path_joint_chain( start_jnt = '', end_jnt = '', reroot = False ):
     if reroot:
         path_joints_to_ground( path_jnts = path_jnts )
     else:
-        cmds.setAttr( path_jnts[0] + '.translateY', 0 )
+        path_joints_to_ground( path_jnts = path_jnts )
+        # cmds.setAttr( path_jnts[0] + '.translateY', 0 )
     print( 'grounded' )
     print( path_jnts )
     # return
@@ -846,14 +977,16 @@ def path_joints_to_ground( path_jnts = [], reroot = False ):
     unparent all joints and set tranlsateY to 0.0
     reparent
     '''
-    path_jnts.reverse()
+    if reroot:
+        path_jnts.reverse()
     cmds.parent( path_jnts, w = True )  # world is parent
     for j in path_jnts:
         cmds.setAttr( j + '.translateY', 0.0 )
     for j in range( len( path_jnts ) ):
         if j < len( path_jnts ) - 1:
             cmds.parent( path_jnts[j + 1], path_jnts[j] )
-    path_jnts.reverse()  # for some reason i need to reverse the change as it effects the list outside this function
+    if reroot:
+        path_jnts.reverse()  # for some reason i need to reverse the change as it effects the list outside this function
 
 
 def skin_jnts_to_path_jnts( skin_jnts = [], path_jnts = [], controls = True ):
@@ -981,7 +1114,7 @@ def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt
         cmds.setAttr( obj + '.' + attr, cb = True )
 
     # attr control
-    attr_Ct = place.Controller2( name, start_jnt, True, 'splineStart_ctrl', X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+    attr_Ct = place.Controller2( name, start_jnt, True, 'pinYup_ctrl', X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
     cmds.parent( attr_Ct[0], CONTROLS() )
     cmds.parentConstraint( splineStrt, attr_Ct[0], mo = True )
     # lock translation
@@ -991,7 +1124,7 @@ def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt
     # SPINE
     splineName = name
     splineSize = X * 1
-    splineDistance = X * 4
+    splineDistance = X * 10
 
     spline = [start_jnt, end_jnt]
     # build spline
@@ -1075,7 +1208,10 @@ def weights_meshImport():
         im_path = os.path.join( path, g )
         cmds.select( geo )
         # print( im_path )
-        krl.importWeights02( geo, im_path )
+        try:
+            krl.importWeights02( geo, im_path )
+        except:
+            print( 'geo failed to import weights: ', geo )
 
 
 def weights_path():
@@ -1093,11 +1229,11 @@ def weights_path():
 
 
 def low_geo():
-    return ['cor:snake_anim_mesh']
+    return ['cor:snake_body_Low_geo', 'cor:snake_tongue_low_geo']
 
 
 def high_geo():
-    return ['statue_man_model:Statue_man_High']
+    return ['cor:snake_body_geo', 'cor:snake_tongue_geo']
 
 '''
 import webrImport as web

@@ -1285,6 +1285,8 @@ def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X =
     r_layer = None
     if not parent_layer:
         r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse )
+        for control in r_layer.controls:
+            cmds.parentConstraint( master[4], control[0], mo = True )
     else:
         r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse )
         i = 0
