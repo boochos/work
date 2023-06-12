@@ -1494,6 +1494,9 @@ def parentSwitch( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True,
         cmds.connectAttr( revrsOrnt + '.outputX',
                          SwitchCnst + '.' + wghtAttr[0] )
         cmds.connectAttr( Ct + '.' + OrntOffOn, SwitchCnst + '.' + wghtAttr[1] )
+        #
+        hijackAttrs( SwitchCnst, Ct, 'interpType', 'orientInterpType', True, 2, force = True )
+        # cmds.setAttr( Ct + '.interpType', k = False )
 
     # create parent switch
     if Prnt:
