@@ -102,6 +102,7 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', mstrCrv
         #
         blendNode = blendShape( [mstrCrv, dynCurve], mstrCrv + '_result', n = mstrCrv + '_result_blendshape' )[0]
         # add swap switch, one blends on, the other blends off
+        # add nConstraint, to lock the head
         pass
     hairSys.getShape().iterations.set( 5 )
     hairSys.getShape().drag.set( 0 )
