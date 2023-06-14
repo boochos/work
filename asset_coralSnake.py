@@ -609,7 +609,7 @@ def pathTwist( amount = 4, ramp = '', curve = '' ):
         i += 1
 
 
-def pathIk2( curve = 'path_layer_05', position_ctrl = None, start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', tail_as_root = False, curve_up = '' ):
+def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = 'neck_01_jnt', end_jnt = 'tail_11_jnt', tail_as_root = False, curve_up = '' ):
     '''
     based on cmds.pathAnimation()
     spline ik has parametric curve travel, the span between each cv is the same value no matter the length, can have linear travel across entire length of curve

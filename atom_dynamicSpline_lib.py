@@ -18,6 +18,10 @@ app = web.mod( "atom_appendage_lib" )
 jnt = web.mod( 'atom_joint_lib' )
 
 
+def WORLD_SPACE():
+    return '___WORLD_SPACE'
+
+
 def attachObj( obj = '', upObj = '', crv = '', position = 1.0 ):
     '''
     attach object to motion path
@@ -54,23 +58,31 @@ def makeCurve( start = 'joint1', end = 'joint2', name = 'crvTest', points = 4 ):
     return crv
 
 
-def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
+def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', mstrCrvReparent = True, addBlendShape = True ):
     '''
-    
+    for vehicles these need to be True:
+    mstrCrvReparent (reparent group of master curve)
+    addBlendShape (drives master curve with blendshape)
     '''
     #
     mstrCrvObj = ls( mstrCrv )[0]
     mstrCrvObj.visibility.set( False )
-    dup = duplicate( mstrCrv, name = mstrCrv + '_dynamicCurve' )[0]
+    strtCurve = duplicate( mstrCrv, name = mstrCrv + '_dynamicStartCurve' )[0]  # attraction curve, will receive a blendshape from the master curve
 
-    select( dup )
+    select( strtCurve )
     Mel.eval( 'makeCurvesDynamicHairs 0 0 1;' )
-    # print( stuff )
     hairSys = None
     dynCurve = None
     nuc = 'nucleus1'
-    follicle = dup.getParent()
-    # print( follicle )
+    # rename output curve
+    output_curves_grp = 'hairSystem1OutputCurves'
+    child = cmds.listRelatives( output_curves_grp, children = True )
+    if child:
+        # print( child )
+        cmds.rename( child[0], mstrCrv + '_dynamicOutputCurve' )
+    #
+    follicle = strtCurve.getParent()
+    cmds.rename( follicle.name(), mstrCrv + '_follicle' )
 
     for i in follicle.getShape().connections( d = True, s = False ):
         if i.getShape().type() == 'nurbsCurve':
@@ -79,9 +91,18 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
 
         elif i.getShape().type() == 'hairSystem':
             hairSys = i
-    blendNode = blendShape( dynCurve, mstrCrv, n = mstrCrv + '_toDynamic_blendshape' )[0]
-    cmds.setAttr( str( blendNode ) + '.' + str( dynCurve ), 1 )
-    # print( blendNode )
+    if addBlendShape:
+        blendNode = blendShape( dynCurve, mstrCrv, n = mstrCrv + '_dynamic_blendshape' )[0]
+        cmds.setAttr( str( blendNode ) + '.' + str( dynCurve ), 1 )
+        # print( blendNode )
+    else:
+        # temp, separate to function
+        blendNode = blendShape( mstrCrv, strtCurve, n = mstrCrv + '_startDriver_blendshape' )[0]
+        # always full weight
+        #
+        blendNode = blendShape( [mstrCrv, dynCurve], mstrCrv + '_result', n = mstrCrv + '_result_blendshape' )[0]
+        # add swap switch, one blends on, the other blends off
+        pass
     hairSys.getShape().iterations.set( 5 )
     hairSys.getShape().drag.set( 0 )
     # hairSys.getShape().startCurveAttract.set( 5 )
@@ -120,21 +141,31 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '' ):
     cmds.setAttr( attrObj + '.startCurveAttract', 5 )
     cmds.setAttr( attrObj + '.attractionDamp', 1.75 )
 
-    # cleanup to local group
-    dynGrp = cmds.group( em = True, name = mstrCrv + '_dynamicGrp' )
-    cmds.setAttr( dynGrp + '.visibility', 0 )
-    cmds.parent( mstrCrv, dynGrp )
-    cmds.parent( str( follicle.getParent() ), dynGrp )
     #
     sharedDynGrp = 'dynamicWorldGrp'
     if not cmds.objExists( sharedDynGrp ):
         sharedDynGrp = cmds.group( name = sharedDynGrp, em = True )
         cmds.setAttr( sharedDynGrp + '.visibility', 0 )
+    #
+    dynGrp = None
+    if mstrCrvReparent:
+        # cleanup to local group
+        dynGrp = cmds.group( em = True, name = mstrCrv + '_dynamicGrp' )
+        cmds.setAttr( dynGrp + '.visibility', 0 )
+        cmds.parent( mstrCrv, dynGrp )
+        cmds.parent( str( follicle.getParent() ), dynGrp )
+        cmds.parent( dynGrp, sharedDynGrp )
+    else:
+        cmds.parent( follicle.name(), sharedDynGrp )
     # clean to shared group
     cmds.parent( str( hairSys ), sharedDynGrp )
-    cmds.parent( 'hairSystem1OutputCurves', sharedDynGrp )
+    cmds.parent( output_curves_grp, sharedDynGrp )
     cmds.parent( nuc, sharedDynGrp )
-    cmds.parent( dynGrp, sharedDynGrp )
+
+    try:
+        cmds.parent( sharedDynGrp, WORLD_SPACE() )
+    except:
+        pass
 
     return [str( follicle.getParent() ), dynGrp, sharedDynGrp ]
 
