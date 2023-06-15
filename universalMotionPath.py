@@ -1252,7 +1252,7 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     cmds.setAttr( curve + '.template', 1 )
     cmds.parent( curve, path_grp )
     curve_result = cmds.duplicate( curve, name = curve + '_result' )[0]
-    dyn_result = dnm.makeDynamic( parentObj = WORLD_SPACE(), attrObj = MASTERCT()[2], mstrCrv = curve, mstrCrvReparent = False, addBlendShape = False )
+    dyn_result = dnm.makeDynamicPath( parentObj = WORLD_SPACE(), attrObj = MASTERCT()[2], mstrCrv = curve, rsltCrv = curve_result )
     print( dyn_result )
     #
     clusters = place.clstrOnCV( curve, 'layer_' + pad_number( i = layers ) + '_Clstr' )

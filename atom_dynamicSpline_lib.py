@@ -63,6 +63,8 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', mstrCrv
     for vehicles these need to be True:
     mstrCrvReparent (reparent group of master curve)
     addBlendShape (drives master curve with blendshape)
+    
+    separated extra functionality to dif function should remove above options and restore to previous functionality, just for vehicles
     '''
     #
     mstrCrvObj = ls( mstrCrv )[0]
@@ -98,6 +100,7 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', mstrCrv
     else:
         # temp, separate to function
         blendNode = blendShape( mstrCrv, strtCurve, n = mstrCrv + '_startDriver_blendshape' )[0]
+        cmds.setAttr( str( blendNode ) + '.' + str( mstrCrv ), 1 )
         # always full weight
         #
         blendNode = blendShape( [mstrCrv, dynCurve], mstrCrv + '_result', n = mstrCrv + '_result_blendshape' )[0]
@@ -168,7 +171,134 @@ def makeDynamic( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', mstrCrv
     except:
         pass
 
-    return [str( follicle.getParent() ), dynGrp, sharedDynGrp ]
+    return [str( follicle.getParent() ), dynGrp, sharedDynGrp  ]
+
+
+def makeDynamicPath( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', rsltCrv = '' ):
+    '''
+    for ribbon module
+    '''
+    #
+    mstrCrvObj = ls( mstrCrv )[0]
+    mstrCrvObj.visibility.set( False )
+    strtCrv = duplicate( mstrCrv, name = mstrCrv + '_dynamicStartCurve' )[0]  # attraction curve, will receive a blendshape from the master curve
+
+    select( strtCrv )
+    Mel.eval( 'makeCurvesDynamicHairs 0 0 1;' )
+    hairSys = None
+    dynCrv = None
+    nuc = 'nucleus1'
+    # rename output curve
+    output_curves_grp = 'hairSystem1OutputCurves'
+    child = cmds.listRelatives( output_curves_grp, children = True )
+    if child:
+        # print( child )
+        cmds.rename( child[0], mstrCrv + '_dynamicOutputCurve' )
+    #
+    follicle = strtCrv.getParent()
+    cmds.rename( follicle.name(), mstrCrv + '_follicle' )
+
+    for i in follicle.getShape().connections( d = True, s = False ):
+        if i.getShape().type() == 'nurbsCurve':
+            dynCrv = i
+            # print( dynCrv )
+
+        elif i.getShape().type() == 'hairSystem':
+            hairSys = i
+
+    # blendshapes
+    # temp, separate to function
+    blendShapeDrvr = blendShape( mstrCrv, strtCrv, n = mstrCrv + '_startDriver_blendshape' )[0]
+    cmds.setAttr( str( blendShapeDrvr ) + '.' + str( mstrCrv ), 1 )
+    # always full weight
+    #
+    blendShapeRslt = blendShape( [mstrCrv, dynCrv], rsltCrv, n = rsltCrv + '_blendshape' )[0]
+    # add swap switch, one blends on, the other blends off
+    # add nConstraint, to lock the head
+
+    hairSys.getShape().iterations.set( 5 )
+    hairSys.getShape().drag.set( 0 )
+    # hairSys.getShape().startCurveAttract.set( 5 )
+    # hairSys.getShape().attractionDamp.set( 1.5 )
+
+    # Set the follicle system properties
+    folshape = follicle.getShape()
+    folshape.pointLock.set( 1 )
+
+    # attrs
+    misc.optEnum( attrObj, attr = 'Dynamic', enum = 'CONTROL' )
+    # dynamic enable attr connection
+    en_attr = 'enable'
+    # nucleus
+    place.hijackAttrs( nuc, attrObj, en_attr, en_attr, set = False, default = 0, force = True )
+    cmds.setAttr( attrObj + '.' + en_attr, cb = True )
+    # dynamic enable hairSystem
+    cndtn = cmds.shadingNode( 'condition', au = True, n = attrObj + '_cndtn_dynmc' )
+    cmds.setAttr( cndtn + '.colorIfFalseR', 3 )
+    cmds.connectAttr( attrObj + '.' + en_attr, cndtn + '.firstTerm' )
+    cmds.connectAttr( cndtn + '.outColorR', str( hairSys.getShape() ) + '.simulationMethod' )
+
+    s_attr = 'startFrame'
+    cmds.addAttr( attrObj, ln = s_attr, at = 'long', h = False )
+    cmds.setAttr( attrObj + '.' + s_attr, cb = True )
+    cmds.setAttr( attrObj + '.' + s_attr, k = False )
+    cmds.setAttr( attrObj + '.' + s_attr, 1 )
+    # misc.addAttribute( [attrObj], ['startFrame'], -1000.0, 10000.0, True, 'float' )
+    cmds.connectAttr( attrObj + '.' + s_attr, nuc + '.' + s_attr, force = True )
+    #
+    w_attr = 'dynamic_weight'  # blend shape blend, should be piped through enable boolean attr to turn it off by forcing path curve fully one no matter the weight attr
+    misc.addAttribute( [attrObj], [w_attr], 0.0, 1.0, False, 'float' ),  # make keyable later
+    cmds.connectAttr( attrObj + '.' + w_attr, str( blendShapeRslt ) + '.' + dynCrv )  # str( blendShapeDrvr ) + '.' + str( mstrCrv )
+    revrs = cmds.shadingNode( 'reverse', au = True, n = ( mstrCrv + '_weightRevrs' ) )
+    cmds.connectAttr( attrObj + '.' + w_attr, revrs + '.inputX' )
+    cmds.connectAttr( revrs + '.outputX', str( blendShapeRslt ) + '.' + mstrCrv )
+    #
+    misc.addAttribute( [attrObj], ['startCurveAttract', 'attractionDamp'], 0.0, 100.0, True, 'float' )
+    cmds.connectAttr( attrObj + '.startCurveAttract', str( hairSys.getShape() ) + '.startCurveAttract', force = True )
+    cmds.connectAttr( attrObj + '.attractionDamp', str( hairSys.getShape() ) + '.attractionDamp', force = True )
+    cmds.setAttr( attrObj + '.startCurveAttract', 5 )
+    cmds.setAttr( attrObj + '.attractionDamp', 1.75 )
+
+    #
+    sharedDynGrp = 'dynamicWorldGrp'
+    if not cmds.objExists( sharedDynGrp ):
+        sharedDynGrp = cmds.group( name = sharedDynGrp, em = True )
+        cmds.setAttr( sharedDynGrp + '.visibility', 0 )
+    #
+    cmds.parent( follicle.name(), sharedDynGrp )
+    # clean to shared group
+    cmds.parent( str( hairSys ), sharedDynGrp )
+    cmds.parent( output_curves_grp, sharedDynGrp )
+    cmds.parent( nuc, sharedDynGrp )
+
+    try:
+        cmds.parent( sharedDynGrp, WORLD_SPACE() )
+    except:
+        pass
+
+    result = DynamicPath( strtCrv = strtCrv,
+                          dynCrv = dynCrv,
+                          blendShapeDrvr = blendShapeDrvr,
+                          blendShapeRslt = blendShapeRslt,
+                          sharedDynGrp = sharedDynGrp,
+                          follicle = follicle,
+                          folshape = folshape,
+                          output_curves_grp = output_curves_grp )
+
+    return result
+
+
+class DynamicPath():
+
+    def __init__( self, strtCrv = '', dynCrv = '', blendShapeDrvr = '', blendShapeRslt = '', sharedDynGrp = '', follicle = '', folshape = '', output_curves_grp = '' ):
+        self.strtCrv = strtCrv
+        self.dynCrv = dynCrv
+        self.blendShapeDrvr = blendShapeDrvr
+        self.blendShapeRslt = blendShapeRslt
+        self.sharedDynGrp = sharedDynGrp
+        self.follicle = follicle
+        self.folshape = folshape
+        self.output_curves_grp = output_curves_grp
 
 
 def createAndConnectBlendNodesToAttr( ctrl, attr, nodes ):
