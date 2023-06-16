@@ -49,7 +49,7 @@ def __________________PATH():
     pass
 
 
-def build_curve( length = 10, cvs = 2, layer = 0, reverse = False ):
+def build_curve( name = '', length = 10, cvs = 2, layer = 0, reverse = False, d = 2 ):
     '''
     
     '''
@@ -65,7 +65,11 @@ def build_curve( length = 10, cvs = 2, layer = 0, reverse = False ):
             p = p + ',( 0, 0,' + str( length * direction ) + ')'
             p = p + ']'
             # print( p )
-            crv = cmds.curve( n = pth + '_layer_' + pad_number( i = layer ), d = 1, p = eval( p ) )
+            crv = None
+            if name:
+                crv = cmds.curve( n = name + '_' + pth, d = 1, p = eval( p ) )
+            else:
+                crv = cmds.curve( n = pth + '_layer_' + pad_number( i = layer ), d = 1, p = eval( p ) )
             '''
             if reverse:
                 cmds.setAttr( crv + '.scaleZ', -1 )'''
@@ -97,7 +101,11 @@ def build_curve( length = 10, cvs = 2, layer = 0, reverse = False ):
                 i = i + 1
             p = p + ']'
             # print( p )
-            crv = cmds.curve( n = pth + '_layer_' + pad_number( i = layer ), d = 2, p = eval( p ) )
+            crv = None
+            if name:
+                crv = cmds.curve( n = name + '_' + pth, d = d, p = eval( p ) )
+            else:
+                crv = cmds.curve( n = pth + '_layer_' + pad_number( i = layer ), d = d, p = eval( p ) )
             '''
             if reverse:
                 cmds.setAttr( crv + '.scaleZ', -1 )'''
@@ -1225,6 +1233,8 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     layers_built = []
     colors = [ 'lightYellow', 'lightBlue', 'pink', 'hotPink', 'purple']
     rows = 2
+    create_up_curve = False
+    d = 1
     i = 0  # layer
     j = 0  # colors
     while i < layers:
@@ -1233,7 +1243,10 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
             lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = None, master = MASTERCT(), layer = i )
             layers_built.append( lyrs )
         else:
-            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = layers_built[i - 1], master = MASTERCT(), layer = i )
+            if i == layers - 1:
+                create_up_curve = True  # build curve on last layer
+                d = 2
+            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = layers_built[i - 1], master = MASTERCT(), layer = i, create_up_curve = create_up_curve, d = d )
             layers_built.append( lyrs )
         # counters
         print( i, rows )
@@ -1245,12 +1258,14 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
             j = j + 1
 
     #
+    '''
     path_grp = cmds.group( em = True, n = name + '_ribbon_path_rig_Grp' )
     cmds.parent( path_grp, WORLD_SPACE() )
     # path curve
     curve = build_curve( length = length, cvs = len( layers_built[-1].controls ), layer = layers, reverse = reverse )
     cmds.setAttr( curve + '.template', 1 )
     cmds.parent( curve, path_grp )
+
     curve_result = cmds.duplicate( curve, name = curve + '_result' )[0]
     dyn_result = dnm.makeDynamicPath( parentObj = WORLD_SPACE(), attrObj = MASTERCT()[2], mstrCrv = curve, rsltCrv = curve_result )
     print( dyn_result )
@@ -1276,6 +1291,7 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
         cmds.parentConstraint( control[4], clusters[f], mo = True )
         cmds.parentConstraint( control[4], clusters_up[f], mo = True )
         f += 1
+    '''
 
     ##### non functional control, need to remove from coral snake reference   ######
     # up
@@ -1287,22 +1303,32 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     cmds.parentConstraint( 'master_Grp', upCntCt[0], mo = True )
     #
     #####
+    # print( 'master: ', layers_built[-1].curve )
+    #
+    curve_result = cmds.duplicate( layers_built[-1].curve, name = layers_built[-1].curve + '_result' )[0]
+    cmds.setAttr( curve_result + '.v', 1 )
+    # print( 'result: ', curve_result )
+    #
+    # IF DYNAMICS DONT CREATE, SNAKE WONT FOLLOW PATH CUZ ITS STUCK ON THE RESULT CURVE, RESULT CURVE NEVER RECEIVED A BLENDSHAPE
+    #
+    dyn_result = dnm.makeDynamicPath( parentObj = WORLD_SPACE(), attrObj = MASTERCT()[2], mstrCrv = layers_built[-1].curve, rsltCrv = curve_result )
+    # print( dyn_result )
 
-    return curve_result, curve_up
+    return curve_result, layers_built[-1].curve_up
 
 
-def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0, create_curve = False, create_up_curve = False ):
+def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0, create_curve = True, create_up_curve = False, d = 2 ):
     '''
     follow formula for how control and follicles increase on layers. ie (controls * 2) -1 = follicles on the same layer. next layer controls match previous follicles
     '''
     xmlt = 0.1
     r_layer = None
     if not parent_layer:
-        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse )
+        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse, create_curve = create_curve, create_up_curve = create_up_curve, d = d )
         for control in r_layer.controls:
             cmds.parentConstraint( master[4], control[0], mo = True )
     else:
-        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse )
+        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse, create_curve = create_curve, create_up_curve = create_up_curve, d = d )
         i = 0
         for control in r_layer.controls:
             cmds.parentConstraint( parent_layer.follicles[i], control[0], mo = True )
@@ -1311,6 +1337,7 @@ def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X =
             i += 1
     #
     place.hijackVis( r_layer.controls_grp, master[2], name = 'ctrlLayer' + str( layer ), suffix = False, default = 0, mode = 'visibility' )
+    cmds.connectAttr( master[2] + '.' + 'ctrlLayer' + str( layer ), r_layer.curve + '.visibility' )
 
     return r_layer
 
@@ -1320,7 +1347,7 @@ class Ribbon():
     
     '''
 
-    def __init__( self, name, length, width, all_grp = '', controls_grp = '', follicles_grp = '', joints_grp = '', controls = [], follicles = [], follicle_shapes = [], joints = [], geo = '', X = 1, ctrl_shape = '', color = '', rows = 2 ):
+    def __init__( self, name, length, width, all_grp = '', controls_grp = '', follicles_grp = '', joints_grp = '', controls = [], follicles = [], follicle_shapes = [], joints = [], geo = '', X = 1, ctrl_shape = '', color = '', rows = 2, curve = '', curve_up = '' ):
         self.name = name
         self.length = length
         self.width = width
@@ -1337,9 +1364,11 @@ class Ribbon():
         self.ctrl_shape = ctrl_shape
         self.color = color
         self.rows = rows
+        self.curve = curve
+        self.curve_up = curve_up
 
 
-def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, create_curve = False, create_up_curve = False ):
+def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, create_curve = True, create_up_curve = False, d = 2 ):
     '''
     ribbon
     maybe add a curve to each layer for visual reference
@@ -1449,9 +1478,46 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
 
     #
     skin_ribbon( joints = joints, geo = ribn )
+    curve = ''
+    curve_up = ''
+    # print( 'curve', create_curve, 'curve_up', create_up_curve )
+    if create_curve:
+        #
+        path_grp = cmds.group( em = True, n = name + '_ribbon_path_Grp' )
+        cmds.parent( path_grp, WORLD_SPACE() )
+        # path curve
+        curve = build_curve( name = name, length = length, cvs = len( controls ), reverse = reverse, d = d )
+        cmds.setAttr( curve + '.template', 1 )
+        cmds.parent( curve, path_grp )
+        #
+        clusters = place.clstrOnCV( curve, name + '_Clstr' )
+        cGrp = name + '_clstr_Grp'
+        cmds.group( clusters, n = cGrp, w = True )
+        cmds.setAttr( cGrp + '.visibility', 0 )
+        cmds.parent( cGrp, path_grp )
+        f = 0
+        for control in controls:
+            cmds.parentConstraint( control[4], clusters[f], mo = True )
+            f += 1
+    #
+    if create_curve and create_up_curve:
+        # path curve_up, up vectors
+        curve_up = cmds.duplicate( curve, name = curve + '_up' )[0]
+        cmds.setAttr( curve_up + '.template', 1 )
+        cmds.setAttr( curve_up + '.ty', width * 3 )
+        #
+        clusters_up = place.clstrOnCV( curve_up, name + '_up_Clstr' )
+        cGrpUp = name + 'clstrUp_Grp'
+        cmds.group( clusters_up, n = cGrpUp, w = True )
+        cmds.setAttr( cGrpUp + '.visibility', 0 )
+        cmds.parent( cGrpUp, path_grp )
+        f = 0
+        for control in controls:
+            cmds.parentConstraint( control[4], clusters_up[f], mo = True )
+            f += 1
 
     #
-    ribbon_class = Ribbon( name, length, width, a_grp, c_grp, f_grp, j_grp, controls, follicles, follicle_shapes, joints, ribn, X, ctrl_shape, color, rows )
+    ribbon_class = Ribbon( name, length, width, a_grp, c_grp, f_grp, j_grp, controls, follicles, follicle_shapes, joints, ribn, X, ctrl_shape, color, rows, curve, curve_up )
     return ribbon_class
 
 

@@ -239,7 +239,7 @@ def neck( neck_jnt_chain = [], micro_body_cts = [] ):
     misc.optEnum( tipCt[2], attr = 'neckIk', enum = 'CONTROL' )
     place.addAttribute( tipCt[2], attr, 0.0, 1.0, True, 'float' )
     # position
-    place.parentSwitch( 
+    conPos = place.parentSwitch( 
         name = tipCt[2],
         Ct = tipCt[2],
         CtGp = tipCt[1],
@@ -251,9 +251,21 @@ def neck( neck_jnt_chain = [], micro_body_cts = [] ):
         Prnt = False,
         OPT = False,
         attr = 'isolate',
-        w = 0.2 )
+        w = 0.2 )[0]
+    print( conPos )
+    # blend parent switches to zero
+    # this is wrong, weight has to be normalized. end result when off should be so isolate value is set to the off position
+    mlt1 = cmds.shadingNode( 'multDoubleLinear', n = tipCt[2] + '_ikPosWeightMlt_1', asUtility = True )
+    cmds.connectAttr( tipCt[2] + '.' + attr, mlt1 + '.input1' )
+    cmds.connectAttr( 'neck_ik_tip_revrsPos.outputX', mlt1 + '.input2' )
+    cmds.connectAttr( mlt1 + '.output', conPos + '.neck_ik_tip_PosOffGpW0', f = True )
+    #
+    mlt2 = cmds.shadingNode( 'multDoubleLinear', n = tipCt[2] + '_ikPosWeightMlt_2', asUtility = True )
+    cmds.connectAttr( tipCt[2] + '.' + attr, mlt2 + '.input1' )
+    cmds.connectAttr( tipCt[2] + '.isolatePositionOffOn', mlt2 + '.input2' )
+    cmds.connectAttr( mlt2 + '.output', conPos + '.neck_ik_tip_PosOnGpW1', f = True )
     # rotation
-    place.parentSwitch( 
+    conRot = place.parentSwitch( 
         name = tipCt[2],
         Ct = tipCt[2],
         CtGp = tipCt[1],
@@ -265,8 +277,17 @@ def neck( neck_jnt_chain = [], micro_body_cts = [] ):
         Prnt = False,
         OPT = False,
         attr = 'isolate',
-        w = 0.8 )
-
+        w = 0.8 )[1]
+    #  blend parent switches to zero
+    mlt1 = cmds.shadingNode( 'multDoubleLinear', n = tipCt[2] + '_ikOrntWeightMlt_1', asUtility = True )
+    cmds.connectAttr( tipCt[2] + '.' + attr, mlt1 + '.input1' )
+    cmds.connectAttr( 'neck_ik_tip_revrsOrnt.outputX', mlt1 + '.input2' )
+    cmds.connectAttr( mlt1 + '.output', conRot + '.neck_ik_tip_OrntOffGpW0', f = True )
+    #
+    mlt2 = cmds.shadingNode( 'multDoubleLinear', n = tipCt[2] + '_ikOrntWeightMlt_2', asUtility = True )
+    cmds.connectAttr( tipCt[2] + '.' + attr, mlt2 + '.input1' )
+    cmds.connectAttr( tipCt[2] + '.isolateOrientOffOn', mlt2 + '.input2' )
+    cmds.connectAttr( mlt2 + '.output', conRot + '.neck_ik_tip_OrntOnGpW1', f = True )
     # neck to spline switch
     micros_with_spline = []
     i = 0
@@ -622,8 +643,9 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         PositionCt = position_ctrl
     # create attribute
     t_attr = 'travel'
-    travel_max = 2000.0  # meant to be used as percent. length is 50%, 300% ,of original length
-    place.addAttribute( PositionCt[3], t_attr, 0.0, travel_max, True, 'float' )
+    travel_min = -10000.0  # meant to be used as percent. length is 50%, 300% ,of original length
+    travel_max = 10000.0
+    place.addAttribute( PositionCt[3], t_attr, travel_min, travel_max, True, 'float' )
     mlt_merge_travel_length = cmds.shadingNode( 'multDoubleLinear', n = PositionCt[3] + '_mergeLengthMlt', asUtility = True )  # connect below, twice
     cmds.connectAttr( PositionCt[3] + '.' + t_attr, mlt_merge_travel_length + '.input1', force = True )
     place.hijackAttrs( position_ctrl[3], position_ctrl[2], t_attr, t_attr, set = False, default = None, force = True )
@@ -771,7 +793,7 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         cmds.parent( microCt[0], m_ground_grp )
         cmds.parentConstraint( microCt[4], j, mo = False )
         # cmds.parentConstraint( 'master_Grp', microCt[0], mo = True )
-        place.addAttribute( microCt[2], 'position', 0.0, 100.0, True, 'float' )  # max is number of points in curve
+        place.addAttribute( microCt[2], 'position', travel_min, travel_max, True, 'float' )  # max is number of points in curve
         cmds.setAttr( microCt[2] + '.position', arc_fraction * 100 )
         cmds.setAttr( microCt[2] + '.position', lock = True )
 
@@ -821,15 +843,20 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         cmds.connectAttr( length_tail_mlt + '.output', lengthNeg_tail_mlt + '.input1' )
         cmds.setAttr( lengthNeg_tail_mlt + '.input2', -1.0 )
         #
-        subNew_tail_add = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_subtractNew_Add' ) )
+        subNew_tail_add = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_tailSubtractNew_Add' ) )
         cmds.setAttr( subNew_tail_add + '.input1', 100.0 )
         cmds.connectAttr( lengthNeg_tail_mlt + '.output', subNew_tail_add + '.input2' )
+        #
+        # tail travel
+        travel_tail_add = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_tailTravel_Add' ) )
+        cmds.connectAttr( position_ctrl[3] + '.' + t_attr, travel_tail_add + '.input1' )
+        cmds.connectAttr( subNew_tail_add + '.output', travel_tail_add + '.input2' )
 
-        # NEED TO CONNECT TRAVEL TO TAIL LOCK
+        # ADD CLAMPS ON TRAVEL VALUES SO JOINTS SLIDE ON TOP OF THEIR NEIGHBHOURS ON EITHER END
 
         #
         blnd_root_typs = cmds.shadingNode( 'blendColors', name = ( microCt[2] + '_rootTypeBlend' ), asUtility = True )
-        cmds.connectAttr( subNew_tail_add + '.output', blnd_root_typs + '.color2R' )  # # change
+        cmds.connectAttr( travel_tail_add + '.output', blnd_root_typs + '.color2R' )  # # change
         cmds.connectAttr( position_ctrl[3] + '.' + root_attr, blnd_root_typs + '.blender', force = True )
         #
         cmds.connectAttr( dbl_path + '.output', blnd_root_typs + '.color1R' )  # into blend before normalizing

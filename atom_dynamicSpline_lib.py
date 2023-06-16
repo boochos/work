@@ -180,8 +180,8 @@ def makeDynamicPath( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', rsl
     '''
     #
     mstrCrvObj = ls( mstrCrv )[0]
-    mstrCrvObj.visibility.set( False )
-    strtCrv = duplicate( mstrCrv, name = mstrCrv + '_dynamicStartCurve' )[0]  # attraction curve, will receive a blendshape from the master curve
+    # mstrCrvObj.visibility.set( False )
+    strtCrv = duplicate( rsltCrv, name = mstrCrv + '_dynamicStartCurve' )[0]  # dup result curve, name it like mastr, cant dup mastr, constrained with clusters, causes problems
 
     select( strtCrv )
     Mel.eval( 'makeCurvesDynamicHairs 0 0 1;' )
@@ -208,6 +208,7 @@ def makeDynamicPath( parentObj = 'joint1', attrObj = 'joint2', mstrCrv = '', rsl
 
     # blendshapes
     # temp, separate to function
+    print( mstrCrv, strtCrv )
     blendShapeDrvr = blendShape( mstrCrv, strtCrv, n = mstrCrv + '_startDriver_blendshape' )[0]
     cmds.setAttr( str( blendShapeDrvr ) + '.' + str( mstrCrv ), 1 )
     # always full weight

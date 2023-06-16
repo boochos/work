@@ -1,11 +1,12 @@
+from pickle import NONE
 import os
 
-# from atom_placement_lib import loc
 import maya.OpenMaya as OpenMaya
 import maya.cmds as cmds
 import maya.mel as mel
 import webrImport as web
 
+# from atom_placement_lib import loc
 #
 # web
 ui = web.mod( 'atom_ui_lib' )
@@ -1444,7 +1445,10 @@ def parentSwitch( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True,
     if OPT:
         cmds.addAttr( Ct, ln = Parent, attributeType = 'enum', en = 'OPTNS' )
         cmds.setAttr( Ct + '.' + Parent, cb = True )
-
+    # SwitchCnstPos, SwitchCnstRot, SwitchCnstPrt
+    SwitchCnstPos = None
+    SwitchCnstRot = None
+    SwitchCnstPrt = None
     # create point switch
     if Pos:
         # create and constrain matching Obj1Gp and Obj2Gp
@@ -1457,14 +1461,14 @@ def parentSwitch( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True,
         # contrain object with switch constraints
         cmds.addAttr( Ct, ln = PosOffOn, attributeType = 'float',
                      k = True, dv = w, min = 0.0, max = 1.0 )
-        SwitchCnst = cmds.pointConstraint( PosOffGp, CtGp, w = 1.0, mo = False )[0]
+        SwitchCnstPos = cmds.pointConstraint( PosOffGp, CtGp, w = 1.0, mo = False )[0]
         cmds.pointConstraint( PosOnGp, CtGp, w = 0.0, mo = False )
         # build switch
-        wghtAttr = cmds.listAttr( SwitchCnst, k = True, ud = True )
+        wghtAttr = cmds.listAttr( SwitchCnstPos, k = True, ud = True )
         revrsPos = cmds.shadingNode( 'reverse', au = True, n = ( name + '_revrsPos' ) )
         cmds.connectAttr( Ct + '.' + PosOffOn, revrsPos + '.inputX' )
-        cmds.connectAttr( revrsPos + '.outputX', SwitchCnst + '.' + wghtAttr[0] )
-        cmds.connectAttr( Ct + '.' + PosOffOn, SwitchCnst + '.' + wghtAttr[1] )
+        cmds.connectAttr( revrsPos + '.outputX', SwitchCnstPos + '.' + wghtAttr[0] )
+        cmds.connectAttr( Ct + '.' + PosOffOn, SwitchCnstPos + '.' + wghtAttr[1] )
 
     # create orient switch
     if Ornt:
@@ -1484,18 +1488,18 @@ def parentSwitch( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True,
         # contrain object with switch constraints
         cmds.addAttr( Ct, ln = OrntOffOn, attributeType = 'float',
                      k = True, dv = w, min = 0.0, max = 1.0 )
-        SwitchCnst = cmds.orientConstraint( OrntOffGp, CtGp, w = 1.0, mo = False )[0]
+        SwitchCnstRot = cmds.orientConstraint( OrntOffGp, CtGp, w = 1.0, mo = False )[0]
         cmds.orientConstraint( OrntOnGp, CtGp, w = 0.0, mo = False )
         # build switch
-        wghtAttr = cmds.listAttr( SwitchCnst, k = True, ud = True )
+        wghtAttr = cmds.listAttr( SwitchCnstRot, k = True, ud = True )
         revrsOrnt = cmds.shadingNode( 
             'reverse', au = True, n = ( name + '_revrsOrnt' ) )
         cmds.connectAttr( Ct + '.' + OrntOffOn, revrsOrnt + '.inputX' )
         cmds.connectAttr( revrsOrnt + '.outputX',
-                         SwitchCnst + '.' + wghtAttr[0] )
-        cmds.connectAttr( Ct + '.' + OrntOffOn, SwitchCnst + '.' + wghtAttr[1] )
+                         SwitchCnstRot + '.' + wghtAttr[0] )
+        cmds.connectAttr( Ct + '.' + OrntOffOn, SwitchCnstRot + '.' + wghtAttr[1] )
         #
-        hijackAttrs( SwitchCnst, Ct, 'interpType', 'orientInterpType', True, 2, force = True )
+        hijackAttrs( SwitchCnstRot, Ct, 'interpType', 'orientInterpType', True, 2, force = True )
         # cmds.setAttr( Ct + '.interpType', k = False )
 
     # create parent switch
@@ -1516,16 +1520,18 @@ def parentSwitch( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True,
         # contrain object with switch constraints
         cmds.addAttr( Ct, ln = PrntOffOn, attributeType = 'float',
                      k = True, dv = w, min = 0.0, max = 1.0 )
-        SwitchCnst = cmds.parentConstraint( PrntOffGp, CtGp, w = 1.0, mo = False )[0]
+        SwitchCnstPrt = cmds.parentConstraint( PrntOffGp, CtGp, w = 1.0, mo = False )[0]
         cmds.parentConstraint( PrntOnGp, CtGp, w = 0.0, mo = False )
         # build switch
-        wghtAttr = cmds.listAttr( SwitchCnst, k = True, ud = True )
+        wghtAttr = cmds.listAttr( SwitchCnstPrt, k = True, ud = True )
         revrsPrnt = cmds.shadingNode( 
             'reverse', au = True, n = ( name + '_revrsPrnt' ) )
         cmds.connectAttr( Ct + '.' + PrntOffOn, revrsPrnt + '.inputX' )
         cmds.connectAttr( revrsPrnt + '.outputX',
-                         SwitchCnst + '.' + wghtAttr[0] )
-        cmds.connectAttr( Ct + '.' + PrntOffOn, SwitchCnst + '.' + wghtAttr[1] )
+                         SwitchCnstPrt + '.' + wghtAttr[0] )
+        cmds.connectAttr( Ct + '.' + PrntOffOn, SwitchCnstPrt + '.' + wghtAttr[1] )
+
+    return [SwitchCnstPos, SwitchCnstRot, SwitchCnstPrt]
 
 
 def setRotOrder( obj, rotOrder = 2, hier = False ):
