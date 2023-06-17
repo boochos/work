@@ -267,3 +267,33 @@ def ikJntRange( jnt, percent = 70 ):
     elif len( q ) > 1:
         OpenMaya.MGlobal.displayWarning( '---  ' + jnt + ' joint is not planar  ---' )
         return result
+
+
+def insertJoint( jnt = '', axis = 'tz' ):
+    '''
+    
+    '''
+    children = cmds.listRelatives( jnt, children = True )
+    if children:
+        if len( children ) == 1:
+            children = children[0]
+        else:
+            print( 'more than one parent', children )
+            children[0]
+    else:
+        return
+    rds = cmds.getAttr( jnt + '.radius' )
+    # print( parent )
+    tz = cmds.getAttr( children + '.' + axis )
+    dis = tz / 2
+    j = cmds.insertJoint( jnt )
+    cmds.setAttr( j + '.radius', rds )
+    cmds.move( 0, 0, dis, j + '.scalePivot', j + '.rotatePivot', r = True, ls = True, wd = True )
+
+
+def insertJoints( jnts = [] ):
+    '''
+    
+    '''
+    for jnt in jnts:
+        insertJoint( jnt )
