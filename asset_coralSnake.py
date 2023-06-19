@@ -42,6 +42,11 @@ def prebuild():
     cmds.parentConstraint( 'master_Grp', 'root_jnt', mo = True )
     place.cleanUp( 'root_jnt', SknJnts = True )
     cmds.deltaMush( low_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    cmds.deltaMush( high_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+
+    misc.optEnum( MasterCt[2], attr = 'LOD', enum = 'OPTNS' )
+    place.hijackVis( 'cor:body_low_grp', MasterCt[2], name = 'lowGeo', suffix = False, default = 1, mode = 'visibility' )
+    place.hijackVis( 'cor:body_high_grp', MasterCt[2], name = 'highGeo', suffix = False, default = 0, mode = 'visibility' )
 
     #
     # scale
@@ -77,6 +82,7 @@ def build():
 
     #
     head()
+    # return
     micro_body_cts = body_spline()
 
     # neck spline part 2
@@ -127,7 +133,6 @@ def fangs():
     # fangLCt = fangL.createController()
     fangLCt = place.Controller2( 'fang_L', 'fang_jnt_L', True, 'squareXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
     cmds.setAttr( fangLCt[2] + '.showManipDefault', 2 )
-    cmds.setAttr( fangLCt[2] + '.rotateX', 72 )
     place.translationLock( fangLCt[2], True )
     place.rotationLock( fangLCt[2], True )
     place.rotationXLock( fangLCt[2], False )
@@ -135,7 +140,6 @@ def fangs():
     # fangRCt = fangR.createController()
     fangRCt = place.Controller2( 'fang_R', 'fang_jnt_R', True, 'squareXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
     cmds.setAttr( fangRCt[2] + '.showManipDefault', 2 )
-    cmds.setAttr( fangLCt[2] + '.rotateX', 72 )
     place.translationLock( fangRCt[2], True )
     place.rotationLock( fangRCt[2], True )
     place.rotationXLock( fangRCt[2], False )
@@ -146,6 +150,9 @@ def fangs():
     cmds.parentConstraint( 'head_jnt', fangRCt[0], mo = True )
     place.cleanUp( fangLCt[0], Ctrl = True )
     place.cleanUp( fangRCt[0], Ctrl = True )
+    # pose, tuck away
+    cmds.setAttr( fangLCt[2] + '.rotateX', 72 )
+    cmds.setAttr( fangRCt[2] + '.rotateX', 72 )
 
 
 def jaw():
@@ -1325,12 +1332,26 @@ def ____SKIN():
 
 def weights_meshExport():
     '''
-    dargonfly object weights
+    snake
     '''
     # path
     path = weights_path()
     # geo
     all_geo = low_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, g )
+        cmds.select( geo )
+        krl.exportWeights02( ex_path )
+
+    # geo
+    all_geo = high_geo()
     for geo in all_geo:
         g = ''
         if '|' in geo:
@@ -1352,6 +1373,23 @@ def weights_meshImport():
     path = weights_path()
     # geo
     all_geo = low_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        im_path = os.path.join( path, g )
+        cmds.select( geo )
+        # print( im_path )
+        try:
+            krl.importWeights02( geo, im_path )
+        except:
+            print( 'geo failed to import weights: ', geo )
+    #
+    all_geo = high_geo()
     for geo in all_geo:
         g = ''
         if '|' in geo:

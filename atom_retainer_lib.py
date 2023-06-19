@@ -274,6 +274,9 @@ def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight
     attr_blg_max_sfx = op2 + '_max'
     slide_raw = 'slide_current'
     bulge_raw = 'bulge_current'
+    # inverse
+    force_bulge_direction = 'match'
+    bulge_direction_qualifier = 'qualifier'  # hijack condition node, use min/max so only "greater than", "less than" are available
 
     # add attrs
     if limits:
@@ -347,7 +350,7 @@ def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight
     cmds.connectAttr( slave + '.' + attr_blg_ds_sfx, mlt3 + '.input1' )
     cmds.connectAttr( slave + '.' + attr_blg_sfx, mlt3 + '.input2' )
     if suffix != 'anchor1':
-        place.smartAttrBlend( master = mlt3, slave = slave_CtGrp, masterAttr = 'output', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False )
+        smart_nodes = place.smartAttrBlend( master = mlt3, slave = slave_CtGrp, masterAttr = 'output', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False, blendAttrExisting = False )
         pass
     else:
         cmds.connectAttr( mlt3 + '.output', slave_CtGrp + '.translateY' )  # final output
@@ -380,6 +383,36 @@ def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight
         if con:
             masterAttr = con[0]
             easeIntoLimits( name = name, masterAttr = masterAttr, slaveAttr = slaveAttr , maxAttr = maxAttr, minAttr = minAttr )
+    # force bulge direction
+    if not limits:
+        smart_blend_result_node = smart_nodes[-1]
+        # make attr
+        misc.optEnum( slave, attr = 'bulgeDirection', enum = 'CONTROL' )
+        createAttr( obj = slave, attr = force_bulge_direction, typ = 'bool', cb = True )
+        # createAttr( obj = slave, attr = bulge_direction_qualifier, typ = 'bool', cb = True )
+
+        # make math nodes
+        rawInvrs = cmds.shadingNode( 'multDoubleLinear', au = True, n = slave + '_matchDirectionMath' )
+        cmds.connectAttr( smart_blend_result_node + '.output', rawInvrs + '.input1' )
+        cmds.setAttr( rawInvrs + '.input2', -1 )
+        #
+        cndtnMath = cmds.shadingNode( 'condition', au = True, n = slave + '_matchDirectionCond' )
+        cmds.connectAttr( smart_blend_result_node + '.output', cndtnMath + '.firstTerm' )  # raw, unforced value from smart blend node
+        cmds.setAttr( cndtnMath + '.secondTerm', 0 )
+        cmds.setAttr( cndtnMath + '.operation', 2 )  # greater than
+        cmds.connectAttr( smart_blend_result_node + '.output', cndtnMath + '.colorIfFalseR' )
+        cmds.connectAttr( rawInvrs + '.output', cndtnMath + '.colorIfTrueR' )
+        place.hijackAttrs( cndtnMath, slave, 'operation', bulge_direction_qualifier, set = True, default = 2, force = True )
+
+        # pipe through on / off
+        cndtnOnOff = cmds.shadingNode( 'condition', au = True, n = slave + '_matchDirectionOnOff' )
+        cmds.connectAttr( slave + '.' + force_bulge_direction, cndtnOnOff + '.firstTerm' )
+        cmds.setAttr( cndtnOnOff + '.secondTerm', 1 )
+        cmds.setAttr( cndtnOnOff + '.operation', 0 )  # equal
+        cmds.connectAttr( smart_blend_result_node + '.output', cndtnOnOff + '.colorIfFalseR' )  # raw
+        cmds.connectAttr( cndtnMath + '.outColorR', cndtnOnOff + '.colorIfTrueR' )  # raw, unforced value from smart blend node outColorR
+        #
+        cmds.connectAttr( cndtnOnOff + '.outColorR', slave_CtGrp + '.translateY', f = True )  # slave_CtGrp
 
 
 def slideBulgeAnchorsAll( row_cv_controls = [] ):
@@ -398,7 +431,7 @@ def slideBulgeAnchorsAll( row_cv_controls = [] ):
 
 def dynamic():
     '''
-    add dynamic jiggle to cv, try using dynamic spline same as in vehicle
+    turn on option in controller class
     '''
     pass
 
