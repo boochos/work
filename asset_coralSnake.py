@@ -36,6 +36,8 @@ def prebuild():
     GEO = PreBuild[3]
     WORLD_SPACE = PreBuild[4]
     MasterCt = PreBuild[5]
+    #
+    neck_retainer()
     # weights
     weights_meshImport()
     #
@@ -348,6 +350,26 @@ def neck( neck_jnt_chain = [], micro_body_cts = [] ):
     place.hijackAttrs( baseCt[0], name, 'visibility', 'baseVis', set = True, default = 0.0, force = True )
     place.hijackAttrs( tipCt[0], name, 'visibility', 'tipVis', set = True, default = 0.0, force = True )
     '''
+
+
+def neck_retainer():
+    '''
+    repose geo, lost latest update
+    2 rows at base of skull
+    add row to neck side, 2 on either end to help transition off retainer
+    row in middle gets majority of the weight to skin
+    also lost weight settings for retainer
+    current skin weights should indicate position of retainer
+    '''
+    ns = 'neck_rtnr'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_v004.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    cmds.parentConstraint( 'body_002_jnt', ns + ':row_0_CtGrp' )
+    cmds.parentConstraint( 'body_001_jnt', ns + ':row_1_CtGrp' )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_2_CtGrp' )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_3_CtGrp' )
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
 
 
 def body_spline( tail_as_root = False ):
