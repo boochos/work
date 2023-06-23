@@ -1214,7 +1214,7 @@ def _____________RIBBONS():
     pass
 
 
-def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_shape = 'diamond_ctrl', reverse = False, prebuild = False, prebuild_type = 4, ):
+def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_shape = 'diamond_ctrl', reverse = False, prebuild = False, prebuild_type = 4, fk = False, dynamics = False ):
     '''
     
     '''
@@ -1240,13 +1240,13 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     while i < layers:
         _name = 'layer_' + pad_number( i = i )
         if i == 0:
-            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = None, master = MASTERCT(), layer = i )
+            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = None, master = MASTERCT(), layer = i, fk = fk )
             layers_built.append( lyrs )
         else:
             if i == layers - 1:
                 create_up_curve = True  # build curve on last layer
                 d = 2
-            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = layers_built[i - 1], master = MASTERCT(), layer = i, create_up_curve = create_up_curve, d = d )
+            lyrs = ribbon_layer( name = _name, rows = rows, length = length, width = width, color = colors[j], X = X, ctrl_shape = ctrl_shape, reverse = reverse, parent_layer = layers_built[i - 1], master = MASTERCT(), layer = i, create_up_curve = create_up_curve, d = d, fk = fk )
             layers_built.append( lyrs )
         # counters
         print( i, rows )
@@ -1305,30 +1305,33 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     #####
     # print( 'master: ', layers_built[-1].curve )
     #
-    curve_result = cmds.duplicate( layers_built[-1].curve, name = layers_built[-1].curve + '_result' )[0]
-    cmds.setAttr( curve_result + '.v', 1 )
-    # print( 'result: ', curve_result )
-    #
-    # IF DYNAMICS DONT CREATE, SNAKE WONT FOLLOW PATH CUZ ITS STUCK ON THE RESULT CURVE, RESULT CURVE NEVER RECEIVED A BLENDSHAPE
-    #
-    dyn_result = dnm.makeDynamicPath( parentObj = WORLD_SPACE(), attrObj = MASTERCT()[2], mstrCrv = layers_built[-1].curve, rsltCrv = curve_result )
-    # print( dyn_result )
+    if dynamics:
+        curve_result = cmds.duplicate( layers_built[-1].curve, name = layers_built[-1].curve + '_result' )[0]
+        cmds.setAttr( curve_result + '.v', 1 )
+        # print( 'result: ', curve_result )
+        #
+        # IF DYNAMICS DONT CREATE, SNAKE WONT FOLLOW PATH CUZ ITS STUCK ON THE RESULT CURVE, RESULT CURVE NEVER RECEIVED A BLENDSHAPE
+        #
+        dyn_result = dnm.makeDynamicPath( parentObj = WORLD_SPACE(), attrObj = MASTERCT()[2], mstrCrv = layers_built[-1].curve, rsltCrv = curve_result )
+        # print( dyn_result )
+    else:
+        curve_result = layers_built[-1].curve
 
     return curve_result, layers_built[-1].curve_up
 
 
-def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0, create_curve = True, create_up_curve = False, d = 2 ):
+def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0, create_curve = True, create_up_curve = False, d = 2, fk = False ):
     '''
     follow formula for how control and follicles increase on layers. ie (controls * 2) -1 = follicles on the same layer. next layer controls match previous follicles
     '''
     xmlt = 0.1
     r_layer = None
     if not parent_layer:
-        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse, create_curve = create_curve, create_up_curve = create_up_curve, d = d )
+        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse, create_curve = create_curve, create_up_curve = create_up_curve, d = d, fk = fk )
         for control in r_layer.controls:
             cmds.parentConstraint( master[4], control[0], mo = True )
     else:
-        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse, create_curve = create_curve, create_up_curve = create_up_curve, d = d )
+        r_layer = ribbon( name = name, rows = rows, length = length, width = width, color = color, X = X * ( 1 - ( xmlt * ( layer + 1 ) ) ), ctrl_shape = ctrl_shape, reverse = reverse, create_curve = create_curve, create_up_curve = create_up_curve, d = d, fk = fk )
         i = 0
         for control in r_layer.controls:
             cmds.parentConstraint( parent_layer.follicles[i], control[0], mo = True )
@@ -1368,7 +1371,7 @@ class Ribbon():
         self.curve_up = curve_up
 
 
-def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, create_curve = True, create_up_curve = False, d = 2 ):
+def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, create_curve = True, create_up_curve = False, d = 2, fk = False ):
     '''
     ribbon
     maybe add a curve to each layer for visual reference
@@ -1451,19 +1454,23 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
             #
             if cmds.objExists( MASTERCT()[4] ):
                 if j > 0:
-                    place.parentSwitch( 
-                        name = c_Ct[2],
-                        Ct = c_Ct[2],
-                        CtGp = c_Ct[1],
-                        TopGp = c_Ct[0],
-                        ObjOff = c_Ct[0],
-                        ObjOn = controls[j - 1][4],
-                        Pos = False,
-                        Ornt = False,
-                        Prnt = True,
-                        OPT = True,
-                        attr = 'fk',
-                        w = 0.0 )
+                    if fk:
+                        place.parentSwitch( 
+                            name = c_Ct[2],
+                            Ct = c_Ct[2],
+                            CtGp = c_Ct[1],
+                            TopGp = c_Ct[0],
+                            ObjOff = c_Ct[0],
+                            ObjOn = controls[j - 1][4],
+                            Pos = False,
+                            Ornt = False,
+                            Prnt = True,
+                            OPT = True,
+                            attr = 'fk',
+                            w = 0.0 )
+                    else:
+                        pass
+                        # gets constrained outside this function as well
                 else:
                     pass
                     # gets constrained to follicle later in layer function

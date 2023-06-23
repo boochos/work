@@ -23,7 +23,7 @@ def ____PREBUILD():
     pass
 
 
-def prebuild():
+def prebuild( lod100 = True, lod300 = False ):
     '''
     
     '''
@@ -39,7 +39,7 @@ def prebuild():
     #
     neck_retainer()
     # weights
-    weights_meshImport()
+    weights_meshImport( lod100 = lod100, lod300 = lod300 )
     #
     cmds.parentConstraint( 'master_Grp', 'root_jnt', mo = True )
     place.cleanUp( 'root_jnt', SknJnts = True )
@@ -69,11 +69,11 @@ def prebuild():
         cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
 
 
-def build():
+def build( lod100 = True, lod300 = False, fk = False, dynamics = False ):
     '''
     
     '''
-    prebuild()
+    prebuild( lod100 = lod100, lod300 = lod300 )
 
     # neck spline part 1
     start_jnt = 'body_001_jnt'
@@ -85,7 +85,7 @@ def build():
     #
     head()
     # return
-    micro_body_cts = body_spline()
+    micro_body_cts = body_spline( fk = fk, dynamics = dynamics )
 
     # neck spline part 2
     cmds.delete( con )
@@ -362,17 +362,22 @@ def neck_retainer():
     current skin weights should indicate position of retainer
     '''
     ns = 'neck_rtnr'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_v004.ma'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_v006.ma'
     cmds.file( pth, reference = True, namespace = ns, force = True )
-    cmds.parentConstraint( 'body_002_jnt', ns + ':row_0_CtGrp' )
-    cmds.parentConstraint( 'body_001_jnt', ns + ':row_1_CtGrp' )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_2_CtGrp' )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_3_CtGrp' )
+    #
+    cmds.parentConstraint( 'body_001_jnt', ns + ':master', mo = True )
+    #
+    cmds.parentConstraint( 'body_002_jnt', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_002_jnt', ns + ':row_1_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_001_jnt', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_4_twistPvt', mo = True )
+    #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
 
 
-def body_spline( tail_as_root = False ):
+def body_spline( fk = False, dynamics = False, tail_as_root = False ):
     '''
     fix hard coded names
     '''
@@ -386,12 +391,24 @@ def body_spline( tail_as_root = False ):
     master = 'master'
     layers = 6
     # returnsNothing_FixIt = ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = reverse )
-    curve, curve_up = ump.ribbon_path( name = '', layers = 6, length = 120, width = 3, X = 2.0, ctrl_shape = 'pinYupZfront_ctrl', reverse = True, prebuild = False, prebuild_type = 4 )
+    curve, curve_up = ump.ribbon_path( 
+        name = '',
+        layers = layers,
+        length = 120,
+        width = 3,
+        X = 2.0,
+        ctrl_shape = 'pinYupZfront_ctrl',
+        reverse = True,
+        prebuild = False,
+        prebuild_type = 4,
+        fk = fk,
+        dynamics = dynamics
+        )
     #
     position_ctrl = place.Controller2( 'position', 'body_001_jnt', True, 'splineEnd_ctrl', 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'green' ).result
     #
     # pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root )
-    micro_body_cts = pathIk2( curve = curve, position_ctrl = position_ctrl, tail_as_root = tail_as_root, curve_up = curve_up )
+    micro_body_cts = pathIk2( curve = curve, position_ctrl = position_ctrl, tail_as_root = tail_as_root, curve_up = curve_up, fk = fk )
 
     misc.optEnum( position_ctrl[2], attr = 'path', enum = 'CONTROL' )
     # cmds.setAttr( master + '.path', cb = False )
@@ -401,7 +418,7 @@ def body_spline( tail_as_root = False ):
         cmds.setAttr( master + '.ctrlLayer' + str( i ), cb = False )
         i += 1
 
-    cmds.setAttr( position_ctrl[2] + '.ctrlLayer' + str( 3 ), 1 )
+    # cmds.setAttr( position_ctrl[2] + '.ctrlLayer' + str( 3 ), 1 )
     #
     return micro_body_cts
     #
@@ -670,7 +687,7 @@ def pathTwist( amount = 4, ramp = '', curve = '' ):
         i += 1
 
 
-def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = 'body_001_jnt', end_jnt = 'body_121_jnt', tail_as_root = False, curve_up = '' ):
+def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = 'body_001_jnt', end_jnt = 'body_121_jnt', tail_as_root = False, curve_up = '', fk = False ):
     '''
     based on cmds.pathAnimation()
     spline ik has parametric curve travel, the span between each cv is the same value no matter the length, can have linear travel across entire length of curve
@@ -813,20 +830,21 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         cmds.parentConstraint( j, microBodyCt[0], mo = True )
         micro_body_cts.append( microBodyCt )
         # fk down chain
-        if i >= fk_start:  # old: if i > 0:
-            place.parentSwitch( 
-                name = microBodyCt[2],
-                Ct = microBodyCt[2],
-                CtGp = microBodyCt[1],
-                TopGp = microBodyCt[0],
-                ObjOff = j,
-                ObjOn = skin_jnts[i - 1],
-                Pos = False,
-                Ornt = False,
-                Prnt = True,
-                OPT = True,
-                attr = 'fk',
-                w = 0.0 )
+        if fk:
+            if i >= fk_start:  # old: if i > 0:
+                place.parentSwitch( 
+                    name = microBodyCt[2],
+                    Ct = microBodyCt[2],
+                    CtGp = microBodyCt[1],
+                    TopGp = microBodyCt[0],
+                    ObjOff = j,
+                    ObjOn = skin_jnts[i - 1],
+                    Pos = False,
+                    Ornt = False,
+                    Prnt = True,
+                    OPT = True,
+                    attr = 'fk',
+                    w = 0.0 )
 
         # control on ground
         name = 'micro_ground_' + pad_number( i = i )
@@ -1387,46 +1405,48 @@ def weights_meshExport():
         krl.exportWeights02( ex_path )
 
 
-def weights_meshImport():
+def weights_meshImport( lod100 = True, lod300 = False ):
     '''
     dargonfly object weights
     '''
     # path
     path = weights_path()
-    # geo
-    all_geo = low_geo()
-    for geo in all_geo:
-        g = ''
-        if '|' in geo:
-            g = geo.split( '|' )[-1]
-        elif ':' in geo:
-            g = geo.split( ':' )[-1]
-        else:
-            g = geo
-        im_path = os.path.join( path, g )
-        cmds.select( geo )
-        # print( im_path )
-        try:
-            krl.importWeights02( geo, im_path )
-        except:
-            print( 'geo failed to import weights: ', geo )
+    if lod100:
+        # geo
+        all_geo = low_geo()
+        for geo in all_geo:
+            g = ''
+            if '|' in geo:
+                g = geo.split( '|' )[-1]
+            elif ':' in geo:
+                g = geo.split( ':' )[-1]
+            else:
+                g = geo
+            im_path = os.path.join( path, g )
+            cmds.select( geo )
+            # print( im_path )
+            try:
+                krl.importWeights02( geo, im_path )
+            except:
+                print( 'geo failed to import weights: ', geo )
     #
-    all_geo = high_geo()
-    for geo in all_geo:
-        g = ''
-        if '|' in geo:
-            g = geo.split( '|' )[-1]
-        elif ':' in geo:
-            g = geo.split( ':' )[-1]
-        else:
-            g = geo
-        im_path = os.path.join( path, g )
-        cmds.select( geo )
-        # print( im_path )
-        try:
-            krl.importWeights02( geo, im_path )
-        except:
-            print( 'geo failed to import weights: ', geo )
+    if lod300:
+        all_geo = high_geo()
+        for geo in all_geo:
+            g = ''
+            if '|' in geo:
+                g = geo.split( '|' )[-1]
+            elif ':' in geo:
+                g = geo.split( ':' )[-1]
+            else:
+                g = geo
+            im_path = os.path.join( path, g )
+            cmds.select( geo )
+            # print( im_path )
+            try:
+                krl.importWeights02( geo, im_path )
+            except:
+                print( 'geo failed to import weights: ', geo )
 
 
 def weights_path():
