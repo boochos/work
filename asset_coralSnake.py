@@ -763,7 +763,7 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
     place.cleanUp( m_up_grp, Ctrl = True )
     cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, m_up_grp + '.visibility', force = True )
 
-    #
+    # path
     crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
     arc_length = cmds.getAttr( crv_info + '.arcLength' )  # original
     # new length divide by original length
@@ -777,6 +777,16 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
     cmds.setAttr( dvd_multiplier + '.input1Z', 1.0 )
     cmds.connectAttr( ( dvd_length + '.outputZ' ), ( dvd_multiplier + '.input2Z' ) )
     cmds.connectAttr( ( dvd_multiplier + '.outputZ' ), ( mlt_merge_travel_length + '.input2' ) )
+    # up path
+    crv_info_up = cmds.arclen( curve, ch = True, n = ( curve_up + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
+    # divide 2 arcLengths
+    dvd_length_up = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve_up + '_lengthDvd' ) )
+    cmds.setAttr( ( dvd_length_up + '.operation' ), 2 )  # set operation: 2 = divide, 1 = multiply
+    cmds.connectAttr( ( crv_info_up + '.arcLength' ), ( dvd_length_up + '.input1Z' ) )
+    cmds.connectAttr( ( crv_info + '.arcLength' ), ( dvd_length_up + '.input2Z' ) )
+    # multiply final position result by this output
+    mlt_length_dif = cmds.shadingNode( 'multDoubleLinear', n = curve_up + '_lengthDifMlt', asUtility = True )
+    cmds.connectAttr( ( dvd_length_up + '.outputZ' ), ( mlt_length_dif + '.input2' ) )
     #
     '''
     # create tail as root nodes
@@ -937,7 +947,10 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         cmds.connectAttr( blnd_root_typs + '.outputR', mlt_path + '.input1', force = True )
         cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
 
-        cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+        #
+        # out needs to be multiplied by length change of up curve vs path curve
+        cmds.connectAttr( mlt_path + '.output', ( mlt_length_dif + '.input1' ) )
+        cmds.connectAttr( mlt_length_dif + '.output', mo_path_up + '.uValue', force = True )
         # finish up vector travel and aim constraint for snake
         # connect travel, matching joint below
         if i > 0:
