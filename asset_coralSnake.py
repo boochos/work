@@ -23,7 +23,7 @@ def ____PREBUILD():
     pass
 
 
-def prebuild( lod100 = True, lod300 = False ):
+def prebuild( lod100 = True, lod300 = False, deltaMush = False ):
     '''
     
     '''
@@ -40,11 +40,17 @@ def prebuild( lod100 = True, lod300 = False ):
     neck_retainer()
     # weights
     weights_meshImport( lod100 = lod100, lod300 = lod300 )
+    # geo
+    print( GEO )
+    cmds.parent( 'cor:coralSnake_grp', GEO[0] )
     #
     cmds.parentConstraint( 'master_Grp', 'root_jnt', mo = True )
     place.cleanUp( 'root_jnt', SknJnts = True )
-    cmds.deltaMush( low_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
-    cmds.deltaMush( high_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    if deltaMush:
+        if lod100:
+            cmds.deltaMush( low_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+        if lod300:
+            cmds.deltaMush( high_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
 
     misc.optEnum( MasterCt[2], attr = 'LOD', enum = 'OPTNS' )
     place.hijackVis( 'cor:body_low_grp', MasterCt[2], name = 'lowGeo', suffix = False, default = 1, mode = 'visibility' )
@@ -66,14 +72,20 @@ def prebuild( lod100 = True, lod300 = False ):
     misc.scaleUnlock( '___SKIN_JOINTS', sx = True, sy = True, sz = True )
     for s in scl:
         cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
-        cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
+        if deltaMush:
+            if lod100:
+                cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
+            if lod300:
+                cmds.connectAttr( mstr + '.' + uni, 'deltaMush2' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
 
 
-def build( lod100 = True, lod300 = False, fk = False, dynamics = False ):
+def build( lod100 = True, lod300 = False, fk = False, dynamics = False, deltaMush = False ):
     '''
-    
+    assumes joints are in scene and geo groups and object are referenced, 
+    objects are hard coded
     '''
-    prebuild( lod100 = lod100, lod300 = lod300 )
+    prebuild( lod100 = lod100, lod300 = lod300, deltaMush = deltaMush )
+    # return
 
     # neck spline part 1
     start_jnt = 'body_001_jnt'
@@ -374,7 +386,10 @@ def neck_retainer():
     cmds.parentConstraint( 'head_jnt', ns + ':row_4_twistPvt', mo = True )
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
-    cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
 
 
 def body_spline( fk = False, dynamics = False, tail_as_root = False ):

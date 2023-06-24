@@ -1455,6 +1455,7 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
             if cmds.objExists( MASTERCT()[4] ):
                 if j > 0:
                     if fk:
+                        # follow joint flow
                         place.parentSwitch( 
                             name = c_Ct[2],
                             Ct = c_Ct[2],
@@ -1468,6 +1469,22 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
                             OPT = True,
                             attr = 'fk',
                             w = 0.0 )
+                        # reverse joint flow
+                        '''
+                        not ready, need to switch variables, child/parent
+                        place.parentSwitch( 
+                            name = c_Ct[2],
+                            Ct = c_Ct[2],
+                            CtGp = c_Ct[1],
+                            TopGp = c_Ct[0],
+                            ObjOff = c_Ct[0],
+                            ObjOn = controls[j - 1][4],
+                            Pos = False,
+                            Ornt = False,
+                            Prnt = True,
+                            OPT = True,
+                            attr = 'fk',
+                            w = 0.0 )'''
                     else:
                         pass
                         # gets constrained outside this function as well
