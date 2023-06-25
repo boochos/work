@@ -17,6 +17,7 @@ krl = web.mod( "key_rig_lib" )
 # jnt = web.mod( 'atom_joint_lib' )
 ac = web.mod( 'animCurve_lib' )
 # cn = web.mod( 'constraint_lib' )
+cpl = web.mod( "clipPickle_lib" )
 
 
 def ____PREBUILD():
@@ -73,9 +74,8 @@ def prebuild( lod100 = True, lod300 = False, deltaMush = False ):
     for s in scl:
         cmds.connectAttr( mstr + '.' + uni, '___SKIN_JOINTS' + s )
         if deltaMush:
-            if lod100:
-                cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
-            if lod300:
+            cmds.connectAttr( mstr + '.' + uni, 'deltaMush1' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
+            if lod100 and lod300:
                 cmds.connectAttr( mstr + '.' + uni, 'deltaMush2' + s )  # set scale, apply deltaMush, add scale connection for deltaMush
 
 
@@ -102,6 +102,7 @@ def build( lod100 = True, lod300 = False, fk = False, dynamics = False, deltaMus
     # neck spline part 2
     cmds.delete( con )
     neck( neck_jnt_chain = neck_ik_jnts, micro_body_cts = micro_body_cts )
+    # import neck retaner settings
 
 
 def ____FACE():
@@ -1515,7 +1516,7 @@ def low_geo():
 
 
 def high_geo():
-    return ['cor:snake_body_geo', 'cor:snake_tongue_geo']
+    return ['cor:snake_body_geo', 'cor:snake_tongue_geo', 'cor:snake_eye_right', 'cor:snake_eye_left']
 
 '''
 import webrImport as web

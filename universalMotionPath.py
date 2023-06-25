@@ -1452,39 +1452,40 @@ def ribbon( name = '', rows = 2, length = 120, width = 20, color = '', X = 1, ct
             cmds.parentConstraint( c_Ct[4], jnt, mo = True )
             controls.append( c_Ct )
             #
+            reverse_fk = True
             if cmds.objExists( MASTERCT()[4] ):
                 if j > 0:
                     if fk:
-                        # follow joint flow
-                        place.parentSwitch( 
-                            name = c_Ct[2],
-                            Ct = c_Ct[2],
-                            CtGp = c_Ct[1],
-                            TopGp = c_Ct[0],
-                            ObjOff = c_Ct[0],
-                            ObjOn = controls[j - 1][4],
-                            Pos = False,
-                            Ornt = False,
-                            Prnt = True,
-                            OPT = True,
-                            attr = 'fk',
-                            w = 0.0 )
-                        # reverse joint flow
-                        '''
-                        not ready, need to switch variables, child/parent
-                        place.parentSwitch( 
-                            name = c_Ct[2],
-                            Ct = c_Ct[2],
-                            CtGp = c_Ct[1],
-                            TopGp = c_Ct[0],
-                            ObjOff = c_Ct[0],
-                            ObjOn = controls[j - 1][4],
-                            Pos = False,
-                            Ornt = False,
-                            Prnt = True,
-                            OPT = True,
-                            attr = 'fk',
-                            w = 0.0 )'''
+                        if not reverse_fk:
+                            # follow joint flow
+                            place.parentSwitch( 
+                                name = c_Ct[2],
+                                Ct = c_Ct[2],
+                                CtGp = c_Ct[1],
+                                TopGp = c_Ct[0],
+                                ObjOff = c_Ct[0],
+                                ObjOn = controls[j - 1][4],
+                                Pos = False,
+                                Ornt = False,
+                                Prnt = True,
+                                OPT = True,
+                                attr = 'fk',
+                                w = 0.0 )
+                        else:
+                            # reverse joint flow
+                            place.parentSwitch( 
+                                name = controls[j - 1][2],
+                                Ct = controls[j - 1][2],
+                                CtGp = controls[j - 1][1],
+                                TopGp = controls[j - 1][0],
+                                ObjOff = controls[j - 1][0],
+                                ObjOn = c_Ct[4],
+                                Pos = False,
+                                Ornt = False,
+                                Prnt = True,
+                                OPT = True,
+                                attr = 'fk',
+                                w = 0.0 )
                     else:
                         pass
                         # gets constrained outside this function as well
