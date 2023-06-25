@@ -702,11 +702,12 @@ def pathTwist( amount = 4, ramp = '', curve = '' ):
         i += 1
 
 
-def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = 'body_001_jnt', end_jnt = 'body_121_jnt', tail_as_root = False, curve_up = '', fk = False ):
+def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = 'body_001_jnt', end_jnt = 'body_121_jnt', tail_as_root = False, curve_up = '', fk = False, ribn = 'layer_05_ribbon' ):
     '''
     based on cmds.pathAnimation()
     spline ik has parametric curve travel, the span between each cv is the same value no matter the length, can have linear travel across entire length of curve
     '''
+    new_up = False  # this is a fail, remove code that relates
     # travel control
     PositionCt = None
     if not position_ctrl:
@@ -777,16 +778,16 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
     cmds.setAttr( dvd_multiplier + '.input1Z', 1.0 )
     cmds.connectAttr( ( dvd_length + '.outputZ' ), ( dvd_multiplier + '.input2Z' ) )
     cmds.connectAttr( ( dvd_multiplier + '.outputZ' ), ( mlt_merge_travel_length + '.input2' ) )
+
+    '''
     # up path
-    crv_info_up = cmds.arclen( curve, ch = True, n = ( curve_up + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
+    crv_info_up = cmds.arclen( curve_up, ch = True, n = ( curve_up + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
     # divide 2 arcLengths
     dvd_length_up = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve_up + '_lengthDvd' ) )
     cmds.setAttr( ( dvd_length_up + '.operation' ), 2 )  # set operation: 2 = divide, 1 = multiply
     cmds.connectAttr( ( crv_info_up + '.arcLength' ), ( dvd_length_up + '.input1Z' ) )
     cmds.connectAttr( ( crv_info + '.arcLength' ), ( dvd_length_up + '.input2Z' ) )
-    # multiply final position result by this output
-    mlt_length_dif = cmds.shadingNode( 'multDoubleLinear', n = curve_up + '_lengthDifMlt', asUtility = True )
-    cmds.connectAttr( ( dvd_length_up + '.outputZ' ), ( mlt_length_dif + '.input2' ) )
+    '''
     #
     '''
     # create tail as root nodes
@@ -828,10 +829,12 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
 
         #
         microUpCt = None
+        mo_path_up = None
         if curve_up:
             # up vector control
             name = 'micro_up_' + pad_number( i = i )
             microUpCt = place.Controller2( name, j, True, 'loc_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+            # cmds.setAttr( microUpCt[1] + '.translateY', 10 ) # has to stay at 0.0
             upCts.append( microUpCt[4] )
             place.translationLock( microUpCt[2] )
             place.rotationLock( microUpCt[2] )
@@ -839,9 +842,11 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
             # cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, microUpCt[0] + '.visibility', force = True )
             cmds.parent( microUpCt[0], m_up_grp )
             # stick to path
-            mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
-            cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
-            ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
+            if not new_up:
+                #
+                mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+                cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+                ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
 
         # control for body
         fk_start = 110
@@ -947,11 +952,25 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         cmds.connectAttr( blnd_root_typs + '.outputR', mlt_path + '.input1', force = True )
         cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
 
+        '''
         #
+        # multiply final position result by this output
+        mlt_length_dif = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_lengthDifMlt', asUtility = True )
+        cmds.connectAttr( ( dvd_length_up + '.outputZ' ), ( mlt_length_dif + '.input2' ) )
         # out needs to be multiplied by length change of up curve vs path curve
         cmds.connectAttr( mlt_path + '.output', ( mlt_length_dif + '.input1' ) )
         cmds.connectAttr( mlt_length_dif + '.output', mo_path_up + '.uValue', force = True )
         # finish up vector travel and aim constraint for snake
+        '''
+
+        if new_up:
+            fol = ump.follicle_on_nurbs( name = microCt[2] + '_up', ribn = ribn, parent = m_up_grp, u = 0.5 )
+            cmds.parentConstraint( fol[0], microUpCt[0], mo = False )
+            cmds.connectAttr( mlt_path + '.output', fol[1] + '.parameterV', force = True )
+        else:
+            # original method
+            cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+
         # connect travel, matching joint below
         if i > 0:
             # cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )

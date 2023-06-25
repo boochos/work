@@ -1320,7 +1320,7 @@ def ribbon_path( name = '', layers = 3, length = 10, width = 1, X = 2.0, ctrl_sh
     return curve_result, layers_built[-1].curve_up
 
 
-def ribbon_layer( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0, create_curve = True, create_up_curve = False, d = 2, fk = False ):
+def ribbon_layer( name = '', rows = 2, length = 120, width = 15, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, parent_layer = None, master = [], layer = 0, create_curve = True, create_up_curve = False, d = 2, fk = False ):
     '''
     follow formula for how control and follicles increase on layers. ie (controls * 2) -1 = follicles on the same layer. next layer controls match previous follicles
     '''
@@ -1371,7 +1371,7 @@ class Ribbon():
         self.curve_up = curve_up
 
 
-def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, create_curve = True, create_up_curve = False, d = 2, fk = False ):
+def ribbon( name = '', rows = 2, length = 120, width = 20, color = '', X = 1, ctrl_shape = 'diamond_ctrl', reverse = False, create_curve = True, create_up_curve = False, d = 2, fk = False ):
     '''
     ribbon
     maybe add a curve to each layer for visual reference
@@ -1528,7 +1528,7 @@ def ribbon( name = '', rows = 2, length = 120, width = 10, color = '', X = 1, ct
         # path curve_up, up vectors
         curve_up = cmds.duplicate( curve, name = curve + '_up' )[0]
         cmds.setAttr( curve_up + '.template', 1 )
-        cmds.setAttr( curve_up + '.ty', width * 3 )
+        cmds.setAttr( curve_up + '.ty', 0.5 )  # up vector has to stay close, otherwise upvectors break.
         #
         clusters_up = place.clstrOnCV( curve_up, name + '_up_Clstr' )
         cGrpUp = name + 'clstrUp_Grp'
@@ -1556,6 +1556,30 @@ def skin_ribbon( joints = [], geo = '' ):
     sknClstr = mel.eval( 'newSkinCluster "-toSelectedBones -bindMethod 0  -normalizeWeights 1 -weightDistribution 0 -mi 1 -omi true -dr 6 -rui false  , multipleBindPose, 0";' )[0]
     cmds.setAttr( sknClstr + '.skinningMethod', 1 )
     return sknClstr
+
+
+def follicle_on_nurbs( name = '', ribn = '', parent = '', u = 0.5, v = 0.5 ):
+    '''
+    
+    '''
+    ribn_shape = cmds.listRelatives( ribn, s = True )[0]
+    #
+    fol_shape = cmds.createNode( 'follicle', n = name + '_follicleShape' )
+    fol = cmds.listRelatives( fol_shape, p = True )[0]
+    cmds.setAttr( fol + '.simulationMethod', 0 )
+    if parent:
+        cmds.parent( fol, parent )
+    # return
+    cmds.connectAttr( fol_shape + '.outRotate', fol + '.rotate', f = True )
+    cmds.connectAttr( fol_shape + '.outTranslate', fol + '.translate' )
+    cmds.connectAttr( ribn_shape + '.worldMatrix', fol_shape + '.inputWorldMatrix' )
+    cmds.connectAttr( ribn_shape + '.local', fol_shape + '.inputSurface' )
+
+    cmds.setAttr( fol_shape + '.parameterU', u )
+    cmds.setAttr( fol_shape + '.parameterV', v )
+    # length_fraction = length_fraction + step
+
+    return [fol, fol_shape]
 
 '''
 # path rig
