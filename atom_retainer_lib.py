@@ -35,6 +35,185 @@ def __________________BUILD():
     pass
 
 
+def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, axis = [ 0, 1, 0 ], X = 1, hideRows = False ):
+    '''
+    degree = 1 or 3
+    ---
+    CANT USE DEGREE 1 (LINEAR) WITH MUSCLE, HAS SEAM, MUSCLE RIPS IT APART ... RETAINER HAS TO BE (CUBIC) IF INFLUENCED BY MUSCLE, 
+    CANT MOVE 2ND AND 2ND LAST ROWS, MUSCLE SYSTEM DOESNT LIKE IT.
+    ---
+    create rigged nurbs object
+    row options to expand with end rows
+    cv options for twist
+    cv options for sliding based distance
+    cv options for bulge
+    '''
+    # things to add
+
+    #
+    PreBuild = place.rigPrebuild( Top = 4, Ctrl = True, SknJnts = True, Geo = True, World = True, Master = True, OlSkool = False, Size = X * 10 )
+    scale()
+    logType( typ = 'plane' )
+    MasterCt = PreBuild[5]
+    # place.cleanUp( obj, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    #
+    if axis == [ 0, 1, 0 ]:
+        cv_shape = 'diamondYup_ctrl'
+        row_shape = 'facetZup_ctrl'
+        row_direction = 2  # y is up
+        codeScale = X * 2.5
+        cmds.select( MasterCt[2] )
+        ui.importCurveShape( name = row_shape, codeScale = codeScale )
+        cmds.select( MasterCt[3] )
+        ui.importCurveShape( name = row_shape, codeScale = codeScale * 0.9 )
+    else:  # assume Z direction [ 0, 0, 1 ]
+        cv_shape = 'diamondZup_ctrl'
+        row_shape = 'facetYup_ctrl'
+        row_direction = 1  # z is up
+        codeScale = X * 2.5
+        cmds.select( MasterCt[2] )
+        ui.importCurveShape( name = row_shape, codeScale = codeScale )
+        cmds.select( MasterCt[3] )
+        ui.importCurveShape( name = row_shape, codeScale = codeScale * 0.9 )
+    #
+    name = 'retainer'
+    geo = None
+    colors = [ 'lightBlue', 'pink', 'hotPink', 'purple']
+    row_cv_controls = []
+    row_controls = []
+    joints = []
+    length_ratio = length / width
+    #
+    if degree == 1 or degree == 3:
+        geo = cmds.nurbsPlane( name = name, axis = axis, patchesU = patchesU, patchesV = patchesV, degree = degree, lengthRatio = length_ratio, width = width )
+        print( geo )
+        place.cleanUp( geo[0], Body = True )
+        if degree == 3:
+            if hideRows:
+                rows = patchesV + 3
+            else:
+                rows = patchesV + 1
+                cmds.setAttr( geo[1] + '.patchesV', patchesV - 2 )
+        else:
+            rows = patchesV + 1
+        print( rows )
+        # rows = spans + 1
+        cvs = patchesU + 3
+        print( cvs )
+        '''
+        rotation = -90
+        rotation_inc = 360 / cvs  # each cv gets rotation to, for bulge effect
+        if degree == 3:
+            rotation = -90 + rotation_inc  # / cvs * -1
+        '''
+
+        # orient cv controls, figure out split
+        mid_cv = 0
+        h_cvs = cvs / 2
+        r_cvs = ( round( h_cvs ) )
+        print( h_cvs, r_cvs )
+        if r_cvs == h_cvs:
+            print( 'no mid cv' )
+        else:
+            print( 'mid cv' )
+            mid_cv = r_cvs + 1
+        # create parts
+
+        clr = 0
+
+        for r in range( rows ):
+            #
+            row_master = False
+            cv_controls = []
+            for c in range( cvs ):
+                print( 'c ', c )
+                # cv name
+                cv = name + '.cv[' + str( c ) + '][' + str( r ) + ']'
+                cv_name = cv.replace( '.', '_' ).replace( '][', '_' ).replace( '[', '_' ).replace( ']', '' ).split( name + '_' )[1]
+                # cv control
+                pos = cmds.xform( cv, t = True, ws = True, q = True )
+                cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
+                place.cleanUp( cv_Ct[0], Ctrl = True )
+                cmds.xform( cv_Ct[0], ws = True, t = pos )
+
+                if c <= r_cvs - 1:
+                    cmds.setAttr( cv_Ct[0] + '.rotateZ' , 90 )
+                    cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
+                if  mid_cv and c > mid_cv - 1:
+                        cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
+                        cmds.setAttr( cv_Ct[1] + '.rotateZ' , 90 )
+                if not mid_cv and c > r_cvs - 1:
+                    cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
+                    cmds.setAttr( cv_Ct[1] + '.rotateZ' , 90 )
+
+                '''
+                cmds.setAttr( cv_Ct[0] + '.rotateZ' , rotation )  # doesnt account for up axis
+                '''
+                cv_controls.append( cv_Ct )
+                '''
+                rotation = rotation - rotation_inc
+                '''
+                # joint
+                cmds.select( cv_Ct[2] )
+                j = place.joint()
+                j = cmds.rename( j, cv_Ct[2] + '_jnt' )
+                place.cleanUp( j, SknJnts = True )
+                cmds.parentConstraint( cv_Ct[4], j, mo = True )
+                joints.append( j )
+                # row master control
+                if not row_master:
+                    row_name = 'row_' + str( r )
+                    row_Ct = place.Controller2( row_name, geo[0], False, row_shape, X * 5.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
+                    place.scaleUnlock( row_Ct[2], sx = True, sy = True, sz = False )
+                    place.cleanUp( row_Ct[0], Ctrl = True )
+                    insertTwistPivotControl( obj = row_Ct, X = X * 2, colorName = colors[clr] )
+                    if row_direction == 1:  # reverse of cylinder
+                        cmds.xform( row_Ct[0], ws = True, t = [ 0, pos[row_direction], 0 ] )
+                    else:
+                        cmds.xform( row_Ct[0], ws = True, t = [ 0, 0, pos[row_direction] ] )
+                    cmds.parentConstraint( MasterCt[4], row_Ct[0], mo = True )
+                    row_controls.append( row_Ct )
+                    row_master = True
+            # constrain cvs to row
+            for cv_control in cv_controls:
+                cmds.parentConstraint( row_Ct[4], cv_control[0], mo = True )
+            row_cv_controls.append( cv_controls )
+            # update color
+            if degree == 3 and r == 0:  # next is 2nd, keep color
+                # print( '2nd', r )
+                pass
+            elif degree == 3 and r == range( rows )[-3]:  # next is 2nd last, skip a color to match last iteration
+                # print( '2nd last', r, range( rows )[-3] )
+                clr = clr + 1
+                if clr > len( colors ) - 1:
+                    clr = 0
+            elif degree == 3 and r == range( rows )[-2]:  # next is last, keep color from previous iteration
+                # print( 'last', r, range( rows )[-2] )
+                pass
+            else:
+                # print( 'nth', r )
+                clr = clr + 1
+                if clr > len( colors ) - 1:
+                    clr = 0
+
+        # skin before moving stuff around
+        skin( joints, geo = geo[0] )
+        #
+        if degree == 3 and hideRows:  # could do this always to keep consistent if behaviour is bad even in linear(degree 1)
+            degree3( row_controls, row_cv_controls )
+            row_controls.pop( 1 )  # remove second
+            row_controls.pop( -2 )  # remove second last
+            row_cv_controls.pop( 1 )  # remove cv second
+            row_cv_controls.pop( -2 )  # remove cv second last
+        #
+        # slideBulgeAll( row_cv_controls )
+        slideBulgeAnchorsAll( row_cv_controls, plane = True )  # need better deafults for middle row
+        twist( row_controls )
+        # scale()
+    else:
+        print( 'degrees has to be 1 or 3' )
+
+
 def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1, hideRows = False ):
     '''
     degree = 1 or 3
@@ -111,7 +290,7 @@ def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1, hide
                 cv_name = cv.replace( '.', '_' ).replace( '][', '_' ).replace( '[', '_' ).replace( ']', '' ).split( name + '_' )[1]
                 # cv control
                 pos = cmds.xform( cv, t = True, ws = True, q = True )
-                cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
+                cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
                 place.cleanUp( cv_Ct[0], Ctrl = True )
                 cmds.xform( cv_Ct[0], ws = True, t = pos )
                 cmds.setAttr( cv_Ct[0] + '.rotateZ' , rotation )  # doesnt account for up axis
@@ -415,7 +594,7 @@ def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight
         cmds.connectAttr( cndtnOnOff + '.outColorR', slave_CtGrp + '.translateY', f = True )  # slave_CtGrp
 
 
-def slideBulgeAnchorsAll( row_cv_controls = [] ):
+def slideBulgeAnchorsAll( row_cv_controls = [], plane = False ):
     '''
     connect cv rows with slide Bulge effect
     '''
@@ -425,8 +604,12 @@ def slideBulgeAnchorsAll( row_cv_controls = [] ):
         slave_cvs = row_cv_controls[r + 1]
         anchor2_cvs = row_cv_controls[-1]
         for c in range( len( anchor1_cvs ) ):
-            slideBulgeAnchors( master = anchor1_cvs[c][2], slave = slave_cvs[c][2], slide_weight = 0.5, bulge_weight = 0.5 )
-            slideBulgeAnchors( master = anchor2_cvs[c][2], slave = slave_cvs[c][2], slide_weight = -0.5, bulge_weight = 0.5 )
+            if plane:
+                slideBulgeAnchors( master = anchor1_cvs[c][2], slave = slave_cvs[c][2], slide_weight = -0.5, bulge_weight = 0.5 )
+                slideBulgeAnchors( master = anchor2_cvs[c][2], slave = slave_cvs[c][2], slide_weight = 0.5, bulge_weight = 0.5 )
+            else:
+                slideBulgeAnchors( master = anchor1_cvs[c][2], slave = slave_cvs[c][2], slide_weight = 0.5, bulge_weight = 0.5 )
+                slideBulgeAnchors( master = anchor2_cvs[c][2], slave = slave_cvs[c][2], slide_weight = -0.5, bulge_weight = 0.5 )
 
 
 def dynamic():
