@@ -55,7 +55,7 @@ def prebuild( lod100 = True, lod300 = False, deltaMush = False ):
 
     misc.optEnum( MasterCt[2], attr = 'LOD', enum = 'OPTNS' )
     place.hijackVis( 'cor:body_low_grp', MasterCt[2], name = 'lowGeo', suffix = False, default = 1, mode = 'visibility' )
-    place.hijackVis( 'cor:body_high_grp', MasterCt[2], name = 'highGeo', suffix = False, default = 0, mode = 'visibility' )
+    place.hijackVis( 'cor:body_high_grp_anim', MasterCt[2], name = 'highGeo', suffix = False, default = 0, mode = 'visibility' )
 
     #
     # scale
@@ -391,6 +391,11 @@ def neck_retainer():
         cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
     except:
         pass
+
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\retainer_settings_pose.0005.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
 
 
 def body_spline( fk = False, dynamics = False, tail_as_root = False ):
@@ -1512,11 +1517,11 @@ def weights_path():
 
 
 def low_geo():
-    return ['cor:snake_body_Low_geo', 'cor:snake_tongue_low_geo', 'cor:snake_eye_right', 'cor:snake_eye_left']
+    return ['cor:snake_body_Low_geo', 'cor:snake_tongue_low_geo', 'cor:snake_eye_low_right', 'cor:snake_eye_low_left']
 
 
 def high_geo():
-    return ['cor:snake_body_geo', 'cor:snake_tongue_geo', 'cor:snake_eye_right', 'cor:snake_eye_left']
+    return ['cor:snake_body_geo_anim', 'cor:snake_tongue_geo_anim', 'cor:snake_eye_right_anim', 'cor:snake_eye_left_anim']
 
 '''
 import webrImport as web
