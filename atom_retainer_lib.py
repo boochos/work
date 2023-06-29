@@ -35,7 +35,7 @@ def __________________BUILD():
     pass
 
 
-def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, axis = [ 0, 1, 0 ], X = 1, hideRows = False ):
+def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, axis = [ 0, 1, 0 ], X = 1, hideRows = False, mirrorControls = True ):
     '''
     degree = 1 or 3
     ---
@@ -59,18 +59,18 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
     #
     if axis == [ 0, 1, 0 ]:
         cv_shape = 'diamondYup_ctrl'
-        row_shape = 'facetZup_ctrl'
+        row_shape = 'rectangleWideZup_ctrl'
         row_direction = 2  # y is up
-        codeScale = X * 2.5
+        codeScale = X * 1.5
         cmds.select( MasterCt[2] )
         ui.importCurveShape( name = row_shape, codeScale = codeScale )
         cmds.select( MasterCt[3] )
         ui.importCurveShape( name = row_shape, codeScale = codeScale * 0.9 )
     else:  # assume Z direction [ 0, 0, 1 ]
         cv_shape = 'diamondZup_ctrl'
-        row_shape = 'facetYup_ctrl'
+        row_shape = 'rectangleWideYup_ctrl'
         row_direction = 1  # z is up
-        codeScale = X * 2.5
+        codeScale = X * 1.5
         cmds.select( MasterCt[2] )
         ui.importCurveShape( name = row_shape, codeScale = codeScale )
         cmds.select( MasterCt[3] )
@@ -135,16 +135,26 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
                 cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
                 place.cleanUp( cv_Ct[0], Ctrl = True )
                 cmds.xform( cv_Ct[0], ws = True, t = pos )
-
+                #
                 if c <= r_cvs - 1:
                     cmds.setAttr( cv_Ct[0] + '.rotateZ' , 90 )
                     cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
+                #
                 if  mid_cv and c > mid_cv - 1:
-                        cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
+                    cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
+                    if mirrorControls:
+                        cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
+                        scaleInverse( cv_Ct[1], 'scaleY' )
+                    else:
                         cmds.setAttr( cv_Ct[1] + '.rotateZ' , 90 )
+                #
                 if not mid_cv and c > r_cvs - 1:
                     cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
-                    cmds.setAttr( cv_Ct[1] + '.rotateZ' , 90 )
+                    if mirrorControls:
+                        cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
+                        scaleInverse( cv_Ct[1], 'scaleY' )
+                    else:
+                        cmds.setAttr( cv_Ct[1] + '.rotateZ' , 90 )
 
                 '''
                 cmds.setAttr( cv_Ct[0] + '.rotateZ' , rotation )  # doesnt account for up axis
@@ -163,7 +173,7 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
                 # row master control
                 if not row_master:
                     row_name = 'row_' + str( r )
-                    row_Ct = place.Controller2( row_name, geo[0], False, row_shape, X * 5.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
+                    row_Ct = place.Controller2( row_name, geo[0], False, row_shape, X * 2.8, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
                     place.scaleUnlock( row_Ct[2], sx = True, sy = True, sz = False )
                     place.cleanUp( row_Ct[0], Ctrl = True )
                     insertTwistPivotControl( obj = row_Ct, X = X * 2, colorName = colors[clr] )
@@ -656,6 +666,17 @@ def rigTopNodeName():
 
 def __________________UTIL():
     pass
+
+
+def scaleInverse( obj = '', axis = 'scaleY' ):
+    '''
+    assumes axis is locked
+    unlock and set to -1.0
+    lock
+    '''
+    cmds.setAttr( obj + '.' + axis, lock = False )
+    cmds.setAttr( obj + '.' + axis, -1.0 )
+    cmds.setAttr( obj + '.' + axis, lock = True )
 
 
 def scale():

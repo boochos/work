@@ -18,6 +18,7 @@ krl = web.mod( "key_rig_lib" )
 ac = web.mod( 'animCurve_lib' )
 # cn = web.mod( 'constraint_lib' )
 cpl = web.mod( "clipPickle_lib" )
+arl = web.mod( 'atom_retainer_lib' )
 
 
 def ____PREBUILD():
@@ -39,6 +40,7 @@ def prebuild( lod100 = True, lod300 = False, deltaMush = False ):
     MasterCt = PreBuild[5]
     #
     neck_retainer()
+    throat_retainer()
     # weights
     weights_meshImport( lod100 = lod100, lod300 = lod300 )
     # geo
@@ -109,6 +111,38 @@ def ____FACE():
     pass
 
 
+def throat_retainer():
+    '''
+    build face rig from template
+    is later referenced and connected with blendshape
+    '''
+    # retainer
+    # arl.createPlane( patchesU = 2, patchesV = 4, degree = 3, axis = [ 0, 1, 0 ], X = 0.5, hideRows = True, length = 4, width = 1.0 )
+
+    ns = 'throat_rtnr'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\throat_retainer_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    #
+    cmds.parentConstraint( 'throat_base_jnt', ns + ':master', mo = True )
+    #
+    cmds.parentConstraint( 'throat_05_jnt', ns + ':row_0_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_04_jnt', ns + ':row_2_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_4_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_01_jnt', ns + ':row_6_twistPvt', mo = False )
+    #
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+    # import pose, settings
+
+
 def tongue():
     # tongue
     # TongueCt = place.Controller2( 'Tongue', 'jaw_jnt', False, 'splineStart_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
@@ -135,7 +169,8 @@ def throat():
     spline( name = name, start_jnt = 'throat_01_jnt', end_jnt = 'throat_05_jnt', splinePrnt = 'body_003_jnt', splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.1, splineFalloff = 1 )
     #
     cmds.setAttr( name + '.Stretch', 1 )
-    cmds.setAttr( name + '.ClstrMidIkBlend', 0.5 )
+    cmds.setAttr( name + '.ClstrMidIkBlend', 0.25 )
+    cmds.setAttr( name + '.ClstrMidIkSE_W', 0.0 )
     cmds.setAttr( name + '.VctrMidIkBlend', 0.5 )
     #
     place.hijackAttrs( baseCt[0], name, 'visibility', 'baseVis', set = True, default = 0.0, force = True )
@@ -168,6 +203,18 @@ def fangs():
     # pose, tuck away
     cmds.setAttr( fangLCt[2] + '.rotateX', 72 )
     cmds.setAttr( fangRCt[2] + '.rotateX', 72 )
+
+
+def jaw_ik():
+    '''
+    create left/right jawk ik for lipline attachment
+    move lower jaw pivot to corner of mouth, anatomically the geo is wrong. need to adjust to fit geo
+    add pivot offset group to cvs in retainer, for constraining to rig
+    TODO: create upper jaw ik, sliding forward when jaw opens for folding fang snakes
+    TODO: create tilting outer upper jaw control
+    
+    '''
+    pass
 
 
 def jaw():
