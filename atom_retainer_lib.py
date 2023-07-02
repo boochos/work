@@ -134,6 +134,7 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
                 pos = cmds.xform( cv, t = True, ws = True, q = True )
                 cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
                 place.cleanUp( cv_Ct[0], Ctrl = True )
+                insertCvPivotControl( obj = cv_Ct, X = X * 0.2, colorName = colors[clr] )
                 cmds.xform( cv_Ct[0], ws = True, t = pos )
                 #
                 if c <= r_cvs - 1:
@@ -761,6 +762,24 @@ def createDisNode( name = '' ):
     '''
     dis = cmds.createNode( 'distanceBetween', name = name + '___dis' )
     return dis
+
+
+def insertCvPivotControl( obj = [], X = 1, colorName = '' ):
+    '''
+    obj = expected to be full controller hierarchy
+    creates a control, used to place a row control, so CtGrp twists from the correct position. 
+    this control should be used to place the row
+    '''
+    #
+    ctrl = place.circle( name = obj[2] + '_cvPvt', obj = obj[2], shape = 'loc_ctrl', size = X, colorName = colorName )[0]
+    attr = 'Pivot_Vis'
+    place.addAttribute( obj[2], attr, 1, 1, True, 'long' )
+    cmds.connectAttr( obj[2] + '.' + attr, ctrl + 'Shape' + '.visibility' )
+    place.scaleLock( ctrl, True )
+    cmds.setAttr( ctrl + '.visibility', l = True, cb = False )
+    #
+    cmds.parent( ctrl, obj[0] )
+    cmds.parent( obj[1], ctrl )
 
 
 def insertTwistPivotControl( obj = [], X = 1, colorName = '' ):

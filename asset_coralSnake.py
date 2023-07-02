@@ -259,7 +259,7 @@ def jaw():
     apg.aimRig( name = 'jaw_R', obj = 'jaw_lower_jnt_R', aimObj = JawRCt[4], upParent = JawCt[4], distance = 5, aim = [0, 0, -1], up = [0, -1, 0] )
 
     #
-    JawLowerLCt = place.Controller2( 'jaw_lower_L', 'jaw_lower_jnt_L', True, 'squareZup_ctrl', 0.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
+    JawLowerLCt = place.Controller2( 'jaw_lower_L', 'jaw_lower_jnt_L', True, 'shldrL_ctrl', 1.0, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
     cmds.setAttr( JawLowerLCt[2] + '.showManipDefault', 1 )
     # place.translationLock( JawLowerLCt[2], True )
     place.rotationLock( JawLowerLCt[2], True )
@@ -268,7 +268,7 @@ def jaw():
     place.cleanUp( JawLowerLCt[0], Ctrl = True )
     # cmds.setAttr( JawLowerLCt[0] + '.v', 0 )
     #
-    JawLowerRCt = place.Controller2( 'jaw_lower_R', 'jaw_lower_jnt_R', True, 'squareZup_ctrl', 0.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
+    JawLowerRCt = place.Controller2( 'jaw_lower_R', 'jaw_lower_jnt_R', True, 'shldrR_ctrl', 1.0, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'red' ).result
     cmds.setAttr( JawLowerRCt[2] + '.showManipDefault', 1 )
     # place.translationLock( JawLowerRCt[2], True )
     place.rotationLock( JawLowerRCt[2], True )
