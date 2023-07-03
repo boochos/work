@@ -35,12 +35,13 @@ def __________________BUILD():
     pass
 
 
-def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, axis = [ 0, 1, 0 ], X = 1, hideRows = False, mirrorControls = True ):
+def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, axis = [ 0, 1, 0 ], X = 1, hideRows = False, hideCvs = False, mirrorControls = True ):
     '''
     degree = 1 or 3
     ---
     CANT USE DEGREE 1 (LINEAR) WITH MUSCLE, HAS SEAM, MUSCLE RIPS IT APART ... RETAINER HAS TO BE (CUBIC) IF INFLUENCED BY MUSCLE, 
     CANT MOVE 2ND AND 2ND LAST ROWS, MUSCLE SYSTEM DOESNT LIKE IT.
+    if using maya muscle system, cant hide rows and cvs over same position as others, muscle breaks
     ---
     create rigged nurbs object
     row options to expand with end rows
@@ -109,8 +110,8 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
 
         # orient cv controls, figure out split
         mid_cv = 0
-        h_cvs = cvs / 2
-        r_cvs = ( round( h_cvs ) )
+        h_cvs = cvs / 2  # half
+        r_cvs = ( round( h_cvs ) )  # rounded
         print( h_cvs, r_cvs )
         if r_cvs == h_cvs:
             print( 'no mid cv' )
@@ -186,8 +187,12 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
                     row_controls.append( row_Ct )
                     row_master = True
             # constrain cvs to row
-            for cv_control in cv_controls:
-                cmds.parentConstraint( row_Ct[4], cv_control[0], mo = True )
+            if not hideCvs:
+                for cv_control in cv_controls:
+                    cmds.parentConstraint( row_Ct[4], cv_control[0], mo = True )
+            else:
+                pass
+            #
             row_cv_controls.append( cv_controls )
             # update color
             if degree == 3 and r == 0:  # next is 2nd, keep color
@@ -209,6 +214,24 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
 
         # skin before moving stuff around
         skin( joints, geo = geo[0] )
+        #
+        i = 0
+        if hideCvs:
+            for rowCvs in row_cv_controls:
+                for cv_control in rowCvs:
+                    if cv_control == rowCvs[1]:
+                        cmds.parentConstraint( rowCvs[0][4], cv_control[0], mo = False )
+                        cmds.setAttr( cv_control[0] + '.visibility', 0 )
+                    elif cv_control == rowCvs[-2]:
+                        cmds.parentConstraint( rowCvs[-1][4], cv_control[0], mo = False )
+                        cmds.setAttr( cv_control[0] + '.visibility', 0 )
+                    else:
+                        cmds.parentConstraint( row_controls[i][4], cv_control[0], mo = True )
+                i += 1
+                #
+                rowCvs.pop( 1 )  # remove second
+                rowCvs.pop( -2 )  # remove second last
+
         #
         if degree == 3 and hideRows:  # could do this always to keep consistent if behaviour is bad even in linear(degree 1)
             degree3( row_controls, row_cv_controls )
@@ -432,6 +455,8 @@ def slideBulgeAnchors( master = '', slave = '', slide_weight = 0.5, bulge_weight
     '''
     #
     slave_CtGrp = cmds.listRelatives( slave, p = True )[0]
+    if not 'CtGrp' in slave_CtGrp:  # assume 'Pvt' group is present, get next parent
+        slave_CtGrp = cmds.listRelatives( slave_CtGrp, p = True )[0]
     slave_TopGrp = cmds.listRelatives( slave_CtGrp, p = True )[0]
     master_CtGrp = cmds.listRelatives( master, p = True )[0]
     # attr names
@@ -630,7 +655,7 @@ def dynamic():
     pass
 
 
-def muslce():
+def muscle():
     '''
     make retainer a muscle
     '''
@@ -778,8 +803,8 @@ def insertCvPivotControl( obj = [], X = 1, colorName = '' ):
     place.scaleLock( ctrl, True )
     cmds.setAttr( ctrl + '.visibility', l = True, cb = False )
     #
-    cmds.parent( ctrl, obj[0] )
-    cmds.parent( obj[1], ctrl )
+    cmds.parent( ctrl, obj[1] )
+    cmds.parent( obj[2], ctrl )
 
 
 def insertTwistPivotControl( obj = [], X = 1, colorName = '' ):
@@ -949,10 +974,17 @@ def neutralizeDistances():
         if parent:
             topGrps = cmds.listRelatives( parent, c = True )
             for topGrp in topGrps:
+                # cmds.select( topGrp )
+                # cmds.pickWalk( d = 'down' )
+                # cmds.pickWalk( d = 'down' )
+                # cmds.pickWalk( d = 'left' )  # ct group
+                # ctGrp = cmds.ls( sl = 1 )
                 ctGrp = cmds.listRelatives( topGrp, c = True )
                 for item in ctGrp:
                     if '_CtGrp' in item:
                         control = cmds.listRelatives( item, c = True )
+                        if '_cvPvt' in control[0]:
+                            control = cmds.listRelatives( control, c = True )
                         for c in control:
                             if cmds.attributeQuery( anchorPrefix() + anchorAttr1(), node = c, ex = 1 ):
                                 controls.append( c )

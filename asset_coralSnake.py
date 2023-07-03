@@ -111,6 +111,23 @@ def ____FACE():
     pass
 
 
+def build_face():
+    '''
+    rig face
+    '''
+    atom_ui()
+    # rig parts
+    # throat_retainer()
+    jaw()
+    throat()
+    cheek_retainer_l()
+    jaw_retainer_l()
+    cheek_retainer_r()
+    jaw_retainer_r()
+    # skin
+    weights_face_meshImport()
+
+
 def throat_retainer():
     '''
     build face rig from template
@@ -120,16 +137,18 @@ def throat_retainer():
     # arl.createPlane( patchesU = 2, patchesV = 4, degree = 3, axis = [ 0, 1, 0 ], X = 0.5, hideRows = True, length = 4, width = 1.0 )
 
     ns = 'throat_rtnr'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\throat_retainer_v001.ma'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_6_v001.ma'
     cmds.file( pth, reference = True, namespace = ns, force = True )
     #
     cmds.parentConstraint( 'throat_base_jnt', ns + ':master', mo = True )
     #
-    cmds.parentConstraint( 'throat_05_jnt', ns + ':row_0_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_04_jnt', ns + ':row_2_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_4_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_01_jnt', ns + ':row_6_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_07_jnt', ns + ':row_0_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_06_jnt', ns + ':row_2_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_05_jnt', ns + ':row_3_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_04_jnt', ns + ':row_4_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_5_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_6_twistPvt', mo = False )
+    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_8_twistPvt', mo = False )
     #
     cmds.select( ns + ':cv_0_0' )
     arl.neutralizeDistances()
@@ -141,6 +160,162 @@ def throat_retainer():
         pass
 
     # import pose, settings
+
+
+def cheek_retainer_l():
+    '''
+    
+    '''
+    ns = 'cheek_rtnr_l'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_l.0004.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'head_jnt', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_7_twistPvt', mo = True )
+    # cvs
+    cmds.parentConstraint( 'throat_01_jnt', ns + ':cv_5_7_cvPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_4_cvPvt', mo = True )
+    #
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def cheek_retainer_r():
+    '''
+    
+    '''
+    ns = 'cheek_rtnr_r'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_r.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'head_jnt', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_7_twistPvt', mo = True )
+    # cvs
+    cmds.parentConstraint( 'throat_01_jnt', ns + ':cv_5_7_cvPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
+    #
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def jaw_retainer_l():
+    '''
+    
+    '''
+    ns = 'jaw_rtnr_l'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_l.0006.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_7_twistPvt', mo = True )
+
+    # cv in row 2
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_2_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_2_cvPvt', mo = True, w = 0.75 )
+    # cv in row 3
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.75 )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
+    # cv in row 4
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_4_cvPvt', mo = True )
+    # cv in row 5
+    cmds.parentConstraint( 'jaw_jnt_L', ns + ':cv_0_5_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def jaw_retainer_r():
+    '''
+    
+    '''
+    ns = 'jaw_rtnr_r'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_r.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_7_twistPvt', mo = True )
+
+    # cv in row 2
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_2_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_2_cvPvt', mo = True, w = 0.75 )
+    # cv in row 3
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.75 )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
+    # cv in row 4
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
+    # cv in row 5
+    cmds.parentConstraint( 'jaw_jnt_R', ns + ':cv_5_5_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
 
 
 def tongue():
@@ -156,11 +331,15 @@ def throat():
     #
     baseCt = place.Controller2( 'throat', 'throat_base_jnt', True, 'facetXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
     cmds.parentConstraint( 'body_003_jnt', baseCt[0], mo = True )
+    # add smart blend for auto throat rotation at base
+    #
+    #
+    #
     cmds.parentConstraint( baseCt[4], 'throat_base_jnt', mo = True )
     place.cleanUp( baseCt[0], Ctrl = True )
     #
     tipCt = place.Controller2( 'throat_tip', 'throat_tip_jnt', True, 'facetXup_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( 'jawTip_jnt', tipCt[0], mo = True )
+    cmds.parentConstraint( 'jaw_tip_jnt', tipCt[0], mo = True )
     cmds.parentConstraint( tipCt[4], 'throat_tip_jnt', mo = True )
     place.cleanUp( tipCt[0], Ctrl = True )
 
@@ -169,7 +348,7 @@ def throat():
     spline( name = name, start_jnt = 'throat_01_jnt', end_jnt = 'throat_05_jnt', splinePrnt = 'body_003_jnt', splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.1, splineFalloff = 1 )
     #
     cmds.setAttr( name + '.Stretch', 1 )
-    cmds.setAttr( name + '.ClstrMidIkBlend', 0.25 )
+    cmds.setAttr( name + '.ClstrMidIkBlend', 0.75 )
     cmds.setAttr( name + '.ClstrMidIkSE_W', 0.0 )
     cmds.setAttr( name + '.VctrMidIkBlend', 0.5 )
     #
@@ -1462,7 +1641,10 @@ def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt
 
     # attr control
     attr_Ct = place.Controller2( name, start_jnt, True, 'pinYup_ctrl', X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
-    cmds.parent( attr_Ct[0], CONTROLS() )
+    try:
+        cmds.parent( attr_Ct[0], CONTROLS() )
+    except:
+        pass
     cmds.parentConstraint( splineStrt, attr_Ct[0], mo = True )
     # lock translation
     place.rotationLock( attr_Ct[2], True )
@@ -1507,8 +1689,31 @@ def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt
     cmds.setAttr( splineName + '_S_IK_Cntrl.LockOrientOffOn', 0 )
     cmds.setAttr( splineName + '_E_IK_Cntrl.LockOrientOffOn', 0 )
     # scale
-    cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_S_IK_curve_scale.input2Z' )
-    cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_E_IK_curve_scale.input2Z' )
+    try:
+        cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_S_IK_curve_scale.input2Z' )
+        cmds.connectAttr( '___CONTROLS.scaleZ', splineName + '_E_IK_curve_scale.input2Z' )
+    except:
+        pass
+
+
+def mirror_neg_x():
+    '''
+    basic code, needs work, simple variation
+    '''
+    # wildcard
+    cmds.select( '*:*cvPvt' )
+    sel = cmds.ls( sl = True )
+    for s in sel:
+            if 'jaw' in s:
+                ty = cmds.getAttr( s + '.ty' )
+                cmds.setAttr( s + '.ty', ty * -1 )
+
+
+def mirror_complex():
+    '''
+    cvs in same row swap values from left to right, need method
+    '''
+    pass
 
 
 def ____SKIN():
@@ -1594,6 +1799,85 @@ def weights_meshImport( lod100 = True, lod300 = False ):
                 print( 'geo failed to import weights: ', geo )
 
 
+def weights_face_meshExport():
+    '''
+    snake
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = low_face_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, '_face_' + g )
+        cmds.select( geo )
+        krl.exportWeights02( ex_path )
+
+    # geo
+    all_geo = high_face_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, '_face_' + g )
+        cmds.select( geo )
+        krl.exportWeights02( ex_path )
+
+
+def weights_face_meshImport( lod100 = True, lod300 = True ):
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    if lod100:
+        # geo
+        all_geo = low_face_geo()
+        for geo in all_geo:
+            g = ''
+            if '|' in geo:
+                g = geo.split( '|' )[-1]
+            elif ':' in geo:
+                g = geo.split( ':' )[-1]
+            else:
+                g = geo
+            im_path = os.path.join( path, '_face_' + g )
+            cmds.select( geo )
+            # print( im_path )
+            try:
+                krl.importWeights02( geo, im_path )
+            except:
+                print( 'geo failed to import weights: ', geo )
+    #
+    if lod300:
+        all_geo = high_face_geo()
+        for geo in all_geo:
+            g = ''
+            if '|' in geo:
+                g = geo.split( '|' )[-1]
+            elif ':' in geo:
+                g = geo.split( ':' )[-1]
+            else:
+                g = geo
+            im_path = os.path.join( path, '_face_' + g )
+            cmds.select( geo )
+            # print( im_path )
+            try:
+                krl.importWeights02( geo, im_path )
+            except:
+                print( 'geo failed to import weights: ', geo )
+
+
 def weights_path():
     '''
     make path if not present from current file
@@ -1629,3 +1913,14 @@ acs.body_spline()
 # weights
 acs.weights_meshExport()
 '''
+
+
+def low_face_geo():
+    return ['face:snake_body_Low_geo']
+
+
+def high_face_geo():
+    '''
+    face only, body geo
+    '''
+    return ['face:snake_body_geo_anim']
