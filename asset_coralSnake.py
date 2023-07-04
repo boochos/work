@@ -1,3 +1,4 @@
+from _ast import Pass
 import os
 
 import maya.cmds as cmds
@@ -38,9 +39,16 @@ def prebuild( lod100 = True, lod300 = False, deltaMush = False ):
     GEO = PreBuild[3]
     WORLD_SPACE = PreBuild[4]
     MasterCt = PreBuild[5]
-    #
+
+    # retainers
     neck_retainer()
     throat_retainer()
+    cheek_retainer_l()
+    jaw_retainer_l()
+    cheek_retainer_r()
+    jaw_retainer_r()
+    # return
+
     # weights
     weights_meshImport( lod100 = lod100, lod300 = lod300 )
     # geo
@@ -128,196 +136,6 @@ def build_face():
     weights_face_meshImport()
 
 
-def throat_retainer():
-    '''
-    build face rig from template
-    is later referenced and connected with blendshape
-    '''
-    # retainer
-    # arl.createPlane( patchesU = 2, patchesV = 4, degree = 3, axis = [ 0, 1, 0 ], X = 0.5, hideRows = True, length = 4, width = 1.0 )
-
-    ns = 'throat_rtnr'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_6_v001.ma'
-    cmds.file( pth, reference = True, namespace = ns, force = True )
-    #
-    cmds.parentConstraint( 'throat_base_jnt', ns + ':master', mo = True )
-    #
-    cmds.parentConstraint( 'throat_07_jnt', ns + ':row_0_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_06_jnt', ns + ':row_2_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_05_jnt', ns + ':row_3_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_04_jnt', ns + ':row_4_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_5_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_6_twistPvt', mo = False )
-    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_8_twistPvt', mo = False )
-    #
-    cmds.select( ns + ':cv_0_0' )
-    arl.neutralizeDistances()
-    #
-    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
-    try:
-        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
-    except:
-        pass
-
-    # import pose, settings
-
-
-def cheek_retainer_l():
-    '''
-    
-    '''
-    ns = 'cheek_rtnr_l'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
-    cmds.file( pth, reference = True, namespace = ns, force = True )
-    # settings
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_l.0004.clip'
-    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
-                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
-
-    #
-    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
-    # rows
-    cmds.parentConstraint( 'head_jnt', ns + ':row_0_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_2_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_3_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_4_twistPvt', mo = True )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_5_twistPvt', mo = True )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_7_twistPvt', mo = True )
-    # cvs
-    cmds.parentConstraint( 'throat_01_jnt', ns + ':cv_5_7_cvPvt', mo = True )
-    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_4_cvPvt', mo = True )
-    #
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
-    #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
-    try:
-        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
-    except:
-        pass
-
-
-def cheek_retainer_r():
-    '''
-    
-    '''
-    ns = 'cheek_rtnr_r'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
-    cmds.file( pth, reference = True, namespace = ns, force = True )
-    # settings
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_r.0001.clip'
-    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
-                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
-
-    #
-    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
-    # rows
-    cmds.parentConstraint( 'head_jnt', ns + ':row_0_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_2_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_3_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_4_twistPvt', mo = True )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_5_twistPvt', mo = True )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_7_twistPvt', mo = True )
-    # cvs
-    cmds.parentConstraint( 'throat_01_jnt', ns + ':cv_5_7_cvPvt', mo = True )
-    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
-    #
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
-    #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
-    try:
-        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
-    except:
-        pass
-
-
-def jaw_retainer_l():
-    '''
-    
-    '''
-    ns = 'jaw_rtnr_l'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
-    cmds.file( pth, reference = True, namespace = ns, force = True )
-    # settings
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_l.0006.clip'
-    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
-                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
-
-    #
-    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
-    # rows
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':row_0_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':row_2_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_4_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_5_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_7_twistPvt', mo = True )
-
-    # cv in row 2
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_2_cvPvt', mo = True, w = 0.25 )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_2_cvPvt', mo = True, w = 0.75 )
-    # cv in row 3
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.75 )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.25 )
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
-    # cv in row 4
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_4_cvPvt', mo = True )
-    # cv in row 5
-    cmds.parentConstraint( 'jaw_jnt_L', ns + ':cv_0_5_cvPvt', mo = True )
-    #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
-    try:
-        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
-    except:
-        pass
-
-
-def jaw_retainer_r():
-    '''
-    
-    '''
-    ns = 'jaw_rtnr_r'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
-    cmds.file( pth, reference = True, namespace = ns, force = True )
-    # settings
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_r.0001.clip'
-    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
-                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
-
-    #
-    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
-    # rows
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':row_0_twistPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':row_2_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_4_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_5_twistPvt', mo = True )
-    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_7_twistPvt', mo = True )
-
-    # cv in row 2
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_2_cvPvt', mo = True, w = 0.25 )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_2_cvPvt', mo = True, w = 0.75 )
-    # cv in row 3
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.75 )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.25 )
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
-    # cv in row 4
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
-    # cv in row 5
-    cmds.parentConstraint( 'jaw_jnt_R', ns + ':cv_5_5_cvPvt', mo = True )
-    #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
-    try:
-        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
-    except:
-        pass
-
-
 def tongue():
     # tongue
     # TongueCt = place.Controller2( 'Tongue', 'jaw_jnt', False, 'splineStart_ctrl', 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
@@ -345,10 +163,10 @@ def throat():
 
     # spline
     name = 'throatMicro'
-    spline( name = name, start_jnt = 'throat_01_jnt', end_jnt = 'throat_05_jnt', splinePrnt = 'body_003_jnt', splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.1, splineFalloff = 1 )
+    spline( name = name, start_jnt = 'throat_01_jnt', end_jnt = 'throat_07_jnt', splinePrnt = 'body_003_jnt', splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.1, splineFalloff = 1 )
     #
     cmds.setAttr( name + '.Stretch', 1 )
-    cmds.setAttr( name + '.ClstrMidIkBlend', 0.75 )
+    cmds.setAttr( name + '.ClstrMidIkBlend', 0.6 )
     cmds.setAttr( name + '.ClstrMidIkSE_W', 0.0 )
     cmds.setAttr( name + '.VctrMidIkBlend', 0.5 )
     #
@@ -480,6 +298,410 @@ def jaw():
 
     apg.aimRig( name = 'jaw_upper_L', obj = 'jaw_upper_jnt_L', aimObj = JawUpperLCt[4], upParent = 'head_jnt', distance = 1, aim = [0, 0, 1], up = [-1, 0, 0] )
     apg.aimRig( name = 'jaw_upper_R', obj = 'jaw_upper_jnt_R', aimObj = JawUpperRCt[4], upParent = 'head_jnt', distance = 1, aim = [0, 0, -1], up = [1, 0, 0] )
+
+
+def ____RETAINERS():
+    pass
+
+
+def neck_retainer():
+    '''
+    repose geo, lost latest update
+    2 rows at base of skull
+    add row to neck side, 2 on either end to help transition off retainer
+    row in middle gets majority of the weight to skin
+    also lost weight settings for retainer
+    current skin weights should indicate position of retainer
+    '''
+    ns = 'neck_rtnr'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_cylinder_4_original_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\neck_retainer.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'body_001_jnt', ns + ':master', mo = True )
+    #
+    cmds.parentConstraint( 'body_003_jnt', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_002_jnt', ns + ':row_1_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_001_jnt', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'head_jnt', ns + ':row_4_twistPvt', mo = True )
+    #
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def throat_retainer():
+    '''
+
+    '''
+    # retainer
+    # arl.createPlane( patchesU = 2, patchesV = 4, degree = 3, axis = [ 0, 1, 0 ], X = 0.5, hideRows = True, length = 4, width = 1.0 )
+
+    ns = 'throat_rtnr'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_pivot_v001.ma'  # need to change to non mirrored
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\throat_retainer.0004.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'throat_base_jnt', ns + ':master', mo = True )
+    #
+    cmds.parentConstraint( 'jaw_jnt', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_jnt', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_jnt', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'neck_rtnr:cv_4_3_Grp', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'neck_rtnr:cv_2_3_Grp', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'neck_rtnr:cv_1_3_Grp', ns + ':row_7_twistPvt', mo = True )
+    # cmds.parentConstraint( 'throat_base_jnt', ns + ':row_8_twistPvt', mo = True )
+    #
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+    # import pose, settings
+
+
+def cheek_retainer_l():
+    '''
+    
+    '''
+    ns = 'cheek_rtnr_l'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_l.0004.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'head_jnt', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_002_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_003_jnt', ns + ':row_7_twistPvt', mo = True )
+    # cvs
+    cmds.parentConstraint( 'throat_01_jnt', ns + ':cv_5_7_cvPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_4_cvPvt', mo = True )
+    #
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def cheek_retainer_r():
+    '''
+    
+    '''
+    ns = 'cheek_rtnr_r'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_r.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'head_jnt', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_002_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'body_003_jnt', ns + ':row_7_twistPvt', mo = True )
+    # cvs
+    cmds.parentConstraint( 'throat_01_jnt', ns + ':cv_5_7_cvPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
+    #
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def jaw_retainer_l():
+    '''
+    
+    '''
+    ns = 'jaw_rtnr_l'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_l.0006.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_7_twistPvt', mo = True )
+
+    # cv in row 2
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_2_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_2_cvPvt', mo = True, w = 0.75 )
+    # cv in row 3
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.75 )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
+    # cv in row 4
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_4_cvPvt', mo = True )
+    # cv in row 5
+    # cmds.parentConstraint( 'jaw_jnt_L', ns + ':cv_0_5_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def jaw_retainer_r():
+    '''
+    
+    '''
+    ns = 'jaw_rtnr_r'
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_v001.ma'
+    cmds.file( pth, reference = True, namespace = ns, force = True )
+    # settings
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_r.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'head_jnt', ns + ':master', mo = True )
+    # rows
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'throat_base_jnt', ns + ':row_7_twistPvt', mo = True )
+
+    # cv in row 2
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_2_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_2_cvPvt', mo = True, w = 0.75 )
+    # cv in row 3
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.75 )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
+    # cv in row 4
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
+    # cv in row 5
+    # cmds.parentConstraint( 'jaw_jnt_R', ns + ':cv_5_5_cvPvt', mo = True )
+    #
+    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def ____CONNECT_FACE():
+    '''
+    this whole sections was a fail. throat deformations were too broad. should be limited to expressions
+    '''
+    pass
+
+
+def connect_face():
+    '''
+    
+    '''
+    # Assume that the current open file has been opened from the correct directory and get the base path from that
+    ns = 'face_rig'
+    path = os.path.dirname( cmds.file( query = True, exn = True ) )
+    face_rig_file = 'coralSnake_rigFaceWeights_v024.ma'
+    path = os.path.join( path, face_rig_file )
+    cmds.file( path, reference = True, namespace = ns, force = True )
+
+    # Geo to connect outMesh
+    from_geoList = [ns + ':face:snake_body_geo_anim']
+
+    # Geo to connect inMesh
+    to_geoList = ['cor:snake_body_geo_anim']
+
+    # import the face assets
+    # importFaceAssets( path, importList )
+
+    '''
+    # Connect the outMesh to the inMesh of the specific geo
+    connectInToOutMesh( from_geoList, to_geoList )
+
+    # Connect the tongue geo
+    if cmds.objExists( 'tongue_FrGeo' ) == True:
+        tongueShape = cmds.listRelatives( 'tongue_FrGeo', shapes = True )[0]
+        if cmds.objExists( 'tongue_Geo' ) == True:
+            tongueOrg = extractShapeNode( 'tongue_Geo', True )
+            cmds.connectAttr( tongueShape + '.outMesh', tongueOrg + '.inMesh', force = True )
+        else:
+            print( '=====tongue_Geo does not exist, skipping tongue connection.=====' )
+    else:
+        print( '=====tongue_FrGeo does not exist, skipping tongue connection.=====' )
+    '''
+
+    # extract the shape and orig nodes from their transforms
+    head = extractShapeNode( 'cor:snake_body_geo_anim', False )
+    headOrig = extractShapeNode( 'cor:snake_body_geo_anim', True )
+    headFr = extractShapeNode( ns + ':face:snake_body_geo_anim', False )
+    ear = None
+    # Duplicate the head_Geo, this is used and an intermediate from the head_Geo and the blendshapes
+    headInter = cmds.duplicate( head, name = head + '_intermediateGeo' )[0]
+
+    # setup the objects to connect
+    connectionList = [headFr, headInter]
+    # Build the ears
+    '''
+    if cmds.checkBox('atom_ghstDog_earCheck', q=True, v=True):
+        agd.buildGhostDogEars()
+        ear = extractShapeNode('earRig_head_Geo', False)
+        cmds.setAttr('earRig_head_Geo.visibility', 0)
+    '''
+    # create the blendShape
+    blendNode = cmds.blendShape( headFr, ear, headInter, n = 'face_blendshape' )
+
+    # set the blendNode target weights
+    trgCnt = len( cmds.blendShape( blendNode, query = True, t = True ) )
+    for i in range( 0, trgCnt, 1 ):
+        cmds.blendShape( blendNode, edit = True, w = ( i, 1 ) )
+
+    # Connect the blendShape to the Orig node
+    cmds.connectAttr( blendNode[0] + '.outputGeometry[0]', headOrig + '.inMesh', force = True, )
+
+    return
+
+    # Visibility list
+    setVisList = ['faceUtil_Gp', 'faceJnt_Gp', headInter, 'head_FrGeo', 'Lf_eye_FrGeo', 'Lf_eyeouter_FrGeo',
+                  'Lf_eyewater_FrGeo', 'Rt_eye_FrGeo', 'Rt_eyeouter_FrGeo', 'Rt_eyewater_FrGeo', 'tongue_FrGeo']
+    # setFaceItemsVis( setVisList )
+
+    # parent the face grp to the head
+    cmds.parentConstraint( 'neck_jnt_06', 'faceCtrl_Gp', mo = True )
+
+    # Sebastian made me add this --starting here
+    # create deformer contorllers
+    # dfrm.master( deformer = True )
+
+    # clean up OL_SKOOL rig, add to Finalize later
+    cmds.setAttr( 'Up_lip_2x|faceSharedAttr.macroVisibility', 0 )
+    cmds.setAttr( 'Up_lip_2x|faceSharedAttr.mainVisibility', 1 )
+    cmds.setAttr( 'Up_lip_2x|faceSharedAttr.microVisibility', 0 )
+    cmds.setAttr( 'Up_lip_2x|faceSharedAttr.tongueVisibility', 0 )
+    cmds.select( 'LfUpBk_lipShape.cv[0:12]', 'LfUpBk_lipShape1.cv[0:12]', 'LfUpBk_lipShape2.cv[0:12]' )
+    cmds.scale( 0.5, 0.5, 0.5 )
+    cmds.select( 'RtUpBk_lipShape.cv[0:12]', 'RtUpBk_lipShape1.cv[0:12]', 'RtUpBk_lipShape2.cv[0:12]' )
+    cmds.scale( 0.5, 0.5, 0.5 )
+    cmds.select( 'Lf_eyeFK.cv[0:16]' )
+    cmds.scale( 2.0, 1.0, 1.0 )
+    cmds.select( 'Rt_eyeFK.cv[0:16]' )
+    cmds.scale( 2.0, 1.0, 1.0 )
+    cmds.delete( 'Lf_eyeFKAim_GpGp', 'Rt_eyeFKAim_GpGp ' )
+    # --ending here
+
+    # parent the face grp to the head
+    cmds.parentConstraint( 'neck_jnt_06', 'faceCtrl_Gp', mo = True )
+    # parent all the non parented mesh
+    # parentNonParentedMesh()
+    # Parent the facerig groups to the proper group
+    parentList = ['faceCtrl_Gp', 'faceJnt_Gp', 'faceUtil_Gp', 'faceGeo_Gp', 'Lf_eyeFKAim_Gp', 'Rt_eyeFKAim_Gp']
+
+    for obj in parentList:
+        if cmds.objExists( obj ) == True:
+            # added this in case the
+            try:
+                cmds.parent( obj, '___OL_SKOOL' )
+            except:
+                pass
+
+
+def connectInToOutMesh( from_geoList, to_geoList ):
+    # check that the from and to geoLists are the same size
+    if len( from_geoList ) == len( to_geoList ):
+        # interate through the outList
+        for i in range( 0, len( from_geoList ), 1 ):
+            # interate through the sides
+            sides = ['Lf_', 'Rt_']
+            for side in sides:
+                # Check that the from object exists
+                if cmds.objExists( side + from_geoList[i] ) == True:
+                    fromShape = cmds.listRelatives( side + from_geoList[i], shapes = True )[0]
+                    # check that the to object exists
+                    if cmds.objExists( side + to_geoList[i] ) == True:
+                        toOrig = extractShapeNode( side + to_geoList[i], True )
+                        if toOrig != None:
+                            cmds.connectAttr( fromShape + '.outMesh', toOrig + '.inMesh', force = True )
+                        else:
+                            print( 'Warning...' + side + to_geoList[i] + ' has no shapeOrig to connect.' )
+    else:
+        print( '=====List size miss match, from and to geo lists must have the same length.=====' )
+
+
+def extractShapeNode( name, orig = False ):
+    '''
+    this can clearly have less 'if' and 'for' stupidity... fix
+    '''
+    objects = cmds.ls( type = 'transform' )
+    returnNode = None
+    if cmds.objExists( name ):
+        for obj in objects:
+            # find the 'name' in the object name
+            if name == obj:
+                shapeList = cmds.listRelatives( obj, shapes = True )
+                if name == 'sculpt_Geo' or name == 'special_Geo':
+                    return shapeList[0]
+
+                elif shapeList != None:
+                    for i in shapeList:
+                        # if list connections returns None then the ShapeOrig has been found
+                        con = cmds.listConnections( i, s = True, d = False )
+
+                        if orig == True:
+                            if con == None:
+                                returnNode = i
+                        else:
+                            if con != None:
+                                returnNode = i
+    else:
+        print( '=====%s, does not exists, extraction failed.=====' % ( name ) )
+    return returnNode
 
 
 def ____BODY():
@@ -634,39 +856,6 @@ def neck( neck_jnt_chain = [], micro_body_cts = [] ):
     place.hijackAttrs( baseCt[0], name, 'visibility', 'baseVis', set = True, default = 0.0, force = True )
     place.hijackAttrs( tipCt[0], name, 'visibility', 'tipVis', set = True, default = 0.0, force = True )
     '''
-
-
-def neck_retainer():
-    '''
-    repose geo, lost latest update
-    2 rows at base of skull
-    add row to neck side, 2 on either end to help transition off retainer
-    row in middle gets majority of the weight to skin
-    also lost weight settings for retainer
-    current skin weights should indicate position of retainer
-    '''
-    ns = 'neck_rtnr'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_v006.ma'
-    cmds.file( pth, reference = True, namespace = ns, force = True )
-    #
-    cmds.parentConstraint( 'body_001_jnt', ns + ':master', mo = True )
-    #
-    cmds.parentConstraint( 'body_002_jnt', ns + ':row_0_twistPvt', mo = True )
-    cmds.parentConstraint( 'body_002_jnt', ns + ':row_1_twistPvt', mo = True )
-    cmds.parentConstraint( 'body_001_jnt', ns + ':row_2_twistPvt', mo = True )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_3_twistPvt', mo = True )
-    cmds.parentConstraint( 'head_jnt', ns + ':row_4_twistPvt', mo = True )
-    #
-    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
-    try:
-        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
-    except:
-        pass
-
-    # settings
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\retainer_settings_pose.0005.clip'
-    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
-                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
 
 
 def body_spline( fk = False, dynamics = False, tail_as_root = False ):

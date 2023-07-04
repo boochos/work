@@ -80,7 +80,7 @@ def snakeTongue( Name, X ):
     # tng = place.Controller( Name, 'tongue_01_jnt', True, 'facetZup_ctrl', X * 2.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
     # tngCt = tng.createController()
     tngCt = place.Controller2( Name, 'tongue_01_jnt', True, 'facetZup_ctrl', X * 2.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( 'jawTip_jnt', tngCt[0], mo = True )
+    cmds.parentConstraint( 'jaw_tip_jnt', tngCt[0], mo = True )
     place.translationLock( tngCt[2], True )
     place.rotationLock( tngCt[2], True )
     # tngTip = place.Controller( Name + 'Tip', 'tongue_05_jnt', True, 'facetZup_ctrl', X * 2.5, 17, 8, 1, ( 0, 0, 1 ), True, True )

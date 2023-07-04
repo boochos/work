@@ -35,7 +35,7 @@ def __________________BUILD():
     pass
 
 
-def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, axis = [ 0, 1, 0 ], X = 1, hideRows = False, hideCvs = False, mirrorControls = True ):
+def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, axis = [ 0, 1, 0 ], X = 1, hideRows = False, hideCvs = False, mirrorControls = True, sideBulge = True ):
     '''
     degree = 1 or 3
     ---
@@ -133,17 +133,19 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
                 cv_name = cv.replace( '.', '_' ).replace( '][', '_' ).replace( '[', '_' ).replace( ']', '' ).split( name + '_' )[1]
                 # cv control
                 pos = cmds.xform( cv, t = True, ws = True, q = True )
-                cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
+                cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
                 place.cleanUp( cv_Ct[0], Ctrl = True )
                 insertCvPivotControl( obj = cv_Ct, X = X * 0.2, colorName = colors[clr] )
                 cmds.xform( cv_Ct[0], ws = True, t = pos )
                 #
                 if c <= r_cvs - 1:
-                    cmds.setAttr( cv_Ct[0] + '.rotateZ' , 90 )
-                    cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
+                    if sideBulge:
+                        cmds.setAttr( cv_Ct[0] + '.rotateZ' , 90 )
+                        cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
                 #
                 if  mid_cv and c > mid_cv - 1:
-                    cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
+                    if sideBulge:
+                        cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
                     if mirrorControls:
                         cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
                         scaleInverse( cv_Ct[1], 'scaleY' )
@@ -151,7 +153,8 @@ def createPlane( patchesU = 1, patchesV = 8, length = 8, width = 4, degree = 3, 
                         cmds.setAttr( cv_Ct[1] + '.rotateZ' , 90 )
                 #
                 if not mid_cv and c > r_cvs - 1:
-                    cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
+                    if sideBulge:
+                        cmds.setAttr( cv_Ct[0] + '.rotateZ' , -90 )
                     if mirrorControls:
                         cmds.setAttr( cv_Ct[1] + '.rotateZ' , -90 )
                         scaleInverse( cv_Ct[1], 'scaleY' )
@@ -324,8 +327,9 @@ def create( spans = 1, sections = 8, degree = 3, axis = [ 0, 0, 1 ], X = 1, hide
                 cv_name = cv.replace( '.', '_' ).replace( '][', '_' ).replace( '[', '_' ).replace( ']', '' ).split( name + '_' )[1]
                 # cv control
                 pos = cmds.xform( cv, t = True, ws = True, q = True )
-                cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.3, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
+                cv_Ct = place.Controller2( cv_name, geo[0], False, cv_shape, X * 0.2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colors[clr] ).result
                 place.cleanUp( cv_Ct[0], Ctrl = True )
+                insertCvPivotControl( obj = cv_Ct, X = X * 0.2, colorName = colors[clr] )
                 cmds.xform( cv_Ct[0], ws = True, t = pos )
                 cmds.setAttr( cv_Ct[0] + '.rotateZ' , rotation )  # doesnt account for up axis
                 cv_controls.append( cv_Ct )
@@ -802,9 +806,14 @@ def insertCvPivotControl( obj = [], X = 1, colorName = '' ):
     cmds.connectAttr( obj[2] + '.' + attr, ctrl + 'Shape' + '.visibility' )
     place.scaleLock( ctrl, True )
     cmds.setAttr( ctrl + '.visibility', l = True, cb = False )
-    #
+    # below ct grp, wrong
+    '''
     cmds.parent( ctrl, obj[1] )
     cmds.parent( obj[2], ctrl )
+    '''
+    # above ct grp, more functional, breaks mirror behaviour
+    cmds.parent( ctrl, obj[0] )
+    cmds.parent( obj[1], ctrl )
 
 
 def insertTwistPivotControl( obj = [], X = 1, colorName = '' ):
@@ -980,11 +989,24 @@ def neutralizeDistances():
                 # cmds.pickWalk( d = 'left' )  # ct group
                 # ctGrp = cmds.ls( sl = 1 )
                 ctGrp = cmds.listRelatives( topGrp, c = True )
+                # print( ctGrp )
                 for item in ctGrp:
                     if '_CtGrp' in item:
                         control = cmds.listRelatives( item, c = True )
                         if '_cvPvt' in control[0]:
                             control = cmds.listRelatives( control, c = True )
+                        for c in control:
+                            if cmds.attributeQuery( anchorPrefix() + anchorAttr1(), node = c, ex = 1 ):
+                                controls.append( c )
+                            else:
+                                # print( c )
+                                pass
+                    elif '_cvPvt' in item:
+                        control = cmds.listRelatives( item, c = True )
+                        # print( control )
+                        if '_CtGrp' in control[1]:
+                            control = cmds.listRelatives( control, c = True )
+                            # print( control )
                         for c in control:
                             if cmds.attributeQuery( anchorPrefix() + anchorAttr1(), node = c, ex = 1 ):
                                 controls.append( c )
