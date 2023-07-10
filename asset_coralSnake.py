@@ -59,9 +59,9 @@ def prebuild( lod100 = True, lod300 = False, deltaMush = False ):
     place.cleanUp( 'root_jnt', SknJnts = True )
     if deltaMush:
         if lod100:
-            cmds.deltaMush( low_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+            cmds.deltaMush( low_geo(), smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
         if lod300:
-            cmds.deltaMush( high_geo(), smoothingIterations = 4, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+            cmds.deltaMush( high_geo(), smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
 
     misc.optEnum( MasterCt[2], attr = 'LOD', enum = 'OPTNS' )
     place.hijackVis( 'cor:body_low_grp', MasterCt[2], name = 'lowGeo', suffix = False, default = 1, mode = 'visibility' )
@@ -163,7 +163,7 @@ def throat():
 
     # spline
     name = 'throatMicro'
-    spline( name = name, start_jnt = 'throat_01_jnt', end_jnt = 'throat_07_jnt', splinePrnt = 'body_003_jnt', splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.1, splineFalloff = 1 )
+    spline( name = name, start_jnt = 'throat_01_jnt', end_jnt = 'throat_05_jnt', splinePrnt = 'body_003_jnt', splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.1, splineFalloff = 1 )
     #
     cmds.setAttr( name + '.Stretch', 1 )
     cmds.setAttr( name + '.ClstrMidIkBlend', 0.6 )
@@ -193,13 +193,13 @@ def fangs():
     #
     cmds.parentConstraint( fangLCt[4], 'fang_jnt_L', mo = True )
     cmds.parentConstraint( fangRCt[4], 'fang_jnt_R', mo = True )
-    cmds.parentConstraint( 'head_jnt', fangLCt[0], mo = True )
-    cmds.parentConstraint( 'head_jnt', fangRCt[0], mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', fangLCt[0], mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', fangRCt[0], mo = True )
     place.cleanUp( fangLCt[0], Ctrl = True )
     place.cleanUp( fangRCt[0], Ctrl = True )
     # pose, tuck away
-    cmds.setAttr( fangLCt[2] + '.rotateX', 72 )
-    cmds.setAttr( fangRCt[2] + '.rotateX', 72 )
+    cmds.setAttr( fangLCt[2] + '.rotateX', 50 )
+    cmds.setAttr( fangRCt[2] + '.rotateX', 50 )
 
 
 def jaw_ik():
@@ -317,19 +317,34 @@ def neck_retainer():
     pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_cylinder_4_original_v001.ma'
     cmds.file( pth, reference = True, namespace = ns, force = True )
     # settings
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\neck_retainer.0001.clip'
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\neck_retainer.0002.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\neck_retainer_cvs.0002.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
     arl.neutralizeDistances()
     #
     cmds.parentConstraint( 'body_001_jnt', ns + ':master', mo = True )
-    #
+    # rows
     cmds.parentConstraint( 'body_003_jnt', ns + ':row_0_twistPvt', mo = True )
     cmds.parentConstraint( 'body_002_jnt', ns + ':row_1_twistPvt', mo = True )
     cmds.parentConstraint( 'body_001_jnt', ns + ':row_2_twistPvt', mo = True )
     cmds.parentConstraint( 'head_jnt', ns + ':row_3_twistPvt', mo = True )
     cmds.parentConstraint( 'head_jnt', ns + ':row_4_twistPvt', mo = True )
+    # cvs
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':cv_4_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'throat_03_jnt', ns + ':cv_3_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_2_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_4_4_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_3_4_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_4_2_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_3_2_cvPvt', mo = True )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_2_2_cvPvt', mo = True, w = 1 )
+    cmds.parentConstraint( 'body_001_jnt', ns + ':cv_2_2_cvPvt', mo = True, w = 1 )
+    cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_2_4_cvPvt', mo = True, w = 1 )
+    cmds.parentConstraint( 'body_001_jnt', ns + ':cv_2_4_cvPvt', mo = True, w = 1 )
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
@@ -346,11 +361,14 @@ def throat_retainer():
     # arl.createPlane( patchesU = 2, patchesV = 4, degree = 3, axis = [ 0, 1, 0 ], X = 0.5, hideRows = True, length = 4, width = 1.0 )
 
     ns = 'throat_rtnr'
-    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_pivot_v001.ma'  # need to change to non mirrored
+    pth = 'P:\\SYMD\\assets\\chr\\coralSnake\\rig\\maya\\scenes\\retainer_plane_5_pivotAlt_v001.ma'  # need to change to non mirrored
     cmds.file( pth, reference = True, namespace = ns, force = True )
 
     # settings
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\throat_retainer.0004.clip'
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\throat_retainer.0005.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\throat_retainer_cvs.0002.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -386,6 +404,9 @@ def cheek_retainer_l():
     path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_l.0004.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_l_cv.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
     arl.neutralizeDistances()
     #
@@ -402,10 +423,10 @@ def cheek_retainer_l():
     cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
     cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_4_cvPvt', mo = True )
     #
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_5_3_cvPvt', mo = True, w = 0.75 )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_5_3_cvPvt', mo = True, w = 0.25 )
     #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
         cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
     except:
@@ -421,6 +442,9 @@ def cheek_retainer_r():
     cmds.file( pth, reference = True, namespace = ns, force = True )
     # settings
     path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_r.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\cheek_retainer_r_cv.0001.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -439,10 +463,10 @@ def cheek_retainer_r():
     cmds.parentConstraint( 'throat_02_jnt', ns + ':cv_5_5_cvPvt', mo = True )
     cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
     #
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.75 )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True , w = 0.25 )
     #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
         cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
     except:
@@ -458,6 +482,9 @@ def jaw_retainer_l():
     cmds.file( pth, reference = True, namespace = ns, force = True )
     # settings
     path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_l.0006.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_l_cv.0001.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -478,14 +505,15 @@ def jaw_retainer_l():
     # cv in row 3
     cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.75 )
     cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_3_cvPvt', mo = True, w = 0.25 )
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_2_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_2_3_cvPvt', mo = True, w = 0.1 )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_2_3_cvPvt', mo = True, w = 0.9 )
     # cv in row 4
-    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_4_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_L', ns + ':cv_0_4_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_lower_jnt_L', ns + ':cv_0_4_cvPvt', mo = True, w = 0.75 )
     # cv in row 5
     # cmds.parentConstraint( 'jaw_jnt_L', ns + ':cv_0_5_cvPvt', mo = True )
     #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
         cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
     except:
@@ -501,6 +529,9 @@ def jaw_retainer_r():
     cmds.file( pth, reference = True, namespace = ns, force = True )
     # settings
     path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_r.0001.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\jaw_retainer_r_cv.0001.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -521,14 +552,15 @@ def jaw_retainer_r():
     # cv in row 3
     cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.75 )
     cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_3_cvPvt', mo = True, w = 0.25 )
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
-    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_3_3_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_3_3_cvPvt', mo = True, w = 0.1 )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_3_3_cvPvt', mo = True, w = 0.9 )
     # cv in row 4
-    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_4_cvPvt', mo = True )
+    cmds.parentConstraint( 'jaw_upper_jnt_R', ns + ':cv_5_4_cvPvt', mo = True, w = 0.25 )
+    cmds.parentConstraint( 'jaw_lower_jnt_R', ns + ':cv_5_4_cvPvt', mo = True, w = 0.75 )
     # cv in row 5
     # cmds.parentConstraint( 'jaw_jnt_R', ns + ':cv_5_5_cvPvt', mo = True )
     #
-    # cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
         cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
     except:
@@ -745,7 +777,8 @@ def neck( neck_jnt_chain = [], micro_body_cts = [] ):
     cmds.setAttr( baseCt[0] + '.v', 0 )
     #
     tipIsolateCt = place.Controller2( 'neck_ik_isolate', neck_jnt_chain[-1], False, 'squareZup_ctrl', 5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.pointConstraint( baseCt[4], tipIsolateCt[0], mo = True )
+    cmds.parentConstraint( MASTERCT()[4], tipIsolateCt[0], mo = True )
+    cmds.pointConstraint( baseCt[4], tipIsolateCt[1], mo = True )
     place.cleanUp( tipIsolateCt[0], Ctrl = True )
     cmds.setAttr( tipIsolateCt[0] + '.v', 0 )
 
@@ -1944,7 +1977,7 @@ def weights_meshExport():
         krl.exportWeights02( ex_path )
 
 
-def weights_meshImport( lod100 = True, lod300 = False ):
+def weights_meshImport( lod100 = True, lod300 = True ):
     '''
     dargonfly object weights
     '''

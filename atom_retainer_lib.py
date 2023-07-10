@@ -802,7 +802,7 @@ def insertCvPivotControl( obj = [], X = 1, colorName = '' ):
     #
     ctrl = place.circle( name = obj[2] + '_cvPvt', obj = obj[2], shape = 'loc_ctrl', size = X, colorName = colorName )[0]
     attr = 'Pivot_Vis'
-    place.addAttribute( obj[2], attr, 1, 1, True, 'long' )
+    place.addAttribute( obj[2], attr, 0, 1, True, 'long' )
     cmds.connectAttr( obj[2] + '.' + attr, ctrl + 'Shape' + '.visibility' )
     place.scaleLock( ctrl, True )
     cmds.setAttr( ctrl + '.visibility', l = True, cb = False )
