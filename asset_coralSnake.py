@@ -52,16 +52,22 @@ def prebuild( lod100 = True, lod300 = False, deltaMush = False ):
     # weights
     weights_meshImport( lod100 = lod100, lod300 = lod300 )
     # geo
-    print( GEO )
+    # print( GEO )
     cmds.parent( 'cor:coralSnake_grp', GEO[0] )
     #
     cmds.parentConstraint( 'master_Grp', 'root_jnt', mo = True )
     place.cleanUp( 'root_jnt', SknJnts = True )
     if deltaMush:
         if lod100:
-            cmds.deltaMush( low_geo(), smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+            node = cmds.deltaMush( low_geo(), smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )[0]
+            cmds.setAttr( node + '.inwardConstraint' , 0.4 )
+            cmds.setAttr( node + '.outwardConstraint' , 0.2 )
+            cmds.setAttr( node + '.distanceWeight' , 0.3 )
         if lod300:
-            cmds.deltaMush( high_geo(), smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+            node = cmds.deltaMush( high_geo(), smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )[0]
+            cmds.setAttr( node + '.inwardConstraint' , 0.4 )
+            cmds.setAttr( node + '.outwardConstraint' , 0.2 )
+            cmds.setAttr( node + '.distanceWeight' , 0.3 )
 
     misc.optEnum( MasterCt[2], attr = 'LOD', enum = 'OPTNS' )
     place.hijackVis( 'cor:body_low_grp', MasterCt[2], name = 'lowGeo', suffix = False, default = 1, mode = 'visibility' )
@@ -112,7 +118,8 @@ def build( lod100 = True, lod300 = False, fk = False, dynamics = False, deltaMus
     # neck spline part 2
     cmds.delete( con )
     neck( neck_jnt_chain = neck_ik_jnts, micro_body_cts = micro_body_cts )
-    # import neck retaner settings
+    #
+    connect_cache_geo()
 
 
 def ____FACE():
@@ -320,7 +327,7 @@ def neck_retainer():
     path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\neck_retainer.0002.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
-    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\neck_retainer_cvs.0002.clip'
+    path = 'C:\\Users\\s.weber\\Documents\\maya\\clipLibrary\\neck_retainer_cvs.0003.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -1938,6 +1945,20 @@ def mirror_complex():
     pass
 
 
+def connect_cache_geo():
+    '''
+    connect rig geo to cache geo
+    '''
+    rig_geo = high_geo()
+    cache = cache_geo()
+    i = 0
+    for geo in rig_geo:
+        name = geo.split( ':' )[-1]
+        node = cmds.blendShape( geo, cache[i], n = name )[0]
+        cmds.setAttr( node + '.' + name, 1 )
+        i += 1
+
+
 def ____SKIN():
     pass
 
@@ -2121,6 +2142,9 @@ def low_geo():
 def high_geo():
     return ['cor:snake_body_geo_anim', 'cor:snake_tongue_geo_anim', 'cor:snake_eye_right_anim', 'cor:snake_eye_left_anim']
 
+
+def cache_geo():
+    return ['cor:snake_body_geo', 'cor:snake_tongue_geo', 'cor:snake_eye_right', 'cor:snake_eye_left']
 '''
 import webrImport as web
 acs = web.mod( 'asset_coralSnake' )
