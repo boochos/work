@@ -770,11 +770,17 @@ def head():
     jaw()
 
 
-def neck( neck_jnt_chain = [], micro_body_cts = [] ):
+def neck( neck_jnt_chain = [], micro_body_cts = [], reroot = True ):
     '''
     need micro body control at base of neck
     neck chain order matches micros, list is reversed
     '''
+    start_jnt = neck_jnt_chain[0]
+    end_jnt = neck_jnt_chain[-1]
+    if reroot:
+        start_jnt = neck_jnt_chain[-1]
+        end_jnt = neck_jnt_chain[0]
+
     parent_micro = micro_body_cts[len( neck_jnt_chain ) - 1]
     #
     baseCt = place.Controller2( 'neck_ik_base', neck_jnt_chain[-1], False, 'boxTallZup_ctrl', 4, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
@@ -883,7 +889,7 @@ def neck( neck_jnt_chain = [], micro_body_cts = [] ):
 
     # spline
     name = 'neck_ik'
-    spline( name = name, start_jnt = neck_jnt_chain[-1], end_jnt = neck_jnt_chain[0], splinePrnt = baseCt[4], splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.4, splineFalloff = 1 )
+    spline( name = name, start_jnt = start_jnt, end_jnt = end_jnt, splinePrnt = baseCt[4], splineStrt = baseCt[4], splineEnd = tipCt[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 0.4, splineFalloff = 1 )
     cmds.setAttr( name + '.ClstrMidIkBlend', 0.9 )
     cmds.setAttr( name + '_S_IK_Cntrl.LockOrientOffOn', 1.0 )
     cmds.setAttr( name + '_E_IK_Cntrl.LockOrientOffOn', 1.0 )
@@ -1322,6 +1328,9 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
     micro_body_cts = []
     # attachs
     upCts = []
+    #
+    ground_cts = []
+
     i = 0
     for j in attach_jnts:
         # position, startU value
@@ -1385,6 +1394,7 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         # control on ground
         name = 'micro_ground_' + pad_number( i = i )
         microCt = place.Controller2( name, j, True, 'rectangleWideYup_ctrl', 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        ground_cts.append( microCt )
         cmds.parent( microCt[0], m_ground_grp )
         cmds.parentConstraint( microCt[4], j, mo = False )
         # cmds.parentConstraint( 'master_Grp', microCt[0], mo = True )
@@ -1481,7 +1491,8 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         if i > 0:
             # cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
             # add aim constraint
-            cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
+            # cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] ) # wrong direction
+            cmds.aimConstraint( microCt[4], ground_cts[i - 1][1], mo = True, wuo = upCts[i - 1], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
 
         #
         i += 1
