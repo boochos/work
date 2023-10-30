@@ -934,7 +934,8 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
 
     # spin
     Spin = name + '_spin' + sffx
-    spinct = place.Controller( Spin, spin, False, ctrlShp, X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
+    # spinct = place.Controller( Spin, spin, False, ctrlShp, X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
+    spinct = place.Controller( Spin, spin, True, ctrlShp, X * 9, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = colorName )
     SpinCt = spinct.createController()
     cmds.parent( SpinCt[0], WHEEL_GRP )
     cmds.parentConstraint( SpinCt[4], spin, mo = True )
@@ -1118,6 +1119,7 @@ def tire_curves( position = '', side = '', suffix = '', mirror = False ):
 
     # names
     GRP = 'wheel' + suffix + '_' + position + '_' + side + '_CrvGrp'
+    GRP_L = 'wheel' + suffix + '_' + position + '_' + 'L' + '_CrvGrp'  # mirror rz from L
     crvs = []
     c0 = 'tire' + suffix + '_crv0_' + position + '_' + side
     c1 = 'tire' + suffix + '_crv1_' + position + '_' + side
@@ -1131,6 +1133,8 @@ def tire_curves( position = '', side = '', suffix = '', mirror = False ):
     if not cmds.objExists( c0 ):
         # curve group
         GRP = cmds.group( name = GRP, em = True )
+        rz = cmds.getAttr( GRP_L + '.rotateZ' )
+        cmds.setAttr( GRP + '.rotateZ', -1 * rz )
         cmds.pointConstraint( wheel_center, GRP, mo = False )
         place.cleanUp( GRP, World = True )
         # curves
@@ -1192,6 +1196,11 @@ def tire_proxy2( position = '', side = '', suffix = '', crvs = [] ):
     '''
     create tire from joint info
     '''
+    # assume curves have group above, check rotations, should be 0.0.0 before starting
+    parent = cmds.listRelatives( crvs[0], parent = True )[0]
+    rz = cmds.getAttr( parent + '.rotateZ' )
+    cmds.setAttr( parent + '.rotateZ', 0 )
+
     # loft
     lofted = cmds.loft( crvs, name = 'lofted' + suffix + '_' + position + '_' + side, degree = 1 )  # [u'lofted_front_L', u'loft1']
     place.cleanUp( lofted[0], World = True )
@@ -1205,6 +1214,9 @@ def tire_proxy2( position = '', side = '', suffix = '', crvs = [] ):
     cmds.xform( cpc = True, p = True )  # center pivot doesnt work unless object is visible
     cmds.setAttr( loftedPoly[0] + '.visibility', 0 )
     tire_proxy = loftedPoly[0]
+
+    # reset reaulted loft rz
+    cmds.setAttr( tire_proxy + '.rotateZ', rz )
 
     return [tire_proxy, lofted[0]]
 
@@ -1271,11 +1283,12 @@ def tire_proxy( position = '', side = '', tire_geo = [] ):
     return [tire[0], base, wraps]
 
 
-def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2, 29, 5 ), pressureMult = 0.3, distortionRows = 6 ):
+def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2, 29, 5 ), pressureMult = 0.3, distortionRows = 4 ):
     '''
     add tire pressure behaviour
     lattice = object local space (X, Y, Z)
     distortion rows = hack, starting from center row, higher number removes more rows from calculation, higher number better for short tire wall
+    distrotion rows use to be set to 6, and pressuremlt at 0.15
     '''
     # group
     g = cmds.group( name = name + '_clusterGrp_' + suffix, em = True )
