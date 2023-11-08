@@ -17,6 +17,7 @@ vhl = web.mod( 'vehicle_lib' )
 app = web.mod( "atom_appendage_lib" )
 ss = web.mod( "selectionSet_lib" )
 cn = web.mod( 'constraint_lib' )
+krl = web.mod( "key_rig_lib" )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -32,34 +33,8 @@ def message( what = '', maya = True, warning = False ):
             print( what )
 
 
-def fix_normals( del_history = False ):
-    '''
-    after skinning geo gets weird normals
-    '''
-    geo = get_geo_list( name = 'cessna', ns = 'geo', tire_front_l = True, tire_back_l = True, tire_back_r = True )
-    cmds.select( geo )
-    cmds.polyNormalPerVertex( unFreezeNormal = True )
-    for g in geo:
-        cmds.select( g )
-        cmds.polySoftEdge( angle = 45 )
-    if del_history:
-        cmds.delete( geo, ch = True )
-
-
-def mirror_jnts():
-    '''
-    
-    '''
-    # jnts - new joints for pivots
-    mirrorj = [
-    'back_L_jnt',
-    'front_L_jnt',
-    'chassis_L_jnt',
-    'axle_back_L_jnt'
-    ]
-    # mirror
-    for j in mirrorj:
-        jnt.mirror( j , mirrorBehavior = True )
+def __________________BUILD():
+    pass
 
 
 def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v011.ma', pilot_geo = '' ):
@@ -361,6 +336,35 @@ def landing_gear_left( ctrls = [], chassis_joint = '', pivot_controls = [], tire
     #
     ik = app.create_ik2( stJnt = obj1, endJnt = obj3, pv = PvCt[4], parent = CtB[4], name = 'back_suspension', suffix = suffix, setChannels = True )
     '''
+
+    # flex
+    flex = [
+    'landingGear_flex_01_L_jnt',
+    'landingGear_flex_02_L_jnt',
+    'landingGear_flex_03_L_jnt',
+    'landingGear_flex_04_L_jnt',
+    'landingGear_flex_05_L_jnt',
+    'landingGear_flex_06_L_jnt'
+    ]
+    #
+    name = 'landingGear' + '_back_' + suffix
+    flexCt = place.Controller2( name, flex[-1], True, 'pinYup_ctrl', X * 11, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( 'landingGear_flex_00_L_jnt', flexCt[0], mo = True )
+    place.translationZLock( flexCt[2], True )
+    place.rotationLock( flexCt[2], True )
+    place.cleanUp( flexCt[0], Ctrl = True )
+    for j in flex:
+        place.smartAttrBlend( master = flexCt[2], slave = j, masterAttr = 'translateY', slaveAttr = 'rotateX', blendAttrObj = flexCt[2], blendAttrString = 'flex', blendWeight = 0.22, reverse = True )
+        place.smartAttrBlend( master = flexCt[2], slave = j, masterAttr = 'translateX', slaveAttr = 'rotateY', blendAttrObj = flexCt[2], blendAttrString = 'flex', blendWeight = 0.22, reverse = False )
+
+    # wheel all control
+    name = 'wheelA' + '_back_' + suffix
+    whlA = place.Controller2( name, 'wheelA_back_steer_L_jnt', False, 'squareXup_ctrl', X * 11, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( flex[-1], whlA[0], mo = True )
+    place.cleanUp( whlA[0], Ctrl = True )
+    # parentSwitch( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
+    place.parentSwitch( whlA[2], whlA[2], whlA[1], whlA[0], 'master_Grp', whlA[0], False, False, True, True, 'wheel', 1.0 )
+
     # back A
     sel = [
     'axle_back_L_jnt',
@@ -370,9 +374,10 @@ def landing_gear_left( ctrls = [], chassis_joint = '', pivot_controls = [], tire
     'wheelA_back_top_L_jnt',
     'wheelA_back_spin_L_jnt'
     ]
+
     print( '_____________', tire_geo, rim_geo )
     # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    new_ctrls = [ctrls[0], 'suspension_piston_01_L_jnt']
+    new_ctrls = [ctrls[0], whlA[4]]
     whlA = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
                      tire_geo = [tire_geo[0]], rim_geo = [rim_geo[0]], caliper_geo = caliper_geo, name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.05 )
     # whlA  = [steer, ContactCt, PressureCt]
@@ -480,6 +485,35 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     ik = app.create_ik2( stJnt = obj1, endJnt = obj3, pv = PvCt[4], parent = CtB[4], name = 'back_suspension', suffix = suffix, setChannels = True )
     '''
 
+    # flex
+    flex = [
+    'landingGear_flex_01_R_jnt',
+    'landingGear_flex_02_R_jnt',
+    'landingGear_flex_03_R_jnt',
+    'landingGear_flex_04_R_jnt',
+    'landingGear_flex_05_R_jnt',
+    'landingGear_flex_06_R_jnt'
+    ]
+    #
+    name = 'landingGear' + '_back_' + suffix
+    flexCt = place.Controller2( name, flex[-1], True, 'pinYup_ctrl', X * 11, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.xform( flexCt[2], os = True, r = True, ro = ( 180, 180, 0 ) )  # right side
+    cmds.parentConstraint( 'landingGear_flex_00_R_jnt', flexCt[0], mo = True )
+    place.translationZLock( flexCt[2], True )
+    place.rotationLock( flexCt[2], True )
+    place.cleanUp( flexCt[0], Ctrl = True )
+    for j in flex:
+        place.smartAttrBlend( master = flexCt[2], slave = j, masterAttr = 'translateY', slaveAttr = 'rotateX', blendAttrObj = flexCt[2], blendAttrString = 'flex', blendWeight = 0.22, reverse = False )
+        place.smartAttrBlend( master = flexCt[2], slave = j, masterAttr = 'translateX', slaveAttr = 'rotateY', blendAttrObj = flexCt[2], blendAttrString = 'flex', blendWeight = 0.22, reverse = True )
+
+    # wheel all control
+    name = 'wheelA' + '_back_' + suffix
+    whlA = place.Controller2( name, 'wheelA_back_steer_R_jnt', False, 'squareXup_ctrl', X * 11, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( flex[-1], whlA[0], mo = True )
+    place.cleanUp( whlA[0], Ctrl = True )
+    # parentSwitch( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
+    place.parentSwitch( whlA[2], whlA[2], whlA[1], whlA[0], 'master_Grp', whlA[0], False, False, True, True, 'wheel', 1.0 )
+
     # back A
     sel = [
     'axle_back_R_jnt',
@@ -489,8 +523,9 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     'wheelA_back_top_R_jnt',
     'wheelA_back_spin_R_jnt'
     ]
+
     # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    new_ctrls = [ctrls[0], 'suspension_piston_01_R_jnt']
+    new_ctrls = [ctrls[0], whlA[4]]
     whlA = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
                      tire_geo = [tire_geo[0]], rim_geo = [rim_geo[0]], caliper_geo = caliper_geo, name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.05 )
     # whlA = [steer, ContactCt, PressureCt]
@@ -1058,6 +1093,10 @@ def hoses( X = 1.0 ):
     cmds.setAttr( 'hoseA_R_E_IK_Cntrl.LockOrientOffOn', 1 )
 
 
+def __________________GEO():
+    pass
+
+
 def get_geo_list( name = 'cessna', ns = 'geo',
                 aileron_l = False,
                 aileron_r = False,
@@ -1386,18 +1425,119 @@ def process_geo_list( name = '' ):
     s = []
     setDict = ss.loadDict( os.path.join( ss.defaultPath(), name + '.sel' ) )
     if tire:
-        print( name )
+        # print( name )
         # print( setDict )
-        print( '___ loaded raw', setDict )
+        # print( '___ loaded raw', setDict )
+        pass
     if setDict:
         for obj in setDict.keys():
             if tire:
-                print( obj )
-                print( setDict[obj] )
+                # print( obj )
+                # print( setDict[obj] )
+                pass
             s.append( obj )
         # print( s )
         return s
     return None
+
+
+def low_geo():
+    return ['statue_man_model:Statue_man_Low']
+
+
+def __________________SKIN():
+    pass
+
+
+def weights_meshExport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = low_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        ex_path = os.path.join( path, g )
+        cmds.select( geo )
+        krl.exportWeights02( ex_path )
+
+
+def weights_meshImport():
+    '''
+    dargonfly object weights
+    '''
+    # path
+    path = weights_path()
+    # geo
+    all_geo = low_geo()
+    for geo in all_geo:
+        g = ''
+        if '|' in geo:
+            g = geo.split( '|' )[-1]
+        elif ':' in geo:
+            g = geo.split( ':' )[-1]
+        else:
+            g = geo
+        im_path = os.path.join( path, g )
+        cmds.select( geo )
+        # print( im_path )
+        krl.importWeights02( geo, im_path )
+
+
+def weights_path():
+    '''
+    make path if not present from current file
+    '''
+    # path
+    path = cmds.file( query = True, sceneName = True )
+    filename = cmds.file( query = True, sceneName = True , shortName = True )
+    path = path.split( filename )[0]
+    path = os.path.join( path, 'weights' )
+    if not os.path.isdir( path ):
+        os.mkdir( path )
+    return path
+
+
+def __________________UTIL():
+    pass
+
+
+def fix_normals( del_history = False ):
+    '''
+    after skinning geo gets weird normals
+    '''
+    geo = get_geo_list( name = 'cessna', ns = 'geo', tire_front_l = True, tire_back_l = True, tire_back_r = True )
+    cmds.select( geo )
+    cmds.polyNormalPerVertex( unFreezeNormal = True )
+    for g in geo:
+        cmds.select( g )
+        cmds.polySoftEdge( angle = 45 )
+    if del_history:
+        cmds.delete( geo, ch = True )
+
+
+def mirror_jnts():
+    '''
+    
+    '''
+    # jnts - new joints for pivots
+    mirrorj = [
+    'back_L_jnt',
+    'front_L_jnt',
+    'chassis_L_jnt',
+    'axle_back_L_jnt'
+    ]
+    # mirror
+    for j in mirrorj:
+        jnt.mirror( j , mirrorBehavior = True )
 
 
 def rename_files( s = 'kingAir', r = 'cessna', d = 'C:\\Users\\s.weber\\Documents\\maya\\selectionSets' ):
