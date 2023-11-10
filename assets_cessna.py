@@ -37,7 +37,7 @@ def __________________BUILD():
     pass
 
 
-def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v011.ma', pilot_geo = '' ):
+def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v012.ma', pilot_geo = '' ):
     '''
     build plane
     '''
@@ -141,6 +141,25 @@ def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\
     #
     doors( X )
     wings( X )
+    wings_broken( X )
+    weights_meshImport()
+
+    # broken wing
+    joints = [
+    'chassis_R_jnt',
+    'wingBreak_00_R_jnt'
+    ]
+    geos = wing_broken_geo()
+    default_skin( joints = joints, geos = geos )
+    # broken flap
+    joints = [
+    'flapsA_00_R_jnt',
+    'flapsA_01_R_jnt'
+    ]
+    geos = flap_broken_geo()
+    default_skin( joints = joints, geos = geos )
+
+    #
     # mini_pistons( X )
     # hoses( X )
     #
@@ -272,71 +291,6 @@ def landing_gear_left( ctrls = [], chassis_joint = '', pivot_controls = [], tire
     clr = 'blue'
     suffix = 'L'
 
-    '''
-    #
-    nm = 'landingGear_back'
-    m = vhl.rotate_part( name = nm, suffix = suffix, obj = 'landingGear_retract_L_jnt', objConstrain = True, parent = chassis_joint, rotations = [1, 0, 0], X = X * 14, shape = 'squareYup_ctrl', color = clr )
-    cmds.transformLimits( m[2] , erx = [1, 1], rx = ( -83, 0 ) )
-    # suspension piston
-    # pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
-    obj1 = 'suspension_piston_00_L_jnt'
-    obj2 = 'suspension_piston_01_L_jnt'
-    geo = get_geo_list( pistonTop_back_l = True )
-    vhl.skin( obj1, geo )
-    geo = get_geo_list( pistonBottom_back_l = True )
-    vhl.skin( obj2, geo )
-    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = obj1, obj2 = obj2,
-                            parent1 = 'landingGear_retract_L_jnt', parent2 = 'landingGear_retract_L_jnt', parentUp1 = 'landingGear_retract_L_jnt', parentUp2 = 'landingGear_retract_L_jnt',
-                            aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = clr )
-    hide.append( pstnCtrls[0][0] )
-    place.translationXLock( pstnCtrls[1][2], True )
-    place.translationZLock( pstnCtrls[1][2], True )
-    # ( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
-    # pivot_controls = [frontl, frontr, backl, backr]
-    place.parentSwitch( 'contactLock_' + suffix, pstnCtrls[1][2], pstnCtrls[1][1], pstnCtrls[1][0], pstnCtrls[0][4], pivot_controls[1][4], True, False, False, True, 'pivot', 0.0 )
-    place.breakConnection( pstnCtrls[1][1], 'tx' )
-    place.breakConnection( pstnCtrls[1][1], 'tz' )
-
-    #
-    obj1 = 'landing_arm_00_L_jnt'
-    obj2 = 'landing_arm_01_L_jnt'
-    geo = get_geo_list( retractArm_l = True )
-    vhl.skin( obj1, geo )
-    pstnCtrls = vhl.piston( name = 'landing_arm', suffix = suffix, obj1 = obj1, obj2 = obj2,
-                            parent1 = 'landingGear_retract_L_jnt', parent2 = 'chassis_L_jnt', parentUp1 = None, parentUp2 = None,
-                            aim1 = [0, 0, 1], up1 = [0, -1, 0], aim2 = [0, 0, -1], up2 = [0, -1, 0], X = X * 1, color = clr )
-    cmds.orientConstraint( 'chassis_L_jnt', pstnCtrls[0][1], mo = True )
-
-    # suspension ik
-    obj1 = 'suspension_arm_00_L_jnt'
-    obj2 = 'suspension_arm_01_L_jnt'
-    obj3 = 'suspension_arm_02_L_jnt'
-    geo = get_geo_list( suspensionArmTop_l = True )
-    vhl.skin( obj1, geo )
-    geo = get_geo_list( suspensionArmBottom_l = True )
-    vhl.skin( obj2, geo )
-    name = 'back_A_suspension_arm' + '_' + suffix
-    CtA = place.Controller2( name, obj1, False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( 'suspension_piston_00_L_jnt', CtA[0], mo = True )
-    cmds.pointConstraint( CtA[4], obj1, mo = True )
-    place.cleanUp( CtA[0], Ctrl = True )
-    hide.append( CtA[0] )
-    #
-    name = 'back_B_suspension_arm' + '_' + suffix
-    CtB = place.Controller2( name, obj3, False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( 'suspension_piston_01_L_jnt', CtB[0], mo = True )
-    place.cleanUp( CtB[0], Ctrl = True )
-    hide.append( CtB[0] )
-    #
-    PvCt = app.create_3_joint_pv2( stJnt = obj1, endJnt = obj3, prefix = 'back_suspension', suffix = suffix, distance_offset = 0.0, orient = True, color = clr, X = X * 0.5, midJnt = '' )
-    cmds.parentConstraint( 'suspension_piston_01_L_jnt', PvCt[0], mo = True )
-    place.cleanUp( PvCt[0], Ctrl = True )
-    hide.append( PvCt[0] )
-    # return
-    #
-    ik = app.create_ik2( stJnt = obj1, endJnt = obj3, pv = PvCt[4], parent = CtB[4], name = 'back_suspension', suffix = suffix, setChannels = True )
-    '''
-
     # flex
     flex = [
     'landingGear_flex_01_L_jnt',
@@ -384,27 +338,8 @@ def landing_gear_left( ctrls = [], chassis_joint = '', pivot_controls = [], tire
     # pivot_controls   = [frontl, frontr, backl, backr]
     place.smartAttrBlend( master = whlA[2][2], slave = pivot_controls[1][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
     place.smartAttrBlend( master = whlA[2][2], slave = whlA[1][1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )
-    return
+    # return
 
-    '''
-    # back B
-    sel = [
-    'axle_back_L_jnt',
-    'wheelB_back_steer_L_jnt',
-    'wheelB_back_center_L_jnt',
-    'wheelB_back_bottom_L_jnt',
-    'wheelB_back_top_L_jnt',
-    'wheelB_back_spin_L_jnt'
-    ]
-    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    new_ctrls = [ctrls[0], 'suspension_piston_01_L_jnt']
-    whlB = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
-                     tire_geo = [tire_geo[1]], rim_geo = [rim_geo[0]], caliper_geo = [], name = 'wheelB_back', suffix = suffix, X = X * 0.25, exp = False, pressureMult = 0.15 )
-    # whlB = [steer, ContactCt, PressureCt]
-    place.smartAttrBlend( master = whlB[2][2], slave = whlB[1][1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )
-    place.smartAttrBlend( master = whlA[2][2], slave = whlB[2][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
-    place.translationYLock( whlB[2][2], True )
-    '''
     # hide unnecessary
     for i in hide:
         cmds.setAttr( i + '.visibility', 0 )
@@ -419,71 +354,6 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     # main
     clr = 'red'
     suffix = 'R'
-
-    '''
-    #
-    nm = 'landingGear_back'
-    m = vhl.rotate_part( name = nm, suffix = suffix, obj = 'landingGear_retract_R_jnt', objConstrain = True, parent = chassis_joint, rotations = [1, 0, 0], X = X * 14, shape = 'squareYup_ctrl', color = clr )
-    cmds.transformLimits( m[2] , erx = [1, 1], rx = ( -83, 0 ) )
-    # suspension piston
-    # pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = '', obj1 = 'suspension_piston_00_jnt', obj2 = 'suspension_piston_01_jnt', parent1 = 'landingGear_retract_jnt', parent2 = 'landingGear_retract_jnt', parentUp1 = 'landingGear_retract_jnt', parentUp2 = ctrls[2],
-    obj1 = 'suspension_piston_00_R_jnt'
-    obj2 = 'suspension_piston_01_R_jnt'
-    geo = get_geo_list( pistonTop_back_r = True )
-    vhl.skin( obj1, geo )
-    geo = get_geo_list( pistonBottom_back_r = True )
-    vhl.skin( obj2, geo )
-    pstnCtrls = vhl.piston( name = 'suspension_piston', suffix = suffix, obj1 = obj1, obj2 = obj2,
-                            parent1 = 'landingGear_retract_R_jnt', parent2 = 'landingGear_retract_R_jnt', parentUp1 = 'landingGear_retract_R_jnt', parentUp2 = 'landingGear_retract_R_jnt',
-                            aim1 = [0, -1, 0], up1 = [0, 0, 1], aim2 = [0, 1, 0], up2 = [0, 0, 1], X = X * 7, color = clr )
-    hide.append( pstnCtrls[0][0] )
-    place.translationXLock( pstnCtrls[1][2], True )
-    place.translationZLock( pstnCtrls[1][2], True )
-    # ( name, Ct, CtGp, TopGp, ObjOff, ObjOn, Pos = True, Ornt = True, Prnt = True, OPT = True, attr = False, w = 1.0 )
-    # pivot_controls = [frontl, frontr, backl, backr]
-    place.parentSwitch( 'contactLock_' + suffix, pstnCtrls[1][2], pstnCtrls[1][1], pstnCtrls[1][0], pstnCtrls[0][4], pivot_controls[2][4], True, False, False, True, 'pivot', 0.0 )
-    place.breakConnection( pstnCtrls[1][1], 'tx' )
-    place.breakConnection( pstnCtrls[1][1], 'tz' )
-
-    #
-    obj1 = 'landing_arm_00_R_jnt'
-    obj2 = 'landing_arm_01_R_jnt'
-    geo = get_geo_list( retractArm_r = True )
-    vhl.skin( obj1, geo )
-    pstnCtrls = vhl.piston( name = 'landing_arm', suffix = suffix, obj1 = obj1, obj2 = obj2,
-                            parent1 = 'landingGear_retract_R_jnt', parent2 = 'chassis_R_jnt', parentUp1 = None, parentUp2 = None,
-                            aim1 = [0, 0, 1], up1 = [0, 1, 0], aim2 = [0, 0, -1], up2 = [0, 1, 0], X = X * 1, color = clr )
-    cmds.orientConstraint( 'chassis_R_jnt', pstnCtrls[0][1], mo = True )
-
-    # suspension ik
-    obj1 = 'suspension_arm_00_R_jnt'
-    obj2 = 'suspension_arm_01_R_jnt'
-    obj3 = 'suspension_arm_02_R_jnt'
-    geo = get_geo_list( suspensionArmTop_r = True )
-    vhl.skin( obj1, geo )
-    geo = get_geo_list( suspensionArmBottom_r = True )
-    vhl.skin( obj2, geo )
-    name = 'back_A_suspension_arm' + '_' + suffix
-    CtA = place.Controller2( name, obj1, False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( 'suspension_piston_00_R_jnt', CtA[0], mo = True )
-    cmds.pointConstraint( CtA[4], obj1, mo = True )
-    place.cleanUp( CtA[0], Ctrl = True )
-    hide.append( CtA[0] )
-    #
-    name = 'back_B_suspension_arm' + '_' + suffix
-    CtB = place.Controller2( name, obj3, False, 'loc_ctrl', X, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
-    cmds.parentConstraint( 'suspension_piston_01_R_jnt', CtB[0], mo = True )
-    place.cleanUp( CtB[0], Ctrl = True )
-    hide.append( CtB[0] )
-    #
-    PvCt = app.create_3_joint_pv2( stJnt = obj1, endJnt = obj3, prefix = 'back_suspension', suffix = suffix, distance_offset = 0.0, orient = True, color = clr, X = X * 0.5, midJnt = '' )
-    cmds.parentConstraint( 'suspension_piston_01_R_jnt', PvCt[0], mo = True )
-    place.cleanUp( PvCt[0], Ctrl = True )
-    hide.append( PvCt[0] )
-    # return
-    #
-    ik = app.create_ik2( stJnt = obj1, endJnt = obj3, pv = PvCt[4], parent = CtB[4], name = 'back_suspension', suffix = suffix, setChannels = True )
-    '''
 
     # flex
     flex = [
@@ -532,30 +402,6 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     # pivot_controls   = [frontl, frontr, backl, backr]
     place.smartAttrBlend( master = whlA[2][2], slave = pivot_controls[2][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
     place.smartAttrBlend( master = whlA[2][2], slave = whlA[1][1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )
-    # secondary wheel
-    '''
-    place.smartAttrBlend( master = 'wheelA_back_spin_L', slave = 'wheelB_back_spin_L_CtGrp', masterAttr = 'rotateX', slaveAttr = 'rotateX', blendAttrObj = 'wheelA_back_spin_L', blendAttrString = 'spinPair', blendWeight = 1.0, reverse = False )
-    # return
-    # back B
-    sel = [
-    'axle_back_R_jnt',
-    'wheelB_back_steer_R_jnt',
-    'wheelB_back_center_R_jnt',
-    'wheelB_back_bottom_R_jnt',
-    'wheelB_back_top_R_jnt',
-    'wheelB_back_spin_R_jnt'
-    ]
-    # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
-    new_ctrls = [ctrls[0], 'suspension_piston_01_R_jnt']
-    whlB = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
-                     tire_geo = [tire_geo[1]], rim_geo = [rim_geo[0]], caliper_geo = [], name = 'wheelB_back', suffix = suffix, X = X * 0.25, exp = False, pressureMult = 0.15 )
-    # whlB = [steer, ContactCt, PressureCt]
-    place.smartAttrBlend( master = whlB[2][2], slave = whlB[1][1], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = True )
-    place.smartAttrBlend( master = whlA[2][2], slave = whlB[2][2], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
-    place.translationYLock( whlB[2][2], True )
-    # secondary wheel
-    place.smartAttrBlend( master = 'wheelA_back_spin_R', slave = 'wheelB_back_spin_R_CtGrp', masterAttr = 'rotateX', slaveAttr = 'rotateX', blendAttrObj = 'wheelA_back_spin_R', blendAttrString = 'spinPair', blendWeight = 1.0, reverse = False )
-    '''
     # return
 
     # hide unnecessary
@@ -737,19 +583,24 @@ def wings( X = 1.0 ):
     place.translationXLock( m[2], lock = False )
     place.translationYLock( m[2], lock = False )
     flapA = m
-    '''
-    # flap B L
-    parent = 'chassis_L_jnt'
-    j = 'flapsB_00_L_jnt'
+
+    # flap broken
+    parent = m[4]
+    j = 'flapsA_01_L_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    geo = get_geo_list( flapsB_l = True )
+    flap_brkn_l = vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [1, 1, 1], X = X * 7, shape = 'rectangleWideZup_ctrl', color = 'lightBlue' )
+
+    # spoiler L
+    parent = 'wingBreak_01_L_jnt'
+    j = 'spoiler_00_L_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1]
+    geo = get_geo_list( spoiler_l = True )
     vhl.skin( j, geo )
-    s = vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'lightBlue' )
-    place.smartAttrBlend( master = m[2], slave = s[1], masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = m[2], blendAttrString = 'sync', blendWeight = 1.0, reverse = False )
-    '''
+    spl_l = vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'lightBlue' )
     # aileron L
-    parent = 'chassis_L_jnt'
+    parent = 'wingBreak_01_L_jnt'
     j = 'aileron_00_L_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
@@ -763,7 +614,7 @@ def wings( X = 1.0 ):
     nm = n[0] + '_' + n[1]
     geo = get_geo_list( aileronSpoiler_l = True )
     vhl.skin( j, geo )
-    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 2, shape = 'rectangleWideXup_ctrl', color = 'lightBlue' )
+    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'lightBlue' )
     # elevator L
     parent = 'chassis_L_jnt'
     j = 'elevator_00_L_jnt'
@@ -779,7 +630,7 @@ def wings( X = 1.0 ):
     nm = n[0] + '_' + n[1]
     geo = get_geo_list( elevatorSpoiler_l = True )
     vhl.skin( j, geo )
-    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 2, shape = 'rectangleWideXup_ctrl', color = 'lightBlue' )
+    vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'lightBlue' )
     #
     # propeller
     parent = 'chassis_jnt'
@@ -787,7 +638,7 @@ def wings( X = 1.0 ):
     nm = j.split( '_' )[0]
     geo = get_geo_list( prop_l = True )
     vhl.skin( j, geo )
-    PrpCt = vhl.rotate_part( name = nm, suffix = 'C', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrR_ctrl', color = 'yellow' )
+    PrpCt = vhl.rotate_part( name = nm, suffix = 'C', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrL_ctrl', color = 'yellow' )
     vis_obj = nm + '_C'
     place.optEnum( vis_obj, attr = 'propeller', enum = 'VIS' )
     for g in geo:
@@ -814,20 +665,26 @@ def wings( X = 1.0 ):
     place.smartAttrBlend( master = flapA[2], slave = m[1], masterAttr = 'tx', slaveAttr = 'tx', blendAttrObj = flapA[2], blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = True )
     place.translationYLock( m[2], lock = False )
     place.smartAttrBlend( master = flapA[2], slave = m[1], masterAttr = 'ty', slaveAttr = 'ty', blendAttrObj = flapA[2], blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = True )
-    '''
-    # flap BR
-    parent = 'chassis_R_jnt'
-    j = 'flapsB_00_R_jnt'
+
+    # flap broken
+    parent = m[4]
+    j = 'flapsA_01_R_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
-    geo = get_geo_list( flapsB_r = True )
+    flap_brkn_r = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [1, 1, 1], X = X * 7, shape = 'rectangleWideZup_ctrl', color = 'pink' )
+
+    # spoiler L
+    parent = 'wingBreak_01_R_jnt'
+    j = 'spoiler_00_R_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1]
+    geo = get_geo_list( spoiler_r = True )
     vhl.skin( j, geo )
-    s = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'pink' )
-    place.smartAttrBlend( master = m[2], slave = s[1], masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = m[2], blendAttrString = 'sync', blendWeight = 1.0, reverse = False )
-    place.smartAttrBlend( master = flapA[2], slave = s[1], masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = flapA[2], blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = False )
-    '''
+    spl_r = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'pink' )
+    place.smartAttrBlend( master = spl_l[2], slave = spl_r[1], masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = ail_l[2], blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = False )
+
     # aileron R
-    parent = 'chassis_R_jnt'
+    parent = 'wingBreak_01_R_jnt'
     j = 'aileron_00_R_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
@@ -842,7 +699,7 @@ def wings( X = 1.0 ):
     nm = n[0] + '_' + n[1]
     geo = get_geo_list( aileronSpoiler_r = True )
     vhl.skin( j, geo )
-    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 2, shape = 'rectangleWideXup_ctrl', color = 'pink' )
+    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'pink' )
     # elevator R
     parent = 'chassis_R_jnt'
     j = 'elevator_00_R_jnt'
@@ -859,7 +716,7 @@ def wings( X = 1.0 ):
     nm = n[0] + '_' + n[1]
     geo = get_geo_list( elevatorSpoiler_r = True )
     vhl.skin( j, geo )
-    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 2, shape = 'rectangleWideXup_ctrl', color = 'pink' )
+    vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'pink' )
     #
     #
     parent = 'chassis_jnt'
@@ -1093,6 +950,47 @@ def hoses( X = 1.0 ):
     cmds.setAttr( 'hoseA_R_E_IK_Cntrl.LockOrientOffOn', 1 )
 
 
+def wings_broken( X = 1.0 ):
+    '''
+    
+    '''
+    # wings left
+    clr = 'blue'
+
+    parent = 'chassis_jnt'
+    j = 'wingBreak_00_L_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1]
+    brkn_l = vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [1, 1, 1], X = X * 13, shape = 'rectangleWideZup_ctrl', color = clr )
+
+    # broken driver
+    j = 'flapsA_01_L_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1] + '_L'
+    place.smartAttrBlend( master = brkn_l[2], slave = nm + '_CtGrp', masterAttr = 'rx', slaveAttr = 'rx', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
+    place.smartAttrBlend( master = brkn_l[2], slave = nm + '_CtGrp', masterAttr = 'ry', slaveAttr = 'ry', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
+    place.smartAttrBlend( master = brkn_l[2], slave = nm + '_CtGrp', masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
+    # cmds.orientConstraint( brkn_l[4], 'flapsA_01_L_jnt', mo = True )
+
+    # wings right
+    clr = 'red'
+
+    parent = 'chassis_jnt'
+    j = 'wingBreak_00_R_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1]
+    brkn_r = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [1, 1, 1], X = X * 13, shape = 'rectangleWideZup_ctrl', color = clr )
+
+    # broken driver
+    j = 'flapsA_01_R_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1] + '_R'
+    place.smartAttrBlend( master = brkn_r[2], slave = nm + '_CtGrp', masterAttr = 'rx', slaveAttr = 'rx', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
+    place.smartAttrBlend( master = brkn_r[2], slave = nm + '_CtGrp', masterAttr = 'ry', slaveAttr = 'ry', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
+    place.smartAttrBlend( master = brkn_r[2], slave = nm + '_CtGrp', masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
+    # cmds.orientConstraint( brkn_r[4], 'flapsA_01_R_jnt', mo = True )
+
+
 def __________________GEO():
     pass
 
@@ -1158,6 +1056,8 @@ def get_geo_list( name = 'cessna', ns = 'geo',
                 tire_front_l = False,
                 door_upper = False,
                 door_lower = False,
+                spoiler_l = False,
+                spoiler_r = False,
                 all = False ):
     '''
     geo members via selection set
@@ -1380,6 +1280,14 @@ def get_geo_list( name = 'cessna', ns = 'geo',
         geo_list = process_geo_list( name = name + '_' + 'door_upper' )
         geo_sets.append( geo_list )
 
+    # spoilers
+    if spoiler_l or all:
+        geo_list = process_geo_list( name = name + '_' + 'spoiler_l' )
+        geo_sets.append( geo_list )
+    if spoiler_r or all:
+        geo_list = process_geo_list( name = name + '_' + 'spoiler_r' )
+        geo_sets.append( geo_list )
+
     # build list
     for geo_set in geo_sets:
         if geo_set:
@@ -1442,7 +1350,21 @@ def process_geo_list( name = '' ):
 
 
 def low_geo():
-    return ['statue_man_model:Statue_man_Low']
+    geo = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_right_brakes_base_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_right_brakes_base_2',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_right_brakes_base',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_right_brakes',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_left_brakes_base',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_left_brakes_cable',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_left_brakes',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_left_brakes_base_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_left_brakes_base_2',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_right_brakes_cable',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_right_brakes_base_2_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:chassis_group|geo:ast:rear_left_brakes_base_2_rivets'
+    ]
+    return geo
 
 
 def __________________SKIN():
@@ -1461,6 +1383,8 @@ def weights_meshExport():
         g = ''
         if '|' in geo:
             g = geo.split( '|' )[-1]
+            if ':' in g:
+                g = g.split( ':' )[-1]
         elif ':' in geo:
             g = geo.split( ':' )[-1]
         else:
@@ -1482,11 +1406,18 @@ def weights_meshImport():
         g = ''
         if '|' in geo:
             g = geo.split( '|' )[-1]
+            if ':' in g:
+                g = g.split( ':' )[-1]
         elif ':' in geo:
             g = geo.split( ':' )[-1]
         else:
             g = geo
         im_path = os.path.join( path, g )
+        # make no constraint
+        c = cn.getConstraint( geo, nonKeyedRoute = True, keyedRoute = True, plugRoute = True )
+        if c:
+            print( c )
+            cmds.delete( c )
         cmds.select( geo )
         # print( im_path )
         krl.importWeights02( geo, im_path )
@@ -1504,6 +1435,32 @@ def weights_path():
     if not os.path.isdir( path ):
         os.mkdir( path )
     return path
+
+
+def default_skin( joints = [], geos = [] ):
+    '''
+    skin geo list to joint
+    '''
+    #
+    # alternate method
+    # cmds.select( [geo_hub[1], jnt_hub[1]] )
+    # mel.eval( 'SmoothBindSkin;' )
+    #
+    sel = cmds.ls( sl = 1 )
+    # print( len( geos ), geos )
+    # skin
+    for g in geos:
+        # print( g )
+        # delete constraint
+        c = cn.getConstraint( g, nonKeyedRoute = True, keyedRoute = True, plugRoute = True )
+        if c:
+            print( c )
+            cmds.delete( c )
+        #
+        cmds.select( joints )
+        cmds.select( g, add = True )
+        mel.eval( 'SmoothBindSkin;' )
+    cmds.select( sel )
 
 
 def __________________UTIL():
@@ -1564,6 +1521,74 @@ def rename_files( s = 'kingAir', r = 'cessna', d = 'C:\\Users\\s.weber\\Document
             # print( 'no', fyl )
             pass
         i += 1
+
+
+def flap_broken_geo():
+
+    geo = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_flaps_group|geo:ast:wing_right_flaps_rivets|geo:ast:wing_right_flaps_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_flaps_group|geo:ast:wing_right_flaps|geo:ast:wing_right_flaps',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_flaps_group|geo:ast:wing_right_flaps_track_joint|geo:ast:wing_right_flaps_track_joint'
+    ]
+    return geo
+
+
+def wing_broken_geo():
+
+    geo = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_glass_rear|geo:ast:wing_right_position_lights_glass_rear',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_fuel_cap_screw|geo:ast:wing_right_fuel_cap_screw',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_rivets|geo:ast:wing_right_position_lights_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_skin_top_rivets|geo:ast:wing_right_skin_top_rivets',
+    'geo:ast:wing_right_landing_light_reflectors',
+    'geo:ast:wing_right_leading_edge',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_wires_1|geo:ast:wing_right_landing_light_wires_1',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_flap_track_frames|geo:ast:wing_right_flap_track_frames',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_skin_middle|geo:ast:wing_right_skin_middle',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_glass_bulb_2|geo:ast:wing_right_landing_light_glass_bulb_2',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_skin_bottom_rivets|geo:ast:wing_right_skin_bottom_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_wires_2|geo:ast:wing_right_landing_light_wires_2',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_base|geo:ast:wing_right_position_lights_base',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_access_panels_1|geo:ast:wing_right_access_panels_1',
+    'geo:ast:wing_right_landing_light_holder',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_fuel_cap|geo:ast:wing_right_fuel_cap',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_glass|geo:ast:wing_right_position_lights_glass',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_wires_rear|geo:ast:wing_right_position_lights_wires_rear',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_rear_pannels|geo:ast:wing_right_rear_pannels',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_metal_rivets|geo:ast:wing_right_metal_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_inner_parts_group|geo:ast:wing_right_landing_light_inner_frames|geo:ast:wing_right_landing_light_inner_frames',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_tip|geo:ast:wing_right_tip',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_glass_lens|geo:ast:wing_right_landing_light_glass_lens',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_tip_rivets|geo:ast:wing_right_tip_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_inner_parts_group|geo:ast:wing_right_ribs|geo:ast:wing_right_ribs',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_tip_outlet|geo:ast:wing_right_tip_outlet',
+    'geo:ast:wing_right_landing_light_frame',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_wires_front|geo:ast:wing_right_position_lights_wires_front',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_skin_top|geo:ast:wing_right_skin_top',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_base_front|geo:ast:wing_right_position_lights_base_front',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_inner_parts_group|geo:ast:wing_right_spar|geo:ast:wing_right_spar',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_glass|geo:ast:wing_right_landing_light_glass',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_wing_skin_bottom|geo:ast:wing_right_wing_skin_bottom',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_fuel_decalls|geo:ast:wing_right_fuel_decalls',
+    'geo:ast:wing_right_pitot_tube_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_rear_access_panels|geo:ast:wing_right_rear_access_panels',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_access_panels_2|geo:ast:wing_right_access_panels_2',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_base_1|geo:ast:wing_right_landing_light_base_1',
+    'geo:ast:wing_right_pitot_tube_collar',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_base_2|geo:ast:wing_right_landing_light_base_2',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_glass_front|geo:ast:wing_right_position_lights_glass_front',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_inner_parts_group|geo:ast:wing_right_stringer|geo:ast:wing_right_stringer',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_rear_access_panels_rivets|geo:ast:wing_right_rear_access_panels_rivets',
+    'geo:ast:wing_right_pitot_tube',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_access_panels_round_rivets|geo:ast:wing_right_access_panels_round_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_small_glass|geo:ast:wing_right_small_glass',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_position_lights_base_rear|geo:ast:wing_right_position_lights_base_rear',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_access_panels_round|geo:ast:wing_right_access_panels_round',
+    'geo:ast:wing_right_landing_light_frame_rivets',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_landing_light_glass_bulb_1|geo:ast:wing_right_landing_light_glass_bulb_1',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group|geo:ast:wing_right_flap_tracks|geo:ast:wing_right_flap_tracks'
+    ]
+    return geo
 
 #
 #
