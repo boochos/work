@@ -1454,7 +1454,8 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
         #
         # tail travel
         travel_tail_add = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_tailTravel_Add' ) )
-        cmds.connectAttr( position_ctrl[3] + '.' + t_attr, travel_tail_add + '.input1' )
+        # cmds.connectAttr( position_ctrl[3] + '.' + t_attr, travel_tail_add + '.input1' ) # math doesnt work
+        cmds.connectAttr( mlt_merge_travel_length + '.output', travel_tail_add + '.input1' )
         cmds.connectAttr( subNew_tail_add + '.output', travel_tail_add + '.input2' )
 
         # ADD CLAMPS ON TRAVEL VALUES SO JOINTS SLIDE ON TOP OF THEIR NEIGHBHOURS ON EITHER END

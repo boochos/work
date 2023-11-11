@@ -18,6 +18,8 @@ app = web.mod( "atom_appendage_lib" )
 ss = web.mod( "selectionSet_lib" )
 cn = web.mod( 'constraint_lib' )
 krl = web.mod( "key_rig_lib" )
+ac = web.mod( 'animCurve_lib' )
+ump = web.mod( 'universalMotionPath' )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -164,6 +166,8 @@ def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\
     # hoses( X )
     #
     fix_normals()
+    # need to match move pivot with chassis pivot
+    cmds.setAttr( 'move_Grp.translateZ', -76.97 )
 
 
 def landing_gear_front( ctrls = [], chassis_joint = '', pivot_controls = [], tire_geo = [], rim_geo = [], X = 1.0 ):
@@ -583,6 +587,7 @@ def wings( X = 1.0 ):
     place.translationXLock( m[2], lock = False )
     place.translationYLock( m[2], lock = False )
     flapA = m
+    flaps_slide( side = 'L' )
 
     # flap broken
     parent = m[4]
@@ -665,6 +670,7 @@ def wings( X = 1.0 ):
     place.smartAttrBlend( master = flapA[2], slave = m[1], masterAttr = 'tx', slaveAttr = 'tx', blendAttrObj = flapA[2], blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = True )
     place.translationYLock( m[2], lock = False )
     place.smartAttrBlend( master = flapA[2], slave = m[1], masterAttr = 'ty', slaveAttr = 'ty', blendAttrObj = flapA[2], blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = True )
+    flaps_slide( side = 'R' )
 
     # flap broken
     parent = m[4]
@@ -989,6 +995,548 @@ def wings_broken( X = 1.0 ):
     place.smartAttrBlend( master = brkn_r[2], slave = nm + '_CtGrp', masterAttr = 'ry', slaveAttr = 'ry', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
     place.smartAttrBlend( master = brkn_r[2], slave = nm + '_CtGrp', masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
     # cmds.orientConstraint( brkn_r[4], 'flapsA_01_R_jnt', mo = True )
+
+
+def flaps_slide( side = '', X = 1.0 ):
+    '''
+    
+    '''
+    if side == 'R':
+        # crv 1
+        crv = cmds.duplicate( 'flap_curve1_L', n = 'flap_curve1_L'.replace( '_L', '_R' ) )[0]
+        tx = cmds.getAttr( crv + '.tx' )
+        cmds.setAttr( crv + '.tx', tx * -1 )
+        # crv 2
+        crv = cmds.duplicate( 'flap_curve2_L', n = 'flap_curve2_L'.replace( '_L', '_R' ) )[0]
+        tx = cmds.getAttr( crv + '.tx' )
+        cmds.setAttr( crv + '.tx', tx * -1 )
+    #
+    parent = 'chassis_' + side + '_jnt'
+    # track 1
+    crv1 = 'flap_curve1_' + side
+    cmds.parentConstraint( parent, crv1, mo = True )
+    name = 'flap_track1_' + side
+    flp1_l = place.Controller2( name, crv1, False, 'loc_ctrl', X * 6, 6, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
+    cmds.setAttr( flp1_l[0] + '.visibility', False )
+    cmds.setAttr( crv1 + '.visibility', False )
+    place.cleanUp( flp1_l[0], Ctrl = True )
+    place.cleanUp( crv1, Ctrl = True )
+    #
+    mo_path1 = cmds.pathAnimation( flp1_l[0], name = flp1_l[2] + '_motionPath' , c = crv1, startU = 0.0, follow = True, wut = 'object', wuo = 'up_jnt', fm = False, fa = 'z', ua = 'y' )
+    cmds.setAttr( mo_path1 + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+    ac.deleteAnim2( mo_path1, attrs = ['uValue'] )
+
+    # track 2
+    crv2 = 'flap_curve2_' + side
+    cmds.parentConstraint( parent, crv2, mo = True )
+    name = 'flap_track2_' + side
+    flp2_l = place.Controller2( name, crv2, False, 'loc_ctrl', X * 6, 6, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'blue' ).result
+    cmds.setAttr( flp2_l[0] + '.visibility', False )
+    cmds.setAttr( crv2 + '.visibility', False )
+    place.cleanUp( flp2_l[0], Ctrl = True )
+    place.cleanUp( crv2, Ctrl = True )
+    #
+    mo_path2 = cmds.pathAnimation( flp2_l[0], name = flp2_l[2] + '_motionPath' , c = crv2, startU = 0.0, follow = True, wut = 'object', wuo = 'up_jnt', fm = False, fa = 'z', ua = 'y' )
+    cmds.setAttr( mo_path2 + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+    ac.deleteAnim2( mo_path2, attrs = ['uValue'] )
+
+    cmds.aimConstraint( flp2_l[4], flp1_l[1], wut = 'object', wuo = 'flapUp_' + side + '_jnt', aim = [0, 0, 1], u = [0, 1, 0], mo = False )
+
+    # connect flap
+    j = 'flapsA_00_' + side + '_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1] + '_' + side
+    attr = 'slide'
+    misc.optEnum( nm, attr = 'flaps', enum = 'CONTROL' )
+    place.addAttribute( nm, attr, 0.0, 1.0, True, 'float' )
+    cmds.connectAttr( nm + '.' + attr, mo_path1 + '.uValue' )
+    cmds.connectAttr( nm + '.' + attr, mo_path2 + '.uValue' )
+    constraint_delete( obj = nm + '_TopGrp' )
+    cmds.parentConstraint( flp1_l[4], nm + '_TopGrp', mo = True )
+    #
+    reverse = False
+    if side == 'R':
+        reverse = True
+    place.smartAttrBlend( master = nm, slave = 'flapUp_' + side + '_jnt', masterAttr = attr, slaveAttr = 'ty', blendAttrObj = nm, blendAttrString = 'tilt', blendWeight = 8.0, reverse = reverse, minmax = [0, 20] )
+
+    # sync opposite
+    if side == 'R':
+        nm = nm.replace( '_R', '_L' )
+        # slide
+        place.smartAttrBlend( master = nm, slave = mo_path1, masterAttr = attr, slaveAttr = 'uValue', blendAttrObj = nm, blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = False )
+        place.smartAttrBlend( master = nm, slave = mo_path2, masterAttr = attr, slaveAttr = 'uValue', blendAttrObj = nm, blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = False )
+        # tilt
+        place.smartAttrBlend( master = 'flapUp_L_jnt', slave = 'flapUp_R_jnt', masterAttr = 'ty', slaveAttr = 'ty', blendAttrObj = nm, blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = True )
+
+
+def __________________PATH():
+    pass
+
+
+def path( fk = False, dynamics = False, tail_as_root = False, X = 100.0 ):
+    '''
+    fix hard coded names
+    '''
+    #
+    reverse = True
+    '''
+    if tail_as_root:
+        reverse = False'''
+
+    #
+    master = 'master'
+    layers = 6
+    # returnsNothing_FixIt = ump.path2( length = 120, layers = layers, X = 18.0, prebuild = False, ctrl_shape = 'diamond_ctrl', reverse = reverse )
+    curve, curve_up = ump.ribbon_path( 
+        name = '',
+        layers = layers,
+        length = 1200,
+        width = 3,
+        X = X * 2.0,
+        ctrl_shape = 'pinYupZfront_ctrl',
+        reverse = False,
+        prebuild = True,
+        prebuild_type = 4,
+        fk = fk,
+        dynamics = dynamics
+        )
+    #
+    # return
+    position_ctrl = place.Controller2( 'position', 'body_001_jnt', True, 'splineStart_ctrl', X * 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'green' ).result
+    #
+    # pathIk( curve = 'path_layer_05', position_ctrl = position_ctrl, tail_as_root = tail_as_root ) #
+    micro_body_cts = pathIk2( curve = curve, position_ctrl = position_ctrl, tail_as_root = tail_as_root, curve_up = curve_up, fk = fk, X = X )
+
+    misc.optEnum( position_ctrl[2], attr = 'path', enum = 'CONTROL' )
+    # cmds.setAttr( master + '.path', cb = False )
+    i = 0
+    while i <= layers - 1:
+        place.hijackAttrs( master, position_ctrl[2], 'ctrlLayer' + str( i ), 'ctrlLayer' + str( i ), set = False, default = None, force = True )
+        cmds.setAttr( master + '.ctrlLayer' + str( i ), cb = False )
+        i += 1
+
+    place.cleanUp( 'body_001_jnt', World = True )
+    cmds.setAttr( 'body_001_jnt.visibility', False )
+    place.cleanUp( 'path_00_jnt', World = True )
+    cmds.setAttr( 'path_00_jnt.visibility', False )
+
+    # cmds.setAttr( position_ctrl[2] + '.ctrlLayer' + str( 3 ), 1 )
+    #
+    # return micro_body_cts
+
+
+def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = 'body_001_jnt', end_jnt = 'body_121_jnt', tail_as_root = False, curve_up = '', fk = False, ribn = 'layer_05_ribbon', X = 1.0 ):
+    '''
+    based on cmds.pathAnimation()
+    spline ik has parametric curve travel, the span between each cv is the same value no matter the length, can have linear travel across entire length of curve
+    '''
+    new_up = False  # this is a fail, remove code that relates
+    # travel control
+    PositionCt = None
+    if not position_ctrl:
+        PositionCt = place.Controller2( 'position', start_jnt, True, 'splineEnd_ctrl', X * 10, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'green' ).result
+    else:
+        PositionCt = position_ctrl
+    # create attribute
+    t_attr = 'travel'
+    travel_min = -1000000.0  # meant to be used as percent. length is 50%, 300% ,of original length
+    travel_max = 1000000.0
+    place.addAttribute( PositionCt[3], t_attr, travel_min, travel_max, True, 'float' )
+    mlt_merge_travel_length = cmds.shadingNode( 'multDoubleLinear', n = PositionCt[3] + '_mergeLengthMlt', asUtility = True )  # connect below, twice
+    cmds.connectAttr( PositionCt[3] + '.' + t_attr, mlt_merge_travel_length + '.input1', force = True )
+    place.hijackAttrs( position_ctrl[3], position_ctrl[2], t_attr, t_attr, set = False, default = None, force = True )
+    # root attr
+    root_attr = 'headAsRoot'
+    place.addAttribute( PositionCt[3], root_attr, 0.0, 1.0, True, 'float' )
+    place.hijackAttrs( position_ctrl[3], position_ctrl[2], root_attr, root_attr, set = True, default = 1.0, force = True )
+    #
+    cmds.pointConstraint( start_jnt, PositionCt[0], mo = True )
+    cmds.orientConstraint( start_jnt, PositionCt[0], mo = True )  # used to be parent: MASTERCT()[2]
+    place.setChannels( PositionCt[2], [True, False], [True, False], [True, False], [True, True, False] )
+    place.cleanUp( PositionCt[0], Ctrl = True, SknJnts = False, Body = False, Accessory = False, Utility = False, World = False, olSkool = False )
+    cmds.setAttr( PositionCt[2] + '.v', k = False, cb = False )
+    cmds.setAttr( PositionCt[2] + '.ro', k = False, cb = False )
+    cmds.setAttr( PositionCt[2] + '.Offset_Vis', k = False, cb = False )
+    #
+    misc.optEnum( PositionCt[2], attr = 'extra', enum = 'CONTROL' )
+
+    #
+    m_body_attr = 'microBodyVis'
+    place.addAttribute( PositionCt[2], m_body_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_body_attr, k = False, cb = True )
+    m_body_grp = cmds.group( em = True, n = 'microBody_Grp' )
+    place.cleanUp( m_body_grp, Ctrl = True )
+    cmds.connectAttr( PositionCt[2] + '.' + m_body_attr, m_body_grp + '.visibility', force = True )
+    #
+    m_ground_attr = 'microGroundVis'
+    place.addAttribute( PositionCt[2], m_ground_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_ground_attr, k = False, cb = True )
+    m_ground_grp = cmds.group( em = True, n = 'microGround_Grp' )
+    place.cleanUp( m_ground_grp, Ctrl = True )
+    cmds.connectAttr( PositionCt[2] + '.' + m_ground_attr, m_ground_grp + '.visibility', force = True )
+    #
+    m_up_attr = 'microUpVis'
+    place.addAttribute( PositionCt[2], m_up_attr, 0, 1, True, 'long' )
+    cmds.setAttr( PositionCt[2] + '.' + m_up_attr, k = False, cb = False )
+    m_up_grp = cmds.group( em = True, n = 'microUp_Grp' )
+    place.cleanUp( m_up_grp, Ctrl = True )
+    cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, m_up_grp + '.visibility', force = True )
+
+    # path
+    crv_info = cmds.arclen( curve, ch = True, n = ( curve + '_arcLength' ) )  # add math nodes so twist controls stick to body no matter the length of the curve
+    arc_length = cmds.getAttr( crv_info + '.arcLength' )  # original
+    # new length divide by original length
+    dvd_length = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve + '_lengthDvd' ) )
+    cmds.setAttr( ( dvd_length + '.operation' ), 2 )  # set operation: 2 = divide, 1 = multiply
+    cmds.connectAttr( ( crv_info + '.arcLength' ), ( dvd_length + '.input1Z' ) )
+    cmds.setAttr( dvd_length + '.input2Z', arc_length )
+    # create length change multiplier from above result
+    dvd_multiplier = cmds.shadingNode( 'multiplyDivide', au = True, n = ( curve + '_lockDvd' ) )  # create length change multiplier, locks control in place from curve length changes
+    cmds.setAttr( ( dvd_multiplier + '.operation' ), 2 )
+    cmds.setAttr( dvd_multiplier + '.input1Z', 1.0 )
+    cmds.connectAttr( ( dvd_length + '.outputZ' ), ( dvd_multiplier + '.input2Z' ) )
+    cmds.connectAttr( ( dvd_multiplier + '.outputZ' ), ( mlt_merge_travel_length + '.input2' ) )
+
+    length = 0.0
+    arc_fraction = 0.0
+    # hierarchy
+    skin_jnts = get_joint_chain_hier( start_jnt = start_jnt, end_jnt = end_jnt )
+    attach_jnts = []
+    # create new set of joints at ground level
+    if tail_as_root:
+        # build reverse chain
+        attach_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt, reroot = True )
+    else:
+        attach_jnts = path_joint_chain( start_jnt = start_jnt, end_jnt = end_jnt )
+
+    # return
+    # for parent switches up chain
+    micro_body_cts = []
+    # attachs
+    upCts = []
+    #
+    ground_cts = []
+
+    i = 0
+    for j in attach_jnts:
+        # position, startU value
+        if j == attach_jnts[0]:
+            length = 0.0
+        else:
+            _l = cmds.getAttr( j + '.translateZ' )  # assumes joint aim vector is translateZ
+            length = length + _l  # accumulated length
+            arc_fraction = length / arc_length  # accumulated arc length
+            # print( 'length: ', length, 'fraction: ', arc_fraction )
+
+        #
+        microUpCt = None
+        mo_path_up = None
+        if curve_up:
+            # up vector control
+            name = 'micro_up_' + pad_number( i = i )
+            microUpCt = place.Controller2( name, j, True, 'loc_ctrl', X * 1, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+            # cmds.setAttr( microUpCt[1] + '.translateY', 10 ) # has to stay at 0.0
+            upCts.append( microUpCt[4] )
+            place.translationLock( microUpCt[2] )
+            place.rotationLock( microUpCt[2] )
+            place.translationYLock( microUpCt[2] )
+            # cmds.connectAttr( PositionCt[2] + '.' + m_up_attr, microUpCt[0] + '.visibility', force = True )
+            cmds.parent( microUpCt[0], m_up_grp )
+            # stick to path
+            if not new_up:
+                #
+                mo_path_up = cmds.pathAnimation( microUpCt[0], name = microUpCt[2] + '_motionPath' , c = curve_up, startU = 0.0, follow = True, wut = 'object', wuo = 'up_Grp', fm = False, fa = 'z', ua = 'y' )
+                cmds.setAttr( mo_path_up + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+                ac.deleteAnim2( mo_path_up, attrs = ['uValue'] )
+
+        # control for body
+        fk_start = 110
+        color = 'brown'
+        if i >= fk_start:
+            color = 'yellow'
+        name = 'micro_body_' + pad_number( i = i )
+        microBodyCt = place.Controller2( name, skin_jnts[i], False, 'facetZup_ctrl', X * 3.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+        cmds.parent( microBodyCt[0], m_body_grp )
+        cmds.parentConstraint( microBodyCt[4], skin_jnts[i], mo = True )
+        cmds.parentConstraint( j, microBodyCt[0], mo = True )
+        micro_body_cts.append( microBodyCt )
+        # fk down chain
+        if fk:
+            if i >= fk_start:  # old: if i > 0:
+                place.parentSwitch( 
+                    name = microBodyCt[2],
+                    Ct = microBodyCt[2],
+                    CtGp = microBodyCt[1],
+                    TopGp = microBodyCt[0],
+                    ObjOff = j,
+                    ObjOn = skin_jnts[i - 1],
+                    Pos = False,
+                    Ornt = False,
+                    Prnt = True,
+                    OPT = True,
+                    attr = 'fk',
+                    w = 0.0 )
+
+        # control on ground
+        name = 'micro_ground_' + pad_number( i = i )
+        microCt = place.Controller2( name, j, True, 'rectangleWideYup_ctrl', X * 2, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'brown' ).result
+        ground_cts.append( microCt )
+        cmds.parent( microCt[0], m_ground_grp )
+        cmds.parentConstraint( microCt[4], j, mo = False )
+        # cmds.parentConstraint( 'master_Grp', microCt[0], mo = True )
+        place.addAttribute( microCt[2], 'position', travel_min, travel_max, True, 'float' )  # max is number of points in curve
+        cmds.setAttr( microCt[2] + '.position', arc_fraction * 100 )
+        cmds.setAttr( microCt[2] + '.position', lock = True )
+
+        # use the first control on the up vector curve
+        mo_path = cmds.pathAnimation( microCt[0], name = microCt[2] + '_motionPath' , c = curve, startU = 0.0, follow = True, wut = 'object', wuo = microUpCt[4], fm = False, fa = 'z', ua = 'y' )
+        cmds.setAttr( mo_path + '.fractionMode', True )  # turn off parametric, sets start/end range 0-1
+        ac.deleteAnim2( mo_path, attrs = ['uValue'] )
+
+        # travel and stretch nodes
+
+        # multiply to merge length changes and position input form control, math prepped at start of function
+        mlt_merge_length = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_mergeLengthMlt', asUtility = True )
+        cmds.connectAttr( microCt[2] + '.position', mlt_merge_length + '.input1', force = True )
+        cmds.connectAttr( dvd_multiplier + '.outputZ', mlt_merge_length + '.input2', force = True )
+
+        # add twist position attr and main travel attr values, quickly growing into maze :(
+        dbl_path = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_DblLnr' ) )
+        cmds.connectAttr( mlt_merge_length + '.output', dbl_path + '.input1', force = True )
+        cmds.connectAttr( mlt_merge_travel_length + '.output', dbl_path + '.input2', force = True )
+        # normalize result
+        mlt_path = cmds.shadingNode( 'multDoubleLinear', n = microCt[2] + '_normalizeMlt', asUtility = True )
+        cmds.setAttr( mlt_path + '.input2', 0.01 )
+
+        # tail lock for stretch, tail as root
+        neg_tail_mlt = cmds.createNode( 'multDoubleLinear', name = microCt[2] + '_tailMakeNegative_Mlt' )
+        cmds.connectAttr( microCt[2] + '.position', neg_tail_mlt + '.input1', force = True )
+        cmds.setAttr( neg_tail_mlt + '.input2', -1.0 )
+        #
+        sub_tail_add = cmds.createNode( 'addDoubleLinear', name = microCt[2] + '_tailToEnd_Add' )
+        cmds.connectAttr( neg_tail_mlt + '.output', sub_tail_add + '.input2' )
+        cmds.setAttr( sub_tail_add + '.input1', 100.0 )
+        #
+        length_tail_mlt = cmds.createNode( 'multDoubleLinear', name = microCt[2] + '_tailLengthChange_Mlt' )
+        cmds.connectAttr( sub_tail_add + '.output', length_tail_mlt + '.input1' )
+        cmds.connectAttr( dvd_multiplier + '.outputZ', length_tail_mlt + '.input2' )
+        #
+        lengthNeg_tail_mlt = cmds.createNode( 'multDoubleLinear', name = microCt[2] + '_tailMakeLengthNeg_Mlt' )
+        cmds.connectAttr( length_tail_mlt + '.output', lengthNeg_tail_mlt + '.input1' )
+        cmds.setAttr( lengthNeg_tail_mlt + '.input2', -1.0 )
+        #
+        subNew_tail_add = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_tailSubtractNew_Add' ) )
+        cmds.setAttr( subNew_tail_add + '.input1', 100.0 )
+        cmds.connectAttr( lengthNeg_tail_mlt + '.output', subNew_tail_add + '.input2' )
+        #
+        # tail travel
+        travel_tail_add = cmds.createNode( 'addDoubleLinear', name = ( microCt[2] + '_tailTravel_Add' ) )
+        # cmds.connectAttr( position_ctrl[3] + '.' + t_attr, travel_tail_add + '.input1' ) # math doesnt work
+        cmds.connectAttr( mlt_merge_travel_length + '.output', travel_tail_add + '.input1' )
+        cmds.connectAttr( subNew_tail_add + '.output', travel_tail_add + '.input2' )
+
+        # ADD CLAMPS ON TRAVEL VALUES SO JOINTS SLIDE ON TOP OF THEIR NEIGHBHOURS ON EITHER END
+
+        #
+        blnd_root_typs = cmds.shadingNode( 'blendColors', name = ( microCt[2] + '_rootTypeBlend' ), asUtility = True )
+        cmds.connectAttr( travel_tail_add + '.output', blnd_root_typs + '.color2R' )  # # change
+        cmds.connectAttr( position_ctrl[3] + '.' + root_attr, blnd_root_typs + '.blender', force = True )
+        #
+        cmds.connectAttr( dbl_path + '.output', blnd_root_typs + '.color1R' )  # into blend before normalizing
+        cmds.connectAttr( blnd_root_typs + '.outputR', mlt_path + '.input1', force = True )
+        cmds.connectAttr( mlt_path + '.output', mo_path + '.uValue', force = True )
+
+        if new_up:
+            fol = ump.follicle_on_nurbs( name = microCt[2] + '_up', ribn = ribn, parent = m_up_grp, u = 0.5 )
+            cmds.parentConstraint( fol[0], microUpCt[0], mo = False )
+            cmds.connectAttr( mlt_path + '.output', fol[1] + '.parameterV', force = True )
+        else:
+            # original method
+            cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+
+        # connect travel, matching joint below
+        if i > 0:
+            # cmds.connectAttr( mlt_path + '.output', mo_path_up + '.uValue', force = True )
+            # add aim constraint
+            # cmds.aimConstraint( attach_jnts[i - 1], microCt[1], mo = True, wuo = microUpCt[4], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] ) # wrong direction
+            cmds.aimConstraint( microCt[4], ground_cts[i - 1][1], mo = True, wuo = upCts[i - 1], wut = 'object', aim = [0, 0, 1], u = [0, 1, 0] )
+
+        #
+        i += 1
+
+    # guides
+    # guides_grp = guide_many_to_many( PositionCt[2], attach_jnts, upCts, 5 )
+    guides_grp = guide_many_to_many( prefix = 'many', vis_object = PositionCt[2], many1 = attach_jnts, many2 = upCts, offset = 0.0, every_nth = 5 )
+    '''
+    tail lock working, need to add travel offset
+    '''
+    return micro_body_cts
+
+
+def get_joint_chain_hier( start_jnt = '', end_jnt = '', chain = None ):
+    '''
+    cant find end joint if it encounters multiple children
+    '''
+    # list the children of the parent
+    if chain == None:
+        chain = []
+        chain.append( start_jnt )
+    # print( chain )
+    children = cmds.listRelatives( start_jnt, children = True )
+    # print( children )
+    if children:
+        for child in children:
+            # test the child count
+            if child != end_jnt:
+                chain.append( child )
+                return get_joint_chain_hier( child, end_jnt, chain )
+            else:
+                chain.append( child )
+                # print( '______YUP', child )
+                # break
+                return chain
+    # return None
+
+
+def path_joint_chain( start_jnt = '', end_jnt = '', reroot = False ):
+    '''
+    duplicate skin joint chain and reverse hierarchy
+    skin joints will be in the middle of the body, path joints need to placed down to ground level
+    '''
+    #
+    skin_jnts = get_joint_chain_hier( start_jnt = start_jnt, end_jnt = end_jnt, chain = None )
+
+    # duplicate
+    dup = cmds.duplicate( start_jnt, rc = True )
+    # cmds.parent( dup[0], w = True )  # unparent
+    #
+    # cmds.delete( 'head_jnt1' )  # cleanup children, should automate this at some stage.
+
+    # rename
+    cmds.select( dup[0], hi = True )
+    names = cmds.ls( sl = True )
+    if reroot:
+        num = len( names )
+        i = num - 1
+        for jnt in names:
+            cmds.rename( jnt, 'path_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_jnt' )
+            i -= 1
+    else:
+        # num = len( names )
+        i = 0
+        for jnt in names:
+            cmds.rename( jnt, 'path_' + str( ( '%0' + str( 2 ) + 'd' ) % ( i ) ) + '_jnt' )
+            i += 1
+
+    # reroot chain and fix joint orients
+    path_jnts = cmds.ls( sl = True )
+    if reroot:
+        cmds.reroot( path_jnts[-1] )
+        for j in path_jnts:
+            if j == path_jnts[0]:  # first is the last joint(reversed list), needs manual correction, maya skips it
+                cmds.setAttr( j + '.jointOrientX', 0 )
+                cmds.setAttr( j + '.jointOrientY', 0 )
+                cmds.setAttr( j + '.jointOrientZ', 0 )
+            else:
+                cmds.select( j )
+                cmds.joint( e = True, oj = 'zyx', secondaryAxisOrient = 'yup', ch = True, zso = True )
+
+    # path_jnts.reverse()
+    print( 'duplicated' )
+    print( path_jnts )
+    # return
+    # to ground
+    if reroot:
+        path_joints_to_ground( path_jnts = path_jnts )
+    else:
+        path_joints_to_ground( path_jnts = path_jnts )
+        # cmds.setAttr( path_jnts[0] + '.translateY', 0 )
+    print( 'grounded' )
+    print( path_jnts )
+    # return
+
+    # constrain
+    '''
+    # skipping, will add controls instead of joint to joint constraint
+    skin_jnts_to_path_jnts( skin_jnts = skin_jnts, path_jnts = path_jnts, controls = True )
+    print( 'constrained' )
+    print( path_jnts )
+    '''
+    # return
+
+    if reroot:
+        place.cleanUp( path_jnts[-1], SknJnts = True )
+    else:
+        place.cleanUp( path_jnts[0], SknJnts = True )
+    return path_jnts
+
+
+def guide_many_to_many( prefix = 'many', vis_object = '', many1 = [], many2 = [], offset = 0.0, every_nth = 4 ):
+    '''
+    
+    '''
+    grp = cmds.group( name = prefix + '_GuideGrp', em = True )
+    print( grp, vis_object )
+    place.hijackVis( grp, vis_object, name = 'guides', suffix = True, default = False, mode = 'visibility' )
+    place.cleanUp( grp, Ctrl = False, SknJnts = False, Body = False, Accessory = False, Utility = False, World = True, olSkool = False )
+    n = 0
+    for i in range( len( many1 ) ):
+        #
+        if n == 0:
+            g = cmds.group( name = prefix + '___' + many1[i] + '___' + many2[i], em = True )
+            result = place.guideLine( many1[i], many2[i], Name = 'guide' )
+            #
+            cmds.select( result[1][1] )
+            cmds.pickWalk( d = 'down' )
+            cmds.pickWalk( d = 'left' )
+            c = cmds.ls( sl = True )[0]
+            cmds.setAttr( c + '.offsetY', offset )
+            #
+            cmds.parent( result[0], g )
+            cmds.parent( result[1], g )
+            cmds.parent( g, grp )
+        #
+        if n == every_nth - 1:
+            n = 0
+        else:
+            n += 1
+
+    #
+    return grp
+
+
+def path_joints_to_ground( path_jnts = [], reroot = False ):
+    '''
+    unparent all joints and set tranlsateY to 0.0
+    reparent
+    '''
+    if reroot:
+        path_jnts.reverse()
+    cmds.parent( path_jnts, w = True )  # world is parent
+    for j in path_jnts:
+        cmds.setAttr( j + '.translateY', 0.0 )
+    for j in range( len( path_jnts ) ):
+        if j < len( path_jnts ) - 1:
+            cmds.parent( path_jnts[j + 1], path_jnts[j] )
+    if reroot:
+        path_jnts.reverse()  # for some reason i need to reverse the change as it effects the list outside this function
+
+
+def connect_to_path():
+    '''
+    
+    '''
+    # ref rigs
+    vhl = 'vhl'
+    path = 'P:\\FLR\\assets\\veh\\cessna\\rig\\maya\\scenes\\cessna_rig_v007.ma'
+    cmds.file( path, reference = True, ns = vhl )
+    pth = 'pth'
+    path = 'P:\\FLR\\assets\\veh\\cessna\\rig\\maya\\scenes\\cessna_path_rig_v002.ma'
+    cmds.file( path, reference = True, ns = pth )
+
+    #
+    cmds.parentConstraint( pth + ':position', vhl + ':move', mo = False )
+    cmds.setAttr( vhl + ':chassis_pivot.translateY', -207.829 )
 
 
 def __________________GEO():
@@ -1465,6 +2013,33 @@ def default_skin( joints = [], geos = [] ):
 
 def __________________UTIL():
     pass
+
+
+def MASTERCT():
+    return [
+    'master_TopGrp',
+    'master_CtGrp',
+    'master',
+    'master_Offset',
+    'master_Grp'
+    ]
+
+
+def pad_number( i = 1, pad = 2 ):
+    '''
+    given i and pad, return padded string
+    '''
+    return str( ( '%0' + str( pad ) + 'd' ) % ( i ) )
+
+
+def constraint_delete( obj = '' ):
+    '''
+    
+    '''
+    c = cn.getConstraint( obj, nonKeyedRoute = True, keyedRoute = True, plugRoute = True )
+    if c:
+        print( c )
+        cmds.delete( c )
 
 
 def fix_normals( del_history = False ):

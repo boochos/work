@@ -1379,7 +1379,10 @@ def ribbon( name = '', rows = 2, length = 120, width = 20, color = '', X = 1, ct
     # TODO: if rows == 2 aim at each end
     #
     length_ratio = length / width
-    ribn = cmds.nurbsPlane( p = [0, 0, length / -2], ax = [0, 1, 0], w = width, lr = length_ratio , d = 3, u = 1, v = rows - 1, n = name + '_ribbon' )[0]
+    two = 2
+    if reverse:
+        two = -2
+    ribn = cmds.nurbsPlane( p = [0, 0, length / two], ax = [0, 1, 0], w = width, lr = length_ratio , d = 3, u = 1, v = rows - 1, n = name + '_ribbon' )[0]
     cmds.setAttr( ribn + '.v', 0 )
     cmds.setAttr( ribn + '.template', 1 )
     cmds.select( ribn )
@@ -1409,7 +1412,9 @@ def ribbon( name = '', rows = 2, length = 120, width = 20, color = '', X = 1, ct
     follicles = []
     follicle_shapes = []
     controls = []
-    length_fraction = 0
+    length_fraction = 1
+    if reverse:
+        length_fraction = 0
     follicle_amount = ( rows * 2 ) - 1
     step = length / ( follicle_amount - 1 )
     step = step / length  # normalize to 0-1
@@ -1434,7 +1439,10 @@ def ribbon( name = '', rows = 2, length = 120, width = 20, color = '', X = 1, ct
 
         cmds.setAttr( fol_shape + '.parameterV', length_fraction )
         cmds.setAttr( fol_shape + '.parameterU', 0.5 )
-        length_fraction = length_fraction + step
+        if reverse:
+            length_fraction = length_fraction + step
+        else:
+            length_fraction = length_fraction - step
 
         if not follicle_only:
             # joints
