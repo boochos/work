@@ -422,7 +422,7 @@ def remapMultiNs( sel = None, assets = {} ):
                 solvedAssets.append( asset )
                 for member in converted:
                     remappedSolve.append( member )
-                ns = assets[asset][0].split( ':' )[0]
+                ns = assets[asset][0].rsplit( ':' )[0]
                 if ns in liveNsList:
                     liveNsList.remove( ns )
         for asset in solvedAssets:
@@ -432,8 +432,8 @@ def remapMultiNs( sel = None, assets = {} ):
     #
     # solve sel ns
     if sel:
-        selObj = sel.split( ':' )[1]
-        selRef = sel.split( ':' )[0]
+        selObj = sel.rsplit( ':' )[1]
+        selRef = sel.rsplit( ':' )[0]
         obj = findNewNs( selObj, liveNsList )
         if obj:
             liveNsList.remove( selRef )
@@ -441,7 +441,7 @@ def remapMultiNs( sel = None, assets = {} ):
             #
             for member in setList:
                 if selObj in member:
-                    asset = member.split( ':' )[0]
+                    asset = member.rsplit( ':' )[0]
                     setList.remove( member )
                     remappedSolve.append( member )
             del assets[asset]
@@ -453,7 +453,7 @@ def remapMultiNs( sel = None, assets = {} ):
             for member in assets[asset]:
                 # cycle through liveNsList
                 # print member
-                obj = member.split( ':' )[1]
+                obj = member.rsplit( ':' )[1]
                 obj = findNewNs( obj, liveNsList )
                 if obj:
                     if member in setList:
@@ -471,7 +471,7 @@ def remapMultiNs( sel = None, assets = {} ):
     # remove solved ns from previous section
     if remappedSolve:
         for member in remappedSolve:
-            ref = member.split( ':' )[0]
+            ref = member.rsplit( ':' )[0]
             if ref in liveNsList:
                 liveNsList.remove( ref )
     #
@@ -481,7 +481,7 @@ def remapMultiNs( sel = None, assets = {} ):
         setListNoNs = []
         solved = []
         for obj in setList:
-            setListNoNs.append( obj.split( ':' )[1] )
+            setListNoNs.append( obj.rsplit( ':' )[1] )
         for obj in setListNoNs:
             num = setListNoNs.count( obj )
             ns = []

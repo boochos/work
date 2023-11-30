@@ -20,6 +20,7 @@ cn = web.mod( 'constraint_lib' )
 krl = web.mod( "key_rig_lib" )
 ac = web.mod( 'animCurve_lib' )
 ump = web.mod( 'universalMotionPath' )
+sfk = web.mod( 'atom_splineFk_lib' )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -39,7 +40,7 @@ def __________________BUILD():
     pass
 
 
-def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v012.ma', pilot_geo = '' ):
+def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v013.ma', pilot_geo = '' ):
     '''
     build plane
     '''
@@ -143,6 +144,8 @@ def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\
     #
     doors( X )
     wings( X )
+    propellers( X )
+    return
     wings_broken( X )
     weights_meshImport()
 
@@ -179,9 +182,16 @@ def landing_gear_front( ctrls = [], chassis_joint = '', pivot_controls = [], tir
 
     #
     nm = 'landingGear_front'
+    '''
     m = vhl.rotate_part( name = nm, suffix = '', obj = 'landingGear_retract_jnt', objConstrain = True, parent = chassis_joint, rotations = [1, 0, 0], X = X * 14, shape = 'squareYup_ctrl', color = 'yellow' )
     cmds.transformLimits( m[2] , erx = [1, 1], rx = ( 0, 96 ) )
     hide.append( m[0] )
+    '''
+    FgearCt = place.Controller2( nm, 'landingGear_retract_jnt', False, 'squareYup_ctrl', X * 14, 6, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    cmds.setAttr( FgearCt[0] + '.translateY', 85 )
+    cmds.parentConstraint( FgearCt[4], 'landingGear_retract_jnt', mo = True )
+    cmds.parentConstraint( FgearCt[4], 'steer_CtGrp', mo = True )
+    place.cleanUp( FgearCt[0], Ctrl = True )
     # ctrls  = [MasterCt[4], MoveCt[4], SteerCt[4]]
     # piston = [name1_Ct, name2_Ct, nameUp1_Ct, nameUp2_Ct]
     obj1 = 'suspension_piston_00_jnt'
@@ -637,21 +647,6 @@ def wings( X = 1.0 ):
     vhl.skin( j, geo )
     vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'lightBlue' )
     #
-    # propeller
-    parent = 'chassis_jnt'
-    j = 'propeller_jnt'
-    nm = j.split( '_' )[0]
-    geo = get_geo_list( prop_l = True )
-    vhl.skin( j, geo )
-    PrpCt = vhl.rotate_part( name = nm, suffix = 'C', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrL_ctrl', color = 'yellow' )
-    vis_obj = nm + '_C'
-    place.optEnum( vis_obj, attr = 'propeller', enum = 'VIS' )
-    for g in geo:
-        try:
-            place.hijackVis( g, vis_obj, name = 'prop_4_Geo', suffix = False, default = None, mode = 'visibility' )
-        except:
-            pass
-    cmds.setAttr( vis_obj + '.prop_4_Geo', 1 )
 
     size = X * 1
     # wings right
@@ -724,26 +719,6 @@ def wings( X = 1.0 ):
     vhl.skin( j, geo )
     vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'pink' )
     #
-    #
-    parent = 'chassis_jnt'
-    j = 'propeller_R_jnt'
-    nm = j.split( '_' )[0]
-    # PrpCt = vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrR_ctrl', color = clr )
-    # ro = cmds.xform( PrpCt[0], query = True, os = True, ro = True )
-    # cmds.xform( PrpCt[0], os = True, ro = [ro[0], ro[1] + 180, ro[2] + 180] )
-    # cn.updateConstraintOffset( PrpCt[0] )
-    # skin after xform
-    geo = get_geo_list( prop_r = True )
-    # vhl.skin( j, geo )
-    vis_obj = nm + '_C'
-    # place.optEnum( vis_obj, attr = 'propeller', enum = 'VIS' )
-    for g in geo:
-        try:
-            place.hijackVis( g, vis_obj, name = 'prop_3_Geo', suffix = False, default = None, mode = 'visibility' )
-            cmds.parentConstraint( PrpCt[4], g, mo = True )
-        except:
-            pass
-    cmds.setAttr( vis_obj + '.prop_3_Geo', 0 )
 
     # hide unnecessary
     for i in hide:
@@ -1069,6 +1044,93 @@ def flaps_slide( side = '', X = 1.0 ):
         place.smartAttrBlend( master = 'flapUp_L_jnt', slave = 'flapUp_R_jnt', masterAttr = 'ty', slaveAttr = 'ty', blendAttrObj = nm, blendAttrString = 'syncOpposite', blendWeight = 1.0, reverse = True )
 
 
+def propellers( X = 1 ):
+    '''
+    
+    '''
+    # spin
+    # propeller 4x
+    vis_grp = 'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:propeller_4x_group'
+    parent = 'chassis_jnt'
+    j = 'propeller_jnt'
+    nm = j.split( '_' )[0]
+    geo = get_geo_list( prop_l = True )
+    geo = [vis_grp]
+    vhl.skin( j, geo )
+    PrpCt = vhl.rotate_part( name = nm, suffix = 'C', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrL_ctrl', color = 'yellow' )
+    vis_obj = nm + '_C'
+    place.optEnum( vis_obj, attr = 'propeller', enum = 'VIS' )
+    place.hijackVis( vis_grp, vis_obj, name = 'prop_4_Geo', suffix = False, default = None, mode = 'visibility' )
+    cmds.setAttr( vis_obj + '.prop_4_Geo', 1 )
+
+    # propeller 3x
+    vis_grp = 'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:propeller_3x_group'
+    parent = 'chassis_jnt'
+    j = 'propeller_jnt'
+    nm = j.split( '_' )[0]
+    geo = get_geo_list( prop_r = True )
+    vhl.skin( j, geo )
+    vis_obj = nm + '_C'
+    place.hijackVis( vis_grp, vis_obj, name = 'prop_3_Geo', suffix = False, default = None, mode = 'visibility' )
+    cmds.setAttr( vis_obj + '.prop_3_Geo', 0 )
+
+    # bend
+    p = 'propeller_jnt'
+    #
+    joints = [
+    'blade_1_3x_01_jnt',
+    'blade_1_3x_02_jnt',
+    'blade_1_3x_03_jnt',
+    'blade_1_3x_04_jnt',
+    'blade_1_3x_05_jnt',
+    'blade_1_3x_06_jnt'
+    ]
+    geos = blade_1_3x()
+    default_skin( joints = joints, geos = geos, mi = 2 )
+    cmds.deltaMush( geos, smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    # spline
+    name = 'Tri_blade_1'
+    direction = 1
+    digitRig = sfk.SplineFK( name, joints[0], joints[-1], None, direction = direction,
+                              controllerSize = X * 2, rootParent = p, parent1 = p, parentDefault = [1, 0], segIteration = 4, stretch = 0, ik = 'ik', colorScheme = 'yellow' )
+
+    #
+    joints = [
+    'blade_2_3x_01_jnt',
+    'blade_2_3x_02_jnt',
+    'blade_2_3x_03_jnt',
+    'blade_2_3x_04_jnt',
+    'blade_2_3x_05_jnt',
+    'blade_2_3x_06_jnt'
+    ]
+    geos = blade_2_3x()
+    default_skin( joints = joints, geos = geos, mi = 2 )
+    cmds.deltaMush( geos, smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    # spline
+    name = 'Tri_blade_2'
+    direction = 1
+    digitRig = sfk.SplineFK( name, joints[0], joints[-1], None, direction = direction,
+                              controllerSize = X * 2, rootParent = p, parent1 = p, parentDefault = [1, 0], segIteration = 4, stretch = 0, ik = 'splineIK', colorScheme = 'yellow' )
+
+    #
+    joints = [
+    'blade_3_3x_01_jnt',
+    'blade_3_3x_02_jnt',
+    'blade_3_3x_03_jnt',
+    'blade_3_3x_04_jnt',
+    'blade_3_3x_05_jnt',
+    'blade_3_3x_06_jnt'
+    ]
+    geos = blade_3_3x()
+    default_skin( joints = joints, geos = geos, mi = 2 )
+    cmds.deltaMush( geos, smoothingIterations = 10, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )
+    # spline
+    name = 'Tri_blade_3'
+    direction = 1
+    digitRig = sfk.SplineFK( name, joints[0], joints[-1], None, direction = direction,
+                              controllerSize = X * 2, rootParent = p, parent1 = p, parentDefault = [1, 0], segIteration = 4, stretch = 0, ik = 'ik', colorScheme = 'yellow' )
+
+
 def __________________PATH():
     pass
 
@@ -1146,7 +1208,7 @@ def pathIk2( curve = 'path_layer_05_result', position_ctrl = None, start_jnt = '
     cmds.connectAttr( PositionCt[3] + '.' + t_attr, mlt_merge_travel_length + '.input1', force = True )
     place.hijackAttrs( position_ctrl[3], position_ctrl[2], t_attr, t_attr, set = False, default = None, force = True )
     # root attr
-    root_attr = 'headAsRoot'
+    root_attr = 'backIsRoot'
     place.addAttribute( PositionCt[3], root_attr, 0.0, 1.0, True, 'float' )
     place.hijackAttrs( position_ctrl[3], position_ctrl[2], root_attr, root_attr, set = True, default = 1.0, force = True )
     #
@@ -1985,9 +2047,10 @@ def weights_path():
     return path
 
 
-def default_skin( joints = [], geos = [] ):
+def default_skin( joints = [], geos = [], mi = 1 ):
     '''
     skin geo list to joint
+    mi = max influence
     '''
     #
     # alternate method
@@ -2007,7 +2070,7 @@ def default_skin( joints = [], geos = [] ):
         #
         cmds.select( joints )
         cmds.select( g, add = True )
-        mel.eval( 'SmoothBindSkin;' )
+        mel.eval( 'SmoothBindSkin "-mi ' + str( mi ) + '";' )
     cmds.select( sel )
 
 
@@ -2096,6 +2159,30 @@ def rename_files( s = 'kingAir', r = 'cessna', d = 'C:\\Users\\s.weber\\Document
             # print( 'no', fyl )
             pass
         i += 1
+
+
+def blade_1_3x():
+
+    geo = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:propeller_3x_group|geo:ast:blades_3x_01'
+    ]
+    return geo
+
+
+def blade_2_3x():
+
+    geo = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:propeller_3x_group|geo:ast:blades_3x_02'
+    ]
+    return geo
+
+
+def blade_3_3x():
+
+    geo = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:propeller_3x_group|geo:ast:blades_3x_03'
+    ]
+    return geo
 
 
 def flap_broken_geo():
