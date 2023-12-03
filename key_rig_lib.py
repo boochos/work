@@ -215,7 +215,7 @@ def getSkinCluster( obj = '' ):
     #
     if cmds.nodeType( pm_node ) == 'transform':
         print( pm_node )
-        pm_shape = cmds.listRelatives( pm_node, shapes = True )
+        pm_shape = cmds.listRelatives( pm_node, shapes = True, f = True )
         print( pm_shape )
         for s in pm_shape:
             cons = cmds.listHistory( s, pdo = True )
@@ -409,7 +409,8 @@ def exportWeights02( path ):
     '''
     Export the weighting and skinCluster information 
     '''
-    sel = cmds.ls( sl = True )
+    sel = cmds.ls( sl = True, fl = True )
+    # print( 'here____', sel )
     if len( sel ) == 1:
         skinNode = getSkinCluster( sel[0] )
         if skinNode != None:

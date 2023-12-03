@@ -1,5 +1,6 @@
 import os
 
+from assets_cessna import default_skin
 import maya.cmds as cmds
 import maya.mel as mel
 import webrImport as web
@@ -16,10 +17,16 @@ krl = web.mod( "key_rig_lib" )
 cn = web.mod( 'constraint_lib' )
 atom = web.mod( "atom_lib" )
 wrp = web.mod( "createWrap" )
+vhl = web.mod( 'vehicle_lib' )
+ss = web.mod( "selectionSet_lib" )
 
 
 def CONTROLS():
     return '___CONTROLS'
+
+
+def __________________BUILD():
+    pass
 
 
 def arm( master = '', chest = '', side = '', X = 1 ):
@@ -172,7 +179,7 @@ def leg( master = '', pelvis = '', side = '', X = 1 ):
     foot_Ct = place.Controller2( name = 'foot' + suffix, obj = ankl_jnt, groups = True, orient = False, orientCt = False, shape = 'boxZup_ctrl', size = X * 30, colorName = color ).result
     # pose
     cmds.setAttr( foot_Ct[0] + '.ty', 0 )
-    rotZ = cmds.xform( ankl_jnt, q = 1, ro = 1, ws = 1 )[2]  # use rz for ry alignment
+    rotZ = cmds.xform( ankl_jnt, q = 1, ro = 1, ws = 1 )[1]  # use rz for ry alignment
     cmds.setAttr( foot_Ct[2] + '.rotateY', rotZ )
     #
     cmds.parentConstraint( master, foot_Ct[0], mo = True )
@@ -224,12 +231,24 @@ def leg( master = '', pelvis = '', side = '', X = 1 ):
         cmds.setAttr( digitRig.ctrlList[3][2] + '.FK_ParentOffOn', 0 )
 
 
-def build( X = 0.85, lite = 1 ):
+def build( X = 0.85, lite = 1, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\chr\\darryl\\model\\maya\\scenes\\darryl_model_v003.ma' ):
     '''
     elbow_dbl_jnt_L
     '''
     #
     atom.win()
+
+    # ref geo
+    if ns and ref_geo:
+        vhl.reference_geo( ns = ns, path = ref_geo )
+    # default skin
+    '''
+    geos = get_geo_list()
+    joints = process_geo_list( name = 'darryl_skinJoints' )
+    default_skin( joints = joints, geos = geos, mi = 1, delta = True )
+    '''
+    #
+    weights_meshImport()
 
     # doesnt work yet for darryl
     # weights_meshImport()
@@ -477,6 +496,10 @@ def chest( obj = 'spine_jnt_06', parent = '', X = 1.0 ):
     return Ct
 
 
+def __________________SKIN():
+    pass
+
+
 def weights_meshExport():
     '''
     dargonfly object weights
@@ -484,11 +507,13 @@ def weights_meshExport():
     # path
     path = weights_path()
     # geo
-    all_geo = low_geo()
+    all_geo = process_geo_list()
     for geo in all_geo:
         g = ''
         if '|' in geo:
             g = geo.split( '|' )[-1]
+            if ':' in g:
+                g = g.split( ':' )[-1]
         elif ':' in geo:
             g = geo.split( ':' )[-1]
         else:
@@ -498,26 +523,37 @@ def weights_meshExport():
         krl.exportWeights02( ex_path )
 
 
-def weights_meshImport():
+def weights_meshImport( delta = True ):
     '''
     dargonfly object weights
     '''
+    deltas = []
     # path
     path = weights_path()
     # geo
-    all_geo = low_geo()
+    all_geo = process_geo_list()
     for geo in all_geo:
         g = ''
         if '|' in geo:
             g = geo.split( '|' )[-1]
+            if ':' in g:
+                g = g.split( ':' )[-1]
         elif ':' in geo:
             g = geo.split( ':' )[-1]
         else:
             g = geo
         im_path = os.path.join( path, g )
+        # make no constraint
+        c = cn.getConstraint( geo, nonKeyedRoute = True, keyedRoute = True, plugRoute = True )
+        if c:
+            print( c )
+            cmds.delete( c )
         cmds.select( geo )
         # print( im_path )
         krl.importWeights02( geo, im_path )
+        if delta:
+            node = cmds.deltaMush( geo, smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )[0]
+            deltas.append( node )
 
 
 def weights_path():
@@ -534,6 +570,103 @@ def weights_path():
     return path
 
 
+def default_skin( joints = [], geos = [], mi = 1, delta = False ):
+    '''
+    skin geo list to joint list
+    mi = max influences
+    '''
+    #
+    # alternate method
+    # cmds.select( [geo_hub[1], jnt_hub[1]] )
+    # mel.eval( 'SmoothBindSkin;' )
+    #
+    deltas = []
+    sel = cmds.ls( sl = 1 )
+    # print( len( geos ), geos )
+    # skin
+    for g in geos:
+        # print( g )
+        # delete constraint
+        c = cn.getConstraint( g, nonKeyedRoute = True, keyedRoute = True, plugRoute = True )
+        if c:
+            print( c )
+            cmds.delete( c )
+        #
+        cmds.select( joints )
+        cmds.select( g, add = True )
+        mel.eval( 'SmoothBindSkin "-mi ' + str( mi ) + '";' )
+        if delta:
+            node = cmds.deltaMush( g, smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )[0]
+            deltas.append( node )
+    cmds.select( sel )
+
+
+def skin( joints = [], geo = '' ):
+    '''
+    skin ONE object
+    '''
+    cmds.select( joints )
+    cmds.select( geo, add = True )
+    sknClstr = mel.eval( 'newSkinCluster "-bindMethod 1 -normalizeWeights 1 -weightDistribution 0 -mi 1 -omi true -dr 0.1 -rui true,multipleBindPose,1";' )[0]
+    cmds.setAttr( sknClstr + '.skinningMethod', 1 )
+    return sknClstr
+
+
+def __________________GEO():
+    pass
+
+
+def get_geo_list():
+    '''
+    
+    '''
+    all_geo = [
+    'geo:darryl_geo_grp|geo:ast1:ring',
+    'geo:darryl_geo_grp|geo:ast1:eye_right_cornea',
+    'geo:darryl_geo_grp|geo:ast1:eye_right',
+    'geo:darryl_geo_grp|geo:ast1:eye_left',
+    'geo:darryl_geo_grp|geo:ast1:eye_left_cornea',
+    'geo:darryl_geo_grp|geo:ast1:tongue',
+    'geo:darryl_geo_grp|geo:ast1:head',
+    'geo:darryl_geo_grp|geo:ast1:body',
+    'geo:darryl_geo_grp|geo:ast1:shoe_right',
+    'geo:darryl_geo_grp|geo:ast1:shoe_left',
+    'geo:darryl_geo_grp|geo:ast1:trousers',
+    'geo:darryl_geo_grp|geo:ast1:jacket',
+    'geo:darryl_geo_grp|geo:ast1:shirt',
+    'geo:darryl_geo_grp|geo:ast1:watch',
+    'geo:darryl_geo_grp|geo:ast1:teeth_up',
+    'geo:darryl_geo_grp|geo:ast1:teeth_down'
+    ]
+    return all_geo
+
+
+def process_geo_list( name = 'darryl_geo' ):
+    '''
+    
+    '''
+    tire = False
+    if 'tire' in name:
+        tire = True
+    s = []
+    setDict = ss.loadDict( os.path.join( ss.defaultPath(), name + '.sel' ) )
+    if tire:
+        # print( name )
+        # print( setDict )
+        # print( '___ loaded raw', setDict )
+        pass
+    if setDict:
+        for obj in setDict.keys():
+            if tire:
+                # print( obj )
+                # print( setDict[obj] )
+                pass
+            s.append( obj )
+        # print( s )
+        return s
+    return None
+
+
 def low_geo():
     return ['statue_man_model:Statue_man_Low']
 
@@ -546,15 +679,8 @@ def high_geo():
     return ['statue_man_model:Statue_man_High']
 
 
-def skin( joints = [], geo = '' ):
-    '''
-    skin object
-    '''
-    cmds.select( joints )
-    cmds.select( geo, add = True )
-    sknClstr = mel.eval( 'newSkinCluster "-bindMethod 1 -normalizeWeights 1 -weightDistribution 0 -mi 1 -omi true -dr 0.1 -rui true,multipleBindPose,1";' )[0]
-    cmds.setAttr( sknClstr + '.skinningMethod', 1 )
-    return sknClstr
+def __________________JOINTS():
+    pass
 
 
 def finger_joints( suffix = '' ):

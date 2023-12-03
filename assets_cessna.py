@@ -40,7 +40,7 @@ def __________________BUILD():
     pass
 
 
-def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v013.ma', pilot_geo = '' ):
+def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v014.ma', pilot_geo = '' ):
     '''
     build plane
     '''
@@ -145,7 +145,7 @@ def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\
     doors( X )
     wings( X )
     propellers( X )
-    return
+    # return
     wings_broken( X )
     weights_meshImport()
 
@@ -191,6 +191,7 @@ def landing_gear_front( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     cmds.setAttr( FgearCt[0] + '.translateY', 85 )
     cmds.parentConstraint( FgearCt[4], 'landingGear_retract_jnt', mo = True )
     cmds.parentConstraint( FgearCt[4], 'steer_CtGrp', mo = True )
+    cmds.parentConstraint( chassis_joint, FgearCt[0], mo = True )
     place.cleanUp( FgearCt[0], Ctrl = True )
     # ctrls  = [MasterCt[4], MoveCt[4], SteerCt[4]]
     # piston = [name1_Ct, name2_Ct, nameUp1_Ct, nameUp2_Ct]
@@ -570,7 +571,7 @@ def wings( X = 1.0 ):
     '''
     wings flaps and things
     '''
-    #
+
     hide = []
     #
     parent = 'chassis_jnt'
@@ -600,11 +601,13 @@ def wings( X = 1.0 ):
     flaps_slide( side = 'L' )
 
     # flap broken
+    '''
     parent = m[4]
     j = 'flapsA_01_L_jnt'
     n = j.split( '_' )
     nm = n[0] + '_' + n[1]
     flap_brkn_l = vhl.rotate_part( name = nm, suffix = 'L', obj = j, objConstrain = True, parent = parent, rotations = [1, 1, 1], X = X * 7, shape = 'rectangleWideZup_ctrl', color = 'lightBlue' )
+    '''
 
     # spoiler L
     parent = 'wingBreak_01_L_jnt'
@@ -719,6 +722,85 @@ def wings( X = 1.0 ):
     vhl.skin( j, geo )
     vhl.rotate_part( name = nm, suffix = 'R', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 4, shape = 'rectangleWideXup_ctrl', color = 'pink' )
     #
+
+    # BROKEN GEO
+    broken_wing_grp = 'geo:ces:cessna_wings_grp'
+    cmds.setAttr( broken_wing_grp + '.visibility', 1 )
+    #
+    parent = 'chassis_jnt'
+    move = 'move'
+    place.optEnum( move, attr = 'wingBack', enum = 'VIS' )
+    # back r wing vis
+    geos = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:tail_group|geo:ast:right_horizontal_stabilizer_group',
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:tail_group|geo:ast:right_elevator_group'
+    ]
+    for g in geos:
+        try:
+            place.hijackVis( g, move, name = 'elevator', suffix = False, default = None, mode = 'visibility' )
+            # cmds.parentConstraint( parent, g, mo = True )
+        except:
+            pass
+    geos = [
+    'geo:ces:right_wing_breaking_lines_grp'
+    ]
+    for g in geos:
+        place.hijackVis( g, move, name = 'elevatorBroken', suffix = False, default = None, mode = 'visibility' )
+        cmds.parentConstraint( parent, g, mo = True )
+    cmds.setAttr( move + '.elevator', 1 )
+
+    #
+    place.optEnum( move, attr = 'wingFront', enum = 'VIS' )
+    # back r wing vis
+    geos = [
+    'geo:cessna_grp|geo:ast:cessna_208_group|geo:ast:wing_right_group'
+    ]
+    for g in geos:
+        try:
+            place.hijackVis( g, move, name = 'wing', suffix = False, default = None, mode = 'visibility' )
+            # cmds.parentConstraint( parent, g, mo = True )
+        except:
+            pass
+    geos = [
+    'geo:ces:Front_right_wing_breaking_lines_Groups'
+    ]
+    for g in geos:
+        place.hijackVis( g, move, name = 'wingBroken', suffix = False, default = None, mode = 'visibility' )
+        cmds.parentConstraint( parent, g, mo = True )
+    cmds.setAttr( move + '.wing', 1 )
+
+    # controls for broken geo
+    parent = 'chassis_jnt'
+    j = 'wingBroken_00_R_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1]
+    geo = [
+    'geo:ces:Front_right_wing_Part1'
+    ]
+    vhl.skin( j, geo )
+    brkn_wingCt = place.Controller2( nm, j, False, 'rectangleWideXup_ctrl', X * 13, 6, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( brkn_wingCt[4], j, mo = True )
+    cmds.parentConstraint( parent, brkn_wingCt[0], mo = True )
+    place.parentSwitch( 'wingTip', brkn_wingCt[2], brkn_wingCt[1], brkn_wingCt[0], 'master_Grp', parent, Pos = False, Ornt = False, Prnt = True, OPT = True, attr = False, w = 1.0 )
+    place.cleanUp( brkn_wingCt[0], Ctrl = True )
+
+    j = 'elevatorBroken_00_R_jnt'
+    n = j.split( '_' )
+    nm = n[0] + '_' + n[1]
+    geo = [
+    'geo:ces:rear_right_wing_Part1'
+    ]
+    vhl.skin( j, geo )
+    brkn_elevCt = place.Controller2( nm, j, False, 'rectangleWideXup_ctrl', X * 10, 6, 8, 1, ( 0, 0, 1 ), True, True, colorName = clr ).result
+    cmds.parentConstraint( brkn_elevCt[4], j, mo = True )
+    cmds.parentConstraint( parent, brkn_elevCt[0], mo = True )
+    place.parentSwitch( 'elevatorTip', brkn_elevCt[2], brkn_elevCt[1], brkn_elevCt[0], 'master_Grp', parent, Pos = False, Ornt = False, Prnt = True, OPT = True, attr = False, w = 1.0 )
+    place.cleanUp( brkn_elevCt[0], Ctrl = True )
+
+    # vis controls with geo
+    move = 'move'
+    cmds.connectAttr( move + '.wingBroken', brkn_wingCt[0] + '.visibility', f = True )
+    cmds.connectAttr( move + '.wingBroken', brkn_elevCt[0] + '.visibility', f = True )
 
     # hide unnecessary
     for i in hide:
@@ -935,9 +1017,10 @@ def wings_broken( X = 1.0 ):
     '''
     
     '''
+    '''
     # wings left
     clr = 'blue'
-
+    
     parent = 'chassis_jnt'
     j = 'wingBreak_00_L_jnt'
     n = j.split( '_' )
@@ -952,6 +1035,7 @@ def wings_broken( X = 1.0 ):
     place.smartAttrBlend( master = brkn_l[2], slave = nm + '_CtGrp', masterAttr = 'ry', slaveAttr = 'ry', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
     place.smartAttrBlend( master = brkn_l[2], slave = nm + '_CtGrp', masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
     # cmds.orientConstraint( brkn_l[4], 'flapsA_01_L_jnt', mo = True )
+    '''
 
     # wings right
     clr = 'red'
@@ -970,6 +1054,11 @@ def wings_broken( X = 1.0 ):
     place.smartAttrBlend( master = brkn_r[2], slave = nm + '_CtGrp', masterAttr = 'ry', slaveAttr = 'ry', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
     place.smartAttrBlend( master = brkn_r[2], slave = nm + '_CtGrp', masterAttr = 'rz', slaveAttr = 'rz', blendAttrObj = nm, blendAttrString = 'broken', blendWeight = 1.0, reverse = False )
     # cmds.orientConstraint( brkn_r[4], 'flapsA_01_R_jnt', mo = True )
+
+    # controller vis when geo hidden
+    move = 'move'
+    cmds.connectAttr( move + '.wing', 'wingBreak_00_R_TopGrp.visibility', f = True )
+    cmds.connectAttr( move + '.wing', 'flapsA_01_R_TopGrp.visibility', f = True )
 
 
 def flaps_slide( side = '', X = 1.0 ):
@@ -1056,7 +1145,7 @@ def propellers( X = 1 ):
     nm = j.split( '_' )[0]
     geo = get_geo_list( prop_l = True )
     geo = [vis_grp]
-    vhl.skin( j, geo )
+    vhl.skin( j, geo, constraint = False )
     PrpCt = vhl.rotate_part( name = nm, suffix = 'C', obj = j, objConstrain = True, parent = parent, rotations = [0, 0, 1], X = X * 7, shape = 'shldrL_ctrl', color = 'yellow' )
     vis_obj = nm + '_C'
     place.optEnum( vis_obj, attr = 'propeller', enum = 'VIS' )
@@ -1069,7 +1158,7 @@ def propellers( X = 1 ):
     j = 'propeller_jnt'
     nm = j.split( '_' )[0]
     geo = get_geo_list( prop_r = True )
-    vhl.skin( j, geo )
+    vhl.skin( j, geo, constraint = False )
     vis_obj = nm + '_C'
     place.hijackVis( vis_grp, vis_obj, name = 'prop_3_Geo', suffix = False, default = None, mode = 'visibility' )
     cmds.setAttr( vis_obj + '.prop_3_Geo', 0 )
@@ -1129,6 +1218,41 @@ def propellers( X = 1 ):
     direction = 1
     digitRig = sfk.SplineFK( name, joints[0], joints[-1], None, direction = direction,
                               controllerSize = X * 2, rootParent = p, parent1 = p, parentDefault = [1, 0], segIteration = 4, stretch = 0, ik = 'ik', colorScheme = 'yellow' )
+
+
+def wingBend():
+    '''
+    
+    '''
+    # wingA_L bend
+    place.optEnum( wnga_lCt[2], attr = 'bend', enum = 'DFRMR' )
+    cmds.select( 'Dragonfly_forewings1' )
+    wbend = cmds.nonLinear( type = 'bend', name = 'wingA_Bend_L', curvature = 0.0, lowBound = 0.0, highBound = 2.0 )
+    cmds.select( wbend[1], 'wingA_01_jnt_L' )
+    anm.matchObj()
+    cmds.parent( wbend[1], 'wingA_01_jnt_L' )
+    cmds.setAttr( wbend[1] + '.rotateX', 90 )  # [1] handle # [0] deformer
+    cmds.setAttr( wbend[1] + '.rotateZ', 90 )
+    place.hijackAttrs( wbend[1], wnga_lCt[2], 'translateZ', 'bendSlide', set = False, default = 0, force = True )
+    place.hijackAttrs( wbend[0] + 'HandleShape', wnga_lCt[2], 'curvature', 'bendCurvature', set = False, default = 0, force = True )
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    place.setChannels( wbend[1], [False, False], [False, False], [True, False], [False, False, False] )
+    # wingA_L twist
+    place.optEnum( wnga_lCt[2], attr = 'twist', enum = 'DFRMR' )
+    cmds.select( 'Dragonfly_forewings1' )
+    wtwist = cmds.nonLinear( type = 'twist', name = 'wingA_Twist_L', lowBound = 0.0, highBound = 2.0 )
+    cmds.select( wtwist[1], 'wingA_01_jnt_L' )
+    anm.matchObj()
+    cmds.parent( wtwist[1], 'wingA_01_jnt_L' )
+    cmds.setAttr( wtwist[1] + '.rotateX', 90 )
+    cmds.setAttr( wtwist[1] + '.rotateZ', -90 )
+    place.hijackAttrs( wtwist[1], wnga_lCt[2], 'translateZ', 'twistSlide', set = False, default = 0, force = True )
+    place.hijackAttrs( wtwist[0] + 'HandleShape', wnga_lCt[2], 'highBound', 'twistBound', set = False, default = 2, force = True )
+    cmds.setAttr( wnga_lCt[2] + '.twistBound', k = True )
+    place.hijackAttrs( wtwist[0] + 'HandleShape', wnga_lCt[2], 'endAngle', 'twistAngle', set = False, default = 0, force = True )
+    cmds.setAttr( wnga_lCt[2] + '.twistAngle', k = True )
+    # lock geo - [lock, keyable], [visible, lock, keyable]
+    place.setChannels( wtwist[1], [False, False], [False, False], [True, False], [False, False, False] )
 
 
 def __________________PATH():
