@@ -1120,6 +1120,44 @@ def mirrorAB():
     pass
 
 
+def mirror_sel1_sel2_pos():
+    '''
+    
+    '''
+    sel1 = cmds.ls( sl = 1 )[0]
+    sel2 = cmds.ls( sl = 1 )[1]
+    posX = cmds.getAttr( sel1 + '.translateX' )
+    posY = cmds.getAttr( sel1 + '.translateY' )
+    posZ = cmds.getAttr( sel1 + '.translateZ' )
+    #
+    cmds.setAttr( sel2 + '.translateX', posX * -1 )
+    cmds.setAttr( sel2 + '.translateY', posY )
+    cmds.setAttr( sel2 + '.translateZ', posZ )
+
+
+def mirror_sel1_sel2_rot():
+    '''
+    
+    '''
+    sel1 = cmds.ls( sl = 1 )[0]
+    sel2 = cmds.ls( sl = 1 )[1]
+    rotX = cmds.getAttr( sel1 + '.rotateX' )
+    rotY = cmds.getAttr( sel1 + '.rotateY' )
+    rotZ = cmds.getAttr( sel1 + '.rotateZ' )
+    #
+    cmds.setAttr( sel2 + '.rotateX', rotX )
+    cmds.setAttr( sel2 + '.rotateY', rotY * -1 )
+    cmds.setAttr( sel2 + '.rotateZ', rotZ * -1 )
+
+
+def mirror_sel1_sel2():
+    '''
+    
+    '''
+    mirror_sel1_sel2_pos()
+    mirror_sel1_sel2_rot()
+
+
 def __________________PORT():
     pass
 
