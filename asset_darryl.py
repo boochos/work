@@ -148,7 +148,7 @@ def arm( master = '', chest = '', side = '', X = 1 ):
             cmds.setAttr( digitRig.ctrlList[3][2] + '.FK_ParentOffOn', 0 )
 
 
-def leg( master = '', pelvis = '', side = '', X = 1 ):
+def leg( master = '', pelvis = [], side = '', X = 1 ):
     '''
     
     '''
@@ -187,11 +187,15 @@ def leg( master = '', pelvis = '', side = '', X = 1 ):
 
     # ankle
     ankl_Ct = place.Controller2( name = 'ankle' + suffix, obj = ankl_jnt, groups = True, orient = False, orientCt = False, shape = 'facetYup_ctrl', size = X * 30, colorName = color2 ).result
+    cmds.setAttr( ankl_Ct[0] + '.rotateY', rotZ )
     cmds.orientConstraint( ankl_Ct[4], ankl_jnt, mo = True )
     cmds.parent( ankl_Ct[0], CONTROLS() )
 
     # roll
     roll_Ct = place.Controller2( name = 'toe_roll' + suffix, obj = 'toeB_02_jnt' + suffix, groups = True, orient = True, orientCt = True, shape = 'rectangleWideZup_ctrl', size = X * 12, colorName = color2 ).result
+    cmds.setAttr( roll_Ct[0] + '.rotateX', 0 )
+    cmds.setAttr( roll_Ct[0] + '.rotateY', rotZ )
+    cmds.setAttr( roll_Ct[0] + '.rotateZ', 0 )
     cmds.parentConstraint( roll_Ct[4], ankl_Ct[0], mo = True )
     cmds.parentConstraint( foot_Ct[4], roll_Ct[0], mo = True )
     cmds.parent( roll_Ct[0], CONTROLS() )
@@ -229,7 +233,7 @@ def leg( master = '', pelvis = '', side = '', X = 1 ):
         cmds.setAttr( digitRig.ctrlList[3][2] + '.FK_ParentOffOn', 0 )
 
 
-def build( X = 0.85, lite = 1, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\chr\\darryl\\model\\maya\\scenes\\darryl_model_v004.ma' ):
+def build( X = 0.85, lite = 1, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\chr\\darryl\\model\\maya\\scenes\\darryl_model_v004.ma', nurbsSamples = 0 ):
     '''
     elbow_dbl_jnt_L
     '''
@@ -246,7 +250,22 @@ def build( X = 0.85, lite = 1, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\chr\\darr
     default_skin( joints = joints, geos = geos, mi = 1, delta = True )
     '''
     #
-    weights_meshImport()
+    weights_meshImport( nurbsSamples = nurbsSamples )
+    #
+    # wrp.wrapDeformer( master = 'geo:darryl_geo_grp|geo:ast1:darryl_jacket_inner', slave = 'geo:darryl_geo_grp|geo:ast1:darryl_jacket' )
+    # wrp.createWrap2( 'geo:darryl_geo_grp|geo:ast1:darryl_jacket_inner', 'geo:darryl_geo_grp|geo:ast1:darryl_jacket' )
+    # mel.eval( 'SmoothBindSkin "-mi ' + str( mi ) + '";' )
+    sel = [
+    'geo:darryl_geo_grp|geo:ast1:darryl_jacket',
+    'geo:darryl_geo_grp|geo:ast1:darryl_jacket_inner'
+    ]
+    cmds.select( sel )
+    mel.eval( 'CreateWrap;' )
+    '''
+    CreateWrap;
+    performCreateWrap false;
+    deformer -type wrap geo:darryl_geo_grp|geo:ast1:darryl_jacket;
+    '''
     fix_normals( lite = lite )
 
     # doesnt work yet for darryl
@@ -282,9 +301,11 @@ def build( X = 0.85, lite = 1, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\chr\\darr
 
     # legs
     retainer_hip_l()
-    lgsL = leg( master = prebuild.masterCt[4], pelvis = plvs, side = 'L', X = X )
+    retainer_ankle_l()
+    lgsL = leg( master = prebuild.masterCt[4], pelvis = 'pelvis_jnt', side = 'L', X = X )
     retainer_hip_r()
-    lgsR = leg( master = prebuild.masterCt[4], pelvis = plvs, side = 'R', X = X )
+    retainer_ankle_r()
+    lgsR = leg( master = prebuild.masterCt[4], pelvis = 'pelvis_jnt', side = 'R', X = X )
 
     # neck
     retainer_neck()
@@ -292,10 +313,10 @@ def build( X = 0.85, lite = 1, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\chr\\darr
     hd = head( X = X, parent = nck[4] )
     place.parentSwitch( hd[2], hd[2], hd[1], hd[0], prebuild.masterCt[4], nck[4], False, True, False, True, 'Neck', 0.0 )
     # splines
-    spline( name = 'neck_spline', start_jnt = 'neck_jnt_01', end_jnt = 'neck_jnt_05', splinePrnt = nck[4], splineStrt = nck[4], splineEnd = hd[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 2 )
+    spline( name = 'neck_spline', start_jnt = 'neck_jnt_01', end_jnt = 'neck_jnt_05', splinePrnt = nck[4], splineStrt = nck[4], splineEnd = hd[4], startSkpR = False, endSkpR = False, color = 'green', X = 2 )
     cmds.setAttr( 'neck_spline.ClstrMidIkBlend', 0.9 )
     cmds.setAttr( 'neck_spline.ClstrMidIkSE_W', 0.25 )
-    spline( name = 'spine_spline', start_jnt = 'pelvis_jnt', end_jnt = 'spine_jnt_06', splinePrnt = cg[4], splineStrt = plvs[4], splineEnd = chst[4], startSkpR = False, endSkpR = False, color = 'yellow', X = 3 )
+    spline( name = 'spine_spline', start_jnt = 'pelvis_jnt', end_jnt = 'spine_jnt_06', splinePrnt = cg[4], splineStrt = plvs[4], splineEnd = chst[4], startSkpR = False, endSkpR = False, color = 'green', X = 3 )
     cmds.setAttr( 'spine_spline.ClstrMidIkBlend', 1.0 )
     cmds.setAttr( 'spine_spline.ClstrMidIkSE_W', 1.0 )
 
@@ -338,7 +359,7 @@ def head( obj = 'neck_jnt_06', parent = 'neck_jnt_05', X = 1.0 ):
     return Ct
 
 
-def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt = '', splineEnd = '', startSkpR = False, endSkpR = False, color = 'yellow', X = 2 ):
+def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt = '', splineEnd = '', startSkpR = False, endSkpR = False, color = 'green', X = 2 ):
     '''\n
     Build splines\n
     name      = 'chainA'         - name of chain
@@ -368,7 +389,7 @@ def spline( name = '', start_jnt = '', end_jnt = '', splinePrnt = '', splineStrt
         cmds.setAttr( obj + '.' + attr, cb = True )
 
     # attr control
-    attr_Ct = place.Controller2( name, start_jnt, True, 'squareZup_ctrl', X * 12, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
+    attr_Ct = place.Controller2( name, start_jnt, True, 'squareZup_ctrl', X * 15, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = color ).result
     cmds.parent( attr_Ct[0], CONTROLS() )
     cmds.parentConstraint( splineStrt, attr_Ct[0], mo = True )
     # lock translation
@@ -489,17 +510,17 @@ def pelvis( obj = 'pelvis_jnt', parent = '', X = 1.0 ):
     '''
     
     '''
-    Ct = place.Controller2( name = 'pelvis', obj = obj, groups = True, orient = False, orientCt = False, shape = 'biped_pelvis', size = 65 * X, colorName = 'yellow' ).result
+    Ct = place.Controller2( name = 'pelvis', obj = obj, groups = True, orient = False, orientCt = False, shape = 'boxZupNeg_ctrl', size = 65 * X, colorName = 'yellow' ).result
     cmds.parentConstraint( parent, Ct[0], mo = True )
     cmds.parent( Ct[0], CONTROLS() )
     return Ct
 
 
-def chest( obj = 'spine_jnt_03', parent = '', X = 1.0 ):
+def chest( obj = 'spine_jnt_06', parent = '', X = 1.0 ):
     '''
     
     '''
-    Ct = place.Controller2( name = 'chest', obj = obj, groups = True, orient = False, orientCt = False, shape = 'boxZup_ctrl', size = 65 * X, colorName = 'yellow' ).result
+    Ct = place.Controller2( name = 'chest', obj = obj, groups = True, orient = False, orientCt = False, shape = 'boxZupNeg_ctrl', size = 65 * X, colorName = 'yellow' ).result
     cmds.parentConstraint( parent, Ct[0], mo = True )
     cmds.parent( Ct[0], CONTROLS() )
     return Ct
@@ -509,11 +530,15 @@ def __________________SKIN():
     pass
 
 
-def weights_meshExport():
+def weights_meshExport( selected = False ):
     '''
     dargonfly object weights
     '''
     # path
+    sel = []
+    if selected:
+        sel = cmds.ls( sl = True )
+        print( sel )
     path = weights_path()
     # geo
     all_geo = process_geo_list()
@@ -528,11 +553,16 @@ def weights_meshExport():
         else:
             g = geo
         ex_path = os.path.join( path, g )
-        cmds.select( geo )
-        krl.exportWeights02( ex_path )
+        if selected:
+            if geo in sel:
+                cmds.select( geo )
+                krl.exportWeights02( ex_path )
+        else:
+            cmds.select( geo )
+            krl.exportWeights02( ex_path )
 
 
-def weights_meshImport( delta = True ):
+def weights_meshImport( delta = True, nurbsSamples = 0 ):
     '''
     dargonfly object weights
     '''
@@ -559,7 +589,7 @@ def weights_meshImport( delta = True ):
             cmds.delete( c )
         cmds.select( geo )
         # print( im_path )
-        krl.importWeights02( geo, im_path )
+        krl.importWeights02( geo, im_path, nurbsSamples = nurbsSamples )
         if delta:
             node = cmds.deltaMush( geo, smoothingIterations = 8, smoothingStep = 0.5, pinBorderVertices = 1, envelope = 1 )[0]
             deltas.append( node )
@@ -633,7 +663,6 @@ def get_geo_list():
     'geo:darryl_geo_grp|geo:ast1:darryl_shirt',
     'geo:darryl_geo_grp|geo:ast1:darryl_jacket_inner',
     'geo:darryl_geo_grp|geo:ast1:darryl_jacket_collar',
-    'geo:darryl_geo_grp|geo:ast1:darryl_jacket',
     'geo:darryl_geo_grp|geo:ast1:darryl_trousers_side_pockets',
     'geo:darryl_geo_grp|geo:ast1:darryl_trousers_left_pocket',
     'geo:darryl_geo_grp|geo:ast1:darryl_trousers_inner_pockets',
@@ -704,7 +733,7 @@ def retainer_neck():
     '''
     # import pose sand constrain
     ns = 'neck'
-    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_neck_retainer.0004.clip'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_neck_retainer.0005.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -717,7 +746,7 @@ def retainer_neck():
     cmds.parentConstraint( 'neck_jnt_04', ns + ':row_4_twistPvt', mo = True )
     cmds.parentConstraint( 'neck_jnt_05', ns + ':row_6_twistPvt', mo = True )
     #
-    return
+    # return
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
@@ -732,7 +761,7 @@ def retainer_chest():
     '''
     # import pose sand constrain
     ns = 'chst'
-    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_chest_retainer.0006.clip'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_chest_retainer.0009.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -747,7 +776,7 @@ def retainer_chest():
     cmds.parentConstraint( 'spine_jnt_04', ns + ':row_6_twistPvt', mo = True )
     cmds.parentConstraint( 'spine_jnt_06', ns + ':row_8_twistPvt', mo = True )
     #
-    return
+    # return
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
@@ -762,7 +791,7 @@ def retainer_shldr_l():
     '''
     # import pose sand constrain
     ns = 'shldr_l'
-    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_shldr_l_retainer.0002.clip'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_shldr_l_retainer.0003.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -775,7 +804,7 @@ def retainer_shldr_l():
     cmds.parentConstraint( 'shoulder_jnt_L', ns + ':row_4_twistPvt', mo = True )
     cmds.parentConstraint( 'shoulder_jnt_L', ns + ':row_6_twistPvt', mo = True )
     #
-    return
+    # return
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
@@ -790,7 +819,7 @@ def retainer_shldr_r():
     '''
     # import pose sand constrain
     ns = 'shldr_r'
-    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_shldr_r_retainer.0001.clip'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_shldr_r_retainer.0002.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -803,7 +832,7 @@ def retainer_shldr_r():
     cmds.parentConstraint( 'shoulder_jnt_R', ns + ':row_4_twistPvt', mo = True )
     cmds.parentConstraint( 'shoulder_jnt_R', ns + ':row_6_twistPvt', mo = True )
     #
-    return
+    # return
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
@@ -818,7 +847,7 @@ def retainer_hip_l():
     '''
     # import pose sand constrain
     ns = 'hip_l'
-    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_hip_l_retainer.0004.clip'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_hip_l_retainer.0005.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -831,7 +860,7 @@ def retainer_hip_l():
     cmds.parentConstraint( 'hip_jnt_L', ns + ':row_4_twistPvt', mo = True )
     cmds.parentConstraint( 'hip_jnt_L', ns + ':row_6_twistPvt', mo = True )
     #
-    return
+    # return
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:
@@ -846,7 +875,7 @@ def retainer_hip_r():
     '''
     # import pose sand constrain
     ns = 'hip_r'
-    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_hip_r_retainer.0001.clip'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_hip_r_retainer.0002.clip'
     cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
                   putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
     cmds.select( ns + ':cv_0_0' )
@@ -859,7 +888,67 @@ def retainer_hip_r():
     cmds.parentConstraint( 'hip_jnt_R', ns + ':row_4_twistPvt', mo = True )
     cmds.parentConstraint( 'hip_jnt_R', ns + ':row_6_twistPvt', mo = True )
     #
-    return
+    # return
+    #
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def retainer_ankle_l():
+    '''
+    
+    '''
+    # import pose sand constrain
+    ns = 'ankl_l'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_foot_l_retainer.0002.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'knee_dbl_jnt_L', ns + ':master', mo = True )
+    cmds.parentConstraint( 'knee_dbl_jnt_L', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'knee_dbl_jnt_L', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'ankle_jnt_L', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'ankle_jnt_L', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'ankle_jnt_L', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'toeB_02_jnt_L', ns + ':row_6_twistPvt', mo = True )
+    cmds.parentConstraint( 'toeB_02_jnt_L', ns + ':row_8_twistPvt', mo = True )
+    #
+    # return
+    #
+    cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
+    try:
+        cmds.parent( ns + ':___UTIL___', WORLD_SPACE() )
+    except:
+        pass
+
+
+def retainer_ankle_r():
+    '''
+    
+    '''
+    # import pose sand constrain
+    ns = 'ankl_r'
+    path = 'C://Users//s.weber//Documents//maya//clipLibrary//dryl_foot_r_retainer.0002.clip'
+    cpl.clipApply( path = path, ns = False, onCurrentFrame = True, mergeExistingLayers = True, applyLayerSettings = True, applyRootAsOverride = False,
+                  putLayerList = [], putObjectList = [], start = None, end = None, poseOnly = False, clp = '' )
+    cmds.select( ns + ':cv_0_0' )
+    arl.neutralizeDistances()
+    #
+    cmds.parentConstraint( 'knee_dbl_jnt_R', ns + ':master', mo = True )
+    cmds.parentConstraint( 'knee_dbl_jnt_R', ns + ':row_0_twistPvt', mo = True )
+    cmds.parentConstraint( 'knee_dbl_jnt_R', ns + ':row_2_twistPvt', mo = True )
+    cmds.parentConstraint( 'ankle_jnt_R', ns + ':row_3_twistPvt', mo = True )
+    cmds.parentConstraint( 'ankle_jnt_R', ns + ':row_4_twistPvt', mo = True )
+    cmds.parentConstraint( 'ankle_jnt_R', ns + ':row_5_twistPvt', mo = True )
+    cmds.parentConstraint( 'toeB_02_jnt_R', ns + ':row_6_twistPvt', mo = True )
+    cmds.parentConstraint( 'toeB_02_jnt_R', ns + ':row_8_twistPvt', mo = True )
+    #
+    # return
     #
     cmds.setAttr( ns + ':___UTIL___.visibility', 0 )
     try:

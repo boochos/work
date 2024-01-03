@@ -40,7 +40,7 @@ def __________________BUILD():
     pass
 
 
-def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v014.ma', pilot_geo = '' ):
+def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v017.ma', pilot_geo = '' ):
     '''
     build plane
     '''

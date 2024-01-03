@@ -15,6 +15,7 @@ krl = web.mod( "key_rig_lib" )
 ui = web.mod( "atom_ui_lib" )
 cn = web.mod( "constraint_lib" )
 cp = web.mod( 'clipPickle_lib' )
+anm = web.mod( "anim_lib" )
 
 
 def message( what = '', maya = True, warning = False ):
@@ -868,7 +869,7 @@ def findParent( obj = '', find = '___CONTROLS' ):
         while i < limit:
             parent = cmds.listRelatives( obj, p = True )
             if parent:
-                print( parent , find )
+                # print( parent , find )
                 obj = parent[0]
                 if obj == find:
                     return obj
@@ -967,6 +968,49 @@ def getRetainerShape():
             return result
 
 
+def zero( obj = '' ):
+    # does not account for custom attributes
+    # could add another loop for custom attrs
+    sel = []
+    if not obj:
+        sel = cmds.ls( sl = True )
+    else:
+        sel = [obj]
+    # predefined attrs
+    transform = ["translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ"]
+    scale = ["scaleX", "scaleY", "scaleZ"]
+    custom = {'footTilt': 0, 'blender': 0, 'KneeTwist': 0, 'index': 0, 'middle': 0, 'ring': 0,
+              'openclose': 0, 'Spread_toes': 0, 'rotateToes': 0}
+
+    # make sure object selected
+    if len( sel ) != 0:
+        # loop through objects in selection array
+        for i in sel:
+            # find keyable and unlocked attrs for selected object
+            keyable = cmds.listAttr( i, k = True, u = True )
+            # loop through predefined attrs in transform[]
+            for attr in keyable:
+                if attr in transform:
+                    cmds.setAttr( i + "." + attr, 0 )
+                else:
+                    print( 'no trans' )
+            # loop through predefined attrs in $scale array
+            '''
+            for attr in keyable:
+                if attr in scale:
+                    cmds.setAttr( i + "." + attr, 1 )
+                    '''
+            # loop through predefined attrs in $custom array
+            '''
+            for attr in keyable:
+                for key in custom.keys():
+                    if attr == key:
+                        cmds.setAttr( i + "." + attr, custom[key] )
+                        '''
+    else:
+        message( 'Select at least one object' )
+
+
 def __________________MANAGE():
     pass
 
@@ -1034,14 +1078,111 @@ def neutralizeRows():
     find all row controls with proper attrs, run script to reset parent nodes (pivot offset above Ct group), 
     ie, match position of row control, reset row control to zero
     '''
-    pass
+
+    sel = cmds.ls( sl = 1 )
+    for s in sel:
+        # find control group
+        parent = findParent( s )
+        if parent:
+            topGrps = cmds.listRelatives( parent, c = True )
+            for topGrp in topGrps:
+                #
+                pvtGrp = cmds.listRelatives( topGrp, c = True )
+                # print( ctGrp )
+                for p in pvtGrp:
+                    if 'row' in p and 'Pvt' in p:  # pvt layer
+                        pvt = p
+                        ctGrp = cmds.listRelatives( p, c = True, type = 'transform' )
+                        for r in ctGrp:
+                            # print( r )
+                            controls = cmds.listRelatives( r, c = True, type = 'transform' )
+                            for c in controls:
+                                # print( '______', c )
+                                if 'row' in c:
+                                    cmds.select( c )
+                                    neutralizeRow()
+                                    # neutralizeDistances()
+                                else:
+                                    print( 'not row' )
+    cmds.select( sel )
 
 
-def neutralizeCVs():
+def neutralizeRow():
+    '''
+    assume selected is row
+    '''
+    sel = cmds.ls( sl = 1 )[0]
+    p = cmds.listRelatives( sel, p = 1 )
+    # print( p )
+    p = cmds.listRelatives( p, p = 1 )
+    # print( p )
+    if 'twistPvt' in p[0]:
+        cmds.select( [p[0], sel] )
+        anm.matchObj()
+        zero( obj = sel )
+    else:
+        print( 'skipping - not row control' )
+    cmds.select( sel )
+
+
+def neutralizeCvs():
     '''
     neutralize cv positions, may need to add extra control, same as rows have, 'pivot'
     '''
-    pass
+    sel = cmds.ls( sl = 1 )
+    for s in sel:
+        # find control group
+        parent = findParent( s )
+        if parent:
+            topGrps = cmds.listRelatives( parent, c = True )
+            for topGrp in topGrps:
+                #
+                pvtGrp = cmds.listRelatives( topGrp, c = True )
+                # print( ctGrp )
+                for p in pvtGrp:
+                    if 'cvPvt' in p:  # pvt layer
+                        pvt = p
+                        ctGrp = cmds.listRelatives( p, c = True, type = 'transform' )
+                        for r in ctGrp:
+                            # print( r )
+                            controls = cmds.listRelatives( r, c = True, type = 'transform' )
+                            for c in controls:
+                                # print( '______', c )
+                                if 'cv' in c:
+                                    cmds.select( c )
+                                    neutralizeCv()
+                                    # neutralizeDistances()
+                                else:
+                                    print( 'not cv' )
+    cmds.select( sel )
+
+
+def neutralizeCv():
+    '''
+    assume selected is row
+    breaks pose, possible distance calc problem
+    '''
+    sel = cmds.ls( sl = 1 )[0]
+    p = cmds.listRelatives( sel, p = 1 )
+    # print( p )
+    p = cmds.listRelatives( p, p = 1 )
+    # print( p )
+    if 'cvPvt' in p[0]:
+        cmds.select( [p[0], sel] )
+        anm.matchObj()
+        zero( obj = sel )
+    else:
+        print( 'skipping - not row control' )
+    cmds.select( sel )
+
+
+def neutralize():
+    '''
+    reset distances and pivots
+    '''
+    # neutralizeCvs() breaks pose
+    neutralizeRows()
+    neutralizeDistances()
 
 
 def disable( state = False ):
@@ -1150,12 +1291,53 @@ def mirror_sel1_sel2_rot():
     cmds.setAttr( sel2 + '.rotateZ', rotZ * -1 )
 
 
+def mirror_sel1_sel2_scale():
+    '''
+    
+    '''
+    sel1 = cmds.ls( sl = 1 )[0]
+    sel2 = cmds.ls( sl = 1 )[1]
+    sclX = cmds.getAttr( sel1 + '.scaleX' )
+    sclY = cmds.getAttr( sel1 + '.scaleY' )
+    # sclZ = cmds.getAttr( sel1 + '.scaleZ' )
+    #
+    cmds.setAttr( sel2 + '.scaleX', sclX * 1 )
+    cmds.setAttr( sel2 + '.scaleY', sclY )
+    # cmds.setAttr( sel2 + '.scaleZ', sclZ )
+
+
+def mirror_sel1_sel2_custom():
+    '''
+    mirror custom attrs
+    '''
+    user_attrs = []
+    sel1 = cmds.ls( sl = 1 )[0]
+    sel2 = cmds.ls( sl = 1 )[1]
+
+    attrs = cmds.listAttr( sel1, ud = True, u = True )
+    for attr in attrs:
+        v = cmds.getAttr( sel1 + '.' + attr )
+        cmds.setAttr( sel2 + '.' + attr, v )
+    pass
+
+
 def mirror_sel1_sel2():
     '''
     
     '''
     mirror_sel1_sel2_pos()
     mirror_sel1_sel2_rot()
+    mirror_sel1_sel2_scale()
+    mirror_sel1_sel2_custom()
+    #
+    neutralizeDistances()
+
+
+def mirror_cyl_cvs():
+    '''
+    cylinder cvs controls
+    '''
+    pass
 
 
 def __________________PORT():

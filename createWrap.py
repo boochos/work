@@ -12,10 +12,10 @@ def createWrap( *args, **kwargs ):
     # driven
     surface = args[1]
 
-    shapes = cmds.listRelatives( influence, shapes = True )
+    shapes = cmds.listRelatives( influence, shapes = True, f = True )
     influenceShape = shapes[0]
 
-    shapes = cmds.listRelatives( surface, shapes = True )
+    shapes = cmds.listRelatives( surface, shapes = True, f = True )
     surfaceShape = shapes[0]
 
     weightThreshold = kwargs.get( 'weightThreshold', 0.0 )
@@ -85,10 +85,10 @@ def createWrap2( *args, **kwargs ):
     influence = args[0]
     surface = args[1]
 
-    shapes = cmds.listRelatives( influence, shapes = True )
+    shapes = cmds.listRelatives( influence, shapes = True, f = True )
     influenceShape = shapes[0]
 
-    shapes = cmds.listRelatives( surface, shapes = True )
+    shapes = cmds.listRelatives( surface, shapes = True, f = True )
     surfaceShape = shapes[0]
 
     # create wrap deformer

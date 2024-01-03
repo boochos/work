@@ -378,7 +378,7 @@ def getSkinNodeInformation( skinNode ):
         return skinNodeInf
 
 
-def importWeights02( obj, path ):
+def importWeights02( obj, path, nurbsSamples = 0 ):
     '''
     Load the pickled skinfile and setSkinInfo
     '''
@@ -392,7 +392,7 @@ def importWeights02( obj, path ):
     print( '---- File loaded in: %s seconds ----' % cmds.timerX( st = start ) )
     start = cmds.timerX()
     print( '==== Setting weighting data on %s points ====' % str( len( data ) - 1 ) )
-    setSkinInfo( obj, data, update = True )
+    setSkinInfo( obj, data, update = True, nurbsSamples = nurbsSamples )
     print( '==== Skin point data loaded in: %s seconds ====' % cmds.timerX( st = start ) )
     _import.close()
 
@@ -598,7 +598,7 @@ def weightTransferControl( func, path = None, *args ):
         cmds.error( 'Selection size incorrect, select ONE object.' )
 
 
-def createSkinCluster( obj, skinInfo ):
+def createSkinCluster( obj, skinInfo, nurbsSamples = 0 ):
     '''
     Make a skinCluster node, based off of the information in the skinInfo object.
     '''
@@ -638,8 +638,17 @@ def createSkinCluster( obj, skinInfo ):
                         cmds.skinCluster( skinCluster, edit = True, weight = 0, dr = skinInfo[0].dropoffRate[idx],
                                          ps = skinInfo[0].polygonSmoothness[idx], ug = True, ai = inf )
                     else:
-                        cmds.skinCluster( skinCluster, edit = True, weight = 0, dr = skinInfo[0].dropoffRate[idx],
-                                         ns = skinInfo[0].nurbsSamples[idx], ug = True, ai = inf )
+                        if nurbsSamples == 0:
+                            # no override requested
+                            cmds.skinCluster( skinCluster, edit = True, weight = 0, dr = skinInfo[0].dropoffRate[idx],
+                                             ns = skinInfo[0].nurbsSamples[idx], ug = True, ai = inf )
+                        else:
+                            # qualify override
+                            currentSamples = skinInfo[0].nurbsSamples[idx]
+                            if currentSamples > 0 and nurbsSamples > 0:
+                                currentSamples = nurbsSamples
+                            cmds.skinCluster( skinCluster, edit = True, weight = 0, dr = skinInfo[0].dropoffRate[idx],
+                                                                     ns = currentSamples, ug = True, ai = inf )
                 # If the loops get to here the first item in the exported list is probably not a joint.
                 else:
                     # try adding list object to account for mesh instead of joint as first influence
@@ -652,7 +661,7 @@ def createSkinCluster( obj, skinInfo ):
     return skinCluster
 
 
-def setSkinInfo( obj, storedSkinInfo, update = False, updatePercent = .2 ):
+def setSkinInfo( obj, storedSkinInfo, update = False, updatePercent = .2, nurbsSamples = 0 ):
     '''
     Set(import) the skinning information to the storedSkinInfo
     '''
@@ -671,7 +680,7 @@ def setSkinInfo( obj, storedSkinInfo, update = False, updatePercent = .2 ):
         cmds.delete( skinNode )
 
     # In with the new
-    skinNode = createSkinCluster( obj, storedSkinInfo )
+    skinNode = createSkinCluster( obj, storedSkinInfo, nurbsSamples = nurbsSamples )
     if skinNode != None:
         cmds.setAttr( skinNode + '.normalizeWeights', 0 )
         baseFmtStr = skinNode + '.weightList[%d]'
