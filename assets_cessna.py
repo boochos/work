@@ -40,7 +40,7 @@ def __________________BUILD():
     pass
 
 
-def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v017.ma', pilot_geo = '' ):
+def cessna( X = 12, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\veh\\cessna\\model\\maya\\scenes\\cessna_model_v018.ma', pilot_geo = '' ):
     '''
     build plane
     '''
@@ -284,7 +284,7 @@ def landing_gear_front( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     # whl   = [steer, ContactCt, CenterCt] # old = [steer, contact[2], center[2], center[1]]
     # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
     whl = vhl.wheel( master_move_controls = [ctrls[0], 'suspension_piston_01_jnt'], axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
-                     tire_geo = [tire_geo], rim_geo = rim_geo, caliper_geo = [], name = 'wheel_front', suffix = '', X = X * 0.5, exp = False, pressureMult = 0.05 )
+                     tire_geo = [tire_geo], rim_geo = rim_geo, caliper_geo = [], name = 'wheel_front', suffix = '', X = X * 0.5, exp = False, pressureMult = 0.05, constraint = False )
     # whl   = [steer, ContactCt, CenterCt]
     # pivot_controls   = [frontl, frontr, backl, backr]
     place.smartAttrBlend( master = whl[2][2], slave = pivot_controls[0][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
@@ -348,7 +348,7 @@ def landing_gear_left( ctrls = [], chassis_joint = '', pivot_controls = [], tire
     # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
     new_ctrls = [ctrls[0], whlA[4]]
     whlA = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
-                     tire_geo = [tire_geo[0]], rim_geo = [rim_geo[0]], caliper_geo = caliper_geo, name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.05 )
+                     tire_geo = [tire_geo[0]], rim_geo = [rim_geo[0]], caliper_geo = caliper_geo, name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.05, constraint = False )
     # whlA  = [steer, ContactCt, PressureCt]
     # pivot_controls   = [frontl, frontr, backl, backr]
     place.smartAttrBlend( master = whlA[2][2], slave = pivot_controls[1][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )
@@ -412,7 +412,7 @@ def landing_gear_right( ctrls = [], chassis_joint = '', pivot_controls = [], tir
     # ctrls = [MasterCt[4], MoveCt[4], SteerCt[4]]
     new_ctrls = [ctrls[0], whlA[4]]
     whlA = vhl.wheel( master_move_controls = new_ctrls, axle = sel[0], steer = sel[1], center = sel[2], bottom = sel[3], top = sel[4], spin = sel[5],
-                     tire_geo = [tire_geo[0]], rim_geo = [rim_geo[0]], caliper_geo = caliper_geo, name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.05 )
+                     tire_geo = [tire_geo[0]], rim_geo = [rim_geo[0]], caliper_geo = caliper_geo, name = 'wheelA_back', suffix = suffix, X = X * 0.5, exp = False, pressureMult = 0.05, constraint = False )
     # whlA = [steer, ContactCt, PressureCt]
     # pivot_controls   = [frontl, frontr, backl, backr]
     place.smartAttrBlend( master = whlA[2][2], slave = pivot_controls[2][4], masterAttr = 'translateY', slaveAttr = 'translateY', blendAttrObj = '', blendAttrString = '', blendWeight = 1.0, reverse = False )

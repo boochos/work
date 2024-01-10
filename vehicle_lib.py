@@ -807,7 +807,7 @@ def __________________WHEEL():
     pass
 
 
-def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom = '', top = '', spin = '', tire_geo = [], rim_geo = [], caliper_geo = [], name = '', suffix = '', X = 1.0, exp = True, pressureMult = 0.3 ):
+def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom = '', top = '', spin = '', tire_geo = [], rim_geo = [], caliper_geo = [], name = '', suffix = '', X = 1.0, exp = True, pressureMult = 0.3, constraint = True ):
     '''
     create wheel rig
     - translation based rotation
@@ -861,7 +861,7 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
     # return
     # tire has to be facing forward in Z
     tire_p = tire_geo[0]  # test
-    clstr = tire_pressure( obj = tire_p, center = center, name = name, suffix = suffix, pressureMult = pressureMult )
+    clstr = tire_pressure( obj = tire_p, center = center, name = name, suffix = suffix, pressureMult = pressureMult, axle_jnt = axle )
     # geo cleanup
     place.cleanUp( tire_p, World = True )
 
@@ -870,10 +870,10 @@ def wheel( master_move_controls = [], axle = '', steer = '', center = '', bottom
 
     # rim, change to skin
     if rim_geo:
-        skin( spin, rim_geo )
+        skin( spin, rim_geo, constraint = constraint )
     # caliper, skin if exists
     if caliper_geo:
-        skin( center, caliper_geo )
+        skin( center, caliper_geo, constraint = constraint )
 
     # root
     if move:
@@ -1283,7 +1283,7 @@ def tire_proxy( position = '', side = '', tire_geo = [] ):
     return [tire[0], base, wraps]
 
 
-def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2, 29, 5 ), pressureMult = 0.3, distortionRows = 4 ):
+def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2, 29, 5 ), pressureMult = 0.3, distortionRows = 4, axle_jnt = '' ):
     '''
     add tire pressure behaviour
     lattice = object local space (X, Y, Z)
@@ -1292,6 +1292,9 @@ def tire_pressure( obj = '', center = '', name = '', suffix = '', lattice = ( 2,
     '''
     # group
     g = cmds.group( name = name + '_clusterGrp_' + suffix, em = True )
+    if axle_jnt:
+        pos = cmds.xform( axle_jnt, q = True, rp = True, ws = True )
+        # cmds.xform( g, t = pos )
     # g = place.null2( name + '_clusterGrp_' + suffix, center, orient = False )[0]
     cmds.parent( g, '___CONTROLS' )
     cmds.setAttr( g + '.visibility', 0 )
