@@ -84,6 +84,7 @@ def follow_cam( bake = False, worldOrient = True, *args ):
         anm.matchObj()
         # print( cam )
         cmds.setAttr( cam[1] + '.focalLength', 55 )
+        cmds.setAttr( cam[1] + '.nearClipPlane', 1 )
         cmds.parent( cam[0], offset )
         root = plc.null2( nllSuffix = plc.getUniqueName( '__ROOT__' ), obj = sel[0], orient = True )
         parent = root

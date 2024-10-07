@@ -497,14 +497,35 @@ def smarterActivateSet( *args ):
         activateSet( set.options[0] )
 
 
-def toggleMembershipToCurrentSet( sel = [], attrs = [], shapeAttrs = [] ):
+def toggleMembershipToCurrentSet( sel = [], attrs = [], shapeAttrs = [], include = None ):
+    '''
+    
+    '''
     current = GetSetOptions()
     # current.currentSet()  # add if current == None, return message and bail
     if not sel:
         sel = cmds.ls( sl = True )
-        # collect object attrs
+    # collect object attrs
     if not attrs:
         attrs = cmds.channelBox( 'mainChannelBox', q = True, sma = True )
+    if include == None:
+        if attrs:
+            if cmds.attributeQuery( attrs[0], node = sel[0], ex = True ):
+                if cmds.character( sel[0] + '.' + attrs[0], im = currentSet() ) is False:
+                    include = True
+                else:
+                    include = False
+        else:
+            members = cmds.character( currentSet(), q = True )
+            membersObj = []
+            if members:
+                for member in members:
+                    membersObj.append( member.split( '.' )[0] )
+            membersObj = list( set( membersObj ) )
+            if sel[0] not in membersObj:
+                include = True
+            else:
+                include = False
     # obj = cmds.channelBox('mainChannelBox', q=True, mol=True)[0]
     # collect shape attrs
     if not shapeAttrs:
@@ -556,11 +577,14 @@ def toggleMembershipToCurrentSet( sel = [], attrs = [], shapeAttrs = [] ):
                 for member in members:
                     membersObj.append( member.split( '.' )[0] )
             membersObj = list( set( membersObj ) )
-            if sel not in membersObj:
+            # if sel not in membersObj:
+            if include:
                 # print sel
                 # print currentSet()
+                k_attrs = cmds.listAttr( sel, k = 1 )
                 try:
-                    cmds.character( sel, fe = currentSet() )
+                    for attr in k_attrs:
+                        cmds.character( sel + '.' + attr, fe = currentSet() )
                 except:
                     cmds.warning( 
                         '--  ' + sel + '  -- Likely something wrong with the connected anim curve, Try deleting it. --' )
@@ -573,10 +597,23 @@ def toggleMembershipToCurrentSet( sel = [], attrs = [], shapeAttrs = [] ):
     else:
         for item in sel:
             toggleMembershipToCurrentSet( 
-                sel = [item], attrs = attrs, shapeAttrs = shapeAttrs )
+                sel = [item], attrs = attrs, shapeAttrs = shapeAttrs, include = include )
             # print 'wrong'
             # add toggle if / else
             # cmds.character(sel, include=currentSet())
+
+
+def selectMembers():
+    '''
+    select objects in character set
+    '''
+    members = cmds.character( currentSet(), q = True )
+    membersObj = []
+    if members:
+        for member in members:
+            membersObj.append( member.split( '.' )[0] )
+    membersObj = list( set( membersObj ) )
+    cmds.select( membersObj )
 
 
 def insertKey():

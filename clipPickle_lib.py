@@ -100,6 +100,7 @@ def transformTangentType( t = 0 ):
     else:
         return 'auto'
 
+
 '''
 # https://nccastaff.bournemouth.ac.uk/jmacey/RobTheBloke/www/research/maya/mfnanimcurve.htm
 '''
@@ -390,7 +391,12 @@ class Attribute( Key ):
 
     def get( self ):
         #
-        self.value = cmds.getAttr( self.obj + '.' + self.name )
+        # print( self.obj + '.' + self.name )
+        # print( 'name---', self.name )
+        try:
+            self.value = cmds.getAttr( self.obj + '.' + self.name )
+        except:
+            print( 'getAttr fail: ', self.obj + '.' + self.name )
         if not self.poseOnly:
             self.crv = cmds.findKeyframe( self.obj, at = self.name, c = True )
             if self.auto:
@@ -553,6 +559,7 @@ class Obj( Attribute ):
                     keyable.append( k )
         #
         if keyable:
+            # print( layer, keyable )
             for attr in keyable:
                 if attr not in self.attributesDriven:
                     # hacky -- if attr.attr format, remove first attr

@@ -5,6 +5,10 @@ place = web.mod( "atom_place_lib" )
 cn = web.mod( 'constraint_lib' )
 
 
+def ___OGN():
+    pass
+
+
 def deleteExpression( con = '', attr = '' ):
     '''
     #
@@ -510,9 +514,11 @@ def create_delay_position_constraint():
         place.hijackAttrs( loc, sel[1], weightPosAttrStr(), weightPosAttrStr(), set = False, default = None, force = True )  # hijack to slave object for easier rebuild / (export/import)
         place.hijackAttrs( loc, sel[1], delayPosAttrStr(), delayPosAttrStr(), set = False, default = None, force = True )
         #
+        cmds.select( sel )
         return loc
     else:
         print( 'select 2 objects, like you would to create a constraint' )
+    cmds.select( sel )
 
 
 def delayGrpStr():
@@ -563,9 +569,9 @@ def charybdis_tentacles_delayRotations( side = 'L' ):
             [0.4, 14],  # inside
             [0.5, 16],  # outside
             [0.6, 12],  # front
-            [0.2, 13],  # small - outside
-            [0.18, 10],  # small - between
-            [0.16, 16]  # small - inside
+            [0.9, 9],  # small - outside
+            [0.7, 13],  # small - between
+            [0.5, 17]  # small - inside
             ]
         # pseudo target
         _pseudo_master = cmds.group( n = place.getUniqueName( master + '__delay__' ), em = True )
@@ -588,6 +594,7 @@ def charybdis_tentacles_delayRotations( side = 'L' ):
             i += 1
     else:
         print( 'Select an objet from the rig' )
+    cmds.select( sel )
 
 
 def charybdis_tentacles_main_delayPositions( side = 'L' ):
@@ -614,7 +621,13 @@ def charybdis_tentacles_main_delayPositions( side = 'L' ):
         cmds.select( _tip )
         _tip_pseudo = cn.locatorOnSelection( ro = 'zxy', X = 1.3, constrain = True, toSelection = False, group = True )
         _tip_pseudo.append( cmds.listRelatives( _tip_pseudo[0], parent = True )[0] )
-        cmds.parentConstraint( master, _tip_pseudo[1], mo = True )  # grp
+        # need to align to base global
+        '''
+        cmds.setAttr(_tip_pseudo[1] '.rotateX', 0)
+        cmds.setAttr(_tip_pseudo[1] '.rotateY', 0)
+        cmds.setAttr(_tip_pseudo[1] '.rotateZ', 0)
+        '''
+        cmds.parentConstraint( ns + ':base_global_ctrl', _tip_pseudo[1], mo = True )  # grp
         cmds.parentConstraint( _tip_pseudo[0], _tip, mo = True )  # control
         cmds.parent( _tip_pseudo[1], _m )
         # return
@@ -651,6 +664,8 @@ def charybdis_tentacles_main_delayPositions( side = 'L' ):
             i += 1
     else:
         print( 'Select an objet from the rig' )
+
+    cmds.select( sel )
 
 
 def charybdis_tentacles_neighbors_delayPositions( side = 'L' ):
@@ -706,8 +721,874 @@ def charybdis_tentacles_neighbors_delayPositions( side = 'L' ):
             cmds.setAttr( slave + '.' + delayPosAttrStr(), _settings[i][1] )
 
             i += 1
+    cmds.select( sel )
+
+
+def main_tentacles_delay_pos():
+    '''
+    
+    '''
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        charybdis_tentacles_main_delayPositions( side = 'L' )
+        charybdis_tentacles_main_delayPositions( side = 'R' )
+
+
+def tentacles_delay_rot():
+    '''
+    
+    '''
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        charybdis_tentacles_delayRotations( side = 'L' )
+        charybdis_tentacles_delayRotations( side = 'R' )
+
+
+def tentacles_delay_neighbors():
+    '''
+    
+    '''
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        charybdis_tentacles_neighbors_delayPositions( side = 'L' )
+        charybdis_tentacles_neighbors_delayPositions( side = 'R' )
+
+
+def ____SANC():
+    pass
+
+
+def pairBlend_connect( driver = '', slave = '', weight = 1, t = True, r = True ):
+    '''
+    direct connection through pairBlend
+    '''
+    sel = None
+    if not driver:
+        sel = cmds.ls( sl = 1 )
+        driver = sel[0]
+        slave = sel[1]
+    if t and r:
+        pb = cmds.pairBlend( node = slave, at = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz'] )
+    if t and not r:
+        pb = cmds.pairBlend( node = slave, at = ['tx', 'ty', 'tz'] )
+    if r and not t:
+        pb = cmds.pairBlend( node = slave, at = ['rx', 'ry', 'rz'] )
+
+    #
+    if t:
+        cmds.connectAttr( driver + '.tx', pb + '.inTranslateX2' )
+        cmds.connectAttr( driver + '.ty', pb + '.inTranslateY2' )
+        cmds.connectAttr( driver + '.tz', pb + '.inTranslateZ2' )
+    if r:
+        cmds.connectAttr( driver + '.rx', pb + '.inRotateX2' )
+        cmds.connectAttr( driver + '.ry', pb + '.inRotateY2' )
+        cmds.connectAttr( driver + '.rz', pb + '.inRotateZ2' )
+    #
+    cmds.select( pb )
+    d_attr = ''
+    s_attr = ''
+    pb_attr = 'pB_driver__'
+    if ':' in driver:
+        d_whole_name = driver.split( ':' )[1]
+        d_attr = pb_attr + d_whole_name.split( '_' )[1]
+        s_whole_name = slave.split( ':' )[1]
+        s_attr = s_whole_name.split( '_' )[1]
+        pb = cmds.rename( pb, 'pB_driver__' + d_attr + '__slave__' + s_attr )
+    else:
+        d_attr = pb_attr + driver.split( '_' )[1]
+        s_attr = slave.split( '_' )[1]
+        pb = cmds.rename( pb, 'pB_driver__' + d_attr + '__slave__' + s_attr )
+    place.hijackAttrs( pb, slave, 'weight', d_attr, True, weight )
+
+
+def pairBlend_disconnect( n = 'pB_driver__' ):
+    '''
+    n = pair blend string to look for
+    disconnect and remove extra attr to drive the weight
+    pairBlend_driver___
+    '''
+    #
+    sel = cmds.ls( sl = 1 )
+    ns = sel[0].split( ':' )[0]
+
+    # delete blends
+    cmds.select( n + '*' )
+    pairBlends = cmds.ls( sl = 1 )
+    pb_collect = []
+    pb_deleted = []
+
+    for pb in pairBlends:
+        if not pairBlend_curve_in( pb ):
+            cmds.delete( pb )
+            pb_deleted.append( pb )
+        else:
+            pb_collect.append( pb )
+    for pb in pb_collect:
+        # print( pb )
+        if cmds.objExists( pb ):
+            cmds.delete( pb )
+
+    # delete attrs
+    cmds.select( ns + ':*_leg*Control_foot_ctrl' )
+    legs = cmds.ls( sl = 1 )
+    for s in legs:
+        print( s )
+        attrs = cmds.listAttr( s, ud = 1 )
+        print( attrs )
+        for attr in attrs:
+            if n in attr:
+                cmds.deleteAttr( s, at = attr )
+
+    cmds.select( sel )
+
+
+def pairBlend_curve_in( pb = '' ):
+    '''
+    if incoming connection is anim curve dont delete first
+    '''
+    find = ['character', 'animCurveTU', 'animCurveTA', ]
+    # animCurve = False
+    cons = cmds.listConnections( pb, s = True, d = False )
+    cons = list( set( cons ) )
+    # print( cons )
+    for c in cons:
+        found = cmds.nodeType( c )
+        if found in find:
+            # print( 'yes, ', found, c )
+            return True
+
+
+def ___MICRO():
+    pass
+
+
+def femaleHostile_drive_front_carpal_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg02_carpalIk_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg01_carpalIk_ctrl', weight = 1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg03_carpalIk_ctrl', weight = 1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg04_carpalIk_ctrl', weight = 1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06_carpalIk_ctrl', weight = 0.6, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07_carpalIk_ctrl', weight = 0.4, t = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_carpal_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg02_carpalIk_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg01_carpalIk_ctrl', weight = 1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg03_carpalIk_ctrl', weight = 1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg04_carpalIk_ctrl', weight = 1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06_carpalIk_ctrl', weight = 0.6, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07_carpalIk_ctrl', weight = 0.4, t = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_foot_rotation_constraint():
+    '''
+    not necessary, dont use
+    [
+    'character01hostileFemale_default_ably01body01:L_leg01_mainIk_ctrl',
+    'character01hostileFemale_default_ably01body01:L_leg01_ballIk_ctrl'
+    ]
+    '''
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0]
+    i = 1
+    while i <= 35:
+        leg_number = str( ( '%0' + str( pad ) + 'd' ) % ( i ) )
+        cmds.orientConstraint( ns + ':L_leg' + leg_number + '_mainIk_ctrl', ns + ':L_leg' + leg_number + '_ballIk_ctrl', mo = True )
+        cmds.orientConstraint( ns + ':R_leg' + leg_number + '_mainIk_ctrl', ns + ':R_leg' + leg_number + '_ballIk_ctrl', mo = True )
+        i = i + 1
+        if i > 35:
+            break
+
+
+def femaleHostile_drive_front_tip_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg01Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg02Control_foot_ctrl', weight = 0.6 )
+    #
+    driver = 'L_leg01_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg02_carpalIk_ctrl', weight = 0.6, t = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_tip_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg01Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg02Control_foot_ctrl', weight = 0.6 )
+    #
+    driver = 'R_leg01_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg02_carpalIk_ctrl', weight = 0.6, t = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_arms_L_2():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg03Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg02Control_foot_ctrl', weight = 0.3 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg04Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07Control_foot_ctrl', weight = 0.1 )
+    #
+    driver = 'L_leg03_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg02_carpalIk_ctrl', weight = 0.3, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg04_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07_carpalIk_ctrl', weight = 0.1, t = False )
+    #
+    driver = 'L_leg03_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg02_poleVector_ctrl', weight = 0.3, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg04_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_arms_R_2():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg03Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg02Control_foot_ctrl', weight = 0.3 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg04Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07Control_foot_ctrl', weight = 0.1 )
+    #
+    driver = 'R_leg03_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg02_carpalIk_ctrl', weight = 0.3, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg04_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07_carpalIk_ctrl', weight = 0.1, t = False )
+    #
+    driver = 'R_leg03_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg02_poleVector_ctrl', weight = 0.3, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg04_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_arms_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg02Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg01Control_foot_ctrl', weight = 0.7 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg03Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg04Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07Control_foot_ctrl', weight = 0.1 )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_arms_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg02Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg01Control_foot_ctrl', weight = 0.7 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg03Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg04Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07Control_foot_ctrl', weight = 0.1 )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_rear_tip_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg35Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg34Control_foot_ctrl', weight = 0.6 )
+    #
+    driver = 'L_leg35_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg34_carpalIk_ctrl', weight = 0.6, t = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_rear_tip_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg35Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg34Control_foot_ctrl', weight = 0.6 )
+    #
+    driver = 'R_leg35_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg34_carpalIk_ctrl', weight = 0.6, t = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_rear_arms_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg33Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg34Control_foot_ctrl', weight = 0.3 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg32Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg31Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg30Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg29Control_foot_ctrl', weight = 0.1 )
+    #
+    driver = 'L_leg33_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg34_carpalIk_ctrl', weight = 0.3, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg32_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg31_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg30_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg29_carpalIk_ctrl', weight = 0.1, t = False )
+    #
+    driver = 'L_leg33_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg34_poleVector_ctrl', weight = 0.3, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg32_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg31_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg30_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg29_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_rear_arms_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg33Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg34Control_foot_ctrl', weight = 0.3 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg32Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg31Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg30Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg29Control_foot_ctrl', weight = 0.1 )
+    #
+    driver = 'R_leg33_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg34_carpalIk_ctrl', weight = 0.3, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg32_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg31_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg30_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg29_carpalIk_ctrl', weight = 0.1, t = False )
+    #
+    driver = 'R_leg33_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg34_poleVector_ctrl', weight = 0.3, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg32_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg31_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg30_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg29_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_legs_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg08Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05Control_foot_ctrl', weight = 0.1 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07Control_foot_ctrl', weight = 0.8 )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg09Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg10Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg11Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg12Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg13Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg14Control_foot_ctrl', weight = 0.1 )
+
+    #
+    driver = 'L_leg08_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05_carpalIk_ctrl', weight = 0.1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07_carpalIk_ctrl', weight = 0.8, t = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg09_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg10_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg11_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg12_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg13_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg14_carpalIk_ctrl', weight = 0.1, t = False )
+
+    #
+    driver = 'L_leg08_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg05_poleVector_ctrl', weight = 0.1, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg06_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg07_poleVector_ctrl', weight = 0.8, r = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg09_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg10_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg11_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg12_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg13_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg14_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_front_legs_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg08Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05Control_foot_ctrl', weight = 0.1 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07Control_foot_ctrl', weight = 0.8 )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg09Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg10Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg11Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg12Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg13Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg14Control_foot_ctrl', weight = 0.1 )
+
+    #
+    driver = 'R_leg08_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05_carpalIk_ctrl', weight = 0.1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07_carpalIk_ctrl', weight = 0.8, t = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg09_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg10_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg11_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg12_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg13_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg14_carpalIk_ctrl', weight = 0.1, t = False )
+
+    #
+    driver = 'R_leg08_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg05_poleVector_ctrl', weight = 0.1, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg06_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg07_poleVector_ctrl', weight = 0.8, r = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg09_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg10_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg11_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg12_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg13_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg14_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_rear_legs_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg28Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg31Control_foot_ctrl', weight = 0.1 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg30Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg29Control_foot_ctrl', weight = 0.8 )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg27Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg26Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg25Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg24Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg23Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg22Control_foot_ctrl', weight = 0.1 )
+
+    #
+    driver = 'L_leg28_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg31_carpalIk_ctrl', weight = 0.1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg30_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg29_carpalIk_ctrl', weight = 0.8, t = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg27_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg26_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg25_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg24_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg23_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg22_carpalIk_ctrl', weight = 0.1, t = False )
+
+    #
+    driver = 'L_leg28_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg31_poleVector_ctrl', weight = 0.1, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg30_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg29_poleVector_ctrl', weight = 0.8, r = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg27_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg26_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg25_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg24_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg23_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg22_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_rear_legs_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg28Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg31Control_foot_ctrl', weight = 0.1 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg30Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg29Control_foot_ctrl', weight = 0.8 )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg27Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg26Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg25Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg24Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg23Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg22Control_foot_ctrl', weight = 0.1 )
+
+    #
+    driver = 'R_leg28_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg31_carpalIk_ctrl', weight = 0.1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg30_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg29_carpalIk_ctrl', weight = 0.8, t = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg27_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg26_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg25_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg24_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg23_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg22_carpalIk_ctrl', weight = 0.1, t = False )
+
+    #
+    driver = 'R_leg28_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg31_poleVector_ctrl', weight = 0.1, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg30_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg29_poleVector_ctrl', weight = 0.8, r = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg27_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg26_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg25_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg24_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg23_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg22_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_mid_legs_L():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'L_leg18Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg12Control_foot_ctrl', weight = 0.1 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg13Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg14Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg15Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg16Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg17Control_foot_ctrl', weight = 0.9 )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg19Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg20Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg21Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg22Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg23Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg24Control_foot_ctrl', weight = 0.1 )
+
+    #
+    driver = 'L_leg18_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg12_carpalIk_ctrl', weight = 0.1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg13_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg14_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg15_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg16_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg17_carpalIk_ctrl', weight = 0.9, t = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg19_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg20_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg21_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg22_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg23_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg24_carpalIk_ctrl', weight = 0.1, t = False )
+
+    #
+    driver = 'L_leg18_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg12_poleVector_ctrl', weight = 0.1, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg13_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg14_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg15_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg16_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg17_poleVector_ctrl', weight = 0.9, r = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg19_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg20_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg21_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg22_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg23_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'L_leg24_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def femaleHostile_drive_mid_legs_R():
+    '''
+    use pairBlend connect function for the front arms
+    '''
+    driver = 'R_leg18Control_foot_ctrl'
+    ns = ''
+    pad = 2
+    sel = cmds.ls( sl = 1 )
+    if sel:
+        if ':' in sel[0]:
+            ns = sel[0].split( ':' )[0] + ':'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg12Control_foot_ctrl', weight = 0.1 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg13Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg14Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg15Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg16Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg17Control_foot_ctrl', weight = 0.9 )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg19Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg20Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg21Control_foot_ctrl', weight = 0.9 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg22Control_foot_ctrl', weight = 0.8 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg23Control_foot_ctrl', weight = 0.45 )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg24Control_foot_ctrl', weight = 0.1 )
+
+    #
+    driver = 'R_leg18_carpalIk_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg12_carpalIk_ctrl', weight = 0.1, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg13_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg14_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg15_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg16_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg17_carpalIk_ctrl', weight = 0.9, t = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg19_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg20_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg21_carpalIk_ctrl', weight = 0.9, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg22_carpalIk_ctrl', weight = 0.8, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg23_carpalIk_ctrl', weight = 0.45, t = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg24_carpalIk_ctrl', weight = 0.1, t = False )
+
+    #
+    driver = 'R_leg18_poleVector_ctrl'
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg12_poleVector_ctrl', weight = 0.1, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg13_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg14_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg15_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg16_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg17_poleVector_ctrl', weight = 0.9, r = False )
+    #
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg19_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg20_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg21_poleVector_ctrl', weight = 0.9, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg22_poleVector_ctrl', weight = 0.8, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg23_poleVector_ctrl', weight = 0.45, r = False )
+    pairBlend_connect( driver = ns + driver, slave = ns + 'R_leg24_poleVector_ctrl', weight = 0.1, r = False )
+
+    cmds.select ( sel )
+
+
+def ___MACRO():
+    pass
+
+
+def femaleHostile_drive_front_arms():
+    '''
+    left and right
+    '''
+    # femaleHostile_drive_front_arms_L()
+    # femaleHostile_drive_front_arms_R()
+
+    femaleHostile_drive_front_tip_L()
+    femaleHostile_drive_front_tip_R()
+
+    femaleHostile_drive_front_arms_L_2()
+    femaleHostile_drive_front_arms_R_2()
+
+
+def femaleHostile_drive_front_legs():
+    '''
+    left and right
+    '''
+    femaleHostile_drive_front_legs_L()
+    femaleHostile_drive_front_legs_R()
+
+
+def femaleHostile_drive_rear_arms():
+    '''
+    left and right
+    '''
+    femaleHostile_drive_rear_tip_L()
+    femaleHostile_drive_rear_tip_R()
+
+    femaleHostile_drive_rear_arms_L()
+    femaleHostile_drive_rear_arms_R()
+
+
+def femaleHostile_drive_rear_legs():
+    '''
+    left and right
+    '''
+    femaleHostile_drive_rear_legs_L()
+    femaleHostile_drive_rear_legs_R()
+
+
+def femaleHostile_drive_mid_legs():
+    '''
+    left and right
+    '''
+    femaleHostile_drive_mid_legs_L()
+    femaleHostile_drive_mid_legs_R()
+
+
+def femaleHostile_drive_front_carpals():
+    '''
+    carapls
+    '''
+    femaleHostile_drive_front_carpal_L()
+    femaleHostile_drive_front_carpal_R()
+
 
 '''
+
+# left and right, main
+import webrImport as web
+dly = web.mod("delayExpression")
+dly.main_tentacles_delay()
+
+# left and right, rotate
+import webrImport as web
+dly = web.mod("delayExpression")
+dly.tentacles_delay_rot()
+
+# left and right, neighbors
+import webrImport as web
+dly = web.mod("delayExpression")
+dly.tentacles_delay_neighbors()
+
+#
 import webrImport as web
 dly = web.mod("delayExpression")
 dly.charybdis_tentacles_delayRotations()
@@ -723,11 +1604,6 @@ dly.charybdis_tentacles_neighbors_delayPositions()
 import webrImport as web
 dly = web.mod("delayExpression")
 dly.create_delay_position_constraint()
-
-
-import webrImport as web
-dly = web.mod("delayExpression")
-dly.create_delay_rotation_constraint()
 
 #
 '''

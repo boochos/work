@@ -140,10 +140,10 @@ class UI():
         self.med_label_l.setStyleSheet( "font-weight: bold" )
         self.med_label_l.setAlignment( QtCore.Qt.AlignCenter )
         self.add_tantacles_layout_l.addWidget( self.med_label_l )
-        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle04_geo', vis = 'L_tentacle1_controls' )
-        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle06_geo', vis = 'L_tentacle2_controls' )
-        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle07_geo', vis = 'L_tentacle3_controls' )
-        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle08_geo', vis = 'L_tentacle5_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle08_geo', vis = 'L_tentacle1_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle07_geo', vis = 'L_tentacle2_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle06_geo', vis = 'L_tentacle3_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_l, geo = 'L_tentacle04_geo', vis = 'L_tentacle5_controls' )
         #
         self.short_label_l = QtWidgets.QLabel( '______    S H O R T    L   ______' )
         self.short_label_l.setStyleSheet( "font-weight: bold" )
@@ -163,10 +163,10 @@ class UI():
         self.med_label_r.setStyleSheet( "font-weight: bold" )
         self.med_label_r.setAlignment( QtCore.Qt.AlignCenter )
         self.add_tantacles_layout_r.addWidget( self.med_label_r )
-        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle04_geo', vis = 'R_tentacle1_controls' )
-        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle06_geo', vis = 'R_tentacle2_controls' )
-        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle07_geo', vis = 'R_tentacle3_controls' )
-        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle08_geo', vis = 'R_tentacle5_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle08_geo', vis = 'R_tentacle1_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle07_geo', vis = 'R_tentacle2_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle06_geo', vis = 'R_tentacle3_controls' )
+        self.tantacle_row( layout = self.add_tantacles_layout_r, side = 'r', geo = 'R_tentacle04_geo', vis = 'R_tentacle5_controls' )
         #
         self.short_label_r = QtWidgets.QLabel( '______    S H O R T    R   ______' )
         self.short_label_r.setStyleSheet( "font-weight: bold" )
@@ -991,6 +991,7 @@ if __name__ == '__main__':
     # n = UI()
     # n.main_window.show()
 
+
     '''
     app = QtWidgets.QApplication( sys.argv )
     #
@@ -1010,7 +1011,9 @@ if __name__ == '__main__':
     win.main_window.show()
     sys.exit( app.exec_() )'''
 
+
 else:
+
 
     app = QtWidgets.QApplication.instance()
     #

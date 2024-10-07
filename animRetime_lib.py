@@ -1422,10 +1422,13 @@ def getAnimCurves2( object = '', layers = [] ):
                             if found_layer in member_of_layers:
                                 #
                                 mel.eval( 'selectLayer(\"' + found_layer + '\");' )
+                                # get members of layer specified by attrs
+                                obj_attrs = cmds.animLayer( found_layer, q = True, attribute = True )
                                 for attr in attrs:
-                                    crv = cmds.findKeyframe( object, at = attr, c = 1 )
-                                    if crv:
-                                        crvs.append( crv[0] )
+                                    if object + '.' + attr in obj_attrs:  # only if object.attr is in layer query for curve
+                                        crv = cmds.findKeyframe( object, at = attr, c = 1 )
+                                        if crv:
+                                            crvs.append( crv[0] )
                             elif found_layer == 'BaseAnimation':
                                 #
                                 mel.eval( 'selectLayer(\"' + found_layer + '\");' )
@@ -1891,6 +1894,7 @@ def getConnections1( object = '', direction = 'in', find = 'animCurveTU', find_t
     print( 'results________________________', results )
     pass
 
+
 '''
 import imp
 import webrImport as web
@@ -2265,10 +2269,18 @@ class Prefs_dynamic():
 
 
 if __name__ == '__main__':
+
+
     print( 'run only in maya' )
+
+
 else:
+
+
     # open
     app = QtWidgets.QApplication.instance()
+
+
     timewarp_window = init_ui()  # class
     print( timewarp_window.main_window )
     # prefs

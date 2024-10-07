@@ -77,15 +77,11 @@ def snakeTongue( Name, X ):
     X = size
 
     '''
-    # tng = place.Controller( Name, 'tongue_01_jnt', True, 'facetZup_ctrl', X * 2.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    # tngCt = tng.createController()
-    tngCt = place.Controller2( Name, 'tongue_01_jnt', True, 'facetZup_ctrl', X * 2.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
-    cmds.parentConstraint( 'jaw_tip_jnt', tngCt[0], mo = True )
-    place.translationLock( tngCt[2], True )
-    place.rotationLock( tngCt[2], True )
-    # tngTip = place.Controller( Name + 'Tip', 'tongue_05_jnt', True, 'facetZup_ctrl', X * 2.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
-    # tngTipCt = tngTip.createController()
-    tngTipCt = place.Controller2( Name + '_tip', 'tongue_05_jnt', True, 'facetZup_ctrl', X * 2.5, 12, 8, 1, ( 0, 0, 1 ), True, True, colorName = 'yellow' ).result
+    tng = place.Controller( Name, 'tongue_01_jnt', True, 'facetZup_ctrl', X * 2.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    tngCt = tng.createController()
+    cmds.parentConstraint( 'jaw_jnt', tngCt[0], mo = True )
+    tngTip = place.Controller( Name + 'Tip', 'tongue_05_jnt', True, 'facetZup_ctrl', X * 2.5, 17, 8, 1, ( 0, 0, 1 ), True, True )
+    tngTipCt = tngTip.createController()
     cmds.parentConstraint( tngCt[4], tngTipCt[0], mo = True )
 
     # tongue
@@ -106,9 +102,9 @@ def snakeTongue( Name, X ):
 
     # _L
     # controls
-    Ln = Name + '_L'
+    Ln = Name + 'Tongue_L'
     chain = place.controllerDownChain( 'tongueFork_01_jnt_L', Ln, pad = 2, base = None, parent = None, shape = 'facetZup_ctrl',
-                                      color = 6, size = 0.3, groups = True, orient = True, suffix = None,
+                                      color = 6, size = 0.5, groups = True, orient = True, suffix = None,
                                       scale = True, setChannel = False, clone = False, fk = True )[0]
     place.cleanUp( chain[0][0], Ctrl = True )
     cmds.parentConstraint( 'tongue_05_jnt', chain[0][0], mo = True )
@@ -121,9 +117,9 @@ def snakeTongue( Name, X ):
         i = i + 1
     # _R
     # controls
-    Ln = Name + '_R'
+    Ln = Name + 'Tongue_R'
     chain = place.controllerDownChain( 'tongueFork_01_jnt_R', Ln, pad = 2, base = None, parent = None, shape = 'facetZup_ctrl',
-                                      color = 13, size = 0.3, groups = True, orient = True, suffix = None,
+                                      color = 13, size = 0.5, groups = True, orient = True, suffix = None,
                                       scale = True, setChannel = False, clone = False, fk = True )[0]
     place.cleanUp( chain[0][0], Ctrl = True )
     cmds.parentConstraint( 'tongue_05_jnt', chain[0][0], mo = True )

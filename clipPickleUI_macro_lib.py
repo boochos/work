@@ -118,22 +118,17 @@ class CPUI( object ):
 
     def cmdLibrary( self, *args ):
         path = self.path
-        if os.name == 'nt':
-            # print path
-            # path = path.replace( '/', '\\' )
-            # print( path )
-            if os.path.isdir( path ):
-                # print( 'exists: ', path )
+        if os.path.isdir( path ):
+            # print( 'exists: ', path )
+            if os.name == 'nt':
                 path = path.replace( '/', '\\' )
                 subprocess.Popen( r'explorer /open, ' + path )
+            elif platform.system() == 'Darwin':
+                subprocess.call( ["open", "-R", path] )
             else:
-                print( 'doesnt exist: ', path )
-        elif platform.system() == 'Darwin':
-            subprocess.call( ["open", "-R", path] )
+                subprocess.Popen( ['xdg-open', path] )
         else:
-            # message('Close file window to regain control over MAYA.')
-            app = "nautilus"
-            call( [app, path] )
+            print( 'doesnt exist: ', path )
 
     def cmdTypeEx( self ):
         # type of export
@@ -548,7 +543,7 @@ class CPUI( object ):
             cmds.button( self.control.button3, e = True, l = 'P O S E' )
             cmds.textScrollList( self.control.scroll3, edit = True, en = False, ra = True )
             cmds.radioButtonGrp( self.control.typGrpIm, edit = True, select = 2, en1 = False, en = True )
-            cmds.columnLayout( self.control.col2, e = True, en = False )
+            # cmds.columnLayout( self.control.col2, e = True, en = False )
             cmds.rowLayout( self.control.row3, e = True, en = False )
         else:
             self.cmdLoadingHintToggle( on = True, info = True, options = True, range = True )
@@ -558,7 +553,7 @@ class CPUI( object ):
             try:
                 cmds.columnLayout( self.control.col2, e = True, en = True )
             except:
-                pass
+                message( 'no col 2', warning = 1 )
             cmds.rowLayout( self.control.row3, e = True, en = True )
 
     def populateRange( self ):
@@ -574,12 +569,13 @@ class CPUI( object ):
                 cmds.floatField( self.control.int1, edit = True, min = self.clip.start - 1, max = self.clip.end, value = self.clip.start, step = 0.1, en = False )
                 cmds.floatField( self.control.int2, edit = True, min = self.clip.start, max = self.clip.end, value = self.clip.end, step = 0.1, en = False )
             else:
+                print( self.clip.end, self.clip.start )
                 # sliders
                 cmds.intSlider( self.control.sl1, edit = True, min = 0, max = 10, value = 0, step = 1, en = False )
                 cmds.intSlider( self.control.sl2, edit = True, min = 0, max = 10, value = 0, step = 1, en = False )
                 # fields
-                cmds.floatField( self.control.int1, edit = True, min = self.clip.start, max = self.clip.end, value = self.clip.start, step = 0.1, en = True )
-                cmds.floatField( self.control.int2, edit = True, min = self.clip.start, max = self.clip.end, value = self.clip.end, step = 0.1, en = True )
+                cmds.floatField( self.control.int1, edit = True, min = self.clip.start, max = self.clip.end + 1, value = self.clip.start, step = 0.1, en = False )
+                cmds.floatField( self.control.int2, edit = True, min = self.clip.start - 1, max = self.clip.end, value = self.clip.end, step = 0.1, en = False )
         else:
             # sliders
             cmds.intSlider( self.control.sl1, edit = True, min = 0, max = 10, value = 0, step = 1, en = False )
