@@ -243,6 +243,7 @@ def build( X = 0.85, lite = 1, ns = 'geo', ref_geo = 'P:\\FLR\\assets\\chr\\darr
     # ref geo
     if ns and ref_geo:
         vhl.reference_geo( ns = ns, path = ref_geo )
+        # vhl.reference_geo( ns = 'hr', path = 'P:\\FLR\\assets\\chr\\darryl\\model\\houdini\\abc\\darryl_hair_v003\\export_hair.abc' )
     # default skin
     '''
     geos = get_geo_list()
