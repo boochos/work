@@ -8,7 +8,7 @@ import subprocess
 import time
 
 from PySide2 import QtCore, QtGui, QtWidgets
-import cache_abc_sil_dev as cas
+import cache_abc_sil as cas
 import maya
 import maya.cmds as cmds
 import maya.mel as mel
@@ -202,8 +202,9 @@ def init_ui():
     # use file name
     useFileName_layout = QtWidgets.QHBoxLayout()
     useFileName_label = QtWidgets.QLabel( 'Use File Name:  ' )
+    useFileName_label.setToolTip( "Dont rebuild the export name from the file path" )
     useFileName_check = QtWidgets.QCheckBox()
-    useFileName_check.setChecked( False )
+    useFileName_check.setChecked( True )
     #
     useFileName_layout.addWidget( useFileName_label, 0 )
     useFileName_layout.addWidget( useFileName_check, 0 )

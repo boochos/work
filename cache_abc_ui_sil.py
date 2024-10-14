@@ -202,6 +202,7 @@ def init_ui():
     # use file name
     useFileName_layout = QtWidgets.QHBoxLayout()
     useFileName_label = QtWidgets.QLabel( 'Use File Name:  ' )
+    useFileName_label.setToolTip( "Dont rebuild the export name from the file path" )
     useFileName_check = QtWidgets.QCheckBox()
     useFileName_check.setChecked( True )
     #
