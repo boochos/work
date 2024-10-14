@@ -252,7 +252,7 @@ def blastDir( forceTemp = False, brackets = False ):
         return getPath()
 
 
-def blast( w = 1920, h = 1080, x = 1, format = 'qt', qlt = 70, compression = 'H.264', offScreen = True, useGlobals = False, forceTemp = True, burnIn = False, burnInSize = 30, camStr = True, strp_r = False, subDir = '', play = True ):
+def blast( w = 2048, h = 1024, x = 1, format = 'qt', qlt = 70, compression = 'H.264', offScreen = True, useGlobals = False, forceTemp = True, burnIn = False, burnInSize = 30, camStr = True, strp_r = False, subDir = '', play = True ):
     '''
     rv player is mostly used to play back the images or movie files, function has gotten sloppy over time, cant guarantee competence
     subDir = blastName + subDir string
