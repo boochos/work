@@ -105,7 +105,7 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
     project = cmds.workspace( rd = True, q = True )
     # print( project )
     if project not in scene_path:
-        message( 'Scene path and Project path dont match. --- Parsing project path from Scene path', warning = True )
+        message( 'Scene path and Project path mismatch. --- Parsing project path from Scene path', warning = True )
         project = scene_path.split( 'scenes' )[0]
     parts = project.split( '/' )
     # print( parts )
@@ -174,12 +174,17 @@ def cache_abc( framePad = 5, frameSample = 1.0, forceType = False, camera = Fals
             version_name = sel_name
             version_dir = scene_name_raw
     else:
-        if suffix:
-            version_name = shot + '_' + task + '_' + suffix + '_' + sel_name + '_' + version
-            version_dir = shot + '_' + task + '_' + suffix + '_' + version
-        else:
-            version_name = shot + '_' + task + '_' + sel_name + '_' + version
-            version_dir = shot + '_' + task + '_' + version
+        if qualify_filename() == [True, True, True]:  # project match, scene saved, naming conventions
+            if suffix:
+                version_name = shot + '_' + task + '_' + suffix + '_' + sel_name + '_' + version
+                version_dir = shot + '_' + task + '_' + suffix + '_' + version
+            else:
+                version_name = shot + '_' + task + '_' + sel_name + '_' + version
+                version_dir = shot + '_' + task + '_' + version
+        else:  # use file name instead
+            version_name = sel_name
+            version_dir = scene_name_raw
+
     # print( version_name )
     # return
     #
@@ -305,3 +310,79 @@ def filename_getSuffix( task = '' ):
     print( 'suffix: ', suffix )
     return suffix
     '''
+
+
+def qualify_filename():
+    '''
+    parse file path, file name, project path
+    make sure file path matches project path
+    make sure file naming convention is used
+    return bool
+    if false, default export path to file path and use file name as version name
+    '''
+    #
+    p_path = cmds.workspace( rd = True, q = True )  # project path
+    s_path = cmds.file( q = 1, exn = 1 )  # file path
+    # print( 's_path ', s_path )
+    #
+    s_name = ''
+    # project = ''
+    entity = ''
+    task = ''
+    p_go = False
+    s_go = False
+    f_go = False
+
+    # qualify project was set properly relative to scene path
+    if s_path:
+        s_name = s_path.rsplit( '/', 1 )[1].split( '.' )[0]  # file name
+        if s_name[-8:] != 'untitled':
+            s_go = True
+            if p_path in s_path:
+                p_go = True
+                parts = p_path.split( '/' )
+                # project = parts[1]
+                task = parts[-3]
+            else:
+                message( 'Scene path and Project path mismatch.', warning = True )
+            #
+            occ = s_path.count( '/' )  # occurrences
+            if occ == 7:  # expected directory depth
+                find_entity = s_path.split( '/', 2 )[2]
+                entity = find_entity.rsplit( '/', 5 )[1]
+                # print( 'entity ', entity )
+            else:
+                message( 'Directory depth unexpected.', warning = True )
+            # print( 'n ', s_name )
+            # print( 'v ', s_path[-8] )
+            if s_name and entity and task:
+                if entity in s_name and task in s_name:  # qualify name convention
+                    # find '_v'
+                    if s_name[-5:-3] == '_v':  # qualify version convention
+                        # print( '_v', s_name[-5:-3] )
+                        try:
+                            ver = int( s_name[-3:] )
+                            # print( 'ver ', ver )
+                            f_go = True
+                        except:
+                            message( 'Version number unconventional.', warning = True )
+                    else:
+                        message( 'Version suffix not where expected', s_name, warning = True )
+                else:
+                    message( 'Found unconventional name. Missing Shot or Task in name. ' + s_path, warning = True )
+            else:
+                message( 'Found unconventional name and/or directory structure: ' + s_path, warning = True )
+        else:
+            message( 'Scene is untitled.', warning = True )
+    else:
+        message( 'No file path found.', warning = True )
+
+    #
+    if p_go and s_go and f_go:
+        print( 'conventions found' )
+    elif p_go or s_go or f_go:
+        print( 'conventions partial' )
+    else:
+        print( 'conventions fail' )
+    # project matches scene path, scene is named, naming conventions found
+    return [p_go, s_go, f_go]
