@@ -55,8 +55,6 @@ class Action( object ):
         self.scroll1 = name + '_scroll1'
         self.scroll2 = name + '_scroll2'
         self.scroll3 = name + '_scroll3'
-        self.scroll4 = name + '_scroll4'
-        self.scroll5 = name + '_scroll5'
         self.heading0 = name + '_heading0'
         self.heading1 = name + '_heading1'
         self.heading2 = name + '_heading2'
@@ -108,7 +106,7 @@ class Action( object ):
         self.srcGrp = ''
         self.label = label
         self.cmdAction = cmdAction
-        self.ui = [self.row, self.row2, self.row3, self.row4, self.row5, self.row6, self.int1, self.int2, self.form, self.form1, self.opt, self.button1, self.button2, self.button3, self.button4, self.field1, self.heading1, self.field2, self.heading2, self.heading3, self.heading4, self.heading5, self.heading6, self.heading7, self.heading8, self.heading9, self.heading10, self.heading11, self.heading12, self.heading13, self.heading14, self.heading15, self.heading16, self.heading17, self.heading18, self.heading19, self.heading20, self.heading21, self.heading22, self.heading23, self.heading24, self.heading25, self.heading26, self.scroll1, self.scroll2, self.scroll3, self.scroll4, self.scroll5, self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.opt1, self.col1, self.r1, self.r2, self.sl1, self.sl2]
+        self.ui = [self.row, self.row2, self.row3, self.row4, self.row5, self.row6, self.int1, self.int2, self.form, self.form1, self.opt, self.button1, self.button2, self.button3, self.button4, self.field1, self.heading1, self.field2, self.heading2, self.heading3, self.heading4, self.heading5, self.heading6, self.heading7, self.heading8, self.heading9, self.heading10, self.heading11, self.heading12, self.heading13, self.heading14, self.heading15, self.heading16, self.heading17, self.heading18, self.heading19, self.heading20, self.heading21, self.heading22, self.heading23, self.heading24, self.heading25, self.heading26, self.scroll1, self.scroll2, self.scroll3, self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.s0, self.s1, self.s2, self.s3, self.s4, self.s5, self.opt1, self.col1, self.r1, self.r2, self.sl1, self.sl2]
         self.h = h
         self.w = w
         self.heightForm = 30
@@ -177,32 +175,18 @@ class Action( object ):
         # self.s3 = cmds.separator(height=self.sepH, style=self.sepStl)
 
         # 2 scroll lists in form: clip, clip version
-        self.form1 = cmds.formLayout( self.form1, h = 495, w = 1 )
-        # 1 version
+        self.form1 = cmds.formLayout( self.form1, h = 295, w = 1 )
         self.scroll1 = cmds.textScrollList( self.scroll1, sc = self.cmdAction, allowMultiSelection = False, dcc = self.cmdAction, fn = 'plainLabelFont', h = 200, w = 10 )
         attachForm = [( self.scroll1, 'left', 0 ), ( self.scroll1, 'right', 50 )]
         cmds.formLayout( self.form1, edit = True, attachForm = attachForm )
-        # 2 file
         self.scroll2 = cmds.textScrollList( self.scroll2, sc = self.cmdAction, allowMultiSelection = False, dcc = self.cmdAction, fn = 'plainLabelFont', h = 200, w = 45 )
         attachForm = [( self.scroll2, 'right', 0 )]
         attachControl = [( self.scroll2, 'left', 5, self.scroll1 )]
         cmds.formLayout( self.form1, edit = True, attachForm = attachForm, attachControl = attachControl )
-        # 3 layers
         self.scroll3 = cmds.textScrollList( self.scroll3, sc = self.cmdAction, allowMultiSelection = True, dcc = self.cmdAction, fn = 'plainLabelFont', h = 85, w = 10 )
         attachForm = [( self.scroll3, 'left', 0 ), ( self.scroll3, 'right', 0 )]
         attachControl = [( self.scroll3, 'top', 5, self.scroll1 )]
         cmds.formLayout( self.form1, edit = True, attachForm = attachForm, attachControl = attachControl )
-        # 4 remap scrolls
-        self.scroll4 = cmds.textScrollList( self.scroll4, sc = self.cmdAction, allowMultiSelection = False, dcc = self.cmdAction, fn = 'plainLabelFont', h = 85, w = 10 )
-        attachForm = [( self.scroll4, 'left', 0 ), ( self.scroll4, 'right', 0 )]
-        attachControl = [( self.scroll4, 'top', 5, self.scroll3 )]
-        cmds.formLayout( self.form1, edit = True, attachForm = attachForm, attachControl = attachControl )
-        # 5
-        self.scroll5 = cmds.textScrollList( self.scroll5, sc = self.cmdAction, allowMultiSelection = False, dcc = self.cmdAction, fn = 'plainLabelFont', h = 85, w = 10 )
-        attachForm = [( self.scroll5, 'left', 0 ), ( self.scroll5, 'right', 0 )]
-        attachControl = [( self.scroll5, 'top', 5, self.scroll4 )]
-        cmds.formLayout( self.form1, edit = True, attachForm = attachForm, attachControl = attachControl )
-        # remap end
         cmds.setParent( '..' )
 
         # Clip attrs
