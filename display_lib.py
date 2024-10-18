@@ -208,7 +208,7 @@ def graphEditorButtons( *args ):
             item = geButton( name = ui.sftSel, parent = p, attach = item, label = 'SOFT Select',
                             cmd = "import webrImport as web\ncss = web.mod('curveSoftSelect')\ncss.toggleSelJob()",
                             gap = 20, w = w, bg = colorOff() )
-            item = geButton( name = ui.sbfrm, parent = p, attach = item, label = 'SUB frame X',
+            item = geButton( name = ui.sbfrm, parent = p, attach = item, label = 'SUB frame X (slow)',
                             cmd = "import webrImport as web\nac = web.mod('animCurve_lib')\nac.subframe()",
                             gap = 0, w = w, bg = bgc, ann = 'subframes to whole frames ' )
             item = geButton( name = ui.unfy, parent = p, attach = item, label = 'UNIFY',
