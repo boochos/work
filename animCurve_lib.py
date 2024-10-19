@@ -370,11 +370,11 @@ def smoothKeys( weight = 0.5 ):
 
 def subframe():
     '''
-    
+    change to inserting keys instead of moving keys to dif frames
     '''
     # print( '___!!!' )
     sel = cmds.ls( sl = 1 )
-    frames_added = []
+    # frames_added = []
     frames = None
     animCurves = cmds.keyframe( q = True, name = True, sl = True )
     print( animCurves )
@@ -386,10 +386,16 @@ def subframe():
     # return
     # print animCurves
     if animCurves:
+        curves_total = len( animCurves )
+        c = 1
         for crv in animCurves:
-            cmds.select( crv )  # curve cant be selected, not sure how it knows which curve to edit
+            # build feedback string
+            curve_str = 'Curve ' + str( c ) + ' of ' + str( curves_total ) + ' : '
+            #
+            cmds.select( crv )  # select curve so operations operate on individual curves no object selection
             frames = cmds.keyframe( crv, q = True )
-            # print( frames )
+            frames_added = []
+            #
             if frames:
                 i = 0
                 for frame in frames:
@@ -404,38 +410,39 @@ def subframe():
                                 if frames[i + 1] > rnd:  # make sure next frame isnt less than rnd or it will fail, ie [945.999, 945.99999], rnd = 955
                                     if frame > rnd:  # if rounding down make sure frame is free  and hasnt been used by previous iteration
                                         if rnd not in frames_added:
-                                            message( 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
+                                            message( curve_str + 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
                                             cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = rnd )
                                             frames_added.append( rnd )
                                         else:
                                             # move key to next frame is free
                                             next_frame = rnd + 1
                                             if next_frame not in frames_added and next_frame not in frames:
-                                                message( 'moving key -- ' + str( frame ) + ' to ' + str( next_frame ) )
+                                                message( curve_str + 'moving key -- ' + str( frame ) + ' to ' + str( next_frame ) )
                                                 cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = next_frame )
                                                 frames_added.append( next_frame )
                                             else:
-                                                message( 'cutting key -- ' + str( frame ) )
+                                                message( curve_str + 'cutting key -- ' + str( frame ) )
                                                 cmds.cutKey( crv, time = ( frame, frame ) )
                                     else:  # rounding up, frame is less than round, should work , established rnd not in frames
-                                        message( 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
+                                        message( curve_str + 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
                                         cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = rnd )
                                         frames_added.append( rnd )
 
                                 else:
                                     # print( '   ???   ', frame, ' ? ', frames[i + 1], ' ? ', rnd )
-                                    message( 'cutting key -- ' + str( frame ) )
+                                    message( curve_str + 'cutting key -- ' + str( frame ) )
                                     cmds.cutKey( crv, time = ( frame, frame ) )
                             else:
-                                message( 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
+                                message( curve_str + 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
                                 cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = rnd )
                                 frames_added.append( rnd )
                         else:
-                            message( 'cutting key -- ' + str( frame ) )
+                            message( curve_str + 'cutting key -- ' + str( frame ) )
                             cmds.cutKey( crv, time = ( frame, frame ) )
                     i = i + 1
             else:
                 message( 'no keys' )
+            c = c + 1
         cmds.select( sel )
         cmds.selectKey( animCurves )
     else:
@@ -444,80 +451,9 @@ def subframe():
 
 def subframe_quicker():
     '''
-    doesnbt work
+    run native maya snap to frames, then above function
     '''
-    # print( '___!!!' )
-    sel = cmds.ls( sl = 1 )
-    frames_added = []
-    frames = None
-    animCurves = cmds.keyframe( q = True, name = True, sl = True )
-    print( animCurves )
-    if animCurves:
-        cmds.selectKey( clear = True )
-    else:
-        message( 'no curves selected', warning = True )
-        return
-    # return
-    # print animCurves
-    if animCurves:
-        frames = []
-        for crv in animCurves:
-            fs = ( cmds.keyframe( crv, q = True ) )
-            for f in fs:
-                frames.append( f )
-        print( frames )
-        frames = list( set( frames ) )
-        # print( frames )
-        if frames:
-            i = 0
-            for frame in frames:
-                rnd = round( frame, 0 )
-                # print rnd, frame
-                if rnd != frame:
-                    # message( 'checking: ' + 'key' + ' -- ' + str( frame ) )
-                    cmds.refresh( f = 1 )
-                    # print( frame, rnd, frames[i + 1] )
-                    if rnd not in frames:
-                        if frame != frames[-1]:  # cant use next 'if' on last frame
-                            if frames[i + 1] > rnd:  # make sure next frame isnt less than rnd or it will fail, ie [945.999, 945.99999], rnd = 955
-                                if frame > rnd:  # if rounding down make sure frame is free  and hasnt been used by previous iteration
-                                    if rnd not in frames_added:
-                                        message( 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
-                                        cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = rnd )
-                                        frames_added.append( rnd )
-                                    else:
-                                        # move key to next frame is free
-                                        next_frame = rnd + 1
-                                        if next_frame not in frames_added and next_frame not in frames:
-                                            message( 'moving key -- ' + str( frame ) + ' to ' + str( next_frame ) )
-                                            cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = next_frame )
-                                            frames_added.append( next_frame )
-                                        else:
-                                            message( 'cutting key -- ' + str( frame ) )
-                                            cmds.cutKey( animCurves, time = ( frame, frame ) )
-                                else:  # rounding up, frame is less than round, should work , established rnd not in frames
-                                    message( 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
-                                    cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = rnd )
-                                    frames_added.append( rnd )
-
-                            else:
-                                # print( '   ???   ', frame, ' ? ', frames[i + 1], ' ? ', rnd )
-                                message( 'cutting key -- ' + str( frame ) )
-                                cmds.cutKey( animCurves, time = ( frame, frame ) )
-                        else:
-                            message( 'moving key -- ' + str( frame ) + ' to ' + str( rnd ) )
-                            cmds.keyframe( time = ( frame, frame ), absolute = True, timeChange = rnd )
-                            frames_added.append( rnd )
-                    else:
-                        message( 'cutting key -- ' + str( frame ) )
-                        cmds.cutKey( animCurves, time = ( frame, frame ) )
-                i = i + 1
-        else:
-            message( 'no keys' )
-        cmds.select( sel )
-        cmds.selectKey( animCurves )
-    else:
-        message( 'no curves selected' )
+    pass
 
 
 def distributeKeys( step = 3.0, destructive = True, forceWholeFrames = True ):
