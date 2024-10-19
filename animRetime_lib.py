@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import sys
 import time
 
 from PySide2 import QtCore, QtGui, QtWidgets
@@ -24,7 +25,9 @@ try:
     if timewarp_window:
         if not timewarp_window.main_window.isHidden():
             timewarp_window.store_session()
+            print( 'sess' )
             timewarp_window.main_window.close()
+            print( 'close' )
         else:
             timewarp_window = None
 except:
@@ -47,6 +50,39 @@ def message( what = '', maya = True, warning = False ):
 
 def ____UI____():
     pass
+
+
+class CustomQDialog( QtWidgets.QDialog ):
+    '''
+    problem with super(), depends on py version
+    '''
+
+    def __init__( self ):
+        ver = sys.version_info.major  # returns version of py, int
+        # print( '!!!___ ', ver )
+        if ver == 2:
+            super( CustomQDialog, self ).__init__()  # py 2.7+
+        else:
+            super().__init__()  # py 3.0+
+
+    def closeEvent( self, event ):
+        '''
+        
+        '''
+        #
+        timewarp_window.store_session()
+        '''
+        p_d = Prefs_dynamic()
+        p_d.prefs[p_d.session_window_pos_x] = self.frameGeometry().x()
+        p_d.prefs[p_d.session_window_pos_y] = self.frameGeometry().y()
+        p_d.prefs[p_d.session_window_width] = self.geometry().width()
+        p_d.prefs[p_d.session_window_height] = self.geometry().height()
+        # setProject_window = None
+        p_d.prefSave()
+        '''
+        #
+        event.accept()
+        # print( 'Window closed' )
 
 
 class SessionElements():
@@ -91,8 +127,8 @@ def init_ui():
     p_d = Prefs_dynamic()
     win = SessionElements()
     # main
-    main_window = QtWidgets.QDialog()
-    win.main_window = main_window
+    win.main_window = CustomQDialog()
+    win.main_window.setWindowTitle( 'Retime' )
     main_layout = QtWidgets.QVBoxLayout()
     top_layout = QtWidgets.QHBoxLayout()
     bottom_layout = QtWidgets.QHBoxLayout()
@@ -1894,7 +1930,6 @@ def getConnections1( object = '', direction = 'in', find = 'animCurveTU', find_t
     print( 'results________________________', results )
     pass
 
-
 '''
 import imp
 import webrImport as web
@@ -2270,16 +2305,12 @@ class Prefs_dynamic():
 
 if __name__ == '__main__':
 
-
     print( 'run only in maya' )
-
 
 else:
 
-
     # open
     app = QtWidgets.QApplication.instance()
-
 
     timewarp_window = init_ui()  # class
     print( timewarp_window.main_window )

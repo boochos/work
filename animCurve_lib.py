@@ -371,6 +371,16 @@ def smoothKeys( weight = 0.5 ):
 def subframe():
     '''
     change to inserting keys instead of moving keys to dif frames
+    #
+    # insert key command
+    #
+    if cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 ) == 0:
+        cmds.cutKey( animCurves, time = ( frame, frame ) )
+    else:
+        cmds.setKeyframe( animCurves, time = ( rnd, rnd ), i = 1 )
+        cmds.cutKey( animCurves, time = ( frame, frame ) )
+    #
+    #
     '''
     # print( '___!!!' )
     sel = cmds.ls( sl = 1 )

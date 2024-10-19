@@ -2504,3 +2504,9 @@ else:
     setProject_window.main_window.show()
     app.exec_()
 
+'''
+# maya launch command
+import imp
+import setProjectToolSivfx_dev as sp
+imp.reload(sp)
+'''
