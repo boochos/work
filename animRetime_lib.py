@@ -128,7 +128,7 @@ def init_ui():
     win = SessionElements()
     # main
     win.main_window = CustomQDialog()
-    win.main_window.setWindowTitle( 'Retime' )
+    # win.main_window.setWindowTitle( 'Retime' )
     main_layout = QtWidgets.QVBoxLayout()
     top_layout = QtWidgets.QHBoxLayout()
     bottom_layout = QtWidgets.QHBoxLayout()
