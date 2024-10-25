@@ -128,7 +128,7 @@ def init_ui():
     win = SessionElements()
     # main
     win.main_window = CustomQDialog()
-    # win.main_window.setWindowTitle( 'Retime' )
+    win.main_window.setWindowTitle( 'Retime' )
     main_layout = QtWidgets.QVBoxLayout()
     top_layout = QtWidgets.QHBoxLayout()
     bottom_layout = QtWidgets.QHBoxLayout()
@@ -1441,7 +1441,7 @@ def getAnimCurves2( object = '', layers = [] ):
     #
     mel.eval( 'source "buildSetAnimLayerMenu.mel";' )
     # find layers
-    active_layer = getActiveLayer()
+    active_layer = getActiveLayers()
     found_layers = cmds.ls( type = 'animLayer' )
     member_of_layers = getObjectsAnimLayers( object )
     attrs = cmds.listAttr( object, k = 1 )
@@ -1508,14 +1508,8 @@ def getAnimCurves2( object = '', layers = [] ):
                     if crv:
                         crvs.append( crv[0] )
     # restore active layer
-    # restore active layer
-    if active_layer:
-        mel.eval( 'selectLayer(\"' + active_layer + '\");' )
-    else:
-        try:
-            mel.eval( 'selectLayer(\"' + '' + '\");' )
-        except:
-            pass
+    setLayersActive( active_layer )
+
     #
     crvs = list( set( crvs ) )
     # print( crvs )
@@ -2109,16 +2103,33 @@ def getUniqueName( name = '' ):
         return name + str( i ) + '___'
 
 
-def getActiveLayer():
+def getActiveLayers():
     '''
     return current active anim layer
     '''
     layerNames = cmds.ls( type = 'animLayer' )
+    selected_layers = []
     # rootLayer = cmds.animLayer( q = True, root = True )
     for layer in layerNames:
         if cmds.animLayer( layer, q = True, selected = True ):
-            return layer
-    return None
+            selected_layers.append( layer )
+    # print( selected_layers )
+    return selected_layers
+
+
+def setLayersActive( layers = [] ):
+    '''
+    takes list of layers and selects them, making them active
+    '''
+    if not layers:
+        return None
+    #
+    all_layers = cmds.ls( type = 'animLayer' )
+    for layer in all_layers:
+        if layer in layers:
+            cmds.animLayer( layer, e = True, sel = True )  # select
+        else:
+            cmds.animLayer( layer, e = True, sel = False )  # de-select
 
 
 def getDeadCurves( timeWarp = '' ):
