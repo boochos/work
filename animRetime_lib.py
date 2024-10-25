@@ -1508,12 +1508,14 @@ def getAnimCurves2( object = '', layers = [] ):
                     if crv:
                         crvs.append( crv[0] )
     # restore active layer
+    # restore active layer
     if active_layer:
         mel.eval( 'selectLayer(\"' + active_layer + '\");' )
-    elif 'BaseAnimation' in found_layers:
-        mel.eval( 'animLayerEditorOnSelect \"' + 'BaseAnimation' + '\" 0;' )
     else:
-        pass
+        try:
+            mel.eval( 'selectLayer(\"' + '' + '\");' )
+        except:
+            pass
     #
     crvs = list( set( crvs ) )
     # print( crvs )
