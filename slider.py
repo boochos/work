@@ -1,9 +1,11 @@
 # Version 1.5
+import imp
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtWidgets import QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayout, QPushButton
 from shiboken2 import wrapInstance
 
-import animRetime_lib as arl
+import animLayers_lib as anml
+imp.reload( anml )
 import maya.OpenMayaUI as omui
 import maya.cmds as cmds
 import maya.mel as mel
@@ -88,9 +90,9 @@ class CustomSlider( QSlider ):
         self.auto_k_restore = None
         self.all_curves = []
         self.anim_layers = []
-        self.blend_nodes = []
+        self.blend_nodes = []  # mark as dirty for proper ui update
 
-    def get_selected_anim_curves( self ):
+    def get_anim_curves_in_scope( self ):
         """
         Get animation curves based on operation priority:
         1. Graph Editor selected curves
@@ -104,19 +106,16 @@ class CustomSlider( QSlider ):
         # Priority 1: Check for curves selected in graph editor
         selected_curves = cmds.keyframe( q = True, name = True, sl = True )
         if selected_curves:
-            print( 'sel curves ', selected_curves )
-            # self._get_objects_from_curves( selected_curves ) no need for this
+            # print( 'sel curves ', selected_curves )
             return selected_curves
 
         # Priority 2: Check for active animation layers
-        anim_layer_curves = self._get_anim_layer_curves()  # something in here reframes the selection
+        anim_layer_curves = self._get_anim_layer_curves()
         # print( 'out ', anim_layer_curves )
         if anim_layer_curves:
-            print( 'correct, blends', self.blend_nodes )
-            return anim_layer_curves
+            return anim_layer_curves  # dont return yet, check base layer
 
-        print( 'wrong' )
-        # Priority 3: Get all connected animation curves
+        # Priority 3: Get all connected animation curves,
         return self._get_curves_from_objects()
 
     def _get_anim_layer_curves( self ):
@@ -143,8 +142,7 @@ class CustomSlider( QSlider ):
                         self.anim_layers.append( layer )
                         # print( anim_layers )
                 if not self.anim_layers:
-                    # TODO: if None assume base layer, attempt to get curves from base layer, dont return None yet
-                    return None
+                    return None  # likely curves in base layer, skip layer queries
 
             self._get_blend_nodes()
             active_curves = []
@@ -152,55 +150,13 @@ class CustomSlider( QSlider ):
             # Process each selected object, get anim curves for objects in specific layers
             for obj in self.selected_objects:
                 layer_curves = []
-                layer_curves = arl.getAnimCurves2( object = obj, layers = self.anim_layers )
-                # print( layer_curves )
+                layer_curves = anml.getAnimCurves( object = obj, layers = self.anim_layers )
+                print( layer_curves )
                 if layer_curves:
                     active_curves.extend( layer_curves )
 
             # print( active_curves )
             return list( set( active_curves ) )  # Remove duplicates
-
-    def _get_layer_curves( self, anim_layer ):
-            """
-            Get animation curves from a specific animation layer for selected objects.
-            Args:
-                anim_layer: Name of the animation layer to query
-            Returns list of animation curves in the layer.
-            """
-            layer_curves = []
-
-            # Get affected layers for selected objects
-            affected_layers = cmds.animLayer( q = True, affectedLayers = True ) or []
-
-            # If this layer isn't affecting any selected objects, return empty list
-            if anim_layer not in affected_layers:
-                return []
-
-            for obj in self.selected_objects:
-                # Get animated attributes in this layer
-                full_attrs = cmds.animLayer( anim_layer, q = True, attribute = True, aso = True ) or []
-
-                for full_attr in full_attrs:
-                    # Get connected animation curves
-                    connections = cmds.listConnections( full_attr,
-                                                     type = 'animCurve',
-                                                     source = True,
-                                                     destination = False ) or []
-
-                    layer_curves.extend( connections )
-
-            return layer_curves
-
-    def _get_objects_from_curves( self, curves ):
-        """
-        Helper method to get objects connected to given curves.
-        Updates self.selected_objects with connected objects.
-        """
-        self.selected_objects = []
-        for curve in curves:
-            connections = cmds.listConnections( curve, destination = True, source = False ) or []
-            self.selected_objects.extend( [conn for conn in connections
-                                       if conn not in self.selected_objects] )
 
     def _get_curves_from_objects( self ):
         """
@@ -230,7 +186,7 @@ class CustomSlider( QSlider ):
         cmds.undoInfo( openChunk = True, cn = UNDO_CHUNK_NAME )
 
         # Get curves based on selection priority
-        self.all_curves = self.get_selected_anim_curves()
+        self.all_curves = self.get_anim_curves_in_scope()
         # print( 'result', self.all_curves )
 
         if not self.all_curves:
@@ -255,6 +211,7 @@ class CustomSlider( QSlider ):
         """
         Process animation curves for a given object.
         Stores previous, current, and next key values.
+        Questionable query
         """
         for curve in self.all_curves:
             # Verify curve belongs to current object
