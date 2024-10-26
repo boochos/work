@@ -100,6 +100,7 @@ class CustomSlider( QSlider ):
         3. Object-connected curves
         Returns list of animation curve names.
         """
+
         # Get selected objects for further processing
         self.selected_objects = cmds.ls( selection = True )
 
@@ -113,10 +114,27 @@ class CustomSlider( QSlider ):
         anim_layer_curves = self._get_anim_layer_curves()
         # print( 'out ', anim_layer_curves )
         if anim_layer_curves:
+            print( '__in' )
             return anim_layer_curves  # dont return yet, check base layer
 
         # Priority 3: Get all connected animation curves,
         return self._get_curves_from_objects()
+
+    def get_visible_curves( self ):
+        '''
+        
+        '''
+        curves = cmds.keyframe( q = True, name = True, sl = True )
+        if curves:
+            # print( 'sel curves ', selected_curves )
+            return curves
+
+        ge = 'graphEditor1GraphEd'
+        ge_exists = cmds.animCurveEditor( ge, exists = True )
+        if ge_exists:
+            curves = cmds.animCurveEditor( ge, q = True, curvesShown = True )
+        print( 'visible: ', curves )
+        return curves
 
     def _get_anim_layer_curves( self ):
             """
@@ -124,7 +142,9 @@ class CustomSlider( QSlider ):
             Returns filtered list of animation curves that are in active layers.
             """
             # Get all animation layers
-            all_anim_layers = cmds.ls( type = 'animLayer' )
+            self.anim_layers = cmds.ls( type = 'animLayer' )
+
+            '''
             if not all_anim_layers:
                 # print( 'nope' )
                 return None
@@ -143,10 +163,14 @@ class CustomSlider( QSlider ):
                         # print( anim_layers )
                 if not self.anim_layers:
                     return None  # likely curves in base layer, skip layer queries
+            '''
 
             self._get_blend_nodes()
-            active_curves = []
+            active_curves = self.get_visible_curves()
+            print( '__here' )
+            self._get_blend_nodes()
 
+            '''
             # Process each selected object, get anim curves for objects in specific layers
             for obj in self.selected_objects:
                 layer_curves = []
@@ -154,6 +178,7 @@ class CustomSlider( QSlider ):
                 print( layer_curves )
                 if layer_curves:
                     active_curves.extend( layer_curves )
+            '''
 
             # print( active_curves )
             return list( set( active_curves ) )  # Remove duplicates
@@ -165,19 +190,30 @@ class CustomSlider( QSlider ):
         TODO: Test if this works with connected constraints and character sets
         TODO: if object is in a layer but None are selected/active, assume to operate on BaseAnimation layer, find curves 
         """
+
+        '''
         all_curves = []
         for obj in self.selected_objects:
             curves = cmds.listConnections( obj, type = 'animCurve' ) or []
             all_curves.extend( [c for c in curves if c not in all_curves] )
         print( 'basic', all_curves )
+        '''
+
+        # override to test
+        self._get_blend_nodes()
+        all_curves = self.get_visible_curves()
         return all_curves
 
-    def _get_blend_nodes( self ):
+    def get_blend_nodes( self ):
         """Finds blend nodes associated with anim layers in scope"""
         for layer in self.anim_layers:
+            print( layer )
             blends = cmds.animLayer( layer, q = True, blendNodes = True )
             if blends:
                 self.blend_nodes.extend( blends )
+            else:
+                print( 'no blends' )
+                pass
         print( 'blends', self.blend_nodes )
 
     # ... [Rest of the CustomSlider class remains the same]
@@ -185,14 +221,23 @@ class CustomSlider( QSlider ):
         """Query and store the current animation state"""
         cmds.undoInfo( openChunk = True, cn = UNDO_CHUNK_NAME )
 
+        '''
         # Get curves based on selection priority
         self.all_curves = self.get_anim_curves_in_scope()
         # print( 'result', self.all_curves )
+        '''
+
+        # get curves
+        self.all_curves = self.get_visible_curves()
 
         if not self.all_curves:
             print( 'No animation curves found' )
             return
 
+        # initialize
+        self.selected_objects = cmds.ls( selection = True )
+        self.anim_layers = cmds.ls( type = 'animLayer' )
+        self.get_blend_nodes()
         self.current_time = cmds.currentTime( query = True )
         self._initialize_key_values()
 
