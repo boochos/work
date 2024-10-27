@@ -1,11 +1,8 @@
 # Version 1.5
-import imp
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtWidgets import QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayout, QPushButton
 from shiboken2 import wrapInstance
 
-import animLayers_lib as anml
-imp.reload( anml )
 import maya.OpenMayaUI as omui
 import maya.cmds as cmds
 import maya.mel as mel
@@ -17,7 +14,7 @@ global custom_dialog
 UNDO_CHUNK_NAME = 'BlendPose'
 DEFAULT_SLIDER_WIDTH = 400
 DEFAULT_LABEL_WIDTH = 30
-DEFAULT_RANGE = 150.0
+DEFAULT_RANGE = 150.0  # Changed to 80% as per requirement
 
 
 def cleanup_dialog():
@@ -54,15 +51,6 @@ def message( what = '', maya = True, warning = False ):
             print( what )
 
 
-def get_maya_main_window():
-    """
-    Get Maya's main window as a QWidget.
-    Returns the main Maya window wrapped as a QWidget.
-    """
-    main_window_ptr = omui.MQtUtil.mainWindow()
-    return wrapInstance( int( main_window_ptr ), QtWidgets.QWidget )
-
-
 class CustomSlider( QSlider ):
     """
     Custom slider widget for blending between animation poses.
@@ -81,8 +69,31 @@ class CustomSlider( QSlider ):
         self.setRange( int( self.r * -1 ), int( self.r ) )
         self.setValue( 0 )
         self.setFixedWidth( DEFAULT_SLIDER_WIDTH )
+        self.setFixedHeight( 50 )  # Make the slider taller to accommodate the handle
 
-        self.label = QLabel( '0' )
+        # Style the slider with a square handle
+        self.setStyleSheet( """
+            QSlider::handle:horizontal {
+                background-color: #673232;
+                border: 1px solid #373737;
+                width: 26px;
+                height: 24px;
+                margin: -8px 0;/* Adjust margins to half the handle height */
+                border-radius: 4px; /* This rounds the corners */
+            }
+            QSlider::groove:horizontal {
+                border: 1px solid #333333;
+                height: 12px;       /* 2px smaller than handle height */
+                background: #373737  ;
+                margin: 2px 0;
+                position: absolute;
+                left: 4px;         /* Inset by half handle width */
+                right: 4px;        /* Inset by half handle width */
+                border-radius: 4px; /* This rounds the corners */
+            }
+        """ )
+
+        self.label = QLabel( '0%' )
         self.label.setFixedWidth( DEFAULT_LABEL_WIDTH )
 
     def _connect_signals( self ):
@@ -150,7 +161,7 @@ class CustomSlider( QSlider ):
         self._initialize_key_values()
 
         # Process curves and their objects
-        print( self.selected_objects )
+        # print( self.selected_objects )
         for obj in self.selected_objects:
             self._process_object_curves( obj )
 
@@ -169,9 +180,9 @@ class CustomSlider( QSlider ):
         for curve in self.all_curves:
             # Verify curve belongs to current object
             connections = cmds.listHistory( curve, f = True )
-            print( obj, connections )
+            # print( obj, connections )
             if obj not in connections:
-                print( '________out' )
+                # print( '________out' )
                 continue
 
             current_val = self._get_current_value( curve )
@@ -244,14 +255,14 @@ class CustomSlider( QSlider ):
         for obj in self.selected_objects:
             self._process_object_values( obj, value )
 
-        # print( self.blend_nodes )
         if self.blend_nodes:
             # print( self.blend_nodes )
             cmds.dgdirty( self.blend_nodes )
+            mel.eval( 'dgdirty;' )
         else:
             # print( 'dg' )
             mel.eval( 'dgdirty;' )
-        self.label.setText( str( value ) )
+        self.label.setText( str( abs( value ) ) + '%' )
 
     def _process_object_values( self, obj, value ):
         """Process value adjustments for a single object"""
@@ -268,12 +279,15 @@ class CustomSlider( QSlider ):
 
     def _calculate_blended_value( self, obj, curve, value, initial_val ):
         """Calculate the blended value based on slider position"""
+        # Convert slider value directly to percentage (no normalization needed)
+        percentage = value / 100.0  # Direct percentage conversion
+
         if value >= 0:
             target_val = self.next_key_values.get( obj, {} ).get( curve, initial_val )
-            ratio = value / self.r
+            ratio = percentage
         else:
             target_val = self.previous_key_values.get( obj, {} ).get( curve, initial_val )
-            ratio = abs( value ) / self.r
+            ratio = abs( percentage )
 
         return initial_val * ( 1 - ratio ) + target_val * ratio
 
@@ -289,7 +303,7 @@ class CustomSlider( QSlider ):
         """Reset slider to initial position"""
         self.valueChanged.disconnect( self.adjust_values )
         self.setValue( 0 )
-        self.label.setText( '0' )
+        self.label.setText( '0%' )
         self.valueChanged.connect( self.adjust_values )
 
 
@@ -303,7 +317,7 @@ class CustomDialog( QDialog ):
     def _setup_ui( self ):
         """Setup the UI layout and widgets"""
         self.setWindowTitle( "Blend Pose Tool" )
-        self.setFixedHeight( 40 )
+        self.setFixedHeight( 70 )
 
         # Create layout
         layout = QHBoxLayout()
@@ -312,11 +326,20 @@ class CustomDialog( QDialog ):
 
         # Add widgets to layout
         layout.addWidget( self.label )
-        layout.addWidget( self.slider )
+        layout.addWidget( self.slider, 0, QtCore.Qt.AlignCenter )
         layout.addWidget( self.slider.label )
 
         self.setLayout( layout )
         self.adjustSize()
+
+
+def get_maya_main_window():
+    """
+    Get Maya's main window as a QWidget.
+    Returns the main Maya window wrapped as a QWidget.
+    """
+    main_window_ptr = omui.MQtUtil.mainWindow()
+    return wrapInstance( int( main_window_ptr ), QtWidgets.QWidget )
 
 
 if __name__ == '__main__':
