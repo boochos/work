@@ -65,7 +65,8 @@ class CustomSlider( QSlider ):
     COLOR_NEUTRAL = "#373737"  # Gray middle zone
     COLOR_WARNING = "#453939"  # Red outer zones 673232 8B4343
     COLOR_HANDLE_NORMAL = "#8B4343"  # Handle color within threshold
-    COLOR_HANDLE_WARNING = "#FF4444"  # Handle color beyond threshold
+    COLOR_HANDLE_WARNING = "#E54C4C"  # Handle color beyond threshold E54C4C FF4444
+    COLOR_HOVER = "#B24949"
 
     def __init__( self, parent = None ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
@@ -81,12 +82,13 @@ class CustomSlider( QSlider ):
         self.POSITIVE_THRESHOLD = positive
         self._update_stylesheet()
 
-    def set_colors( self, neutral = "#373737", warning = "#8B4343", handle_normal = "#673232", handle_warning = "#FF4444" ):
+    def set_colors( self, neutral = "#373737", warning = "#8B4343", handle_normal = "#673232", handle_warning = "#FF4444", handle_hover = "#B24949" ):
         """Set new colors and update the slider"""
         self.COLOR_NEUTRAL = neutral
         self.COLOR_WARNING = warning
         self.COLOR_HANDLE_NORMAL = handle_normal
         self.COLOR_HANDLE_WARNING = handle_warning
+        self.COLOR_HOVER = handle_hover
         self._update_stylesheet()
 
     def _setup_ui( self ):
@@ -378,14 +380,14 @@ class CustomSlider( QSlider ):
             QSlider::handle:horizontal {
                 background-color: %s;
                 border: 1px solid %s;
-                width: 26px;
+                width: 24px;
                 height: 24px;
-                margin: -8px 0;
+                margin: -10px 0;
                 border-radius: 4px;
             }
             QSlider::groove:horizontal {
-                border: 1px solid #333333;
-                height: 12px;
+                border: 2px solid #333333;
+                height: 8px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0, %s);
                 margin: 2px 0;
                 position: absolute;
@@ -393,13 +395,16 @@ class CustomSlider( QSlider ):
                 right: 4px;
                 border-radius: 4px;
             }
+            QSlider::handle:horizontal:hover {
+                border: 1px solid %s;
+            }
             QSlider::sub-page:horizontal {
                 background: transparent;
             }
             QSlider::add-page:horizontal {
                 background: transparent;
             }
-        """ % ( handle_color, self.COLOR_NEUTRAL, gradient )
+        """ % ( handle_color, self.COLOR_NEUTRAL, gradient, self.COLOR_HOVER )
 
         self.setStyleSheet( stylesheet )
 
@@ -444,7 +449,7 @@ class CustomSlider( QSlider ):
         # Get current value and calculate sensitivity multiplier
         current_value = self.value()
         sensitivity = self._get_sensitivity_multiplier( current_value )
-        print( current_value, sensitivity )
+        # print( current_value, sensitivity )
 
         # Apply sensitivity to movement
         adjusted_delta = delta * sensitivity
@@ -488,7 +493,20 @@ class CustomDialog( QDialog ):
 
         # Example of how to customize the thresholds and colors if needed
         # self.slider.set_threshold(-80, 80)  # Change transition points
-        # self.slider.set_colors(neutral="#444444", warning="#FF4444", handle="#882222")  # Change colors
+        # pallette picker
+        # https://www.realtimecolors.com/?colors=050315-3d3945-714fb6-9c6cfd-8c65db&fonts=Inter-Inter
+        # red
+        # self.slider.set_colors( warning = "#453939", handle_normal = "#8B4343", handle_warning = "#E54C4C", handle_hover = "#B24949" )  # Change colors
+        # teal
+        # self.slider.set_colors( warning = "#394545", handle_normal = "#438B8B", handle_warning = "#4CE5E5", handle_hover = "#49B2B2" )  # Change colors
+        # purple/pink
+        # self.slider.set_colors( warning = "#453945", handle_normal = "#8B438B", handle_warning = "#E54CE5", handle_hover = "#B249B2" )  # Change colors
+        # blue
+        # self.slider.set_colors( warning = "#394555", handle_normal = "#438B99", handle_warning = "#4CE5FF", handle_hover = "#49B2D2" )  # Change colors
+        # green
+        # self.slider.set_colors( warning = "#3D4539", handle_normal = "#4A8B43", handle_warning = "#6DE54C", handle_hover = "#49B249" )  # Change colors
+        # purple
+        # self.slider.set_colors( warning = "#3d3945", handle_normal = "#8263c0", handle_warning = "#8549ff", handle_hover = "#a082db" )  # Change colors
 
         # Add widgets to layout
         layout.addWidget( self.label )
