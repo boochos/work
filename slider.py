@@ -56,12 +56,38 @@ class CustomSlider( QSlider ):
     Custom slider widget for blending between animation poses.
     Handles the core functionality of the blend pose tool.
     """
+    # Class variables for color transition points and colors
+    NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
+    POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
+    SENSITIVITY_ZONE = 5  # Start reducing sensitivity 5 units before threshold
+
+    # Colors
+    COLOR_NEUTRAL = "#373737"  # Gray middle zone
+    COLOR_WARNING = "#453939"  # Red outer zones 673232 8B4343
+    COLOR_HANDLE_NORMAL = "#8B4343"  # Handle color within threshold
+    COLOR_HANDLE_WARNING = "#FF4444"  # Handle color beyond threshold
 
     def __init__( self, parent = None ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
         self._setup_ui()
         self._connect_signals()
         self.reset_state()
+        self._last_mouse_pos = None
+        self._is_tracking = False
+
+    def set_threshold( self, negative, positive ):
+        """Set new threshold values and update the slider"""
+        self.NEGATIVE_THRESHOLD = negative
+        self.POSITIVE_THRESHOLD = positive
+        self._update_stylesheet()
+
+    def set_colors( self, neutral = "#373737", warning = "#8B4343", handle_normal = "#673232", handle_warning = "#FF4444" ):
+        """Set new colors and update the slider"""
+        self.COLOR_NEUTRAL = neutral
+        self.COLOR_WARNING = warning
+        self.COLOR_HANDLE_NORMAL = handle_normal
+        self.COLOR_HANDLE_WARNING = handle_warning
+        self._update_stylesheet()
 
     def _setup_ui( self ):
         """Initialize UI elements and their properties"""
@@ -69,32 +95,15 @@ class CustomSlider( QSlider ):
         self.setRange( int( self.r * -1 ), int( self.r ) )
         self.setValue( 0 )
         self.setFixedWidth( DEFAULT_SLIDER_WIDTH )
-        self.setFixedHeight( 50 )  # Make the slider taller to accommodate the handle
+        self.setFixedHeight( 50 )
 
-        # Style the slider with a square handle
-        self.setStyleSheet( """
-            QSlider::handle:horizontal {
-                background-color: #673232;
-                border: 1px solid #373737;
-                width: 26px;
-                height: 24px;
-                margin: -8px 0;/* Adjust margins to half the handle height */
-                border-radius: 4px; /* This rounds the corners */
-            }
-            QSlider::groove:horizontal {
-                border: 1px solid #333333;
-                height: 12px;       /* 2px smaller than handle height */
-                background: #373737  ;
-                margin: 2px 0;
-                position: absolute;
-                left: 4px;         /* Inset by half handle width */
-                right: 4px;        /* Inset by half handle width */
-                border-radius: 4px; /* This rounds the corners */
-            }
-        """ )
+        self._update_stylesheet()
 
         self.label = QLabel( '0%' )
         self.label.setFixedWidth( DEFAULT_LABEL_WIDTH )
+
+        # Connect valueChanged to update handle color
+        self.valueChanged.connect( self._handle_value_change )
 
     def _connect_signals( self ):
         """Connect Qt signals to their handlers"""
@@ -306,6 +315,159 @@ class CustomSlider( QSlider ):
         self.label.setText( '0%' )
         self.valueChanged.connect( self.adjust_values )
 
+    def _handle_value_change( self, value ):
+        """Update handle color when value changes"""
+        self._update_stylesheet( value )
+        # Update label (original functionality)
+        self.label.setText( str( abs( value ) ) + '%' )
+
+    def _get_handle_color( self, value ):
+        """Determine handle color based on current value"""
+        if value <= self.NEGATIVE_THRESHOLD or value >= self.POSITIVE_THRESHOLD:
+            return self.COLOR_HANDLE_WARNING
+        return self.COLOR_HANDLE_NORMAL
+
+    def _calculate_gradient_stops( self ):
+        """Calculate gradient stops based on current range"""
+        total_range = self.maximum() - self.minimum()
+        if total_range == 0:
+            return "stop:0 {0}, stop:1 {0}".format( self.COLOR_NEUTRAL )
+
+        # Convert the threshold points to percentages of the total range
+        min_red_stop = ( self.NEGATIVE_THRESHOLD - self.minimum() ) / float( total_range )
+        max_red_start = ( self.POSITIVE_THRESHOLD - self.minimum() ) / float( total_range )
+
+        # Ensure stops are within 0-1 range
+        min_red_stop = max( 0, min( min_red_stop, 1 ) )
+        max_red_start = max( 0, min( max_red_start, 1 ) )
+
+        # Build gradient stops
+        stops = []
+
+        # Add red zone for negative values if in range
+        if self.minimum() <= self.NEGATIVE_THRESHOLD:
+            stops.extend( [
+                "stop:0 {0}".format( self.COLOR_WARNING ),
+                "stop:{0} {1}".format( min_red_stop, self.COLOR_WARNING ),
+                "stop:{0} {1}".format( min_red_stop + 0.001, self.COLOR_NEUTRAL )
+            ] )
+        else:
+            stops.append( "stop:0 {0}".format( self.COLOR_NEUTRAL ) )
+
+        # Add red zone for positive values if in range
+        if self.maximum() >= self.POSITIVE_THRESHOLD:
+            stops.extend( [
+                "stop:{0} {1}".format( max_red_start - 0.001, self.COLOR_NEUTRAL ),
+                "stop:{0} {1}".format( max_red_start, self.COLOR_WARNING ),
+                "stop:1 {0}".format( self.COLOR_WARNING )
+            ] )
+        else:
+            stops.append( "stop:1 {0}".format( self.COLOR_NEUTRAL ) )
+
+        return ", ".join( stops )
+
+    def _update_stylesheet( self, value = None ):
+        """Update the stylesheet with current gradient stops and handle color"""
+        gradient = self._calculate_gradient_stops()
+
+        # Use current value if provided, otherwise use slider's value
+        current_value = value if value is not None else self.value()
+        handle_color = self._get_handle_color( current_value )
+
+        stylesheet = """
+            QSlider::handle:horizontal {
+                background-color: %s;
+                border: 1px solid %s;
+                width: 26px;
+                height: 24px;
+                margin: -8px 0;
+                border-radius: 4px;
+            }
+            QSlider::groove:horizontal {
+                border: 1px solid #333333;
+                height: 12px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, %s);
+                margin: 2px 0;
+                position: absolute;
+                left: 4px;
+                right: 4px;
+                border-radius: 4px;
+            }
+            QSlider::sub-page:horizontal {
+                background: transparent;
+            }
+            QSlider::add-page:horizontal {
+                background: transparent;
+            }
+        """ % ( handle_color, self.COLOR_NEUTRAL, gradient )
+
+        self.setStyleSheet( stylesheet )
+
+    def setRange( self, minimum, maximum ):
+        """Override setRange to update gradient when range changes"""
+        super( CustomSlider, self ).setRange( minimum, maximum )
+        self._update_stylesheet()
+
+    def mousePressEvent( self, event ):
+        """Override mousePressEvent to track initial mouse position"""
+        self._is_tracking = True
+        self._last_mouse_pos = event.pos().x()
+        super( CustomSlider, self ).mousePressEvent( event )
+
+    def _get_sensitivity_multiplier( self, value ):
+        """
+        Calculate sensitivity multiplier based on proximity to thresholds.
+        Returns 1.0 for normal movement, 0.5 for reduced movement.
+        """
+        # Define the zones where sensitivity should be reduced
+        near_negative = value <= ( self.NEGATIVE_THRESHOLD + self.SENSITIVITY_ZONE )
+        near_positive = value >= ( self.POSITIVE_THRESHOLD - self.SENSITIVITY_ZONE )
+
+        # If we're near or beyond either threshold, reduce sensitivity
+        if near_negative or near_positive:
+            return 0.5
+        return 1.0
+
+    def mouseMoveEvent( self, event ):
+        """Custom mouse move event with reduced sensitivity near thresholds"""
+        if not self._is_tracking:
+            return
+
+        current_pos = event.pos().x()
+        if self._last_mouse_pos is None:
+            self._last_mouse_pos = current_pos
+            return
+
+        # Calculate the pixel movement
+        delta = current_pos - self._last_mouse_pos
+
+        # Get current value and calculate sensitivity multiplier
+        current_value = self.value()
+        sensitivity = self._get_sensitivity_multiplier( current_value )
+        print( current_value, sensitivity )
+
+        # Apply sensitivity to movement
+        adjusted_delta = delta * sensitivity
+
+        # Calculate new position
+        span = self.maximum() - self.minimum()
+        width = self.width() - self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength )
+        new_value = self.minimum() + ( span * ( self._last_mouse_pos + adjusted_delta -
+                   self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength ) / 2 ) / width )
+
+        # Clamp the value
+        new_value = max( self.minimum(), min( self.maximum(), new_value ) )
+        print( current_value, new_value, sensitivity )
+
+        self.setValue( int( new_value ) )
+        self._last_mouse_pos = current_pos
+
+    def mouseReleaseEvent( self, event ):
+        """Reset tracking on mouse release"""
+        self._is_tracking = False
+        self._last_mouse_pos = None
+        super( CustomSlider, self ).mouseReleaseEvent( event )
+
 
 class CustomDialog( QDialog ):
     """Main dialog window for the Blend Pose Tool"""
@@ -323,6 +485,10 @@ class CustomDialog( QDialog ):
         layout = QHBoxLayout()
         self.label = QLabel( "Blend Pose" )
         self.slider = CustomSlider()
+
+        # Example of how to customize the thresholds and colors if needed
+        # self.slider.set_threshold(-80, 80)  # Change transition points
+        # self.slider.set_colors(neutral="#444444", warning="#FF4444", handle="#882222")  # Change colors
 
         # Add widgets to layout
         layout.addWidget( self.label )
