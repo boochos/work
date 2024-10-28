@@ -13,8 +13,8 @@ global custom_dialog
 
 # Constants
 UNDO_CHUNK_NAME = 'BlendPose'
-DEFAULT_SLIDER_WIDTH = 200
-DEFAULT_RANGE = 100.0  # Changed to 80% as per requirement
+DEFAULT_SLIDER_WIDTH = 400
+DEFAULT_RANGE = 150.0  # Changed to 80% as per requirement
 
 
 def cleanup_dialog():
@@ -79,7 +79,7 @@ class CustomSlider( QSlider ):
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
-    LOCK_RELEASE_MARGIN = 0  # Percentage beyond threshold needed to release lock
+    LOCK_RELEASE_MARGIN = 15  # Percentage beyond threshold needed to release lock
 
     # Colors
     COLOR_NEUTRAL = "#373737"  # Gray middle zone 373737
@@ -109,6 +109,15 @@ class CustomSlider( QSlider ):
 
         # Update handle label position whenever the slider value changes
         self.valueChanged.connect( self._update_handle_label_position )
+
+        # Add mouse tracking to handle groove clicks
+        self.setMouseTracking( True )
+
+        # Initialize click timer
+        self._click_timer = QtCore.QTimer( self )
+        self._click_timer.timeout.connect( self._handle_repeat_click )
+        self._click_direction = 0  # Store click direction (1 for right, -1 for left)
+        self._is_groove_click = False
 
     def set_threshold( self, negative, positive ):
         """Set new threshold values and update the slider"""
@@ -196,69 +205,145 @@ class CustomSlider( QSlider ):
         print( 'check: ', self.value() )
 
     def mousePressEvent( self, event ):
-        """Track initial mouse press"""
-        self._last_mouse_pos = event.pos().x()
+        """Handle mouse press events for both handle and groove"""
+        opt = QtWidgets.QStyleOptionSlider()
+        self.initStyleOption( opt )
+
+        # Get the handle and groove rectangles
+        handle_rect = self.style().subControlRect( 
+            QtWidgets.QStyle.CC_Slider,
+            opt,
+            QtWidgets.QStyle.SC_SliderHandle,
+            self
+        )
+        groove_rect = self.style().subControlRect( 
+            QtWidgets.QStyle.CC_Slider,
+            opt,
+            QtWidgets.QStyle.SC_SliderGroove,
+            self
+        )
+
+        # Check if click is on handle
+        if handle_rect.contains( event.pos() ):
+            self._is_groove_click = False
+            self._last_mouse_pos = event.pos().x()
+            super( CustomSlider, self ).mousePressEvent( event )
+            return
+
+        # Check if click is on groove
+        if groove_rect.contains( event.pos() ):
+            self._is_groove_click = True
+            # Calculate the click position relative to the groove
+            pos = event.pos().x()
+            center = self.width() / 2
+
+            # Trigger the selection query if not already done
+            if not self.all_curves:
+                self.query_selection()
+
+            # Store click direction
+            self._click_direction = 1 if pos >= center else -1
+
+            # Perform initial click
+            self._handle_repeat_click()
+
+            # Start repeating timer - adjust intervals as needed
+            self._click_timer.start( 50 )  # Repeat every 50ms
+            return
+
+        self._is_groove_click = False
         super( CustomSlider, self ).mousePressEvent( event )
+
+    def _handle_repeat_click( self ):
+        """Handle a single click iteration"""
+        if self._click_direction == 0:
+            return
+
+        # Calculate new value
+        current = self.value()
+        new_value = current + self._click_direction
+
+        # Ensure we stay within bounds
+        new_value = max( min( new_value, self.maximum() ), self.minimum() )
+
+        # Only update if value actually changed
+        if new_value != current:
+            self.setValue( new_value )
+            self._handle_value_change( new_value )
+
+    def _reset_after_click( self ):
+        """Reset slider after a groove click"""
+        # Make sure we properly close the undo chunk and reset state
+        self.finalize_value()
 
     def mouseMoveEvent( self, event ):
         """
         Handle mouse movement and threshold locking
         """
-        if self._last_mouse_pos is None:
-            print( 'last mouse pos: ', None )
-            super( CustomSlider, self ).mouseMoveEvent( event )
-            return
+        if not self._is_groove_click:
+            if self._last_mouse_pos is None:
+                print( 'last mouse pos: ', None )
+                super( CustomSlider, self ).mouseMoveEvent( event )
+                return
 
-        current_pos = event.pos().x()
-        width = self.width() - self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength )
-        value_position = ( current_pos / float( width ) ) * ( self.maximum() - self.minimum() ) + self.minimum()
-        current_value = self.value()
-        # print( 'normlized', value_position )
+            current_pos = event.pos().x()
+            width = self.width() - self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength )
+            value_position = ( current_pos / float( width ) ) * ( self.maximum() - self.minimum() ) + self.minimum()
+            current_value = self.value()
+            # print( 'normlized', value_position )
 
-        # Check if mouse has moved beyond threshold + margin
-        if value_position >= ( self.POSITIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN ) or \
-           value_position <= ( self.NEGATIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN ):
-            self._mouse_beyond_threshold = True
-            self._lock_released = True
-
-        # check if the lock has been properly released, dont reset it if it has, this section unlocks the handle if the direction is reversed
-        if not self._lock_released:
-            if value_position >= self.NEGATIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN and self._negative_locked or \
-                value_position <= self.POSITIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN and self._positive_locked:
+            # Check if mouse has moved beyond threshold + margin
+            if value_position >= ( self.POSITIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN ) or \
+               value_position <= ( self.NEGATIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN ):
                 self._mouse_beyond_threshold = True
                 self._lock_released = True
-                self._soft_release = True
-                # print( 'mouse', current_value )
 
-        # Handle positive threshold
-        if current_value >= ( self.POSITIVE_THRESHOLD - 1 ) and not self._lock_released:
-            if not self._mouse_beyond_threshold:
-                self.setValue( self.POSITIVE_THRESHOLD - 1 )
-                return
+            # check if the lock has been properly released, dont reset it if it has, this section unlocks the handle if the direction is reversed
+            if not self._lock_released:
+                if value_position >= self.NEGATIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN and self._negative_locked or \
+                    value_position <= self.POSITIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN and self._positive_locked:
+                    self._mouse_beyond_threshold = True
+                    self._lock_released = True
+                    self._soft_release = True
+                    # print( 'mouse', current_value )
 
-        # Handle negative threshold
-        if current_value <= ( self.NEGATIVE_THRESHOLD + 1 ) and not self._lock_released:
-            if not self._mouse_beyond_threshold:
-                self.setValue( self.NEGATIVE_THRESHOLD + 1 )
-                return
+            # Handle positive threshold
+            if current_value >= ( self.POSITIVE_THRESHOLD - 1 ) and not self._lock_released:
+                if not self._mouse_beyond_threshold:
+                    self.setValue( self.POSITIVE_THRESHOLD - 1 )
+                    return
 
-        if self._soft_release:
-            self._mouse_beyond_threshold = False
-            self._lock_released = False
-            # self._last_mouse_pos = None
-            self._soft_release = False
-            self._negative_locked = False
-            self._positive_locked = False
-        print( 'neg: ', self._negative_locked, 'pos: ', self._positive_locked )
+            # Handle negative threshold
+            if current_value <= ( self.NEGATIVE_THRESHOLD + 1 ) and not self._lock_released:
+                if not self._mouse_beyond_threshold:
+                    self.setValue( self.NEGATIVE_THRESHOLD + 1 )
+                    return
 
-        # reset, didnt move beyond threshold but back between threshold ranges
+            if self._soft_release:
+                self._mouse_beyond_threshold = False
+                self._lock_released = False
+                # self._last_mouse_pos = None
+                self._soft_release = False
+                self._negative_locked = False
+                self._positive_locked = False
+            print( 'neg: ', self._negative_locked, 'pos: ', self._positive_locked )
 
-        super( CustomSlider, self ).mouseMoveEvent( event )
+            # reset, didnt move beyond threshold but back between threshold ranges
+
+            super( CustomSlider, self ).mouseMoveEvent( event )
 
     def mouseReleaseEvent( self, event ):
-        """Reset mouse tracking on release"""
-        self._last_mouse_pos = None
-        super( CustomSlider, self ).mouseReleaseEvent( event )
+        """Handle mouse release events"""
+        if self._is_groove_click:
+            # Stop the timer and reset
+            self._click_timer.stop()
+            self._click_direction = 0
+            self._is_groove_click = False
+            # Reset the slider
+            QtCore.QTimer.singleShot( 100, self._reset_after_click )
+        else:
+            self._last_mouse_pos = None
+            super( CustomSlider, self ).mouseReleaseEvent( event )
 
     def _connect_signals( self ):
         """Connect Qt signals to their handlers"""
@@ -596,7 +681,7 @@ class CustomDialog( QDialog ):
             QPushButton {
                 background-color: #2a2a2a;
                 border: none;
-                border-radius: 7px;
+                border-radius: 4px;
                 margin-bottom: 4px;
                 margin-right: 4px;
             }
