@@ -1,5 +1,6 @@
 # Version 1.5
 from PySide2 import QtCore, QtWidgets
+from PySide2.QtCore import Qt, QPoint
 from PySide2.QtWidgets import QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayout, QPushButton
 from shiboken2 import wrapInstance
 
@@ -12,9 +13,8 @@ global custom_dialog
 
 # Constants
 UNDO_CHUNK_NAME = 'BlendPose'
-DEFAULT_SLIDER_WIDTH = 400
-DEFAULT_LABEL_WIDTH = 30
-DEFAULT_RANGE = 150.0  # Changed to 80% as per requirement
+DEFAULT_SLIDER_WIDTH = 200
+DEFAULT_RANGE = 100.0  # Changed to 80% as per requirement
 
 
 def cleanup_dialog():
@@ -51,6 +51,26 @@ def message( what = '', maya = True, warning = False ):
             print( what )
 
 
+class HandleLabel( QLabel ):
+    """Custom label that follows the slider handle"""
+
+    def __init__( self, parent = None ):
+        super( HandleLabel, self ).__init__( parent )
+        self.setAlignment( Qt.AlignCenter )
+        self.setFixedWidth( 40 )
+        self.setStyleSheet( """
+            QLabel {
+                color: white;
+                background-color: transparent;
+                padding: 2px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 0px solid #333333;
+                border-radius: 2px;
+            }
+        """ )
+
+
 class CustomSlider( QSlider ):
     """
     Custom slider widget for blending between animation poses.
@@ -59,22 +79,36 @@ class CustomSlider( QSlider ):
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
-    SENSITIVITY_ZONE = 5  # Start reducing sensitivity 5 units before threshold
+    LOCK_RELEASE_MARGIN = 0  # Percentage beyond threshold needed to release lock
 
     # Colors
-    COLOR_NEUTRAL = "#373737"  # Gray middle zone
+    COLOR_NEUTRAL = "#373737"  # Gray middle zone 373737
     COLOR_WARNING = "#453939"  # Red outer zones 673232 8B4343
     COLOR_HANDLE_NORMAL = "#8B4343"  # Handle color within threshold
     COLOR_HANDLE_WARNING = "#E54C4C"  # Handle color beyond threshold E54C4C FF4444
-    COLOR_HOVER = "#B24949"
+    COLOR_HOVER = "#B24949"  # handle
+    COLOR_BORDER = '#1a1a1a'
 
     def __init__( self, parent = None ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
+
         self._setup_ui()
         self._connect_signals()
         self.reset_state()
-        self._last_mouse_pos = None
-        self._is_tracking = False
+
+        # Lock state tracking
+        self._positive_locked = False
+        self._negative_locked = False
+        self._lock_released = False
+        self._soft_release = False
+
+        # Create and setup the handle label
+        self.handle_label = HandleLabel( self )
+        self.handle_label.setText( '0' )
+        self.handle_label.hide()  # Initially hide the label
+
+        # Update handle label position whenever the slider value changes
+        self.valueChanged.connect( self._update_handle_label_position )
 
     def set_threshold( self, negative, positive ):
         """Set new threshold values and update the slider"""
@@ -82,14 +116,34 @@ class CustomSlider( QSlider ):
         self.POSITIVE_THRESHOLD = positive
         self._update_stylesheet()
 
-    def set_colors( self, neutral = "#373737", warning = "#8B4343", handle_normal = "#673232", handle_warning = "#FF4444", handle_hover = "#B24949" ):
+    def set_colors( self, neutral = "#343434", warning = "#8B4343", handle_normal = "#673232", handle_warning = "#FF4444", handle_hover = "#B24949", border = '#1a1a1a' ):
         """Set new colors and update the slider"""
         self.COLOR_NEUTRAL = neutral
         self.COLOR_WARNING = warning
         self.COLOR_HANDLE_NORMAL = handle_normal
         self.COLOR_HANDLE_WARNING = handle_warning
         self.COLOR_HOVER = handle_hover
+        self.COLOR_BORDER = border
         self._update_stylesheet()
+
+    def _update_handle_label_position( self ):
+        """Update the position of the handle label to follow the slider handle"""
+        if not self.handle_label.isVisible():
+            self.handle_label.show()
+
+        # Calculate handle position
+        opt = QtWidgets.QStyleOptionSlider()
+        self.initStyleOption( opt )
+        handle_rect = self.style().subControlRect( QtWidgets.QStyle.CC_Slider, opt,
+                                                QtWidgets.QStyle.SC_SliderHandle, self )
+
+        # Position label centered over handle
+        label_x = handle_rect.center().x() - self.handle_label.width() // 2
+        label_y = handle_rect.center().y() - self.handle_label.height() // 2  # Center on handle
+
+        # Update label position
+        self.handle_label.move( label_x, label_y )
+        self.handle_label.setText( '{0}'.format( abs( self.value() ) ) )
 
     def _setup_ui( self ):
         """Initialize UI elements and their properties"""
@@ -101,11 +155,110 @@ class CustomSlider( QSlider ):
 
         self._update_stylesheet()
 
-        self.label = QLabel( '0%' )
-        self.label.setFixedWidth( DEFAULT_LABEL_WIDTH )
-
         # Connect valueChanged to update handle color
         self.valueChanged.connect( self._handle_value_change )
+        self.valueChanged.connect( self._check_threshold_locks )
+
+    def _check_threshold_locks( self, value ):
+        """
+        Handle threshold locking behavior
+        """
+        if self._lock_released:
+            print( 'released' )
+            return
+
+        # Check positive threshold
+        if value >= self.POSITIVE_THRESHOLD - 1:
+            if not self._positive_locked:
+                # Engage lock at threshold
+                self._positive_locked = True
+                self.setValue( self.POSITIVE_THRESHOLD - 1 )
+            elif value >= self.POSITIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN:
+                # Release lock if we've moved past release point
+                self._positive_locked = False
+                self._lock_released = True
+            elif self._positive_locked:
+                # Keep value at threshold while locked
+                self.setValue( self.POSITIVE_THRESHOLD - 1 )
+        # Check negative threshold
+        elif value <= self.NEGATIVE_THRESHOLD + 1:
+            if not self._negative_locked:
+                # Engage lock at threshold
+                self._negative_locked = True
+                self.setValue( self.NEGATIVE_THRESHOLD + 1 )
+            elif value <= self.NEGATIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN:
+                # Release lock if we've moved past release point
+                self._negative_locked = False
+                self._lock_released = True
+            elif self._negative_locked:
+                # Keep value at threshold while locked
+                self.setValue( self.NEGATIVE_THRESHOLD + 1 )
+        print( 'check: ', self.value() )
+
+    def mousePressEvent( self, event ):
+        """Track initial mouse press"""
+        self._last_mouse_pos = event.pos().x()
+        super( CustomSlider, self ).mousePressEvent( event )
+
+    def mouseMoveEvent( self, event ):
+        """
+        Handle mouse movement and threshold locking
+        """
+        if self._last_mouse_pos is None:
+            print( 'last mouse pos: ', None )
+            super( CustomSlider, self ).mouseMoveEvent( event )
+            return
+
+        current_pos = event.pos().x()
+        width = self.width() - self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength )
+        value_position = ( current_pos / float( width ) ) * ( self.maximum() - self.minimum() ) + self.minimum()
+        current_value = self.value()
+        # print( 'normlized', value_position )
+
+        # Check if mouse has moved beyond threshold + margin
+        if value_position >= ( self.POSITIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN ) or \
+           value_position <= ( self.NEGATIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN ):
+            self._mouse_beyond_threshold = True
+            self._lock_released = True
+
+        # check if the lock has been properly released, dont reset it if it has, this section unlocks the handle if the direction is reversed
+        if not self._lock_released:
+            if value_position >= self.NEGATIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN and self._negative_locked or \
+                value_position <= self.POSITIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN and self._positive_locked:
+                self._mouse_beyond_threshold = True
+                self._lock_released = True
+                self._soft_release = True
+                # print( 'mouse', current_value )
+
+        # Handle positive threshold
+        if current_value >= ( self.POSITIVE_THRESHOLD - 1 ) and not self._lock_released:
+            if not self._mouse_beyond_threshold:
+                self.setValue( self.POSITIVE_THRESHOLD - 1 )
+                return
+
+        # Handle negative threshold
+        if current_value <= ( self.NEGATIVE_THRESHOLD + 1 ) and not self._lock_released:
+            if not self._mouse_beyond_threshold:
+                self.setValue( self.NEGATIVE_THRESHOLD + 1 )
+                return
+
+        if self._soft_release:
+            self._mouse_beyond_threshold = False
+            self._lock_released = False
+            # self._last_mouse_pos = None
+            self._soft_release = False
+            self._negative_locked = False
+            self._positive_locked = False
+        print( 'neg: ', self._negative_locked, 'pos: ', self._positive_locked )
+
+        # reset, didnt move beyond threshold but back between threshold ranges
+
+        super( CustomSlider, self ).mouseMoveEvent( event )
+
+    def mouseReleaseEvent( self, event ):
+        """Reset mouse tracking on release"""
+        self._last_mouse_pos = None
+        super( CustomSlider, self ).mouseReleaseEvent( event )
 
     def _connect_signals( self ):
         """Connect Qt signals to their handlers"""
@@ -124,6 +277,13 @@ class CustomSlider( QSlider ):
         self.all_curves = []
         self.anim_layers = []
         self.blend_nodes = []  # mark as dirty for proper ui update
+
+        # Reset lock states
+        self._positive_locked = False
+        self._negative_locked = False
+        self._lock_released = False
+        self._mouse_beyond_threshold = False
+        self._last_mouse_pos = None
 
     def get_visible_curves( self ):
         """Get all curves visible in graph editor"""
@@ -273,7 +433,7 @@ class CustomSlider( QSlider ):
         else:
             # print( 'dg' )
             mel.eval( 'dgdirty;' )
-        self.label.setText( str( abs( value ) ) + '%' )
+        # self.label.setText( str( abs( value ) ) + '%' )
 
     def _process_object_values( self, obj, value ):
         """Process value adjustments for a single object"""
@@ -314,14 +474,14 @@ class CustomSlider( QSlider ):
         """Reset slider to initial position"""
         self.valueChanged.disconnect( self.adjust_values )
         self.setValue( 0 )
-        self.label.setText( '0%' )
+        # self.label.setText( '0%' )
+        self.handle_label.hide()  # Initially hide the label
         self.valueChanged.connect( self.adjust_values )
 
     def _handle_value_change( self, value ):
         """Update handle color when value changes"""
         self._update_stylesheet( value )
-        # Update label (original functionality)
-        self.label.setText( str( abs( value ) ) + '%' )
+        self.handle_label.setText( '{0}'.format( abs( value ) ) )
 
     def _get_handle_color( self, value ):
         """Determine handle color based on current value"""
@@ -386,7 +546,7 @@ class CustomSlider( QSlider ):
                 border-radius: 4px;
             }
             QSlider::groove:horizontal {
-                border: 2px solid #333333;
+                border: 1px solid #333333;
                 height: 8px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0, %s);
                 margin: 2px 0;
@@ -404,7 +564,7 @@ class CustomSlider( QSlider ):
             QSlider::add-page:horizontal {
                 background: transparent;
             }
-        """ % ( handle_color, self.COLOR_NEUTRAL, gradient, self.COLOR_HOVER )
+        """ % ( handle_color, self.COLOR_BORDER, gradient, self.COLOR_HOVER )
 
         self.setStyleSheet( stylesheet )
 
@@ -412,66 +572,6 @@ class CustomSlider( QSlider ):
         """Override setRange to update gradient when range changes"""
         super( CustomSlider, self ).setRange( minimum, maximum )
         self._update_stylesheet()
-
-    def mousePressEvent( self, event ):
-        """Override mousePressEvent to track initial mouse position"""
-        self._is_tracking = True
-        self._last_mouse_pos = event.pos().x()
-        super( CustomSlider, self ).mousePressEvent( event )
-
-    def _get_sensitivity_multiplier( self, value ):
-        """
-        Calculate sensitivity multiplier based on proximity to thresholds.
-        Returns 1.0 for normal movement, 0.5 for reduced movement.
-        """
-        # Define the zones where sensitivity should be reduced
-        near_negative = value <= ( self.NEGATIVE_THRESHOLD + self.SENSITIVITY_ZONE )
-        near_positive = value >= ( self.POSITIVE_THRESHOLD - self.SENSITIVITY_ZONE )
-
-        # If we're near or beyond either threshold, reduce sensitivity
-        if near_negative or near_positive:
-            return 0.5
-        return 1.0
-
-    def mouseMoveEvent( self, event ):
-        """Custom mouse move event with reduced sensitivity near thresholds"""
-        if not self._is_tracking:
-            return
-
-        current_pos = event.pos().x()
-        if self._last_mouse_pos is None:
-            self._last_mouse_pos = current_pos
-            return
-
-        # Calculate the pixel movement
-        delta = current_pos - self._last_mouse_pos
-
-        # Get current value and calculate sensitivity multiplier
-        current_value = self.value()
-        sensitivity = self._get_sensitivity_multiplier( current_value )
-        # print( current_value, sensitivity )
-
-        # Apply sensitivity to movement
-        adjusted_delta = delta * sensitivity
-
-        # Calculate new position
-        span = self.maximum() - self.minimum()
-        width = self.width() - self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength )
-        new_value = self.minimum() + ( span * ( self._last_mouse_pos + adjusted_delta -
-                   self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength ) / 2 ) / width )
-
-        # Clamp the value
-        new_value = max( self.minimum(), min( self.maximum(), new_value ) )
-        print( current_value, new_value, sensitivity )
-
-        self.setValue( int( new_value ) )
-        self._last_mouse_pos = current_pos
-
-    def mouseReleaseEvent( self, event ):
-        """Reset tracking on mouse release"""
-        self._is_tracking = False
-        self._last_mouse_pos = None
-        super( CustomSlider, self ).mouseReleaseEvent( event )
 
 
 class CustomDialog( QDialog ):
@@ -488,7 +588,27 @@ class CustomDialog( QDialog ):
 
         # Create layout
         layout = QHBoxLayout()
-        self.label = QLabel( "Blend Pose" )
+
+        # Create toggle button
+        self.toggle_button = QPushButton()
+        self.toggle_button.setFixedSize( 14, 14 )
+        self.toggle_button.setStyleSheet( """
+            QPushButton {
+                background-color: #2a2a2a;
+                border: none;
+                border-radius: 7px;
+                margin-bottom: 4px;
+                margin-right: 4px;
+            }
+            QPushButton:hover {
+                background-color: #5a5a5a;
+            }
+            QPushButton:pressed {
+                background-color: #1a1a1a;
+            }
+        """ )
+        self.toggle_button.clicked.connect( self._toggle_slider_visibility )
+
         self.slider = CustomSlider()
 
         # Example of how to customize the thresholds and colors if needed
@@ -496,7 +616,7 @@ class CustomDialog( QDialog ):
         # pallette picker
         # https://www.realtimecolors.com/?colors=050315-3d3945-714fb6-9c6cfd-8c65db&fonts=Inter-Inter
         # red
-        # self.slider.set_colors( warning = "#453939", handle_normal = "#8B4343", handle_warning = "#E54C4C", handle_hover = "#B24949" )  # Change colors
+        self.slider.set_colors( warning = "#453939", handle_normal = "#8B4343", handle_warning = "#E54C4C", handle_hover = "#ae4747" )  # Change colors
         # teal
         # self.slider.set_colors( warning = "#394545", handle_normal = "#438B8B", handle_warning = "#4CE5E5", handle_hover = "#49B2B2" )  # Change colors
         # purple/pink
@@ -508,13 +628,16 @@ class CustomDialog( QDialog ):
         # purple
         # self.slider.set_colors( warning = "#3d3945", handle_normal = "#8263c0", handle_warning = "#8549ff", handle_hover = "#a082db" )  # Change colors
 
-        # Add widgets to layout
-        layout.addWidget( self.label )
+        # Add widgets to layout with alignment
+        layout.addWidget( self.toggle_button, 0, QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft )
         layout.addWidget( self.slider, 0, QtCore.Qt.AlignCenter )
-        layout.addWidget( self.slider.label )
 
         self.setLayout( layout )
         self.adjustSize()
+
+    def _toggle_slider_visibility( self ):
+        """Toggle the slider's visibility"""
+        self.slider.setVisible( not self.slider.isVisible() )
 
 
 def get_maya_main_window():
