@@ -447,9 +447,22 @@ class CustomSlider( QSlider ):
             self._process_surrounding_keys( obj, curve, current_val )
 
     def _get_current_value( self, curve ):
-        """Get the current value for a given curve"""
+        """
+        Get the current value for a given curve.
+        If keys are selected, uses the selected key value.
+        Otherwise, evaluates at current time.
+        """
+        # Check if we have selected keys on this curve
+        selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
+
+        if selected_keys:
+            # Get the value of the first selected key
+            key_time = selected_keys[0]
+            return cmds.keyframe( curve, q = True, time = ( key_time, key_time ), vc = True )[0]
+
+        # Fallback to current time evaluation
         return cmds.keyframe( curve, q = True, eval = True,
-                           time = ( self.current_time, self.current_time ) )[0]
+                            time = ( self.current_time, self.current_time ) )[0]
 
     def _initialize_object_storage( self, obj ):
         """Initialize storage dictionaries for an object if needed"""
@@ -463,17 +476,83 @@ class CustomSlider( QSlider ):
         self.initial_values[obj][curve] = current_val
 
     def _process_surrounding_keys( self, obj, curve, current_val ):
-        """Process and store values for surrounding keyframes"""
+        """
+        Process and store values for surrounding keyframes.
+        Handles multiple groups of selected keys with gaps.
+        """
+        # Get all keyframes on the curve
         keyframes = cmds.keyframe( curve, query = True, timeChange = True )
         if not keyframes:
             self._store_default_key_values( obj, curve, current_val )
             return
 
-        prev_keys = [key for key in keyframes if key < self.current_time]
-        next_keys = [key for key in keyframes if key > self.current_time]
+        # Check if we're working with selected keys
+        selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
 
-        self._store_prev_key_value( obj, curve, prev_keys, current_val )
-        self._store_next_key_value( obj, curve, next_keys, current_val )
+        if selected_keys:
+            # Group selected keys
+            key_groups = self._group_selected_keys( keyframes, selected_keys )
+            all_keys = sorted( keyframes )
+
+            # Process each group separately
+            for group in key_groups:
+                # Find surrounding unselected keys for this group
+                prev_key = None
+                next_key = None
+
+                # Find previous unselected key for this group
+                for key in reversed( all_keys ):
+                    if key < group[0] and key not in selected_keys:
+                        prev_key = key
+                        break
+
+                # Find next unselected key for this group
+                for key in all_keys:
+                    if key > group[-1] and key not in selected_keys:
+                        next_key = key
+                        break
+
+                # Get values for surrounding keys
+                prev_val = None
+                next_val = None
+
+                if prev_key is not None:
+                    prev_val = cmds.keyframe( curve, q = True, time = ( prev_key, prev_key ), vc = True )[0]
+                if next_key is not None:
+                    next_val = cmds.keyframe( curve, q = True, time = ( next_key, next_key ), vc = True )[0]
+
+                # Process each key in the group
+                for sel_key in group:
+                    if obj not in self.previous_key_values:
+                        self.previous_key_values[obj] = {}
+                    if obj not in self.next_key_values:
+                        self.next_key_values[obj] = {}
+
+                    # Get current value at this key
+                    current_key_val = cmds.keyframe( curve, q = True, time = ( sel_key, sel_key ), vc = True )[0]
+                    curve_key = '{0}_{1}'.format( curve, sel_key )
+
+                    # Store values for this key
+                    if prev_val is not None:
+                        self.previous_key_values[obj][curve_key] = prev_val
+                    else:
+                        self.previous_key_values[obj][curve_key] = current_key_val
+
+                    if next_val is not None:
+                        self.next_key_values[obj][curve_key] = next_val
+                    else:
+                        self.next_key_values[obj][curve_key] = current_key_val
+
+                    # Store initial value for this key
+                    self.initial_values[obj][curve_key] = current_key_val
+        else:
+            # Handle current time case (no selection)
+            reference_time = self.current_time
+            prev_keys = [key for key in keyframes if key < reference_time]
+            next_keys = [key for key in keyframes if key > reference_time]
+
+            self._store_prev_key_value( obj, curve, prev_keys, current_val )
+            self._store_next_key_value( obj, curve, next_keys, current_val )
 
     def _store_default_key_values( self, obj, curve, current_val ):
         """Store current value as both previous and next key values"""
@@ -481,19 +560,27 @@ class CustomSlider( QSlider ):
         self.next_key_values[obj][curve] = current_val
 
     def _store_prev_key_value( self, obj, curve, prev_keys, current_val ):
-        """Store the value of the previous keyframe"""
+        """
+        Store the value of the previous keyframe.
+        Takes into account whether we're working with selected keys.
+        """
         if prev_keys:
+            prev_time = prev_keys[-1]
             prev_val = cmds.keyframe( curve, q = True,
-                                   time = ( prev_keys[-1], prev_keys[-1] ), vc = True )[0]
+                                    time = ( prev_time, prev_time ), vc = True )[0]
             self.previous_key_values[obj][curve] = prev_val
         else:
             self.previous_key_values[obj][curve] = current_val
 
     def _store_next_key_value( self, obj, curve, next_keys, current_val ):
-        """Store the value of the next keyframe"""
+        """
+        Store the value of the next keyframe.
+        Takes into account whether we're working with selected keys.
+        """
         if next_keys:
+            next_time = next_keys[0]
             next_val = cmds.keyframe( curve, q = True,
-                                   time = ( next_keys[0], next_keys[0] ), vc = True )[0]
+                                    time = ( next_time, next_time ), vc = True )[0]
             self.next_key_values[obj][curve] = next_val
         else:
             self.next_key_values[obj][curve] = current_val
@@ -501,9 +588,8 @@ class CustomSlider( QSlider ):
     def adjust_values( self, value ):
         """
         Adjust animation values based on slider position.
-        Interpolates between previous and next key values.
+        Now handles both selected key and current time scenarios.
         """
-        # print( 'adjust' )
         if not self.all_curves:
             return
 
@@ -512,26 +598,76 @@ class CustomSlider( QSlider ):
             self._process_object_values( obj, value )
 
         if self.blend_nodes:
-            # print( self.blend_nodes )
             cmds.dgdirty( self.blend_nodes )
             mel.eval( 'dgdirty;' )
         else:
-            # print( 'dg' )
             mel.eval( 'dgdirty;' )
-        # self.label.setText( str( abs( value ) ) + '%' )
 
     def _process_object_values( self, obj, value ):
-        """Process value adjustments for a single object"""
+        """
+        Process value adjustments for a single object.
+        Now handles multiple groups of selected keys.
+        """
         self.new_values[obj] = {}
         for curve in self.all_curves:
-            if curve not in self.initial_values.get( obj, {} ):
-                continue
+            # Check if we're working with selected keys
+            selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
 
-            initial_val = self.initial_values[obj][curve]
-            blended_val = self._calculate_blended_value( obj, curve, value, initial_val )
+            if selected_keys:
+                # Process each selected key
+                for key_time in selected_keys:
+                    curve_key = '{0}_{1}'.format( curve, key_time )
+                    if curve_key not in self.initial_values.get( obj, {} ):
+                        continue
 
-            self.new_values[obj][curve] = blended_val
-            cmds.setKeyframe( curve, time = self.current_time, value = blended_val )
+                    initial_val = self.initial_values[obj][curve_key]
+                    blended_val = self._calculate_blended_value( obj, curve_key, value, initial_val )
+
+                    self.new_values[obj][curve_key] = blended_val
+                    cmds.setKeyframe( curve, time = key_time, value = blended_val )
+            else:
+                # Handle current time case
+                if curve not in self.initial_values.get( obj, {} ):
+                    continue
+
+                initial_val = self.initial_values[obj][curve]
+                blended_val = self._calculate_blended_value( obj, curve, value, initial_val )
+
+                self.new_values[obj][curve] = blended_val
+                cmds.setKeyframe( curve, time = self.current_time, value = blended_val )
+
+    def _group_selected_keys( self, keyframes, selected_keys ):
+        """
+        Group selected keys into continuous sequences.
+        Returns list of groups, where each group is a list of selected keys.
+        """
+        if not selected_keys:
+            return []
+
+        # Sort keys
+        selected_keys = sorted( selected_keys )
+        groups = []
+        current_group = [selected_keys[0]]
+
+        # Group consecutive keys
+        for i in range( 1, len( selected_keys ) ):
+            # Find the minimum time difference between any two keys on the curve
+            all_times = sorted( keyframes )
+            min_time_diff = float( 'inf' )
+            for j in range( 1, len( all_times ) ):
+                diff = all_times[j] - all_times[j - 1]
+                if diff < min_time_diff:
+                    min_time_diff = diff
+
+            # Allow for small floating point differences by multiplying min_time_diff by 1.1
+            if selected_keys[i] - selected_keys[i - 1] <= min_time_diff * 1.1:
+                current_group.append( selected_keys[i] )
+            else:
+                groups.append( current_group )
+                current_group = [selected_keys[i]]
+
+        groups.append( current_group )
+        return groups
 
     def _calculate_blended_value( self, obj, curve, value, initial_val ):
         """Calculate the blended value based on slider position"""
