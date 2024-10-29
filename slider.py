@@ -1,4 +1,8 @@
 # Version 1.5
+import json
+import os
+import platform
+
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Qt, QPoint
 from PySide2.QtWidgets import QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayout, QPushButton
@@ -88,10 +92,14 @@ class CustomSlider( QSlider ):
     COLOR_HANDLE_WARNING = "#E54C4C"  # Handle color beyond threshold E54C4C FF4444
     COLOR_HOVER = "#B24949"  # handle
     COLOR_BORDER = '#1a1a1a'
+    COLOR_DISABLED = '#444444'  # Maya grey for disabled state
+    COLOR_DISABLED_BORDER = '#1a1a1a'  # Darker grey for disabled border
 
-    def __init__( self, parent = None ):
+    def __init__( self, parent = None, theme = 'blue' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
-
+        self._is_disabled = False  # Add state tracking
+        # self.theme = theme
+        self._setup_theme( theme )
         self._setup_ui()
         self._connect_signals()
         self.reset_state()
@@ -118,6 +126,7 @@ class CustomSlider( QSlider ):
         self._click_timer.timeout.connect( self._handle_repeat_click )
         self._click_direction = 0  # Store click direction (1 for right, -1 for left)
         self._is_groove_click = False
+        # print( self.COLOR_DISABLED )
 
     def set_threshold( self, negative, positive ):
         """Set new threshold values and update the slider"""
@@ -173,7 +182,7 @@ class CustomSlider( QSlider ):
         Handle threshold locking behavior
         """
         if self._lock_released:
-            print( 'released' )
+            # print( 'released' )
             return
 
         # Check positive threshold
@@ -202,10 +211,17 @@ class CustomSlider( QSlider ):
             elif self._negative_locked:
                 # Keep value at threshold while locked
                 self.setValue( self.NEGATIVE_THRESHOLD + 1 )
-        print( 'check: ', self.value() )
+        # print( 'check: ', self.value() )
 
     def mousePressEvent( self, event ):
         """Handle mouse press events for both handle and groove"""
+        self.query_selection()
+
+        # If disabled, don't process the event
+        if self._is_disabled:
+            # return
+            pass
+
         opt = QtWidgets.QStyleOptionSlider()
         self.initStyleOption( opt )
 
@@ -282,7 +298,7 @@ class CustomSlider( QSlider ):
         """
         if not self._is_groove_click:
             if self._last_mouse_pos is None:
-                print( 'last mouse pos: ', None )
+                # print( 'last mouse pos: ', None )
                 super( CustomSlider, self ).mouseMoveEvent( event )
                 return
 
@@ -326,7 +342,7 @@ class CustomSlider( QSlider ):
                 self._soft_release = False
                 self._negative_locked = False
                 self._positive_locked = False
-            print( 'neg: ', self._negative_locked, 'pos: ', self._positive_locked )
+            # print( 'neg: ', self._negative_locked, 'pos: ', self._positive_locked )
 
             # reset, didnt move beyond threshold but back between threshold ranges
 
@@ -334,6 +350,10 @@ class CustomSlider( QSlider ):
 
     def mouseReleaseEvent( self, event ):
         """Handle mouse release events"""
+        # Reset handle color to normal state
+        self._is_disabled = False  # Reset disabled state
+        self._update_stylesheet( self.value() )
+
         if self._is_groove_click:
             # Stop the timer and reset
             self._click_timer.stop()
@@ -407,6 +427,8 @@ class CustomSlider( QSlider ):
 
         if not self.all_curves:
             message( 'No animation curves found', warning = True )
+            self._is_disabled = True  # Set disabled state
+            self._update_stylesheet( self.value() )
             return
 
         # initialize
@@ -755,7 +777,14 @@ class CustomSlider( QSlider ):
 
         # Use current value if provided, otherwise use slider's value
         current_value = value if value is not None else self.value()
-        handle_color = self._get_handle_color( current_value )
+
+        # Set handle color based on disabled state
+        if self._is_disabled:
+            handle_color = self.COLOR_DISABLED
+            border_hover_color = self.COLOR_DISABLED_BORDER
+        else:
+            handle_color = self._get_handle_color( current_value )
+            border_hover_color = self.COLOR_HOVER
 
         stylesheet = """
             QSlider::handle:horizontal {
@@ -785,7 +814,7 @@ class CustomSlider( QSlider ):
             QSlider::add-page:horizontal {
                 background: transparent;
             }
-        """ % ( handle_color, self.COLOR_BORDER, gradient, self.COLOR_HOVER )
+        """ % ( handle_color, self.COLOR_BORDER, gradient, border_hover_color )
 
         self.setStyleSheet( stylesheet )
 
@@ -794,12 +823,87 @@ class CustomSlider( QSlider ):
         super( CustomSlider, self ).setRange( minimum, maximum )
         self._update_stylesheet()
 
+    def set_theme( self, theme = '' ):
+        """Update the slider's theme and refresh the UI"""
+        self._setup_theme( theme )
+        self._update_stylesheet()
+
+    def _setup_theme( self, theme = 'blue' ):
+        """Set up color theme for the slider"""
+        # Base themes dictionary
+        themes = {
+            'red': {
+                'neutral': "#373737",  # Gray middle zone
+                'warning': "#453939",  # Outer warning zones
+                'handle_normal': "#8B4343",  # Handle normal state
+                'handle_warning': "#E54C4C",  # Handle warning state
+                'handle_hover': "#B24949",  # Handle hover state
+                'border': '#1a1a1a',  # Normal border
+                'disabled': '#444444',  # Disabled handle
+                'disabled_border': '#333333'  # Disabled border
+            },
+            'teal': {
+                'neutral': "#373737",
+                'warning': "#394545",
+                'handle_normal': "#438B8B",
+                'handle_warning': "#4CE5E5",
+                'handle_hover': "#49B2B2",
+                'border': '#1a1a1a',
+                'disabled': '#444444',
+                'disabled_border': '#333333'
+            },
+            'purple': {
+                'neutral': "#373737",
+                'warning': "#3d3945",
+                'handle_normal': "#8263c0",
+                'handle_warning': "#8549ff",
+                'handle_hover': "#a082db",
+                'border': '#1a1a1a',
+                'disabled': '#444444',
+                'disabled_border': '#333333'
+            },
+            'blue': {
+                'neutral': "#373737",
+                'warning': "#394555",
+                'handle_normal': "#438B99",
+                'handle_warning': "#4CE5FF",
+                'handle_hover': "#49B2D2",
+                'border': '#1a1a1a',
+                'disabled': '#444444',
+                'disabled_border': '#333333'
+            },
+            'green': {
+                'neutral': "#373737",
+                'warning': "#3D4539",
+                'handle_normal': "#4A8B43",
+                'handle_warning': "#6DE54C",
+                'handle_hover': "#49B249",
+                'border': '#1a1a1a',
+                'disabled': '#444444',
+                'disabled_border': '#333333'
+            }
+        }
+
+        # Get the selected theme or default to red if theme not found
+        selected_theme = themes.get( theme, themes['red'] )
+
+        # Set the color constants
+        self.COLOR_NEUTRAL = selected_theme['neutral']
+        self.COLOR_WARNING = selected_theme['warning']
+        self.COLOR_HANDLE_NORMAL = selected_theme['handle_normal']
+        self.COLOR_HANDLE_WARNING = selected_theme['handle_warning']
+        self.COLOR_HOVER = selected_theme['handle_hover']
+        self.COLOR_BORDER = selected_theme['border']
+        self.COLOR_DISABLED = selected_theme['disabled']
+        self.COLOR_DISABLED_BORDER = selected_theme['disabled_border']
+
 
 class CustomDialog( QDialog ):
     """Main dialog window for the Blend Pose Tool"""
 
     def __init__( self, parent = None ):
         super( CustomDialog, self ).__init__( parent )
+        self.prefs = WebrToolsPrefs()
         self._setup_ui()
 
     def _setup_ui( self ):
@@ -813,6 +917,8 @@ class CustomDialog( QDialog ):
         # Create toggle button
         self.toggle_button = QPushButton()
         self.toggle_button.setFixedSize( 14, 14 )
+        # print( UNDO_CHUNK_NAME )
+        self.toggle_button.setToolTip( UNDO_CHUNK_NAME )
         self.toggle_button.setStyleSheet( """
             QPushButton {
                 background-color: #2a2a2a;
@@ -837,7 +943,7 @@ class CustomDialog( QDialog ):
         # pallette picker
         # https://www.realtimecolors.com/?colors=050315-3d3945-714fb6-9c6cfd-8c65db&fonts=Inter-Inter
         # red
-        self.slider.set_colors( warning = "#453939", handle_normal = "#8B4343", handle_warning = "#E54C4C", handle_hover = "#ae4747" )  # Change colors
+        # self.slider.set_colors( warning = "#453939", handle_normal = "#8B4343", handle_warning = "#E54C4C", handle_hover = "#ae4747" )  # Change colors
         # teal
         # self.slider.set_colors( warning = "#394545", handle_normal = "#438B8B", handle_warning = "#4CE5E5", handle_hover = "#49B2B2" )  # Change colors
         # purple/pink
@@ -856,9 +962,117 @@ class CustomDialog( QDialog ):
         self.setLayout( layout )
         self.adjustSize()
 
+        # Load and apply saved slider visibility
+        slider_visible = self.prefs.get_tool_pref( 'blend_pose_tool', 'slider_visible', True )
+        self.slider.setVisible( slider_visible )
+
     def _toggle_slider_visibility( self ):
-        """Toggle the slider's visibility"""
-        self.slider.setVisible( not self.slider.isVisible() )
+        """Toggle the slider's visibility and save the state"""
+        current_visible = self.slider.isVisible()
+        self.slider.setVisible( not current_visible )
+        # Save the new visibility state
+        self.prefs.set_tool_pref( 'blend_pose_tool', 'slider_visible', not current_visible )
+
+
+class WebrToolsPrefs( object ):
+    """
+    Manages preferences for WebrTools across different platforms.
+    Handles reading, writing, and default values for tool-specific preferences.
+    """
+
+    def __init__( self ):
+        self.prefs_file = 'WebrToolsPrefs.json'
+        self.prefs_path = self._get_prefs_path()
+        self.default_prefs = {
+            'blend_pose_tool': {
+                'slider_visible': True
+            }
+            # Other tools can add their default prefs here
+        }
+        self.prefs = self._load_prefs()
+
+    def _get_prefs_path( self ):
+        """
+        Get the appropriate preferences directory path based on OS.
+        Returns full path to the preferences file.
+        """
+        system = platform.system().lower()
+
+        if system == 'windows':
+            maya_app_dir = os.environ.get( 'MAYA_APP_DIR' )
+            if maya_app_dir:
+                base_path = maya_app_dir
+            else:
+                base_path = os.path.join( os.environ.get( 'USERPROFILE', '' ), 'Documents', 'maya' )
+
+        elif system == 'darwin':  # macOS
+            base_path = os.path.expanduser( '~/Library/Preferences/Autodesk/maya' )
+
+        elif system == 'linux':
+            base_path = os.path.expanduser( '~/maya' )
+
+        else:
+            raise OSError( 'Unsupported operating system: {}'.format( system ) )
+
+        # Create scripts directory if it doesn't exist
+        scripts_path = os.path.join( base_path, 'scripts' )
+        if not os.path.exists( scripts_path ):
+            os.makedirs( scripts_path )
+
+        return os.path.join( scripts_path, self.prefs_file )
+
+    def _load_prefs( self ):
+        """
+        Load preferences from file or create with defaults if doesn't exist.
+        """
+        try:
+            if os.path.exists( self.prefs_path ):
+                with open( self.prefs_path, 'r' ) as f:
+                    stored_prefs = json.load( f )
+
+                # Merge with defaults to ensure all required keys exist
+                merged_prefs = self.default_prefs.copy()
+                for tool, settings in stored_prefs.items():
+                    if tool in merged_prefs:
+                        merged_prefs[tool].update( settings )
+                    else:
+                        merged_prefs[tool] = settings
+
+                return merged_prefs
+            else:
+                self._save_prefs( self.default_prefs )
+                return self.default_prefs
+
+        except ( IOError, ValueError ) as e:
+            print( 'Error loading preferences: {}'.format( e ) )
+            return self.default_prefs
+
+    def _save_prefs( self, prefs_data ):
+        """
+        Save preferences to file.
+        """
+        try:
+            with open( self.prefs_path, 'w' ) as f:
+                json.dump( prefs_data, f, indent = 4 )
+        except IOError as e:
+            print( 'Error saving preferences: {}'.format( e ) )
+
+    def get_tool_pref( self, tool_name, pref_name, default = None ):
+        """
+        Get a specific tool preference.
+        """
+        tool_prefs = self.prefs.get( tool_name, {} )
+        return tool_prefs.get( pref_name, default )
+
+    def set_tool_pref( self, tool_name, pref_name, value ):
+        """
+        Set a specific tool preference and save to file.
+        """
+        if tool_name not in self.prefs:
+            self.prefs[tool_name] = {}
+
+        self.prefs[tool_name][pref_name] = value
+        self._save_prefs( self.prefs )
 
 
 def get_maya_main_window():
@@ -871,7 +1085,10 @@ def get_maya_main_window():
 
 
 if __name__ == '__main__':
+    # print( '?' )
     pass
 else:
+    # print( 'here' )
     custom_dialog = CustomDialog( get_maya_main_window() )
+    # print( custom_dialog )
     custom_dialog.show()
