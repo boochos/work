@@ -21,10 +21,6 @@ def get_default_width_txt():
     return 'XL'
 
 
-def get_default_range_txt():
-    return '150'
-
-
 # Constants
 TOOL_NAME = 'Blend_N'
 DEFAULT_RANGE_WIDTH_TXT = get_default_width_txt()
@@ -32,7 +28,7 @@ DEFAULT_SLIDER_WIDTH = {
     'S': 100,
     'M': 200,
     'L': 300,
-    DEFAULT_RANGE_WIDTH_TXT: 400  # default
+    DEFAULT_RANGE_WIDTH_TXT: 1200  # default
 }
 
 DEFAULT_RANGE = {
@@ -113,10 +109,13 @@ class CustomSlider( QSlider ):
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
     LOCK_RELEASE_MARGIN = 15  # Percentage beyond threshold needed to release lock
+    TICK_INTERVAL = 50  # Interval for tick marks
+    TICK_WIDTH = 0.03  # Width of tick marks (as percentage of total range)
 
     # groove
     COLOR_GROOVE_NEUTRAL = "#373737"  # Gray middle zone 373737
     COLOR_GROOVE_WARNING = "#453939"  # Red outer zones 673232 8B4343
+    COLOR_TICK_MARK = "#3D4539"  # Color for tick marks 3D4539 E54C4C
     # handle
     COLOR_HANDLE_NORMAL = "#8B4343"  # Handle color within threshold
     COLOR_HANDLE_WARNING = "#E54C4C"  # Handle color beyond threshold E54C4C FF4444
@@ -161,6 +160,11 @@ class CustomSlider( QSlider ):
 
     def __UI__( self ):
         pass
+
+    def set_tick_interval( self, interval ):
+        """Set new tick interval and update the slider"""
+        self.TICK_INTERVAL = interval
+        self._update_stylesheet()
 
     def set_threshold( self, negative, positive ):
         """Set new threshold values and update the slider"""
@@ -254,41 +258,129 @@ class CustomSlider( QSlider ):
         self.handle_label.setText( '{0}'.format( abs( value ) ) )
 
     def _calculate_gradient_stops( self ):
-        """Calculate gradient stops based on current range"""
+        """
+        Calculate gradient stops for a slider with warning zones and tick marks.
+        Only draws warning zones if they're within the slider's range.
+        """
+        # Early return for zero range case
         total_range = self.maximum() - self.minimum()
         if total_range == 0:
             return "stop:0 {0}, stop:1 {0}".format( self.COLOR_GROOVE_NEUTRAL )
 
-        # Convert the threshold points to percentages of the total range
-        min_red_stop = ( self.NEGATIVE_THRESHOLD - self.minimum() ) / float( total_range )
-        max_red_start = ( self.POSITIVE_THRESHOLD - self.minimum() ) / float( total_range )
+        print( "\nSlider Range: {0} to {1}".format( self.minimum(), self.maximum() ) )
+        print( "Warning Thresholds: {0} to {1}".format( self.NEGATIVE_THRESHOLD, self.POSITIVE_THRESHOLD ) )
+        print( "\nGradient Sequence:" )
 
-        # Ensure stops are within 0-1 range
-        min_red_stop = max( 0, min( min_red_stop, 1 ) )
-        max_red_start = max( 0, min( max_red_start, 1 ) )
+        # Constants for better readability
+        TINY_GAP = 0.0001  # dont change
+        PROXIMITY_THRESHOLD = 2  # Don't draw ticks within 2 points of warning zones
+
+        def calculate_position( value ):
+            """Convert absolute value to relative position (0-1)"""
+            return ( value - self.minimum() ) / float( total_range )
+
+        def calculate_value( position ):
+            """Convert relative position (0-1) to slider value"""
+            return position * total_range + self.minimum()
+
+        def format_stop( position, color ):
+            """Format a single gradient stop with both position and corresponding value"""
+            slider_value = calculate_value( position )
+            print( "Position: {0:.4f} ({1}) [Value: {2:.4f}]".format( position, color, slider_value ) )
+            return "stop:{0:.4f} {1}".format( position, color )
+
+        # Check if warning zones are within range
+        has_negative_warning = self.NEGATIVE_THRESHOLD >= self.minimum()
+        has_positive_warning = self.POSITIVE_THRESHOLD <= self.maximum()
+
+        # Calculate key positions only if warning zones are in range
+        min_warning_stop = calculate_position( self.NEGATIVE_THRESHOLD ) if has_negative_warning else None
+        max_warning_start = calculate_position( self.POSITIVE_THRESHOLD ) if has_positive_warning else None
+
+        # Generate tick positions and their actual values
+        start_tick = ( ( self.NEGATIVE_THRESHOLD + self.TICK_INTERVAL ) // self.TICK_INTERVAL ) * self.TICK_INTERVAL
+        end_tick = ( ( self.POSITIVE_THRESHOLD + self.TICK_INTERVAL ) // self.TICK_INTERVAL ) * self.TICK_INTERVAL
+
+        tick_data = []
+        for tick in range( int( start_tick ), int( end_tick ), self.TICK_INTERVAL ):
+            if self.minimum() <= tick <= self.maximum() and tick != 0:
+                # Add proximity check here
+                if ( abs( tick - self.NEGATIVE_THRESHOLD ) > PROXIMITY_THRESHOLD and
+                    abs( tick - self.POSITIVE_THRESHOLD ) > PROXIMITY_THRESHOLD ):
+                    pos = calculate_position( tick )
+                    if 0 < pos < 1:
+                        tick_data.append( ( pos, tick ) )
 
         # Build gradient stops
         stops = []
 
-        # Add red zone for negative values if in range
-        if self.minimum() <= self.NEGATIVE_THRESHOLD:
+        # Add negative warning zone only if in range
+        if has_negative_warning:
+            print( "\n# Negative Warning Zone:" )
             stops.extend( [
-                "stop:0 {0}".format( self.COLOR_GROOVE_WARNING ),
-                "stop:{0} {1}".format( min_red_stop, self.COLOR_GROOVE_WARNING ),
-                "stop:{0} {1}".format( min_red_stop + 0.001, self.COLOR_GROOVE_NEUTRAL )
+                format_stop( 0, self.COLOR_GROOVE_WARNING ),
+                format_stop( min_warning_stop, self.COLOR_GROOVE_WARNING ),
+                format_stop( min_warning_stop + TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
             ] )
+            prev_pos = min_warning_stop + ( TINY_GAP * 2 )
         else:
-            stops.append( "stop:0 {0}".format( self.COLOR_GROOVE_NEUTRAL ) )
+            # Start with neutral color if no warning zone
+            stops.append( format_stop( 0, self.COLOR_GROOVE_NEUTRAL ) )
+            prev_pos = TINY_GAP
 
-        # Add red zone for positive values if in range
-        if self.maximum() >= self.POSITIVE_THRESHOLD:
+        # Add ticks
+        for pos, tick_value in tick_data:
+            # Determine tick direction based on value
+            if tick_value < 0:
+                tick_start = pos
+                tick_end = pos + self.TICK_WIDTH
+                print( "\n# Negative Tick at value: {0}".format( tick_value ) )
+            else:
+                tick_start = pos - self.TICK_WIDTH
+                tick_end = pos
+                print( "\n# Positive Tick at value: {0}".format( tick_value ) )
+
+            # Add background before tick if there's space
+            if tick_start - prev_pos > TINY_GAP:
+                print( "\n# Neutral Background:" )
+                stops.extend( [
+                    format_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
+                    format_stop( tick_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
+                ] )
+
+            # Add tick mark
             stops.extend( [
-                "stop:{0} {1}".format( max_red_start - 0.001, self.COLOR_GROOVE_NEUTRAL ),
-                "stop:{0} {1}".format( max_red_start, self.COLOR_GROOVE_WARNING ),
-                "stop:1 {0}".format( self.COLOR_GROOVE_WARNING )
+                format_stop( tick_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL ),
+                format_stop( tick_start, self.COLOR_TICK_MARK ),
+                format_stop( tick_end, self.COLOR_TICK_MARK ),
+                format_stop( tick_end + TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
+            ] )
+
+            prev_pos = tick_end + TINY_GAP
+
+        # Add final neutral section
+        if has_positive_warning:
+            if max_warning_start - prev_pos > TINY_GAP * 2:
+                print( "\n# Final Neutral Background:" )
+                stops.extend( [
+                    format_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
+                    format_stop( max_warning_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
+                ] )
+
+            # Add positive warning zone
+            print( "\n# Positive Warning Zone:" )
+            stops.extend( [
+                format_stop( max_warning_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL ),
+                format_stop( max_warning_start, self.COLOR_GROOVE_WARNING ),
+                format_stop( 1, self.COLOR_GROOVE_WARNING )
             ] )
         else:
-            stops.append( "stop:1 {0}".format( self.COLOR_GROOVE_NEUTRAL ) )
+            # End with neutral color if no warning zone
+            if 1.0 - prev_pos > TINY_GAP:
+                stops.extend( [
+                    format_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
+                    format_stop( 1, self.COLOR_GROOVE_NEUTRAL )
+                ] )
 
         return ", ".join( stops )
 
