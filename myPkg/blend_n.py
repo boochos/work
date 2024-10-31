@@ -21,6 +21,10 @@ def get_default_width_txt():
     return 'XL'
 
 
+def get_default_range_txt():
+    return '150'
+
+
 # Constants
 TOOL_NAME = 'Blend_N'
 DEFAULT_RANGE_WIDTH_TXT = get_default_width_txt()
