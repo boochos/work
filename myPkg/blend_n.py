@@ -101,6 +101,7 @@ class CustomSlider( QSlider ):
         'med': 0.02,
         'thick': 0.03  # default
     }
+    DEFAULT_TICK_INTERVAL = 50
 
     # Default text values
     DEFAULT_WIDTH_TXT = 'XL'
@@ -122,15 +123,15 @@ class CustomSlider( QSlider ):
     # Tick
     COLOR_TICK_MARK = "#3D4539"
 
-    def __init__( self, parent = None, theme = 'green' ):
+    def __init__( self, parent = None, theme = 'blue' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
         self._is_disabled = False  # Add state tracking
 
         # Initialize preference-based values using class defaults
-        self.TICK_INTERVAL = 50
-        self.TICK_WIDTH = self.DEFAULT_TICK_WIDTH[self.DEFAULT_TICK_WIDTH_TXT]
-        self.SLIDER_WIDTH = self.DEFAULT_SLIDER_WIDTH[self.DEFAULT_WIDTH_TXT]
-        self.SLIDER_RANGE = self.DEFAULT_RANGE[self.DEFAULT_RANGE_TXT]
+        self._tick_interval = self.DEFAULT_TICK_INTERVAL
+        self._tick_width = self.DEFAULT_TICK_WIDTH[self.DEFAULT_TICK_WIDTH_TXT]
+        self._slider_width = self.DEFAULT_SLIDER_WIDTH[self.DEFAULT_WIDTH_TXT]
+        self._slider_range = self.DEFAULT_RANGE[self.DEFAULT_RANGE_TXT]
 
         # self.theme = theme
         self.set_theme( theme )
@@ -162,8 +163,45 @@ class CustomSlider( QSlider ):
         self._is_groove_click = False
         # print( self.COLOR_HANDLE_DISABLED )
 
-    def __UI__( self ):
-        pass
+    # Add property
+    @property
+    def slider_range( self ):
+        """Get current slider range"""
+        return self._slider_range
+
+    @slider_range.setter
+    def slider_range( self, value ):
+        """Set slider range and update UI"""
+        self._slider_range = value
+        self.setRange( -value, value )  # Updates Qt slider range
+        self._update_stylesheet()
+
+    @property
+    def tick_interval( self ):
+        return self._tick_interval
+
+    @tick_interval.setter
+    def tick_interval( self, value ):
+        self._tick_interval = value
+        self._update_stylesheet()
+
+    @property
+    def tick_width( self ):
+        return self._tick_width
+
+    @tick_width.setter
+    def tick_width( self, value ):
+        self._tick_width = value
+        self._update_stylesheet()
+
+    @property
+    def slider_width( self ):
+        return self._slider_width
+
+    @slider_width.setter
+    def slider_width( self, value ):
+        self._slider_width = value
+        self.setFixedWidth( value )
 
     @classmethod
     def get_default_width_txt( cls ):
@@ -195,20 +233,8 @@ class CustomSlider( QSlider ):
         """Get default tick width value"""
         return cls.DEFAULT_TICK_WIDTH[cls.DEFAULT_TICK_WIDTH_TXT]
 
-    def set_tick_interval( self, interval ):
-        """Set new tick interval and update the slider"""
-        self.TICK_INTERVAL = interval
-        self._update_stylesheet()
-
-    def set_slider_width( self, width ):
-        """Set new slider width and update UI"""
-        self.SLIDER_WIDTH = width
-        self.setFixedWidth( width )
-
-    def set_tick_width( self, width ):
-        """Set new tick width and update UI"""
-        self.TICK_WIDTH = width
-        self._update_stylesheet()  # Needed because tick width affects appearance
+    def __UI__( self ):
+        pass
 
     def set_threshold( self, negative, positive ):
         """Set new threshold values and update the slider"""
@@ -249,12 +275,12 @@ class CustomSlider( QSlider ):
     def _setup_ui( self ):
         """Initialize UI elements and their properties"""
         # Use instance variables initialized from preferences
-        self.setRange( int( -self.SLIDER_RANGE ), int( self.SLIDER_RANGE ) )
+        # self.setRange( int( -self.slider_range ), int( self.slider_range ) )
         self.setValue( 0 )
-        self.setFixedWidth( self.SLIDER_WIDTH )
+        # self.setFixedWidth( self.slider_width )  # Use the property
         self.setFixedHeight( 50 )
 
-        self._update_stylesheet()
+        # self._update_stylesheet()
 
         # Connect valueChanged to update handle color
         self.valueChanged.connect( self._handle_value_change )
@@ -347,14 +373,12 @@ class CustomSlider( QSlider ):
                            if has_positive_warning else None )
 
         # Generate tick positions and their actual values
-        start_tick = ( ( self.NEGATIVE_THRESHOLD + self.TICK_INTERVAL ) //
-                     self.TICK_INTERVAL ) * self.TICK_INTERVAL
-        end_tick = ( ( self.POSITIVE_THRESHOLD + self.TICK_INTERVAL ) //
-                   self.TICK_INTERVAL ) * self.TICK_INTERVAL
+        start_tick = ( ( self.NEGATIVE_THRESHOLD + self.tick_interval ) // self.tick_interval ) * self.tick_interval
+        end_tick = ( ( self.POSITIVE_THRESHOLD + self.tick_interval ) // self.tick_interval ) * self.tick_interval
 
         # Build tick data
         tick_data = []
-        for tick in range( int( start_tick ), int( end_tick ), self.TICK_INTERVAL ):
+        for tick in range( int( start_tick ), int( end_tick ), self.tick_interval ):
             if self.minimum() <= tick <= self.maximum() and tick != 0:
                 # Add proximity check
                 if ( abs( tick - self.NEGATIVE_THRESHOLD ) > PROXIMITY_THRESHOLD and
@@ -385,10 +409,10 @@ class CustomSlider( QSlider ):
             # Determine tick direction based on value
             if tick_value < 0:
                 tick_start = pos
-                tick_end = pos + self.TICK_WIDTH
+                tick_end = pos + self.tick_width
                 print( "\n# Negative Tick at value: {0}".format( tick_value ) )
             else:
-                tick_start = pos - self.TICK_WIDTH
+                tick_start = pos - self.tick_width
                 tick_end = pos
                 print( "\n# Positive Tick at value: {0}".format( tick_value ) )
 
@@ -1249,9 +1273,9 @@ class CustomDialog( QDialog ):
         )
 
         self.slider = CustomSlider()
-        self.slider.set_slider_width( slider_width )
-        self.slider.setRange( -slider_range, slider_range )  # Use Qt's setRange directly
-        self.slider.set_tick_width( slider_tick_width )
+        self.slider.slider_width = slider_width
+        self.slider.slider_range = slider_range
+        self.slider.tick_width = slider_tick_width
         self.slider._update_stylesheet()  # Make sure to update the stylesheet after changing TICK_WIDTH
 
         # Add widgets to layout with alignment
@@ -1555,7 +1579,7 @@ class PreferencesDialog( QDialog ):
         # Update slider immediately
         parent_dialog = self.parent()
         if parent_dialog:
-            parent_dialog.slider.setFixedWidth( width_value )
+            parent_dialog.slider.slider_width = width_value
             parent_dialog.adjustSize()
 
     def _on_range_changed( self, radio_button ):
@@ -1570,7 +1594,7 @@ class PreferencesDialog( QDialog ):
         # Update slider immediately
         parent_dialog = self.parent()
         if parent_dialog:
-            parent_dialog.slider.setRange( -range_value, range_value )
+            parent_dialog.slider.slider_range = range_value
 
     def _on_tick_width_changed( self, radio_button ):
         """Handle tick width radio button selection"""
@@ -1584,7 +1608,7 @@ class PreferencesDialog( QDialog ):
         # Update slider immediately
         parent_dialog = self.parent()
         if parent_dialog and parent_dialog.slider:
-            parent_dialog.slider.TICK_WIDTH = width_value
+            parent_dialog.slider.tick_width = width_value
             parent_dialog.slider._update_stylesheet()
 
 
