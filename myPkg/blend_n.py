@@ -1090,6 +1090,9 @@ class CustomSlider( QSlider ):
 
     def _before_handle_move( self, value ):
         """Start undo chunk and set move var, """
+        if not self.all_curves:
+            return
+
         if not self.moved:
             # set moved
             self.moved = True
@@ -1104,19 +1107,22 @@ class CustomSlider( QSlider ):
         Adjust animation values based on slider position.
         Now handles both selected key and current time scenarios.
         """
-        if not self.all_curves:
-            return
 
-        self.moved = True
         self.new_values = {}
         for obj in self.selected_objects:
             self._process_object_values( obj, value )
 
+        '''
         if self.blend_nodes:
             cmds.dgdirty( self.blend_nodes )
             mel.eval( 'dgdirty;' )
         else:
             mel.eval( 'dgdirty;' )
+        '''
+        # optimized ??,
+        # should precombine selected objects and belnds nodes to list to explcicity only call dgdirty oncecombine
+        cmds.dgdirty( self.blend_nodes if self.blend_nodes else [] )
+        mel.eval( 'dgdirty;' )
 
     def _process_object_values( self, obj, value ):
         """
