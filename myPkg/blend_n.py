@@ -82,7 +82,8 @@ class CustomSlider( QSlider ):
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
-    LOCK_RELEASE_MARGIN = 15  # Percentage beyond threshold needed to release lock
+    LOCK_RELEASE_MARGIN_OVERRIDE = 0  # use this value to turn it off
+    LOCK_RELEASE_MARGIN = 15  # REMOVE THIS IN FAVOUR OF PREF # Percentage beyond threshold needed to release lock
 
     # Default dictionaries for configurable values
     DEFAULT_SLIDER_WIDTH = {
@@ -99,9 +100,11 @@ class CustomSlider( QSlider ):
     DEFAULT_TICK_WIDTH = {
         'thin': 0.01,
         'med': 0.02,
-        'thick': 0.03  # default
+        'thick': 0.03  # default # ADD NONE AS AN OPTION
     }
-    DEFAULT_TICK_INTERVAL = 50
+    DEFAULT_TICK_INTERVAL = 50  # TODO: change to dict like above attrs add to prefs
+    DEFAULT_LOCK_RELEASE_MARGIN = 15  # TODO: change to dict like above attrs add to prefs
+    DEFAULT_GROOVE_CLICK_VALUE = 1  # TODO: change to dict like above attrs add to prefs
 
     # Default text values
     DEFAULT_WIDTH_TXT = 'XL'
@@ -342,8 +345,7 @@ class CustomSlider( QSlider ):
     def _format_gradient_stop( self, position, color ):
         """Format a single gradient stop with both position and corresponding value"""
         slider_value = self._calculate_value( position )
-        print( "Position: {0:.4f} ({1}) [Value: {2:.4f}]".format( 
-            position, color, slider_value ) )
+        # print( "Position: {0:.4f} ({1}) [Value: {2:.4f}]".format( position, color, slider_value ) )
         return "stop:{0:.4f} {1}".format( position, color )
 
     def _calculate_gradient_stops( self ):
@@ -353,10 +355,9 @@ class CustomSlider( QSlider ):
         if total_range == 0:
             return "stop:0 {0}, stop:1 {0}".format( self.COLOR_GROOVE_NEUTRAL )
 
-        print( "\nSlider Range: {0} to {1}".format( self.minimum(), self.maximum() ) )
-        print( "Warning Thresholds: {0} to {1}".format( 
-            self.NEGATIVE_THRESHOLD, self.POSITIVE_THRESHOLD ) )
-        print( "\nGradient Sequence:" )
+        # print( "\nSlider Range: {0} to {1}".format( self.minimum(), self.maximum() ) )
+        # print( "Warning Thresholds: {0} to {1}".format( self.NEGATIVE_THRESHOLD, self.POSITIVE_THRESHOLD ) )
+        # print( "\nGradient Sequence:" )
 
         # Constants
         TINY_GAP = 0.0001
@@ -392,7 +393,7 @@ class CustomSlider( QSlider ):
 
         # Add negative warning zone
         if has_negative_warning:
-            print( "\n# Negative Warning Zone:" )
+            # print( "\n# Negative Warning Zone:" )
             stops.extend( [
                 self._format_gradient_stop( 0, self.COLOR_GROOVE_WARNING ),
                 self._format_gradient_stop( min_warning_stop, self.COLOR_GROOVE_WARNING ),
@@ -410,15 +411,15 @@ class CustomSlider( QSlider ):
             if tick_value < 0:
                 tick_start = pos
                 tick_end = pos + self.tick_width
-                print( "\n# Negative Tick at value: {0}".format( tick_value ) )
+                # print( "\n# Negative Tick at value: {0}".format( tick_value ) )
             else:
                 tick_start = pos - self.tick_width
                 tick_end = pos
-                print( "\n# Positive Tick at value: {0}".format( tick_value ) )
+                # print( "\n# Positive Tick at value: {0}".format( tick_value ) )
 
             # Add background before tick if there's space
             if tick_start - prev_pos > TINY_GAP:
-                print( "\n# Neutral Background:" )
+                # print( "\n# Neutral Background:" )
                 stops.extend( [
                     self._format_gradient_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
                     self._format_gradient_stop( tick_start - TINY_GAP,
@@ -440,14 +441,14 @@ class CustomSlider( QSlider ):
         # Add final sections
         if has_positive_warning:
             if max_warning_start - prev_pos > TINY_GAP * 2:
-                print( "\n# Final Neutral Background:" )
+                # print( "\n# Final Neutral Background:" )
                 stops.extend( [
                     self._format_gradient_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
                     self._format_gradient_stop( max_warning_start - TINY_GAP,
                                            self.COLOR_GROOVE_NEUTRAL )
                 ] )
 
-            print( "\n# Positive Warning Zone:" )
+            # print( "\n# Positive Warning Zone:" )
             stops.extend( [
                 self._format_gradient_stop( max_warning_start - TINY_GAP,
                                        self.COLOR_GROOVE_NEUTRAL ),
@@ -1128,6 +1129,7 @@ class CustomSlider( QSlider ):
         """
         Process value adjustments for a single object.
         Now handles multiple groups of selected keys.
+        # TODO: optimize, slows down when too many curves are processed
         """
         self.new_values[obj] = {}
         for curve in self.all_curves:
@@ -1158,7 +1160,9 @@ class CustomSlider( QSlider ):
                 cmds.setKeyframe( curve, time = self.current_time, value = blended_val )
 
     def _calculate_blended_value( self, obj, curve, value, initial_val ):
-        """Calculate the blended value based on slider position"""
+        """Calculate the blended value based on slider position
+            # TODO: optimize, slows down when too many curves are processed
+        """
         # Convert slider value directly to percentage (no normalization needed)
         percentage = value / 100.0  # Direct percentage conversion
 
@@ -1390,6 +1394,7 @@ class PreferencesDialog( QDialog ):
         # Use a short timer to verify mouse hasn't re-entered before closing
         QtCore.QTimer.singleShot( 100, self._check_close )
         super( PreferencesDialog, self ).leaveEvent( event )
+        # TODO: reset pref button to turn off hover color, set normal state.
 
     def enterEvent( self, event ):
         """Handle mouse entering the dialog window"""
