@@ -21,29 +21,52 @@ def get_default_width_txt():
     return 'XL'
 
 
+def get_default_range_txt():
+    return '150'
+
+
+def get_default_tick_width_txt():
+    return 'thick'
+
+
 # Constants
 TOOL_NAME = 'Blend_N'
-DEFAULT_RANGE_WIDTH_TXT = get_default_width_txt()
+#
+DEFAULT_SLIDER_WIDTH_TXT = get_default_width_txt()
 DEFAULT_SLIDER_WIDTH = {
     'S': 100,
     'M': 200,
     'L': 300,
-    DEFAULT_RANGE_WIDTH_TXT: 1200  # default
+    DEFAULT_SLIDER_WIDTH_TXT: 500  # default
 }
-
+#
+DEFAULT_RANGE_WIDTH_TXT = get_default_range_txt()
 DEFAULT_RANGE = {
     '100': 100,
-    '150': 150,  # default
+    DEFAULT_RANGE_WIDTH_TXT: 150,  # default
     '200': 200
 }
+#
+DEFAULT_TICK_WIDTH_TXT = get_default_tick_width_txt()
+DEFAULT_TICK_WIDTH = {
+    'thin': 0.01,
+    'med': 0.02,
+    DEFAULT_TICK_WIDTH_TXT: 0.03  # default
+}
+#
+TICK_INTERVAL = 50  # Original constant for tick interval
+
+
+def get_default_tick_width():
+    return DEFAULT_TICK_WIDTH[get_default_tick_width_txt()]
 
 
 def get_default_width():
-    return DEFAULT_SLIDER_WIDTH['XL']
+    return DEFAULT_SLIDER_WIDTH[get_default_width_txt()]
 
 
 def get_default_range():
-    return DEFAULT_RANGE['150']
+    return DEFAULT_RANGE[get_default_range_txt()]
 
 
 def cleanup_dialog():
@@ -108,22 +131,25 @@ class CustomSlider( QSlider ):
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
+    # Lock
     LOCK_RELEASE_MARGIN = 15  # Percentage beyond threshold needed to release lock
+    # Tick
     TICK_INTERVAL = 50  # Interval for tick marks
     TICK_WIDTH = 0.03  # Width of tick marks (as percentage of total range)
 
-    # groove
-    COLOR_GROOVE_NEUTRAL = "#373737"  # Gray middle zone 373737
-    COLOR_GROOVE_WARNING = "#453939"  # Red outer zones 673232 8B4343
-    COLOR_TICK_MARK = "#3D4539"  # Color for tick marks 3D4539 E54C4C
-    # handle
-    COLOR_HANDLE_NORMAL = "#8B4343"  # Handle color within threshold
-    COLOR_HANDLE_WARNING = "#E54C4C"  # Handle color beyond threshold E54C4C FF4444
-    COLOR_HANDLE_BORDER_HOVER = "#B24949"  # handle
-    COLOR_HANDLE_DISABLED = '#444444'  # Maya grey for disabled state
-    # border
+    # Groove
+    COLOR_GROOVE_NEUTRAL = "#373737"  # Renamed from neutral
+    COLOR_GROOVE_WARNING = "#453939"  # Renamed from warning
+    # Handle
+    COLOR_HANDLE_NEUTRAL = "#8B4343"
+    COLOR_HANDLE_WARNING = "#E54C4C"
+    COLOR_HANDLE_BORDER_HOVER = "#B24949"
+    COLOR_HANDLE_DISABLED = '#444444'
+    # Border
     COLOR_BORDER_NEUTRAL = '#1a1a1a'
-    COLOR_BORDER_DISABLED = '#1a1a1a'  # Darker grey for disabled border
+    COLOR_BORDER_DISABLED = '#333333'
+    # Tick
+    COLOR_TICK_MARK = "#3D4539"
 
     def __init__( self, parent = None, theme = 'green' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
@@ -132,7 +158,7 @@ class CustomSlider( QSlider ):
         self.set_theme( theme )
         self._setup_ui()
         self._connect_signals()
-        self.reset_state()
+        self._reset_state()
 
         # Lock state tracking
         self._positive_locked = False
@@ -198,16 +224,16 @@ class CustomSlider( QSlider ):
 
     def _connect_signals( self ):
         """Connect Qt signals to their handlers"""
-        self.sliderPressed.connect( self.on_handle_press )
-        self.valueChanged.connect( self.on_handle_move )
-        self.sliderReleased.connect( self.on_handle_release )
+        self.sliderPressed.connect( self._before_handle_press )
+        self.valueChanged.connect( self._before_handle_move )
+        self.sliderReleased.connect( self._before_handle_release )
 
     def _setup_ui( self ):
         """Initialize UI elements and their properties"""
         self.r = DEFAULT_RANGE['150']
         self.setRange( int( self.r * -1 ), int( self.r ) )
         self.setValue( 0 )
-        self.setFixedWidth( DEFAULT_SLIDER_WIDTH[DEFAULT_RANGE_WIDTH_TXT] )  # Updated to use simple dict access
+        self.setFixedWidth( DEFAULT_SLIDER_WIDTH[DEFAULT_SLIDER_WIDTH_TXT] )  # Updated to use simple dict access
         self.setFixedHeight( 50 )
 
         self._update_stylesheet()
@@ -257,75 +283,83 @@ class CustomSlider( QSlider ):
         self._update_stylesheet( value )
         self.handle_label.setText( '{0}'.format( abs( value ) ) )
 
+    def _calculate_position( self, value ):
+        """Convert absolute value to relative position (0-1)"""
+        total_range = self.maximum() - self.minimum()
+        if total_range == 0:
+            return 0
+        return ( value - self.minimum() ) / float( total_range )
+
+    def _calculate_value( self, position ):
+        """Convert relative position (0-1) to slider value"""
+        total_range = self.maximum() - self.minimum()
+        return position * total_range + self.minimum()
+
+    def _format_gradient_stop( self, position, color ):
+        """Format a single gradient stop with both position and corresponding value"""
+        slider_value = self._calculate_value( position )
+        print( "Position: {0:.4f} ({1}) [Value: {2:.4f}]".format( 
+            position, color, slider_value ) )
+        return "stop:{0:.4f} {1}".format( position, color )
+
     def _calculate_gradient_stops( self ):
-        """
-        Calculate gradient stops for a slider with warning zones and tick marks.
-        Only draws warning zones if they're within the slider's range.
-        """
+        """Calculate gradient stops for a slider with warning zones and tick marks."""
         # Early return for zero range case
         total_range = self.maximum() - self.minimum()
         if total_range == 0:
             return "stop:0 {0}, stop:1 {0}".format( self.COLOR_GROOVE_NEUTRAL )
 
         print( "\nSlider Range: {0} to {1}".format( self.minimum(), self.maximum() ) )
-        print( "Warning Thresholds: {0} to {1}".format( self.NEGATIVE_THRESHOLD, self.POSITIVE_THRESHOLD ) )
+        print( "Warning Thresholds: {0} to {1}".format( 
+            self.NEGATIVE_THRESHOLD, self.POSITIVE_THRESHOLD ) )
         print( "\nGradient Sequence:" )
 
-        # Constants for better readability
-        TINY_GAP = 0.0001  # dont change
-        PROXIMITY_THRESHOLD = 2  # Don't draw ticks within 2 points of warning zones
-
-        def calculate_position( value ):
-            """Convert absolute value to relative position (0-1)"""
-            return ( value - self.minimum() ) / float( total_range )
-
-        def calculate_value( position ):
-            """Convert relative position (0-1) to slider value"""
-            return position * total_range + self.minimum()
-
-        def format_stop( position, color ):
-            """Format a single gradient stop with both position and corresponding value"""
-            slider_value = calculate_value( position )
-            print( "Position: {0:.4f} ({1}) [Value: {2:.4f}]".format( position, color, slider_value ) )
-            return "stop:{0:.4f} {1}".format( position, color )
+        # Constants
+        TINY_GAP = 0.0001
+        PROXIMITY_THRESHOLD = 2
 
         # Check if warning zones are within range
         has_negative_warning = self.NEGATIVE_THRESHOLD >= self.minimum()
         has_positive_warning = self.POSITIVE_THRESHOLD <= self.maximum()
 
         # Calculate key positions only if warning zones are in range
-        min_warning_stop = calculate_position( self.NEGATIVE_THRESHOLD ) if has_negative_warning else None
-        max_warning_start = calculate_position( self.POSITIVE_THRESHOLD ) if has_positive_warning else None
+        min_warning_stop = ( self._calculate_position( self.NEGATIVE_THRESHOLD )
+                          if has_negative_warning else None )
+        max_warning_start = ( self._calculate_position( self.POSITIVE_THRESHOLD )
+                           if has_positive_warning else None )
 
         # Generate tick positions and their actual values
-        start_tick = ( ( self.NEGATIVE_THRESHOLD + self.TICK_INTERVAL ) // self.TICK_INTERVAL ) * self.TICK_INTERVAL
-        end_tick = ( ( self.POSITIVE_THRESHOLD + self.TICK_INTERVAL ) // self.TICK_INTERVAL ) * self.TICK_INTERVAL
+        start_tick = ( ( self.NEGATIVE_THRESHOLD + self.TICK_INTERVAL ) //
+                     self.TICK_INTERVAL ) * self.TICK_INTERVAL
+        end_tick = ( ( self.POSITIVE_THRESHOLD + self.TICK_INTERVAL ) //
+                   self.TICK_INTERVAL ) * self.TICK_INTERVAL
 
+        # Build tick data
         tick_data = []
         for tick in range( int( start_tick ), int( end_tick ), self.TICK_INTERVAL ):
             if self.minimum() <= tick <= self.maximum() and tick != 0:
-                # Add proximity check here
+                # Add proximity check
                 if ( abs( tick - self.NEGATIVE_THRESHOLD ) > PROXIMITY_THRESHOLD and
                     abs( tick - self.POSITIVE_THRESHOLD ) > PROXIMITY_THRESHOLD ):
-                    pos = calculate_position( tick )
+                    pos = self._calculate_position( tick )
                     if 0 < pos < 1:
                         tick_data.append( ( pos, tick ) )
 
         # Build gradient stops
         stops = []
 
-        # Add negative warning zone only if in range
+        # Add negative warning zone
         if has_negative_warning:
             print( "\n# Negative Warning Zone:" )
             stops.extend( [
-                format_stop( 0, self.COLOR_GROOVE_WARNING ),
-                format_stop( min_warning_stop, self.COLOR_GROOVE_WARNING ),
-                format_stop( min_warning_stop + TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
+                self._format_gradient_stop( 0, self.COLOR_GROOVE_WARNING ),
+                self._format_gradient_stop( min_warning_stop, self.COLOR_GROOVE_WARNING ),
+                self._format_gradient_stop( min_warning_stop + TINY_GAP,
+                                       self.COLOR_GROOVE_NEUTRAL )
             ] )
             prev_pos = min_warning_stop + ( TINY_GAP * 2 )
         else:
-            # Start with neutral color if no warning zone
-            stops.append( format_stop( 0, self.COLOR_GROOVE_NEUTRAL ) )
+            stops.append( self._format_gradient_stop( 0, self.COLOR_GROOVE_NEUTRAL ) )
             prev_pos = TINY_GAP
 
         # Add ticks
@@ -344,42 +378,46 @@ class CustomSlider( QSlider ):
             if tick_start - prev_pos > TINY_GAP:
                 print( "\n# Neutral Background:" )
                 stops.extend( [
-                    format_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
-                    format_stop( tick_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
+                    self._format_gradient_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
+                    self._format_gradient_stop( tick_start - TINY_GAP,
+                                           self.COLOR_GROOVE_NEUTRAL )
                 ] )
 
             # Add tick mark
             stops.extend( [
-                format_stop( tick_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL ),
-                format_stop( tick_start, self.COLOR_TICK_MARK ),
-                format_stop( tick_end, self.COLOR_TICK_MARK ),
-                format_stop( tick_end + TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
+                self._format_gradient_stop( tick_start - TINY_GAP,
+                                       self.COLOR_GROOVE_NEUTRAL ),
+                self._format_gradient_stop( tick_start, self.COLOR_TICK_MARK ),
+                self._format_gradient_stop( tick_end, self.COLOR_TICK_MARK ),
+                self._format_gradient_stop( tick_end + TINY_GAP,
+                                       self.COLOR_GROOVE_NEUTRAL )
             ] )
 
             prev_pos = tick_end + TINY_GAP
 
-        # Add final neutral section
+        # Add final sections
         if has_positive_warning:
             if max_warning_start - prev_pos > TINY_GAP * 2:
                 print( "\n# Final Neutral Background:" )
                 stops.extend( [
-                    format_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
-                    format_stop( max_warning_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL )
+                    self._format_gradient_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
+                    self._format_gradient_stop( max_warning_start - TINY_GAP,
+                                           self.COLOR_GROOVE_NEUTRAL )
                 ] )
 
-            # Add positive warning zone
             print( "\n# Positive Warning Zone:" )
             stops.extend( [
-                format_stop( max_warning_start - TINY_GAP, self.COLOR_GROOVE_NEUTRAL ),
-                format_stop( max_warning_start, self.COLOR_GROOVE_WARNING ),
-                format_stop( 1, self.COLOR_GROOVE_WARNING )
+                self._format_gradient_stop( max_warning_start - TINY_GAP,
+                                       self.COLOR_GROOVE_NEUTRAL ),
+                self._format_gradient_stop( max_warning_start,
+                                       self.COLOR_GROOVE_WARNING ),
+                self._format_gradient_stop( 1, self.COLOR_GROOVE_WARNING )
             ] )
         else:
-            # End with neutral color if no warning zone
             if 1.0 - prev_pos > TINY_GAP:
                 stops.extend( [
-                    format_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
-                    format_stop( 1, self.COLOR_GROOVE_NEUTRAL )
+                    self._format_gradient_stop( prev_pos, self.COLOR_GROOVE_NEUTRAL ),
+                    self._format_gradient_stop( 1, self.COLOR_GROOVE_NEUTRAL )
                 ] )
 
         return ", ".join( stops )
@@ -392,84 +430,156 @@ class CustomSlider( QSlider ):
         self._setup_theme( theme )
         self._update_stylesheet()
 
-    def set_colors( self, neutral = "#343434", warning = "#8B4343", handle_normal = "#673232", handle_warning = "#FF4444", handle_hover = "#B24949", border = '#1a1a1a' ):
-        """Set new colors and update the slider"""
-        self.COLOR_GROOVE_NEUTRAL = neutral
-        self.COLOR_GROOVE_WARNING = warning
-        self.COLOR_HANDLE_NORMAL = handle_normal
+    def set_colors( self,
+        groove_neutral = "#343434",  # Renamed from neutral
+        groove_warning = "#8B4343",  # Renamed from warning
+        handle_normal = "#673232",
+        handle_warning = "#FF4444",
+        handle_hover = "#B24949",
+        border = '#1a1a1a',
+        disabled = '#444444',
+        disabled_border = '#333333',
+        tick_mark = '#3D4539',
+        ui_background = '#2b2b2b',
+        ui_control_bg = '#2b2b2b'
+    ):
+        """
+        Set custom colors for all slider and UI elements.
+        
+        Parameters:
+            groove_neutral (str): Base color for the slider groove
+            groove_warning (str): Color for warning zones on the groove
+            handle_normal (str): Default handle color
+            handle_warning (str): Handle color when in warning zone
+            handle_hover (str): Handle color on hover
+            border (str): Normal border color
+            disabled (str): Disabled handle color
+            disabled_border (str): Border color when disabled
+            tick_mark (str): Color of tick marks on the groove
+            ui_background (str): Background color for UI elements
+            ui_control_bg (str): Background color for UI controls
+        """
+        # Slider groove colors (updated names)
+        self.COLOR_GROOVE_NEUTRAL = groove_neutral
+        self.COLOR_GROOVE_WARNING = groove_warning
+
+        # Handle colors
+        self.COLOR_HANDLE_NEUTRAL = handle_normal
         self.COLOR_HANDLE_WARNING = handle_warning
         self.COLOR_HANDLE_BORDER_HOVER = handle_hover
+
+        # Border colors
         self.COLOR_BORDER_NEUTRAL = border
+        self.COLOR_BORDER_DISABLED = disabled_border
+
+        # Disabled state
+        self.COLOR_HANDLE_DISABLED = disabled
+
+        # Tick mark color
+        self.COLOR_TICK_MARK = tick_mark
+
+        # UI colors
+        self._current_theme = {
+            'groove_neutral': groove_neutral,  # Updated key name
+            'groove_warning': groove_warning,  # Updated key name
+            'handle_normal': handle_normal,
+            'handle_warning': handle_warning,
+            'handle_hover': handle_hover,
+            'border': border,
+            'disabled': disabled,
+            'disabled_border': disabled_border,
+            'tick_mark': tick_mark,
+            'ui_background': ui_background,
+            'ui_control_bg': ui_control_bg
+        }
+
+        # Update the appearance
         self._update_stylesheet()
 
     def _setup_theme( self, theme = 'blue' ):
         """Set up color theme for the slider"""
-        # Base themes dictionary
         themes = {
             'red': {
-                'neutral': "#373737",  # Gray middle zone
-                'warning': "#453939",  # Outer warning zones
-                'handle_normal': "#8B4343",  # Handle normal state
-                'handle_warning': "#E54C4C",  # Handle warning state
-                'handle_hover': "#B24949",  # Handle hover state
-                'border': '#1a1a1a',  # Normal border
-                'disabled': '#444444',  # Disabled handle
-                'disabled_border': '#333333'  # Disabled border
+                'groove_neutral': "#373737",  # Renamed from 'neutral'
+                'groove_warning': "#453939",  # Renamed from 'warning'
+                'handle_normal': "#8B4343",
+                'handle_warning': "#E54C4C",
+                'handle_hover': "#B24949",
+                'border': '#1a1a1a',
+                'disabled': '#444444',
+                'disabled_border': '#333333',
+                'tick_mark': '#453939',
+                'ui_background': '#2b2b2b',
+                'ui_control_bg': '#2b2b2b',
             },
             'teal': {
-                'neutral': "#373737",
-                'warning': "#394545",
+                'groove_neutral': "#373737",
+                'groove_warning': "#394545",
                 'handle_normal': "#438B8B",
                 'handle_warning': "#4CE5E5",
                 'handle_hover': "#49B2B2",
                 'border': '#1a1a1a',
                 'disabled': '#444444',
-                'disabled_border': '#333333'
+                'disabled_border': '#333333',
+                'tick_mark': '#394545',
+                'ui_background': '#2b2b2b',
+                'ui_control_bg': '#2b2b2b',
             },
             'purple': {
-                'neutral': "#373737",
-                'warning': "#3d3945",
+                'groove_neutral': "#373737",
+                'groove_warning': "#3d3945",
                 'handle_normal': "#8263c0",
                 'handle_warning': "#8549ff",
                 'handle_hover': "#a082db",
                 'border': '#1a1a1a',
                 'disabled': '#444444',
-                'disabled_border': '#333333'
+                'disabled_border': '#333333',
+                'tick_mark': '#3d3945',
+                'ui_background': '#2b2b2b',
+                'ui_control_bg': '#2b2b2b',
             },
             'blue': {
-                'neutral': "#373737",
-                'warning': "#394555",
+                'groove_neutral': "#373737",
+                'groove_warning': "#394555",
                 'handle_normal': "#438B99",
                 'handle_warning': "#4CE5FF",
                 'handle_hover': "#49B2D2",
                 'border': '#1a1a1a',
                 'disabled': '#444444',
-                'disabled_border': '#333333'
+                'disabled_border': '#333333',
+                'tick_mark': '#394555',
+                'ui_background': '#2b2b2b',
+                'ui_control_bg': '#2b2b2b',
             },
             'green': {
-                'neutral': "#373737",
-                'warning': "#3D4539",
+                'groove_neutral': "#373737",
+                'groove_warning': "#3D4539",
                 'handle_normal': "#4A8B43",
                 'handle_warning': "#6DE54C",
                 'handle_hover': "#49B249",
                 'border': '#1a1a1a',
                 'disabled': '#444444',
-                'disabled_border': '#333333'
+                'disabled_border': '#333333',
+                'tick_mark': '#3D4539',
+                'ui_background': '#2b2b2b',
+                'ui_control_bg': '#2b2b2b',
             }
         }
 
         # Get the selected theme or default to red if theme not found
         selected_theme = themes.get( theme, themes['red'] )
 
-        # Set the color constants
-        self.COLOR_GROOVE_NEUTRAL = selected_theme['neutral']
-        self.COLOR_GROOVE_WARNING = selected_theme['warning']
-        self.COLOR_HANDLE_NORMAL = selected_theme['handle_normal']
+        # Set the color constants (updated names)
+        self.COLOR_GROOVE_NEUTRAL = selected_theme['groove_neutral']
+        self.COLOR_GROOVE_WARNING = selected_theme['groove_warning']
+        self.COLOR_HANDLE_NEUTRAL = selected_theme['handle_normal']
         self.COLOR_HANDLE_WARNING = selected_theme['handle_warning']
         self.COLOR_HANDLE_BORDER_HOVER = selected_theme['handle_hover']
         self.COLOR_BORDER_NEUTRAL = selected_theme['border']
         self.COLOR_HANDLE_DISABLED = selected_theme['disabled']
         self.COLOR_BORDER_DISABLED = selected_theme['disabled_border']
+        self.COLOR_TICK_MARK = selected_theme['tick_mark']
+        self._current_theme = selected_theme
 
     def _update_stylesheet( self, value = None ):
         """Update the stylesheet with current gradient stops and handle color"""
@@ -522,14 +632,14 @@ class CustomSlider( QSlider ):
         """Determine handle color based on current value"""
         if value <= self.NEGATIVE_THRESHOLD or value >= self.POSITIVE_THRESHOLD:
             return self.COLOR_HANDLE_WARNING
-        return self.COLOR_HANDLE_NORMAL
+        return self.COLOR_HANDLE_NEUTRAL
 
     def __MOUSE__( self ):
         pass
 
     def mousePressEvent( self, event ):
         """Handle mouse press events for both handle and groove"""
-        self.on_handle_press()
+        self._before_handle_press()
 
         # If disabled, don't process the event
         if self._is_disabled:
@@ -569,7 +679,7 @@ class CustomSlider( QSlider ):
 
             # Trigger the selection query if not already done
             if not self.all_curves:
-                self.on_handle_press()
+                self._before_handle_press()
 
             # Store click direction
             self._click_direction = 1 if pos >= center else -1
@@ -660,7 +770,7 @@ class CustomSlider( QSlider ):
     def _reset_after_click( self ):
         """Reset slider after a groove click"""
         # Make sure we properly close the undo chunk and reset state
-        self.on_handle_release()
+        self._before_handle_release()
 
     def _handle_repeat_click( self ):
         """Handle a single click iteration"""
@@ -682,10 +792,12 @@ class CustomSlider( QSlider ):
     def __PRESS__( self ):
         pass
 
+    def _before_handle_press( self ):
+        """Start"""
+        self.on_handle_press()
+
     def on_handle_press( self ):
-        """Query and store the current animation state"""
-        # open chunk
-        cmds.undoInfo( openChunk = True, cn = TOOL_NAME )
+        """HOOK, Query and store the current animation state"""
 
         # get curves
         self.all_curves = self._get_visible_curves()
@@ -934,8 +1046,19 @@ class CustomSlider( QSlider ):
     def __MOVE__( self ):
         pass
 
+    def _before_handle_move( self, value ):
+        """Start undo chunk and set move var, """
+        if not self.moved:
+            # set moved
+            self.moved = True
+            # open chunk
+            cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
+        # if qualified
+        self.on_handle_move( value )
+
     def on_handle_move( self, value ):
         """
+        HOOK
         Adjust animation values based on slider position.
         Now handles both selected key and current time scenarios.
         """
@@ -1003,23 +1126,31 @@ class CustomSlider( QSlider ):
     def __RELEASE__( self ):
         pass
 
-    def on_handle_release( self ):
-        """Reset the slider and clean up the operation"""
-        try:
+    def _before_handle_release( self ):
+        # if chunk, close
+        #
+        if self.moved:
+            cmds.undoInfo( closeChunk = True, cn = 'Blend_N' )
             self._reset_slider()
-            self.reset_state()
+        #
+        self.on_handle_release()
+
+    def on_handle_release( self ):
+        """HOOK, Reset the state"""
+        try:
+            self._reset_state()
         finally:
-            cmds.undoInfo( closeChunk = True, cn = TOOL_NAME )
+            pass
 
     def _reset_slider( self ):
         """Reset slider to initial position"""
-        self.valueChanged.disconnect( self.on_handle_move )
+        self.valueChanged.disconnect( self._before_handle_move )
         self.setValue( 0 )
         # self.label.setText( '0%' )
         self.handle_label.hide()  # Initially hide the label
-        self.valueChanged.connect( self.on_handle_move )
+        self.valueChanged.connect( self._before_handle_move )
 
-    def reset_state( self ):
+    def _reset_state( self ):
         """Reset all state variables to their default values"""
         self.previous_key_values = None
         self.next_key_values = None
@@ -1083,16 +1214,20 @@ class CustomDialog( QDialog ):
         self.toggle_button.clicked.connect( self._toggle_slider_visibility )
 
         # Get default values
-        default_width = DEFAULT_SLIDER_WIDTH[DEFAULT_RANGE_WIDTH_TXT]  # Updated to use simple dict access
+        default_width = DEFAULT_SLIDER_WIDTH[DEFAULT_SLIDER_WIDTH_TXT]  # Updated to use simple dict access
         default_range = DEFAULT_RANGE['150']  # Updated to use simple dict access
+        default_tick_width = DEFAULT_TICK_WIDTH[get_default_tick_width_txt()]
 
         # Create slider with saved preferences
-        slider_width = self.prefs.get_tool_pref( 'blend_pose_tool', 'slider_width', default_width )
-        slider_range = self.prefs.get_tool_pref( 'blend_pose_tool', 'slider_range', default_range )
+        slider_width = self.prefs.get_tool_pref( TOOL_NAME, 'slider_width', default_width )
+        slider_range = self.prefs.get_tool_pref( TOOL_NAME, 'slider_range', default_range )
+        slider_tick_width = self.prefs.get_tool_pref( TOOL_NAME, 'tick_width', default_tick_width )
 
         self.slider = CustomSlider()
         self.slider.setFixedWidth( slider_width )
         self.slider.setRange( -slider_range, slider_range )
+        self.slider.TICK_WIDTH = slider_tick_width  # Set tick width from preferences
+        self.slider._update_stylesheet()  # Make sure to update the stylesheet after changing TICK_WIDTH
 
         # Add widgets to layout with alignment
         layout.addWidget( self.toggle_button, 0, QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft )
@@ -1102,7 +1237,7 @@ class CustomDialog( QDialog ):
         self.adjustSize()
 
         # Load and apply saved slider visibility
-        slider_visible = self.prefs.get_tool_pref( 'blend_pose_tool', 'slider_visible', True )
+        slider_visible = self.prefs.get_tool_pref( TOOL_NAME, 'slider_visible', True )
         self.slider.setVisible( slider_visible )
 
     def _show_context_menu( self, position ):
@@ -1125,7 +1260,7 @@ class CustomDialog( QDialog ):
         current_visible = self.slider.isVisible()
         self.slider.setVisible( not current_visible )
         # Save the new visibility state
-        self.prefs.set_tool_pref( 'blend_pose_tool', 'slider_visible', not current_visible )
+        self.prefs.set_tool_pref( TOOL_NAME, 'slider_visible', not current_visible )
 
 
 class PreferencesDialog( QDialog ):
@@ -1253,7 +1388,7 @@ class PreferencesDialog( QDialog ):
 
         # Create radio buttons for width options
         for i, ( size_name, value ) in enumerate( DEFAULT_SLIDER_WIDTH.items() ):
-            radio = QRadioButton( size_name.title() )
+            radio = QRadioButton( size_name )
             radio.setStyleSheet( """
                 QRadioButton {
                     font-size: 13px;
@@ -1305,9 +1440,34 @@ class PreferencesDialog( QDialog ):
 
         main_layout.addWidget( range_frame )
 
+        # Tick Width section
+        tick_width_label = QLabel( "TICK WIDTH" )
+        tick_width_label.setStyleSheet( width_label.styleSheet() )  # Use same style as width label
+        main_layout.addWidget( tick_width_label )
+
+        # Tick width radio buttons frame
+        tick_frame = QtWidgets.QFrame()
+        tick_layout = QHBoxLayout( tick_frame )
+        tick_layout.setSpacing( 10 )
+        tick_layout.setContentsMargins( 8, 4, 8, 4 )
+        self.tick_width_button_group = QButtonGroup( self )
+
+        # Sort tick width options by their values (thin to thick)
+        sorted_tick_width = sorted( DEFAULT_TICK_WIDTH.items(), key = lambda x: x[1] )
+        for i, ( width_name, value ) in enumerate( sorted_tick_width ):
+            radio = QRadioButton( width_name.title() )
+            radio.setStyleSheet( self.width_button_group.buttons()[0].styleSheet() )
+            radio.tick_width_value = value
+            radio.tick_width_name = width_name
+            self.tick_width_button_group.addButton( radio, i )
+            tick_layout.addWidget( radio )
+
+        main_layout.addWidget( tick_frame )
+
         # Connect signals
         self.width_button_group.buttonClicked.connect( self._on_width_changed )
         self.range_button_group.buttonClicked.connect( self._on_range_changed )
+        self.tick_width_button_group.buttonClicked.connect( self._on_tick_width_changed )
 
         self.setLayout( main_layout )
         self.setMinimumWidth( 200 )
@@ -1316,10 +1476,12 @@ class PreferencesDialog( QDialog ):
     def _load_current_values( self ):
         """Load current preference values and select appropriate radio buttons"""
         # Get current values from preferences
-        current_width = self.prefs.get_tool_pref( 'blend_pose_tool', 'slider_width',
-                                                DEFAULT_SLIDER_WIDTH[DEFAULT_RANGE_WIDTH_TXT] )
-        current_range = self.prefs.get_tool_pref( 'blend_pose_tool', 'slider_range',
-                                                DEFAULT_RANGE['150'] )
+        current_width = self.prefs.get_tool_pref( TOOL_NAME, 'slider_width',
+                                                DEFAULT_SLIDER_WIDTH[DEFAULT_SLIDER_WIDTH_TXT] )
+        current_range = self.prefs.get_tool_pref( TOOL_NAME, 'slider_range',
+                                                DEFAULT_RANGE[get_default_range_txt()] )
+        current_tick_width = self.prefs.get_tool_pref( TOOL_NAME, 'tick_width_name',
+                                                  get_default_tick_width_txt() )
 
         # Select appropriate width radio button
         for button in self.width_button_group.buttons():
@@ -1333,14 +1495,20 @@ class PreferencesDialog( QDialog ):
                 button.setChecked( True )
                 break
 
+        # Select appropriate tick width radio button
+        for button in self.tick_width_button_group.buttons():
+            if button.tick_width_name == current_tick_width:
+                button.setChecked( True )
+                break
+
     def _on_width_changed( self, radio_button ):
         """Handle width radio button selection"""
         width_value = radio_button.width_value
         size_name = radio_button.size_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( 'blend_pose_tool', 'slider_width', width_value )
-        self.prefs.set_tool_pref( 'blend_pose_tool', 'slider_width_name', size_name )
+        self.prefs.set_tool_pref( TOOL_NAME, 'slider_width', width_value )
+        self.prefs.set_tool_pref( TOOL_NAME, 'slider_width_name', size_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
@@ -1354,13 +1522,28 @@ class PreferencesDialog( QDialog ):
         range_name = radio_button.range_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( 'blend_pose_tool', 'slider_range', range_value )
-        self.prefs.set_tool_pref( 'blend_pose_tool', 'slider_range_name', range_name )
+        self.prefs.set_tool_pref( TOOL_NAME, 'slider_range', range_value )
+        self.prefs.set_tool_pref( TOOL_NAME, 'slider_range_name', range_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
         if parent_dialog:
             parent_dialog.slider.setRange( -range_value, range_value )
+
+    def _on_tick_width_changed( self, radio_button ):
+        """Handle tick width radio button selection"""
+        width_value = radio_button.tick_width_value
+        width_name = radio_button.tick_width_name
+
+        # Save to preferences
+        self.prefs.set_tool_pref( TOOL_NAME, 'tick_width', width_value )
+        self.prefs.set_tool_pref( TOOL_NAME, 'tick_width_name', width_name )
+
+        # Update slider immediately
+        parent_dialog = self.parent()
+        if parent_dialog and parent_dialog.slider:
+            parent_dialog.slider.TICK_WIDTH = width_value
+            parent_dialog.slider._update_stylesheet()
 
 
 class WebrToolsPrefs( object ):
@@ -1373,12 +1556,16 @@ class WebrToolsPrefs( object ):
         self.prefs_file = 'WebrToolsPrefs.json'
         self.prefs_path = self._get_prefs_path()
         self.default_prefs = {
-            'blend_pose_tool': {
+            TOOL_NAME: {
                 'slider_visible': True,
-                'slider_width': DEFAULT_SLIDER_WIDTH[DEFAULT_RANGE_WIDTH_TXT],
-                'slider_width_name': 'XL',
-                'slider_range': DEFAULT_RANGE['150'],
-                'slider_range_name': '150'
+                'slider_width': DEFAULT_SLIDER_WIDTH[get_default_width_txt()],
+                'slider_width_name': get_default_width_txt(),
+                'slider_range': DEFAULT_RANGE[get_default_range_txt()],
+                'slider_range_name': get_default_range_txt(),
+
+                # Tick width preferences
+                'tick_width': DEFAULT_TICK_WIDTH[get_default_tick_width_txt()],
+                'tick_width_name': get_default_tick_width_txt()
             }
         }
         self.prefs = self._load_prefs()
