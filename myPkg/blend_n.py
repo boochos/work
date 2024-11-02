@@ -16,57 +16,8 @@ import maya.mel as mel
 # Initialize the global variable
 global custom_dialog
 
-
-def get_default_width_txt():
-    return 'XL'
-
-
-def get_default_range_txt():
-    return '150'
-
-
-def get_default_tick_width_txt():
-    return 'thick'
-
-
 # Constants
 TOOL_NAME = 'Blend_N'
-#
-DEFAULT_SLIDER_WIDTH_TXT = get_default_width_txt()
-DEFAULT_SLIDER_WIDTH = {
-    'S': 100,
-    'M': 200,
-    'L': 300,
-    DEFAULT_SLIDER_WIDTH_TXT: 500  # default
-}
-#
-DEFAULT_RANGE_WIDTH_TXT = get_default_range_txt()
-DEFAULT_RANGE = {
-    '100': 100,
-    DEFAULT_RANGE_WIDTH_TXT: 150,  # default
-    '200': 200
-}
-#
-DEFAULT_TICK_WIDTH_TXT = get_default_tick_width_txt()
-DEFAULT_TICK_WIDTH = {
-    'thin': 0.01,
-    'med': 0.02,
-    DEFAULT_TICK_WIDTH_TXT: 0.03  # default
-}
-#
-TICK_INTERVAL = 50  # Original constant for tick interval
-
-
-def get_default_tick_width():
-    return DEFAULT_TICK_WIDTH[get_default_tick_width_txt()]
-
-
-def get_default_width():
-    return DEFAULT_SLIDER_WIDTH[get_default_width_txt()]
-
-
-def get_default_range():
-    return DEFAULT_RANGE[get_default_range_txt()]
 
 
 def cleanup_dialog():
@@ -131,12 +82,32 @@ class CustomSlider( QSlider ):
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
-    # Lock
     LOCK_RELEASE_MARGIN = 15  # Percentage beyond threshold needed to release lock
-    # Tick
-    TICK_INTERVAL = 50  # Interval for tick marks
-    TICK_WIDTH = 0.03  # Width of tick marks (as percentage of total range)
 
+    # Default dictionaries for configurable values
+    DEFAULT_SLIDER_WIDTH = {
+        'S': 100,
+        'M': 200,
+        'L': 300,
+        'XL': 500  # default
+    }
+    DEFAULT_RANGE = {
+        '100': 100,
+        '150': 150,  # default
+        '200': 200
+    }
+    DEFAULT_TICK_WIDTH = {
+        'thin': 0.01,
+        'med': 0.02,
+        'thick': 0.03  # default
+    }
+
+    # Default text values
+    DEFAULT_WIDTH_TXT = 'XL'
+    DEFAULT_RANGE_TXT = '150'
+    DEFAULT_TICK_WIDTH_TXT = 'thick'
+
+    # Colors
     # Groove
     COLOR_GROOVE_NEUTRAL = "#373737"  # Renamed from neutral
     COLOR_GROOVE_WARNING = "#453939"  # Renamed from warning
@@ -154,6 +125,13 @@ class CustomSlider( QSlider ):
     def __init__( self, parent = None, theme = 'green' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
         self._is_disabled = False  # Add state tracking
+
+        # Initialize preference-based values using class defaults
+        self.TICK_INTERVAL = 50
+        self.TICK_WIDTH = self.DEFAULT_TICK_WIDTH[self.DEFAULT_TICK_WIDTH_TXT]
+        self.SLIDER_WIDTH = self.DEFAULT_SLIDER_WIDTH[self.DEFAULT_WIDTH_TXT]
+        self.SLIDER_RANGE = self.DEFAULT_RANGE[self.DEFAULT_RANGE_TXT]
+
         # self.theme = theme
         self.set_theme( theme )
         self._setup_ui()
@@ -187,10 +165,50 @@ class CustomSlider( QSlider ):
     def __UI__( self ):
         pass
 
+    @classmethod
+    def get_default_width_txt( cls ):
+        """Get default width text value"""
+        return cls.DEFAULT_WIDTH_TXT
+
+    @classmethod
+    def get_default_range_txt( cls ):
+        """Get default range text value"""
+        return cls.DEFAULT_RANGE_TXT
+
+    @classmethod
+    def get_default_tick_width_txt( cls ):
+        """Get default tick width text value"""
+        return cls.DEFAULT_TICK_WIDTH_TXT
+
+    @classmethod
+    def get_default_width( cls ):
+        """Get default width value"""
+        return cls.DEFAULT_SLIDER_WIDTH[cls.DEFAULT_WIDTH_TXT]
+
+    @classmethod
+    def get_default_range( cls ):
+        """Get default range value"""
+        return cls.DEFAULT_RANGE[cls.DEFAULT_RANGE_TXT]
+
+    @classmethod
+    def get_default_tick_width( cls ):
+        """Get default tick width value"""
+        return cls.DEFAULT_TICK_WIDTH[cls.DEFAULT_TICK_WIDTH_TXT]
+
     def set_tick_interval( self, interval ):
         """Set new tick interval and update the slider"""
         self.TICK_INTERVAL = interval
         self._update_stylesheet()
+
+    def set_slider_width( self, width ):
+        """Set new slider width and update UI"""
+        self.SLIDER_WIDTH = width
+        self.setFixedWidth( width )
+
+    def set_tick_width( self, width ):
+        """Set new tick width and update UI"""
+        self.TICK_WIDTH = width
+        self._update_stylesheet()  # Needed because tick width affects appearance
 
     def set_threshold( self, negative, positive ):
         """Set new threshold values and update the slider"""
@@ -230,10 +248,10 @@ class CustomSlider( QSlider ):
 
     def _setup_ui( self ):
         """Initialize UI elements and their properties"""
-        self.r = DEFAULT_RANGE['150']
-        self.setRange( int( self.r * -1 ), int( self.r ) )
+        # Use instance variables initialized from preferences
+        self.setRange( int( -self.SLIDER_RANGE ), int( self.SLIDER_RANGE ) )
         self.setValue( 0 )
-        self.setFixedWidth( DEFAULT_SLIDER_WIDTH[DEFAULT_SLIDER_WIDTH_TXT] )  # Updated to use simple dict access
+        self.setFixedWidth( self.SLIDER_WIDTH )
         self.setFixedHeight( 50 )
 
         self._update_stylesheet()
@@ -1213,20 +1231,27 @@ class CustomDialog( QDialog ):
         """ )
         self.toggle_button.clicked.connect( self._toggle_slider_visibility )
 
-        # Get default values
-        default_width = DEFAULT_SLIDER_WIDTH[DEFAULT_SLIDER_WIDTH_TXT]  # Updated to use simple dict access
-        default_range = DEFAULT_RANGE['150']  # Updated to use simple dict access
-        default_tick_width = DEFAULT_TICK_WIDTH[get_default_tick_width_txt()]
-
-        # Create slider with saved preferences
-        slider_width = self.prefs.get_tool_pref( TOOL_NAME, 'slider_width', default_width )
-        slider_range = self.prefs.get_tool_pref( TOOL_NAME, 'slider_range', default_range )
-        slider_tick_width = self.prefs.get_tool_pref( TOOL_NAME, 'tick_width', default_tick_width )
+        # Get preference values with class defaults
+        slider_width = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'slider_width',
+            CustomSlider.get_default_width()
+        )
+        slider_range = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'slider_range',
+            CustomSlider.get_default_range()
+        )
+        slider_tick_width = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'tick_width',
+            CustomSlider.get_default_tick_width()
+        )
 
         self.slider = CustomSlider()
-        self.slider.setFixedWidth( slider_width )
-        self.slider.setRange( -slider_range, slider_range )
-        self.slider.TICK_WIDTH = slider_tick_width  # Set tick width from preferences
+        self.slider.set_slider_width( slider_width )
+        self.slider.setRange( -slider_range, slider_range )  # Use Qt's setRange directly
+        self.slider.set_tick_width( slider_tick_width )
         self.slider._update_stylesheet()  # Make sure to update the stylesheet after changing TICK_WIDTH
 
         # Add widgets to layout with alignment
@@ -1387,7 +1412,9 @@ class PreferencesDialog( QDialog ):
         self.width_button_group = QButtonGroup( self )
 
         # Create radio buttons for width options
-        for i, ( size_name, value ) in enumerate( DEFAULT_SLIDER_WIDTH.items() ):
+        width_items = list( CustomSlider.DEFAULT_SLIDER_WIDTH.items() )
+        for i, item in enumerate( width_items ):
+            size_name, value = item
             radio = QRadioButton( size_name )
             radio.setStyleSheet( """
                 QRadioButton {
@@ -1429,8 +1456,11 @@ class PreferencesDialog( QDialog ):
         self.range_button_group = QButtonGroup( self )
 
         # Create radio buttons for range options - sorted
-        sorted_range = sorted( DEFAULT_RANGE.items(), key = lambda x: int( x[0] ) )
-        for i, ( range_name, value ) in enumerate( sorted_range ):
+        range_items = list( CustomSlider.DEFAULT_RANGE.items() )
+        # Sort by converting key to int for comparison
+        range_items.sort( key = lambda x: int( x[0] ) )
+        for i, item in enumerate( range_items ):
+            range_name, value = item
             radio = QRadioButton( range_name )
             radio.setStyleSheet( self.width_button_group.buttons()[0].styleSheet() )
             radio.range_value = value
@@ -1453,8 +1483,11 @@ class PreferencesDialog( QDialog ):
         self.tick_width_button_group = QButtonGroup( self )
 
         # Sort tick width options by their values (thin to thick)
-        sorted_tick_width = sorted( DEFAULT_TICK_WIDTH.items(), key = lambda x: x[1] )
-        for i, ( width_name, value ) in enumerate( sorted_tick_width ):
+        tick_items = list( CustomSlider.DEFAULT_TICK_WIDTH.items() )
+        # Sort by value
+        tick_items.sort( key = lambda x: x[1] )
+        for i, item in enumerate( tick_items ):
+            width_name, value = item
             radio = QRadioButton( width_name.title() )
             radio.setStyleSheet( self.width_button_group.buttons()[0].styleSheet() )
             radio.tick_width_value = value
@@ -1475,13 +1508,22 @@ class PreferencesDialog( QDialog ):
 
     def _load_current_values( self ):
         """Load current preference values and select appropriate radio buttons"""
-        # Get current values from preferences
-        current_width = self.prefs.get_tool_pref( TOOL_NAME, 'slider_width',
-                                                DEFAULT_SLIDER_WIDTH[DEFAULT_SLIDER_WIDTH_TXT] )
-        current_range = self.prefs.get_tool_pref( TOOL_NAME, 'slider_range',
-                                                DEFAULT_RANGE[get_default_range_txt()] )
-        current_tick_width = self.prefs.get_tool_pref( TOOL_NAME, 'tick_width_name',
-                                                  get_default_tick_width_txt() )
+        # Get current values from preferences with CustomSlider class defaults
+        current_width = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'slider_width',
+            CustomSlider.get_default_width()
+        )
+        current_range = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'slider_range',
+            CustomSlider.get_default_range()
+        )
+        current_tick_width = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'tick_width_name',  # Note: getting name, not value
+            CustomSlider.get_default_tick_width_txt()
+        )
 
         # Select appropriate width radio button
         for button in self.width_button_group.buttons():
@@ -1555,19 +1597,26 @@ class WebrToolsPrefs( object ):
     def __init__( self ):
         self.prefs_file = 'WebrToolsPrefs.json'
         self.prefs_path = self._get_prefs_path()
+        # Initialize default preferences using CustomSlider class defaults
         self.default_prefs = {
             TOOL_NAME: {
+                # Visibility
                 'slider_visible': True,
-                'slider_width': DEFAULT_SLIDER_WIDTH[get_default_width_txt()],
-                'slider_width_name': get_default_width_txt(),
-                'slider_range': DEFAULT_RANGE[get_default_range_txt()],
-                'slider_range_name': get_default_range_txt(),
+
+                # Width preferences
+                'slider_width': CustomSlider.get_default_width(),
+                'slider_width_name': CustomSlider.get_default_width_txt(),
+
+                # Range preferences
+                'slider_range': CustomSlider.get_default_range(),
+                'slider_range_name': CustomSlider.get_default_range_txt(),
 
                 # Tick width preferences
-                'tick_width': DEFAULT_TICK_WIDTH[get_default_tick_width_txt()],
-                'tick_width_name': get_default_tick_width_txt()
+                'tick_width': CustomSlider.get_default_tick_width(),
+                'tick_width_name': CustomSlider.get_default_tick_width_txt()
             }
         }
+
         self.prefs = self._load_prefs()
 
     def _get_prefs_path( self ):
