@@ -1225,9 +1225,10 @@ class CustomSlider( QSlider ):
         # TODO: optimize, slows down when too many curves are processed
         """
         self.new_values[obj] = {}
+        key_updates = []  # Collect all updates before applying
+
         for curve in self.all_curves:
-            # Check if we're working with selected keys
-            # Use cached selected keys instead of querying
+            # Use cached selected keys
             selected_keys = self._selected_keys_cache.get( curve, [] )
 
             if selected_keys:
@@ -1241,7 +1242,7 @@ class CustomSlider( QSlider ):
                     blended_val = self._calculate_blended_value( obj, curve_key, value, initial_val )
 
                     self.new_values[obj][curve_key] = blended_val
-                    cmds.setKeyframe( curve, time = key_time, value = blended_val )
+                    key_updates.append( ( curve, key_time, blended_val ) )
             else:
                 # Handle current time case
                 if curve not in self.initial_values.get( obj, {} ):
@@ -1251,7 +1252,11 @@ class CustomSlider( QSlider ):
                 blended_val = self._calculate_blended_value( obj, curve, value, initial_val )
 
                 self.new_values[obj][curve] = blended_val
-                cmds.setKeyframe( curve, time = self.current_time, value = blended_val )
+                key_updates.append( ( curve, self.current_time, blended_val ) )
+
+        # Apply all updates in one batch
+        for curve, time, value in key_updates:
+            cmds.setKeyframe( curve, time = time, value = value )
 
     def _calculate_blended_value( self, obj, curve, value, initial_val ):
         """Calculate the blended value based on slider position
