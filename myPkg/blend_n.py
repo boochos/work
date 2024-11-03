@@ -2,6 +2,7 @@
 import json
 import os
 import platform
+import time
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Qt, QPoint
@@ -82,8 +83,6 @@ class CustomSlider( QSlider ):
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
-    LOCK_RELEASE_MARGIN_OVERRIDE = 0  # use this value to turn it off
-    LOCK_RELEASE_MARGIN = 15  # REMOVE THIS IN FAVOUR OF PREF # Percentage beyond threshold needed to release lock
 
     # Default dictionaries for configurable values
     DEFAULT_SLIDER_WIDTH = {
@@ -102,14 +101,31 @@ class CustomSlider( QSlider ):
         'med': 0.02,
         'thick': 0.03  # default # ADD NONE AS AN OPTION
     }
-    DEFAULT_TICK_INTERVAL = 50  # TODO: change to dict like above attrs add to prefs
-    DEFAULT_LOCK_RELEASE_MARGIN = 15  # TODO: change to dict like above attrs add to prefs
-    DEFAULT_GROOVE_CLICK_VALUE = 1  # TODO: change to dict like above attrs add to prefs
+    DEFAULT_TICK_INTERVAL = {
+    '25': 25,
+    '30': 30,
+    '50': 50  # default
+    }
+    DEFAULT_LOCK_RELEASE_MARGIN = {
+        '0': 0,
+        '5': 5,
+        '10': 10,
+        '15': 15  # default
+    }
+    DEFAULT_GROOVE_CLICK_VALUE = {
+        '1': 1,  # default
+        '2': 2,
+        '3': 3,
+        '5': 5
+    }
 
     # Default text values
     DEFAULT_WIDTH_TXT = 'XL'
     DEFAULT_RANGE_TXT = '150'
     DEFAULT_TICK_WIDTH_TXT = 'thick'
+    DEFAULT_TICK_INTERVAL_TXT = '50'
+    DEFAULT_LOCK_RELEASE_MARGIN_TXT = '15'
+    DEFAULT_GROOVE_CLICK_VALUE_TXT = '1'
 
     # Colors
     # Groove
@@ -131,10 +147,12 @@ class CustomSlider( QSlider ):
         self._is_disabled = False  # Add state tracking
 
         # Initialize preference-based values using class defaults
-        self._tick_interval = self.DEFAULT_TICK_INTERVAL
+        self._tick_interval = self.DEFAULT_TICK_INTERVAL[self.DEFAULT_TICK_INTERVAL_TXT]
         self._tick_width = self.DEFAULT_TICK_WIDTH[self.DEFAULT_TICK_WIDTH_TXT]
         self._slider_width = self.DEFAULT_SLIDER_WIDTH[self.DEFAULT_WIDTH_TXT]
         self._slider_range = self.DEFAULT_RANGE[self.DEFAULT_RANGE_TXT]
+        self._lock_release_margin = self.DEFAULT_LOCK_RELEASE_MARGIN[self.DEFAULT_LOCK_RELEASE_MARGIN_TXT]
+        self._groove_click_value = self.DEFAULT_GROOVE_CLICK_VALUE[self.DEFAULT_GROOVE_CLICK_VALUE_TXT]
 
         # self.theme = theme
         self.set_theme( theme )
@@ -206,6 +224,22 @@ class CustomSlider( QSlider ):
         self._slider_width = value
         self.setFixedWidth( value )
 
+    @property
+    def lock_release_margin( self ):
+        return self._lock_release_margin
+
+    @lock_release_margin.setter
+    def lock_release_margin( self, value ):
+        self._lock_release_margin = value
+
+    @property
+    def groove_click_value( self ):
+        return self._groove_click_value
+
+    @groove_click_value.setter
+    def groove_click_value( self, value ):
+        self._groove_click_value = value
+
     @classmethod
     def get_default_width_txt( cls ):
         """Get default width text value"""
@@ -235,6 +269,36 @@ class CustomSlider( QSlider ):
     def get_default_tick_width( cls ):
         """Get default tick width value"""
         return cls.DEFAULT_TICK_WIDTH[cls.DEFAULT_TICK_WIDTH_TXT]
+
+    @classmethod
+    def get_default_tick_interval_txt( cls ):
+        """Get default tick interval text value"""
+        return cls.DEFAULT_TICK_INTERVAL_TXT
+
+    @classmethod
+    def get_default_tick_interval( cls ):
+        """Get default tick interval value"""
+        return cls.DEFAULT_TICK_INTERVAL[cls.DEFAULT_TICK_INTERVAL_TXT]
+
+    @classmethod
+    def get_default_lock_release_margin_txt( cls ):
+        """Get default lock release margin text value"""
+        return cls.DEFAULT_LOCK_RELEASE_MARGIN_TXT
+
+    @classmethod
+    def get_default_lock_release_margin( cls ):
+        """Get default lock release margin value"""
+        return cls.DEFAULT_LOCK_RELEASE_MARGIN[cls.DEFAULT_LOCK_RELEASE_MARGIN_TXT]
+
+    @classmethod
+    def get_default_groove_click_value_txt( cls ):
+        """Get default groove click value text value"""
+        return cls.DEFAULT_GROOVE_CLICK_VALUE_TXT
+
+    @classmethod
+    def get_default_groove_click_value( cls ):
+        """Get default groove click value"""
+        return cls.DEFAULT_GROOVE_CLICK_VALUE[cls.DEFAULT_GROOVE_CLICK_VALUE_TXT]
 
     def __UI__( self ):
         pass
@@ -303,7 +367,7 @@ class CustomSlider( QSlider ):
                 # Engage lock at threshold
                 self._positive_locked = True
                 self.setValue( self.POSITIVE_THRESHOLD - 1 )
-            elif value >= self.POSITIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN:
+            elif value >= self.POSITIVE_THRESHOLD + self.lock_release_margin:
                 # Release lock if we've moved past release point
                 self._positive_locked = False
                 self._lock_released = True
@@ -316,7 +380,7 @@ class CustomSlider( QSlider ):
                 # Engage lock at threshold
                 self._negative_locked = True
                 self.setValue( self.NEGATIVE_THRESHOLD + 1 )
-            elif value <= self.NEGATIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN:
+            elif value <= self.NEGATIVE_THRESHOLD - self.lock_release_margin:
                 # Release lock if we've moved past release point
                 self._negative_locked = False
                 self._lock_released = True
@@ -344,7 +408,7 @@ class CustomSlider( QSlider ):
 
     def _format_gradient_stop( self, position, color ):
         """Format a single gradient stop with both position and corresponding value"""
-        slider_value = self._calculate_value( position )
+        # slider_value = self._calculate_value( position ) # need for print
         # print( "Position: {0:.4f} ({1}) [Value: {2:.4f}]".format( position, color, slider_value ) )
         return "stop:{0:.4f} {1}".format( position, color )
 
@@ -361,7 +425,7 @@ class CustomSlider( QSlider ):
 
         # Constants
         TINY_GAP = 0.0001
-        PROXIMITY_THRESHOLD = 2
+        PROXIMITY_THRESHOLD = 1
 
         # Check if warning zones are within range
         has_negative_warning = self.NEGATIVE_THRESHOLD >= self.minimum()
@@ -754,15 +818,15 @@ class CustomSlider( QSlider ):
             # print( 'normlized', value_position )
 
             # Check if mouse has moved beyond threshold + margin
-            if value_position >= ( self.POSITIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN ) or \
-               value_position <= ( self.NEGATIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN ):
+            if value_position >= ( self.POSITIVE_THRESHOLD + self.lock_release_margin ) or \
+               value_position <= ( self.NEGATIVE_THRESHOLD - self.lock_release_margin ):
                 self._mouse_beyond_threshold = True
                 self._lock_released = True
 
             # check if the lock has been properly released, dont reset it if it has, this section unlocks the handle if the direction is reversed
             if not self._lock_released:
-                if value_position >= self.NEGATIVE_THRESHOLD + self.LOCK_RELEASE_MARGIN and self._negative_locked or \
-                    value_position <= self.POSITIVE_THRESHOLD - self.LOCK_RELEASE_MARGIN and self._positive_locked:
+                if value_position >= self.NEGATIVE_THRESHOLD + self.lock_release_margin and self._negative_locked or \
+                    value_position <= self.POSITIVE_THRESHOLD - self.lock_release_margin and self._positive_locked:
                     self._mouse_beyond_threshold = True
                     self._lock_released = True
                     self._soft_release = True
@@ -822,7 +886,7 @@ class CustomSlider( QSlider ):
 
         # Calculate new value
         current = self.value()
-        new_value = current + self._click_direction
+        new_value = current + ( self._click_direction * self.groove_click_value )
 
         # Ensure we stay within bounds
         new_value = max( min( new_value, self.maximum() ), self.minimum() )
@@ -850,6 +914,11 @@ class CustomSlider( QSlider ):
             self._is_disabled = True  # Set disabled state
             self._update_stylesheet( self.value() )
             return
+
+        # Cache selected keys for all curves
+        self._selected_keys_cache = {}
+        for curve in self.all_curves:
+            self._selected_keys_cache[curve] = cmds.keyframe( curve, q = True, sl = True, tc = True ) or []
 
         # initialize
         self.selected_objects = cmds.ls( selection = True )
@@ -1091,6 +1160,29 @@ class CustomSlider( QSlider ):
 
     def _before_handle_move( self, value ):
         """Start undo chunk and set move var, """
+
+        # Calculate duration if we have a previous start time
+        current_time = time.time()
+        if hasattr( self, '_last_move_time' ):
+            duration = ( current_time - self._last_move_time ) * 1000  # Convert to milliseconds
+            num_curves = len( self.all_curves ) if self.all_curves else 0
+
+            # Initialize or update running average
+            if not hasattr( self, '_move_counts' ):
+                self._move_counts = 1
+                self._move_total_time = duration
+            else:
+                self._move_counts += 1
+                self._move_total_time += duration
+
+            avg_duration = self._move_total_time / self._move_counts
+            print( 'Move duration: {:.2f}ms | Avg: {:.2f}ms | Count: {} | Curves: {}'.format( 
+                duration, avg_duration, self._move_counts, num_curves ) )
+
+        # Store new start time
+        self._last_move_time = current_time
+
+        #
         if not self.all_curves:
             return
 
@@ -1101,6 +1193,7 @@ class CustomSlider( QSlider ):
             cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
         # if qualified
         self.on_handle_move( value )
+        print( 'here' )
 
     def on_handle_move( self, value ):
         """
@@ -1134,7 +1227,8 @@ class CustomSlider( QSlider ):
         self.new_values[obj] = {}
         for curve in self.all_curves:
             # Check if we're working with selected keys
-            selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
+            # Use cached selected keys instead of querying
+            selected_keys = self._selected_keys_cache.get( curve, [] )
 
             if selected_keys:
                 # Process each selected key
@@ -1183,8 +1277,8 @@ class CustomSlider( QSlider ):
         #
         if self.moved:
             cmds.undoInfo( closeChunk = True, cn = 'Blend_N' )
-            self._reset_slider()
         #
+        self._reset_slider()
         self.on_handle_release()
 
     def on_handle_release( self ):
@@ -1204,6 +1298,7 @@ class CustomSlider( QSlider ):
 
     def _reset_state( self ):
         """Reset all state variables to their default values"""
+        self._selected_keys_cache = {}  # Clear the cache
         self.previous_key_values = None
         self.next_key_values = None
         self.initial_values = {}
@@ -1281,11 +1376,28 @@ class CustomDialog( QDialog ):
             'tick_width',
             CustomSlider.get_default_tick_width()
         )
-
+        slider_tick_interval = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'tick_interval',
+            CustomSlider.get_default_tick_interval()
+        )
+        slider_lock_margin = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'lock_release_margin',
+            CustomSlider.get_default_lock_release_margin()
+        )
+        slider_click_value = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'groove_click_value',
+            CustomSlider.get_default_groove_click_value()
+        )
         self.slider = CustomSlider()
         self.slider.slider_width = slider_width
         self.slider.slider_range = slider_range
         self.slider.tick_width = slider_tick_width
+        self.slider.tick_interval = slider_tick_interval
+        self.slider.lock_release_margin = slider_lock_margin
+        self.slider.groove_click_value = slider_click_value
         self.slider._update_stylesheet()  # Make sure to update the stylesheet after changing TICK_WIDTH
 
         # Add widgets to layout with alignment
@@ -1426,7 +1538,7 @@ class PreferencesDialog( QDialog ):
         main_layout.addWidget( title_label )
 
         # Width section
-        width_label = QLabel( "WIDTH" )
+        width_label = QLabel( "SLIDER WIDTH" )
         width_label.setStyleSheet( """
             QLabel {
                 color: #8c8c8c;
@@ -1479,7 +1591,7 @@ class PreferencesDialog( QDialog ):
         main_layout.addWidget( width_frame )
 
         # Range section
-        range_label = QLabel( "RANGE" )
+        range_label = QLabel( "SLIDER RANGE" )
         range_label.setStyleSheet( width_label.styleSheet() )  # Use same style as width label
         main_layout.addWidget( range_label )
 
@@ -1532,10 +1644,91 @@ class PreferencesDialog( QDialog ):
 
         main_layout.addWidget( tick_frame )
 
+        # Tick Interval
+        tick_interval_label = QLabel( "TICK INTERVAL" )
+        tick_interval_label.setStyleSheet( width_label.styleSheet() )
+        main_layout.addWidget( tick_interval_label )
+
+        # Tick interval radio buttons frame
+        interval_frame = QtWidgets.QFrame()
+        interval_layout = QHBoxLayout( interval_frame )
+        interval_layout.setSpacing( 10 )
+        interval_layout.setContentsMargins( 8, 4, 8, 4 )
+        self.tick_interval_button_group = QButtonGroup( self )
+
+        # Create radio buttons for interval options
+        interval_items = list( CustomSlider.DEFAULT_TICK_INTERVAL.items() )
+        interval_items.sort( key = lambda x: int( x[0] ) )
+        for i, item in enumerate( interval_items ):
+            interval_name, value = item
+            radio = QRadioButton( interval_name )
+            radio.setStyleSheet( self.width_button_group.buttons()[0].styleSheet() )
+            radio.interval_value = value
+            radio.interval_name = interval_name
+            self.tick_interval_button_group.addButton( radio, i )
+            interval_layout.addWidget( radio )
+
+        main_layout.addWidget( interval_frame )
+
+        # After tick interval section
+        lock_margin_label = QLabel( "LOCK MARGIN" )
+        lock_margin_label.setStyleSheet( width_label.styleSheet() )
+        main_layout.addWidget( lock_margin_label )
+
+        # Lock margin radio buttons frame
+        margin_frame = QtWidgets.QFrame()
+        margin_layout = QHBoxLayout( margin_frame )
+        margin_layout.setSpacing( 10 )
+        margin_layout.setContentsMargins( 8, 4, 8, 4 )
+        self.lock_margin_button_group = QButtonGroup( self )
+
+        # Create radio buttons for margin options
+        margin_items = list( CustomSlider.DEFAULT_LOCK_RELEASE_MARGIN.items() )
+        margin_items.sort( key = lambda x: int( x[0] ) )
+        for i, item in enumerate( margin_items ):
+            margin_name, value = item
+            radio = QRadioButton( margin_name )
+            radio.setStyleSheet( self.width_button_group.buttons()[0].styleSheet() )
+            radio.margin_value = value
+            radio.margin_name = margin_name
+            self.lock_margin_button_group.addButton( radio, i )
+            margin_layout.addWidget( radio )
+
+        main_layout.addWidget( margin_frame )
+
+        # After lock margin section
+        click_value_label = QLabel( "GROOVE CLICK VALUE" )
+        click_value_label.setStyleSheet( width_label.styleSheet() )
+        main_layout.addWidget( click_value_label )
+
+        # Click value radio buttons frame
+        click_value_frame = QtWidgets.QFrame()
+        click_value_layout = QHBoxLayout( click_value_frame )
+        click_value_layout.setSpacing( 10 )
+        click_value_layout.setContentsMargins( 8, 4, 8, 4 )
+        self.click_value_button_group = QButtonGroup( self )
+
+        # Create radio buttons for click value options
+        click_value_items = list( CustomSlider.DEFAULT_GROOVE_CLICK_VALUE.items() )
+        click_value_items.sort( key = lambda x: int( x[0] ) )
+        for i, item in enumerate( click_value_items ):
+            value_name, value = item
+            radio = QRadioButton( value_name )
+            radio.setStyleSheet( self.width_button_group.buttons()[0].styleSheet() )
+            radio.click_value = value
+            radio.click_value_name = value_name
+            self.click_value_button_group.addButton( radio, i )
+            click_value_layout.addWidget( radio )
+
+        main_layout.addWidget( click_value_frame )
+
         # Connect signals
         self.width_button_group.buttonClicked.connect( self._on_width_changed )
         self.range_button_group.buttonClicked.connect( self._on_range_changed )
         self.tick_width_button_group.buttonClicked.connect( self._on_tick_width_changed )
+        self.tick_interval_button_group.buttonClicked.connect( self._on_tick_interval_changed )
+        self.lock_margin_button_group.buttonClicked.connect( self._on_lock_margin_changed )
+        self.click_value_button_group.buttonClicked.connect( self._on_click_value_changed )
 
         self.setLayout( main_layout )
         self.setMinimumWidth( 200 )
@@ -1559,7 +1752,21 @@ class PreferencesDialog( QDialog ):
             'tick_width_name',  # Note: getting name, not value
             CustomSlider.get_default_tick_width_txt()
         )
-
+        current_tick_interval = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'tick_interval',
+            CustomSlider.get_default_tick_interval()
+        )
+        current_lock_margin = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'lock_release_margin',
+            CustomSlider.get_default_lock_release_margin()
+        )
+        current_click_value = self.prefs.get_tool_pref( 
+            TOOL_NAME,
+            'groove_click_value',
+            CustomSlider.get_default_groove_click_value()
+        )
         # Select appropriate width radio button
         for button in self.width_button_group.buttons():
             if button.width_value == current_width:
@@ -1575,6 +1782,21 @@ class PreferencesDialog( QDialog ):
         # Select appropriate tick width radio button
         for button in self.tick_width_button_group.buttons():
             if button.tick_width_name == current_tick_width:
+                button.setChecked( True )
+                break
+        # Select appropriate tick interval radio button
+        for button in self.tick_interval_button_group.buttons():
+            if button.interval_value == current_tick_interval:
+                button.setChecked( True )
+                break
+        # Select appropriate lock margin radio button
+        for button in self.lock_margin_button_group.buttons():
+            if button.margin_value == current_lock_margin:
+                button.setChecked( True )
+                break
+        # Select appropriate click value radio button
+        for button in self.click_value_button_group.buttons():
+            if button.click_value == current_click_value:
                 button.setChecked( True )
                 break
 
@@ -1622,6 +1844,48 @@ class PreferencesDialog( QDialog ):
             parent_dialog.slider.tick_width = width_value
             parent_dialog.slider._update_stylesheet()
 
+    def _on_tick_interval_changed( self, radio_button ):
+        """Handle tick interval radio button selection"""
+        interval_value = radio_button.interval_value
+        interval_name = radio_button.interval_name
+
+        # Save to preferences
+        self.prefs.set_tool_pref( TOOL_NAME, 'tick_interval', interval_value )
+        self.prefs.set_tool_pref( TOOL_NAME, 'tick_interval_name', interval_name )
+
+        # Update slider immediately
+        parent_dialog = self.parent()
+        if parent_dialog:
+            parent_dialog.slider.tick_interval = interval_value
+
+    def _on_lock_margin_changed( self, radio_button ):
+        """Handle lock release margin radio button selection"""
+        margin_value = radio_button.margin_value
+        margin_name = radio_button.margin_name
+
+        # Save to preferences
+        self.prefs.set_tool_pref( TOOL_NAME, 'lock_release_margin', margin_value )
+        self.prefs.set_tool_pref( TOOL_NAME, 'lock_release_margin_name', margin_name )
+
+        # Update slider immediately
+        parent_dialog = self.parent()
+        if parent_dialog:
+            parent_dialog.slider.lock_release_margin = margin_value
+
+    def _on_click_value_changed( self, radio_button ):
+        """Handle groove click value radio button selection"""
+        click_value = radio_button.click_value
+        click_value_name = radio_button.click_value_name
+
+        # Save to preferences
+        self.prefs.set_tool_pref( TOOL_NAME, 'groove_click_value', click_value )
+        self.prefs.set_tool_pref( TOOL_NAME, 'groove_click_value_name', click_value_name )
+
+        # Update slider immediately
+        parent_dialog = self.parent()
+        if parent_dialog:
+            parent_dialog.slider.groove_click_value = click_value
+
 
 class WebrToolsPrefs( object ):
     """
@@ -1648,7 +1912,19 @@ class WebrToolsPrefs( object ):
 
                 # Tick width preferences
                 'tick_width': CustomSlider.get_default_tick_width(),
-                'tick_width_name': CustomSlider.get_default_tick_width_txt()
+                'tick_width_name': CustomSlider.get_default_tick_width_txt(),
+
+                # Tick interval preferences
+                'tick_interval': CustomSlider.get_default_tick_interval(),
+                'tick_interval_name': CustomSlider.get_default_tick_interval_txt(),
+
+                # Lock release margin preferences
+                'lock_release_margin': CustomSlider.get_default_lock_release_margin(),
+                'lock_release_margin_name': CustomSlider.get_default_lock_release_margin_txt(),
+
+                # Groove click value preferences
+                'groove_click_value': CustomSlider.get_default_groove_click_value(),
+                'groove_click_value_name': CustomSlider.get_default_groove_click_value_txt()
             }
         }
 
