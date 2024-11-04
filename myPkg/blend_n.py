@@ -709,9 +709,20 @@ class CustomSlider( QSlider ):
             current_value = self.value()
             # print( 'normlized', value_position )
 
+            print( '\nMouse Move Debug:' )
+            print( 'Current Position: {0}'.format( current_pos ) )
+            print( 'Value Position: {0}'.format( value_position ) )
+            print( 'Current Value: {0}'.format( current_value ) )
+            print( 'Positive Lock: {0}'.format( self._positive_locked ) )
+            print( 'Negative Lock: {0}'.format( self._negative_locked ) )
+            print( 'Lock Released: {0}'.format( self._lock_released ) )
+            print( 'Mouse Beyond Threshold: {0}'.format( self._mouse_beyond_threshold ) )
+            print( 'Soft Release: {0}'.format( self._soft_release ) )
+
             # Check if mouse has moved beyond threshold + margin
             if value_position >= ( self.POSITIVE_THRESHOLD + self.lock_release_margin ) or \
                value_position <= ( self.NEGATIVE_THRESHOLD - self.lock_release_margin ):
+                print( 'Beyond threshold + margin condition met' )
                 self._mouse_beyond_threshold = True
                 self._lock_released = True
 
@@ -719,6 +730,8 @@ class CustomSlider( QSlider ):
             if not self._lock_released:
                 if value_position >= self.NEGATIVE_THRESHOLD + self.lock_release_margin and self._negative_locked or \
                     value_position <= self.POSITIVE_THRESHOLD - self.lock_release_margin and self._positive_locked:
+                    print( 'Direction reversal condition met:' )
+                    print( 'Value Position vs Threshold: {0} vs {1}'.format( value_position, self.POSITIVE_THRESHOLD ) )
                     self._mouse_beyond_threshold = True
                     self._lock_released = True
                     self._soft_release = True
@@ -737,6 +750,7 @@ class CustomSlider( QSlider ):
                     return
 
             if self._soft_release:
+                print( 'Soft release triggering reset' )
                 self._mouse_beyond_threshold = False
                 self._lock_released = False
                 # self._last_mouse_pos = None
@@ -1062,8 +1076,9 @@ class CustomSlider( QSlider ):
                 self._move_total_time += duration
 
             avg_duration = self._move_total_time / self._move_counts
+            '''
             print( 'Move duration: {:.2f}ms | Avg: {:.2f}ms | Count: {} | Curves: {}'.format( 
-                duration, avg_duration, self._move_counts, num_curves ) )
+                duration, avg_duration, self._move_counts, num_curves ) )'''
 
         # Store new start time
         self._last_move_time = current_time
