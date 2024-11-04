@@ -10,6 +10,8 @@ from PySide2.QtWidgets import ( QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayo
                               QPushButton, QRadioButton, QButtonGroup, QGroupBox )
 from shiboken2 import wrapInstance
 
+import maya.OpenMaya as om
+import maya.OpenMayaAnim as oma
 import maya.OpenMayaUI as omui
 import maya.cmds as cmds
 import maya.mel as mel
@@ -915,11 +917,6 @@ class CustomSlider( QSlider ):
             self._update_stylesheet( self.value() )
             return
 
-        # Cache selected keys for all curves
-        self._selected_keys_cache = {}
-        for curve in self.all_curves:
-            self._selected_keys_cache[curve] = cmds.keyframe( curve, q = True, sl = True, tc = True ) or []
-
         # initialize
         self.selected_objects = cmds.ls( selection = True )
         self.anim_layers = cmds.ls( type = 'animLayer' )
@@ -928,7 +925,6 @@ class CustomSlider( QSlider ):
         self._initialize_key_values()
 
         # Process curves and their objects
-        # print( self.selected_objects )
         for obj in self.selected_objects:
             self._process_object_curves( obj )
 
@@ -1193,7 +1189,6 @@ class CustomSlider( QSlider ):
             cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
         # if qualified
         self.on_handle_move( value )
-        print( 'here' )
 
     def on_handle_move( self, value ):
         """
@@ -1225,11 +1220,9 @@ class CustomSlider( QSlider ):
         # TODO: optimize, slows down when too many curves are processed
         """
         self.new_values[obj] = {}
-        key_updates = []  # Collect all updates before applying
-
         for curve in self.all_curves:
-            # Use cached selected keys
-            selected_keys = self._selected_keys_cache.get( curve, [] )
+            # Check if we're working with selected keys
+            selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
 
             if selected_keys:
                 # Process each selected key
@@ -1242,7 +1235,7 @@ class CustomSlider( QSlider ):
                     blended_val = self._calculate_blended_value( obj, curve_key, value, initial_val )
 
                     self.new_values[obj][curve_key] = blended_val
-                    key_updates.append( ( curve, key_time, blended_val ) )
+                    cmds.setKeyframe( curve, time = key_time, value = blended_val )
             else:
                 # Handle current time case
                 if curve not in self.initial_values.get( obj, {} ):
@@ -1252,11 +1245,7 @@ class CustomSlider( QSlider ):
                 blended_val = self._calculate_blended_value( obj, curve, value, initial_val )
 
                 self.new_values[obj][curve] = blended_val
-                key_updates.append( ( curve, self.current_time, blended_val ) )
-
-        # Apply all updates in one batch
-        for curve, time, value in key_updates:
-            cmds.setKeyframe( curve, time = time, value = value )
+                cmds.setKeyframe( curve, time = self.current_time, value = blended_val )
 
     def _calculate_blended_value( self, obj, curve, value, initial_val ):
         """Calculate the blended value based on slider position
@@ -1304,6 +1293,8 @@ class CustomSlider( QSlider ):
     def _reset_state( self ):
         """Reset all state variables to their default values"""
         self._selected_keys_cache = {}  # Clear the cache
+        self._move_counts = 0  # Reset timing stats
+        self._move_total_time = 0  # Reset timing stats
         self.previous_key_values = None
         self.next_key_values = None
         self.initial_values = {}
