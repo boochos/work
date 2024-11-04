@@ -5,7 +5,9 @@ import platform
 import time
 
 from PySide2 import QtCore, QtWidgets
+from PySide2.QtCore import Qt
 from PySide2.QtCore import Qt, QPoint
+from PySide2.QtGui import QColor
 from PySide2.QtWidgets import ( QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayout,
                               QPushButton, QRadioButton, QButtonGroup, QGroupBox )
 from shiboken2 import wrapInstance
@@ -131,18 +133,18 @@ class CustomSlider( QSlider ):
 
     # Colors
     # Groove
-    COLOR_GROOVE_NEUTRAL = "#373737"  # Renamed from neutral
-    COLOR_GROOVE_WARNING = "#453939"  # Renamed from warning
+    COLOR_GROOVE_NEUTRAL = QColor( 55, 55, 55 ).name()  # rgb(55, 55, 55)
+    COLOR_GROOVE_WARNING = QColor( 69, 57, 57 ).name()  # rgb(69, 57, 57)
     # Handle
-    COLOR_HANDLE_NEUTRAL = "#8B4343"
-    COLOR_HANDLE_WARNING = "#E54C4C"
-    COLOR_HANDLE_BORDER_HOVER = "#B24949"
-    COLOR_HANDLE_DISABLED = '#444444'
+    COLOR_HANDLE_NEUTRAL = QColor( 139, 67, 67 ).name()  # rgb(139, 67, 67)
+    COLOR_HANDLE_WARNING = QColor( 229, 76, 76 ).name()  # rgb(229, 76, 76)
+    COLOR_HANDLE_BORDER_HOVER = QColor( 178, 73, 73 ).name()  # rgb(178, 73, 73)
+    COLOR_HANDLE_DISABLED = QColor( 68, 68, 68 ).name()  # rgb(68, 68, 68)
     # Border
-    COLOR_BORDER_NEUTRAL = '#1a1a1a'
-    COLOR_BORDER_DISABLED = '#333333'
+    COLOR_BORDER_NEUTRAL = QColor( 26, 26, 26 ).name()  # rgb(26, 26, 26)
+    COLOR_BORDER_DISABLED = QColor( 51, 51, 51 ).name()  # rgb(51, 51, 51)
     # Tick
-    COLOR_TICK_MARK = "#3D4539"
+    COLOR_TICK_MARK = QColor( 61, 69, 57 ).name()  # rgb(61, 69, 57)
 
     def __init__( self, parent = None, theme = 'blue' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
@@ -539,139 +541,73 @@ class CustomSlider( QSlider ):
         self._setup_theme( theme )
         self._update_stylesheet()
 
-    def set_colors( self,
-        groove_neutral = "#343434",  # Renamed from neutral
-        groove_warning = "#8B4343",  # Renamed from warning
-        handle_normal = "#673232",
-        handle_warning = "#FF4444",
-        handle_hover = "#B24949",
-        border = '#1a1a1a',
-        disabled = '#444444',
-        disabled_border = '#333333',
-        tick_mark = '#3D4539',
-        ui_background = '#2b2b2b',
-        ui_control_bg = '#2b2b2b'
-    ):
-        """
-        Set custom colors for all slider and UI elements.
-        
-        Parameters:
-            groove_neutral (str): Base color for the slider groove
-            groove_warning (str): Color for warning zones on the groove
-            handle_normal (str): Default handle color
-            handle_warning (str): Handle color when in warning zone
-            handle_hover (str): Handle color on hover
-            border (str): Normal border color
-            disabled (str): Disabled handle color
-            disabled_border (str): Border color when disabled
-            tick_mark (str): Color of tick marks on the groove
-            ui_background (str): Background color for UI elements
-            ui_control_bg (str): Background color for UI controls
-        """
-        # Slider groove colors (updated names)
-        self.COLOR_GROOVE_NEUTRAL = groove_neutral
-        self.COLOR_GROOVE_WARNING = groove_warning
-
-        # Handle colors
-        self.COLOR_HANDLE_NEUTRAL = handle_normal
-        self.COLOR_HANDLE_WARNING = handle_warning
-        self.COLOR_HANDLE_BORDER_HOVER = handle_hover
-
-        # Border colors
-        self.COLOR_BORDER_NEUTRAL = border
-        self.COLOR_BORDER_DISABLED = disabled_border
-
-        # Disabled state
-        self.COLOR_HANDLE_DISABLED = disabled
-
-        # Tick mark color
-        self.COLOR_TICK_MARK = tick_mark
-
-        # UI colors
-        self._current_theme = {
-            'groove_neutral': groove_neutral,  # Updated key name
-            'groove_warning': groove_warning,  # Updated key name
-            'handle_normal': handle_normal,
-            'handle_warning': handle_warning,
-            'handle_hover': handle_hover,
-            'border': border,
-            'disabled': disabled,
-            'disabled_border': disabled_border,
-            'tick_mark': tick_mark,
-            'ui_background': ui_background,
-            'ui_control_bg': ui_control_bg
-        }
-
-        # Update the appearance
-        self._update_stylesheet()
-
     def _setup_theme( self, theme = 'blue' ):
         """Set up color theme for the slider"""
         themes = {
             'red': {
-                'groove_neutral': "#373737",  # Renamed from 'neutral'
-                'groove_warning': "#453939",  # Renamed from 'warning'
-                'handle_normal': "#8B4343",
-                'handle_warning': "#E54C4C",
-                'handle_hover': "#B24949",
-                'border': '#1a1a1a',
-                'disabled': '#444444',
-                'disabled_border': '#333333',
-                'tick_mark': '#453939',
-                'ui_background': '#2b2b2b',
-                'ui_control_bg': '#2b2b2b',
+                'groove_neutral': QColor( 55, 55, 55 ).name(),
+                'groove_warning': QColor( 69, 57, 57 ).name(),
+                'handle_normal': QColor( 139, 67, 67 ).name(),
+                'handle_warning': QColor( 229, 76, 76 ).name(),
+                'handle_hover': QColor( 178, 73, 73 ).name(),
+                'border': QColor( 26, 26, 26 ).name(),
+                'disabled': QColor( 68, 68, 68 ).name(),
+                'disabled_border': QColor( 51, 51, 51 ).name(),
+                'tick_mark': QColor( 69, 57, 57 ).name(),
+                'ui_background': QColor( 43, 43, 43 ).name(),
+                'ui_control_bg': QColor( 43, 43, 43 ).name(),
             },
             'teal': {
-                'groove_neutral': "#373737",
-                'groove_warning': "#394545",
-                'handle_normal': "#438B8B",
-                'handle_warning': "#4CE5E5",
-                'handle_hover': "#49B2B2",
-                'border': '#1a1a1a',
-                'disabled': '#444444',
-                'disabled_border': '#333333',
-                'tick_mark': '#394545',
-                'ui_background': '#2b2b2b',
-                'ui_control_bg': '#2b2b2b',
+                'groove_neutral': QColor( 55, 55, 55 ).name(),
+                'groove_warning': QColor( 57, 69, 69 ).name(),
+                'handle_normal': QColor( 67, 139, 139 ).name(),
+                'handle_warning': QColor( 76, 229, 229 ).name(),
+                'handle_hover': QColor( 73, 178, 178 ).name(),
+                'border': QColor( 26, 26, 26 ).name(),
+                'disabled': QColor( 68, 68, 68 ).name(),
+                'disabled_border': QColor( 51, 51, 51 ).name(),
+                'tick_mark': QColor( 57, 69, 69 ).name(),
+                'ui_background': QColor( 43, 43, 43 ).name(),
+                'ui_control_bg': QColor( 43, 43, 43 ).name(),
             },
             'purple': {
-                'groove_neutral': "#373737",
-                'groove_warning': "#3d3945",
-                'handle_normal': "#8263c0",
-                'handle_warning': "#8549ff",
-                'handle_hover': "#a082db",
-                'border': '#1a1a1a',
-                'disabled': '#444444',
-                'disabled_border': '#333333',
-                'tick_mark': '#3d3945',
-                'ui_background': '#2b2b2b',
-                'ui_control_bg': '#2b2b2b',
+                'groove_neutral': QColor( 55, 55, 55 ).name(),
+                'groove_warning': QColor( 61, 57, 69 ).name(),
+                'handle_normal': QColor( 130, 99, 192 ).name(),
+                'handle_warning': QColor( 133, 73, 255 ).name(),
+                'handle_hover': QColor( 160, 130, 219 ).name(),
+                'border': QColor( 26, 26, 26 ).name(),
+                'disabled': QColor( 68, 68, 68 ).name(),
+                'disabled_border': QColor( 51, 51, 51 ).name(),
+                'tick_mark': QColor( 61, 57, 69 ).name(),
+                'ui_background': QColor( 43, 43, 43 ).name(),
+                'ui_control_bg': QColor( 43, 43, 43 ).name(),
             },
             'blue': {
-                'groove_neutral': "#373737",
-                'groove_warning': "#394555",
-                'handle_normal': "#438B99",
-                'handle_warning': "#4CE5FF",
-                'handle_hover': "#49B2D2",
-                'border': '#1a1a1a',
-                'disabled': '#444444',
-                'disabled_border': '#333333',
-                'tick_mark': '#394555',
-                'ui_background': '#2b2b2b',
-                'ui_control_bg': '#2b2b2b',
+                'groove_neutral': QColor( 55, 55, 55 ).name(),
+                'groove_warning': QColor( 57, 69, 85 ).name(),
+                'handle_normal': QColor( 67, 139, 153 ).name(),
+                'handle_warning': QColor( 76, 229, 255 ).name(),
+                'handle_hover': QColor( 73, 178, 210 ).name(),
+                'border': QColor( 26, 26, 26 ).name(),
+                'disabled': QColor( 68, 68, 68 ).name(),
+                'disabled_border': QColor( 51, 51, 51 ).name(),
+                'tick_mark': QColor( 57, 69, 85 ).name(),
+                'ui_background': QColor( 43, 43, 43 ).name(),
+                'ui_control_bg': QColor( 43, 43, 43 ).name(),
             },
             'green': {
-                'groove_neutral': "#373737",
-                'groove_warning': "#3D4539",
-                'handle_normal': "#4A8B43",
-                'handle_warning': "#6DE54C",
-                'handle_hover': "#49B249",
-                'border': '#1a1a1a',
-                'disabled': '#444444',
-                'disabled_border': '#333333',
-                'tick_mark': '#3D4539',
-                'ui_background': '#2b2b2b',
-                'ui_control_bg': '#2b2b2b',
+                'groove_neutral': QColor( 55, 55, 55 ).name(),
+                'groove_warning': QColor( 61, 69, 57 ).name(),
+                'handle_normal': QColor( 74, 139, 67 ).name(),
+                'handle_warning': QColor( 109, 229, 76 ).name(),
+                'handle_hover': QColor( 73, 178, 73 ).name(),
+                'border': QColor( 26, 26, 26 ).name(),
+                'disabled': QColor( 68, 68, 68 ).name(),
+                'disabled_border': QColor( 51, 51, 51 ).name(),
+                'tick_mark': QColor( 61, 69, 57 ).name(),
+                'ui_background': QColor( 43, 43, 43 ).name(),
+                'ui_control_bg': QColor( 43, 43, 43 ).name(),
             }
         }
 
@@ -1341,19 +1277,23 @@ class CustomDialog( QDialog ):
         self.toggle_button.customContextMenuRequested.connect( self._show_context_menu )  # Connect right-click signal
         self.toggle_button.setStyleSheet( """
             QPushButton {
-                background-color: #2a2a2a;
+                background-color: %s;
                 border: none;
                 border-radius: 4px;
                 margin-bottom: 4px;
                 margin-right: 4px;
             }
             QPushButton:hover {
-                background-color: #5a5a5a;
+                background-color: %s;
             }
             QPushButton:pressed {
-                background-color: #1a1a1a;
+                background-color: %s;
             }
-        """ )
+        """ % ( 
+            QColor( 42, 42, 42 ).name(),
+            QColor( 90, 90, 90 ).name(),
+            QColor( 26, 26, 26 ).name()
+        ) )
         self.toggle_button.clicked.connect( self._toggle_slider_visibility )
 
         # Get preference values with class defaults
@@ -1455,13 +1395,13 @@ class PreferencesDialog( QDialog ):
         """Return the stylesheet for the preferences dialog"""
         return """
             QDialog {
-                background-color: #2b2b2b;
-                border: 1px solid #404040;
+                background-color: %s;
+                border: 1px solid %s;
             }
             QGroupBox {
                 background-color: transparent;
                 border: none;
-                color: #cccccc;
+                color: %s;
                 font-weight: bold;
                 margin-top: 8px;
             }
@@ -1471,7 +1411,7 @@ class PreferencesDialog( QDialog ):
                 padding: 0px 5px 0px 5px;
             }
             QRadioButton {
-                color: #cccccc;
+                color: %s;
                 spacing: 5px;
             }
             QRadioButton::indicator {
@@ -1479,22 +1419,33 @@ class PreferencesDialog( QDialog ):
                 height: 13px;
             }
             QRadioButton::indicator::unchecked {
-                background-color: #2b2b2b;
-                border: 2px solid #404040;
+                background-color: %s;
+                border: 2px solid %s;
                 border-radius: 7px;
             }
             QRadioButton::indicator::checked {
-                background-color: #4b4b4b;
-                border: 2px solid #666666;
+                background-color: %s;
+                border: 2px solid %s;
                 border-radius: 7px;
             }
             QRadioButton:checked {
-                color: #ffffff;
+                color: %s;
             }
             QRadioButton:hover {
-                color: #ffffff;
+                color: %s;
             }
-        """
+        """ % ( 
+            QColor( 43, 43, 43 ).name(),  # #2b2b2b
+            QColor( 64, 64, 64 ).name(),  # #404040
+            QColor( 204, 204, 204 ).name(),  # #cccccc
+            QColor( 204, 204, 204 ).name(),  # #cccccc
+            QColor( 43, 43, 43 ).name(),  # #2b2b2b
+            QColor( 64, 64, 64 ).name(),  # #404040
+            QColor( 75, 75, 75 ).name(),  # #4b4b4b
+            QColor( 102, 102, 102 ).name(),  # #666666
+            QColor( 255, 255, 255 ).name(),  # #ffffff
+            QColor( 255, 255, 255 ).name()  # #ffffff
+        )
 
     def leaveEvent( self, event ):
         """Handle mouse leaving the dialog window"""
@@ -1526,25 +1477,29 @@ class PreferencesDialog( QDialog ):
         title_label = QLabel( "{0} Prefs".format( TOOL_NAME ) )
         title_label.setStyleSheet( """
             QLabel {
-                color: #cccccc;
+                color: %s;
                 font-weight: bold;
                 font-size: 13px;
             }
-        """ )
+        """ % QColor( 204, 204, 204 ).name() )
+
         main_layout.addWidget( title_label )
 
         # Width section
         width_label = QLabel( "SLIDER WIDTH" )
         width_label.setStyleSheet( """
             QLabel {
-                color: #8c8c8c;
+                color: %s;
                 font-weight: bold;
                 font-size: 13px;
                 padding: 2px 10px 2px 10px;
-                background-color: #2b2b2b;
+                background-color: %s;
                 border-radius: 6px;
             }
-        """ )
+        """ % ( 
+            QColor( 140, 140, 140 ).name(),
+            QColor( 43, 43, 43 ).name()
+        ) )
         main_layout.addWidget( width_label )
 
         # Width radio buttons frame
@@ -1569,16 +1524,21 @@ class PreferencesDialog( QDialog ):
                     height: 18px;
                 }
                 QRadioButton::indicator::unchecked {
-                    background-color: #2b2b2b;
-                    border: 2px solid #404040;
+                    background-color: %s;
+                    border: 2px solid %s;
                     border-radius: 9px;
                 }
                 QRadioButton::indicator::checked {
-                    background-color: #4b4b4b;
-                    border: 2px solid #666666;
+                    background-color: %s;
+                    border: 2px solid %s;
                     border-radius: 9px;
                 }
-            """ )
+            """ % ( 
+                QColor( 43, 43, 43 ).name(),
+                QColor( 64, 64, 64 ).name(),
+                QColor( 75, 75, 75 ).name(),
+                QColor( 102, 102, 102 ).name()
+            ) )
             radio.width_value = value
             radio.size_name = size_name
             self.width_button_group.addButton( radio, i )
