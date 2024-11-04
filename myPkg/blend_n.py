@@ -543,88 +543,42 @@ class CustomSlider( QSlider ):
 
     def _setup_theme( self, theme = 'blue' ):
         """Set up color theme for the slider"""
-        themes = {
-            'red': {
-                'groove_neutral': QColor( 55, 55, 55 ).name(),
-                'groove_warning': QColor( 69, 57, 57 ).name(),
-                'handle_normal': QColor( 139, 67, 67 ).name(),
-                'handle_warning': QColor( 229, 76, 76 ).name(),
-                'handle_hover': QColor( 178, 73, 73 ).name(),
-                'border': QColor( 26, 26, 26 ).name(),
-                'disabled': QColor( 68, 68, 68 ).name(),
-                'disabled_border': QColor( 51, 51, 51 ).name(),
-                'tick_mark': QColor( 69, 57, 57 ).name(),
-                'ui_background': QColor( 43, 43, 43 ).name(),
-                'ui_control_bg': QColor( 43, 43, 43 ).name(),
-            },
-            'teal': {
-                'groove_neutral': QColor( 55, 55, 55 ).name(),
-                'groove_warning': QColor( 57, 69, 69 ).name(),
-                'handle_normal': QColor( 67, 139, 139 ).name(),
-                'handle_warning': QColor( 76, 229, 229 ).name(),
-                'handle_hover': QColor( 73, 178, 178 ).name(),
-                'border': QColor( 26, 26, 26 ).name(),
-                'disabled': QColor( 68, 68, 68 ).name(),
-                'disabled_border': QColor( 51, 51, 51 ).name(),
-                'tick_mark': QColor( 57, 69, 69 ).name(),
-                'ui_background': QColor( 43, 43, 43 ).name(),
-                'ui_control_bg': QColor( 43, 43, 43 ).name(),
-            },
-            'purple': {
-                'groove_neutral': QColor( 55, 55, 55 ).name(),
-                'groove_warning': QColor( 61, 57, 69 ).name(),
-                'handle_normal': QColor( 130, 99, 192 ).name(),
-                'handle_warning': QColor( 133, 73, 255 ).name(),
-                'handle_hover': QColor( 160, 130, 219 ).name(),
-                'border': QColor( 26, 26, 26 ).name(),
-                'disabled': QColor( 68, 68, 68 ).name(),
-                'disabled_border': QColor( 51, 51, 51 ).name(),
-                'tick_mark': QColor( 61, 57, 69 ).name(),
-                'ui_background': QColor( 43, 43, 43 ).name(),
-                'ui_control_bg': QColor( 43, 43, 43 ).name(),
-            },
-            'blue': {
-                'groove_neutral': QColor( 55, 55, 55 ).name(),
-                'groove_warning': QColor( 57, 69, 85 ).name(),
-                'handle_normal': QColor( 67, 139, 153 ).name(),
-                'handle_warning': QColor( 76, 229, 255 ).name(),
-                'handle_hover': QColor( 73, 178, 210 ).name(),
-                'border': QColor( 26, 26, 26 ).name(),
-                'disabled': QColor( 68, 68, 68 ).name(),
-                'disabled_border': QColor( 51, 51, 51 ).name(),
-                'tick_mark': QColor( 57, 69, 85 ).name(),
-                'ui_background': QColor( 43, 43, 43 ).name(),
-                'ui_control_bg': QColor( 43, 43, 43 ).name(),
-            },
-            'green': {
-                'groove_neutral': QColor( 55, 55, 55 ).name(),
-                'groove_warning': QColor( 61, 69, 57 ).name(),
-                'handle_normal': QColor( 74, 139, 67 ).name(),
-                'handle_warning': QColor( 109, 229, 76 ).name(),
-                'handle_hover': QColor( 73, 178, 73 ).name(),
-                'border': QColor( 26, 26, 26 ).name(),
-                'disabled': QColor( 68, 68, 68 ).name(),
-                'disabled_border': QColor( 51, 51, 51 ).name(),
-                'tick_mark': QColor( 61, 69, 57 ).name(),
-                'ui_background': QColor( 43, 43, 43 ).name(),
-                'ui_control_bg': QColor( 43, 43, 43 ).name(),
-            }
+        base_colors = {
+            'blue': QColor( 67, 139, 153 ),  # Original blue
+            'red': QColor( 139, 67, 67 ),  # From original red theme
+            'teal': QColor( 67, 139, 139 ),  # From original teal theme
+            'purple': QColor( 130, 99, 192 ),  # From original purple theme
+            'green': QColor( 74, 139, 67 )  # From original green theme
         }
 
-        # Get the selected theme or default to red if theme not found
-        selected_theme = themes.get( theme, themes['red'] )
+        # Get base color or default to blue
+        base = base_colors.get( theme, base_colors['blue'] )
 
-        # Set the color constants (updated names)
-        self.COLOR_GROOVE_NEUTRAL = selected_theme['groove_neutral']
-        self.COLOR_GROOVE_WARNING = selected_theme['groove_warning']
-        self.COLOR_HANDLE_NEUTRAL = selected_theme['handle_normal']
-        self.COLOR_HANDLE_WARNING = selected_theme['handle_warning']
-        self.COLOR_HANDLE_BORDER_HOVER = selected_theme['handle_hover']
-        self.COLOR_BORDER_NEUTRAL = selected_theme['border']
-        self.COLOR_HANDLE_DISABLED = selected_theme['disabled']
-        self.COLOR_BORDER_DISABLED = selected_theme['disabled_border']
-        self.COLOR_TICK_MARK = selected_theme['tick_mark']
-        self._current_theme = selected_theme
+        theme_colors = {
+            'groove_neutral': QColor( 55, 55, 55 ).name(),
+            'groove_warning': value_color( base, 0.6, 0.7 ).name(),  # Darker and desaturated
+            'handle_neutral': base.name(),
+            'handle_warning': value_color( base, 1.4 ).name(),
+            'border_hover': value_color( base, 1.6 ).name(),
+            'border_neutral': QColor( 26, 26, 26 ).name(),
+            'handle_disabled': value_color( base, 0.5, 0.8 ).name(),
+            'border_disabled': value_color( base, 1.3, 0.0 ).name(),
+            'tick_mark': value_color( base, 0.6, 0.7 ).name(),  # Darker and desaturated
+            'ui_background': QColor( 43, 43, 43 ).name(),
+            'ui_control_bg': QColor( 80, 43, 43 ).name()
+        }
+
+        # Set the color constants
+        self.COLOR_GROOVE_NEUTRAL = theme_colors['groove_neutral']
+        self.COLOR_GROOVE_WARNING = theme_colors['groove_warning']
+        self.COLOR_HANDLE_NEUTRAL = theme_colors['handle_neutral']
+        self.COLOR_HANDLE_WARNING = theme_colors['handle_warning']
+        self.COLOR_HANDLE_BORDER_HOVER = theme_colors['border_hover']
+        self.COLOR_BORDER_NEUTRAL = theme_colors['border_neutral']
+        self.COLOR_HANDLE_DISABLED = theme_colors['handle_disabled']
+        self.COLOR_BORDER_DISABLED = theme_colors['border_disabled']
+        self.COLOR_TICK_MARK = theme_colors['tick_mark']
+        self._current_theme = theme_colors
 
     def _update_stylesheet( self, value = None ):
         """Update the stylesheet with current gradient stops and handle color"""
@@ -1968,6 +1922,90 @@ class WebrToolsPrefs( object ):
 
         self.prefs[tool_name][pref_name] = value
         self._save_prefs( self.prefs )
+
+
+def desaturate_color( color, amount = 0.5 ):
+    """
+    Desaturate a color by reducing its saturation
+    Args:
+        color (QColor): Original color
+        amount (float): Amount to desaturate, 0.0 to 1.0 where 1.0 is fully desaturated
+    Returns:
+        QColor: New desaturated color
+    """
+    # Create a copy of the color to modify
+    new_color = QColor( color )
+
+    # Convert to HSV
+    h, s, v, a = new_color.getHsv()
+
+    # Reduce saturation by the specified amount
+    # Original saturation is 0-255, so we multiply the reduction
+    new_s = int( s * ( 1.0 - amount ) )
+
+    # Keep saturation in valid range
+    new_s = max( 0, min( 255, new_s ) )
+
+    # Set new HSV values and return
+    new_color.setHsv( h, new_s, v, a )
+    return new_color
+
+
+def saturate_color( color, amount = 0.5 ):
+    """
+    Increase saturation of a color
+    Args:
+        color (QColor): Original color
+        amount (float): Amount to saturate, 0.0 to 1.0 where 1.0 is fully saturated
+    Returns:
+        QColor: New saturated color
+    """
+    # Create a copy of the color to modify
+    new_color = QColor( color )
+
+    # Convert to HSV
+    h, s, v, a = new_color.getHsv()
+
+    # Increase saturation by the specified amount
+    # Calculate how much room we have to increase (255 is max)
+    room_to_increase = 255 - s
+    increase = int( room_to_increase * amount )
+    new_s = s + increase
+
+    # Keep saturation in valid range
+    new_s = max( 0, min( 255, new_s ) )
+
+    # Set new HSV values and return
+    new_color.setHsv( h, new_s, v, a )
+    return new_color
+
+
+def value_color( color, value_factor, desat_amount = 0 ):
+    """
+    Adjust the value (brightness) and optionally desaturate a color
+    Args:
+        color (QColor): Original color
+        value_factor (float): Value to multiply current value by (0.0 to 1.0 darkens, >1.0 brightens)
+        desat_amount (float): Amount to desaturate, 0.0 to 1.0 where 1.0 is fully desaturated
+    Returns:
+        QColor: New color with adjusted value and saturation
+    """
+    new_color = QColor( color )
+    h, s, v, a = new_color.getHsv()
+
+    # Adjust value while keeping it in valid range (0-255)
+    new_v = int( v * value_factor )
+    new_v = max( 0, min( 255, new_v ) )
+
+    # Adjust saturation if specified
+    if desat_amount > 0:
+        new_s = int( s * ( 1.0 - desat_amount ) )
+        new_s = max( 0, min( 255, new_s ) )
+    else:
+        new_s = s
+
+    new_color.setHsv( h, new_s, new_v, a )
+    return new_color
 
 
 def get_maya_main_window():
