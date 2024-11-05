@@ -146,7 +146,7 @@ class CustomSlider( QSlider ):
     # Tick
     COLOR_TICK_MARK = QColor( 61, 69, 57 ).name()  # rgb(61, 69, 57)
 
-    def __init__( self, parent = None, theme = 'blue' ):
+    def __init__( self, parent = None, theme = 'greyDark' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
         self._is_disabled = False  # Add state tracking
 
@@ -361,37 +361,57 @@ class CustomSlider( QSlider ):
         """
         Handle threshold locking behavior
         """
+        # print( '\nCheck Threshold Locks Debug:' )
+        # print( 'Incoming value: {0}'.format( value ) )
+        # print( 'Lock Released: {0}'.format( self._lock_released ) )
+
         if self._lock_released:
-            # print( 'released' )
+            # print( 'Lock already released, returning' )
             return
 
         # Check positive threshold
         if value >= self.POSITIVE_THRESHOLD - 1:
+            # print( 'Hit positive threshold check:' )
             if not self._positive_locked:
                 # Engage lock at threshold
+                # print( 'Engaging positive lock' )
                 self._positive_locked = True
+                # print( 'Setting value to: {0}'.format( self.POSITIVE_THRESHOLD - 1 ) )
                 self.setValue( self.POSITIVE_THRESHOLD - 1 )
             elif value >= self.POSITIVE_THRESHOLD + self.lock_release_margin:
                 # Release lock if we've moved past release point
+                # print( 'Releasing positive lock - beyond margin' )
                 self._positive_locked = False
                 self._lock_released = True
             elif self._positive_locked:
                 # Keep value at threshold while locked
+                # print( 'Maintaining positive lock at: {0}'.format( self.POSITIVE_THRESHOLD - 1 ) )
                 self.setValue( self.POSITIVE_THRESHOLD - 1 )
+
         # Check negative threshold
         elif value <= self.NEGATIVE_THRESHOLD + 1:
+            # print( 'Hit negative threshold check:' )
             if not self._negative_locked:
                 # Engage lock at threshold
+                # print( 'Engaging negative lock' )
                 self._negative_locked = True
+                # print( 'Setting value to: {0}'.format( self.NEGATIVE_THRESHOLD + 1 ) )
                 self.setValue( self.NEGATIVE_THRESHOLD + 1 )
             elif value <= self.NEGATIVE_THRESHOLD - self.lock_release_margin:
                 # Release lock if we've moved past release point
+                # print( 'Releasing negative lock - beyond margin' )
                 self._negative_locked = False
                 self._lock_released = True
             elif self._negative_locked:
                 # Keep value at threshold while locked
+                # print( 'Maintaining negative lock at: {0}'.format( self.NEGATIVE_THRESHOLD + 1 ) )
                 self.setValue( self.NEGATIVE_THRESHOLD + 1 )
         # print( 'check: ', self.value() )
+        # print( 'End state:' )
+        # print( 'Value: {0}'.format( self.value() ) )
+        # print( 'Positive Lock: {0}'.format( self._positive_locked ) )
+        # print( 'Negative Lock: {0}'.format( self._negative_locked ) )
+        # print( 'Lock Released: {0}'.format( self._lock_released ) )
 
     def _handle_value_change( self, value ):
         """Update handle color when value changes"""
@@ -544,11 +564,19 @@ class CustomSlider( QSlider ):
     def _setup_theme( self, theme = 'blue' ):
         """Set up color theme for the slider"""
         base_colors = {
-            'blue': QColor( 67, 139, 153 ),  # Original blue
-            'red': QColor( 139, 67, 67 ),  # From original red theme
-            'teal': QColor( 67, 139, 139 ),  # From original teal theme
-            'purple': QColor( 130, 99, 192 ),  # From original purple theme
-            'green': QColor( 74, 139, 67 )  # From original green theme
+            'blue': QColor( 60, 112, 175 ),  # Original blue
+            'blueLight': QColor( 60, 147, 176 ),  # Original blue !
+            'red': QColor( 175, 67, 67 ),  # From original red theme
+            'teal': QColor( 83, 181, 178 ),  # From original teal theme
+            'purple': QColor( 89, 95, 179 ),  # From original purple theme
+            'green': QColor( 82, 171, 92 ),  # From original green theme
+            'greenLight': QColor( 120, 176, 60 ),  # From original green theme !
+            'magenta': QColor( 149, 60, 176 ),  # From original green theme
+            'orange': QColor( 175, 120, 48 ),  # From original green theme !
+            'yellow': QColor( 175, 164, 60 ),  # From original green theme !
+            'pink': QColor( 189, 115, 185 ),  # From original green theme !
+            'grey': QColor( 147, 150, 150 ),  # From original green theme !
+            'greyDark': QColor( 109, 110, 110 )  # From original green theme !
         }
 
         # Get base color or default to blue
@@ -556,14 +584,14 @@ class CustomSlider( QSlider ):
 
         theme_colors = {
             'groove_neutral': QColor( 55, 55, 55 ).name(),
-            'groove_warning': value_color( base, 0.6, 0.7 ).name(),  # Darker and desaturated
+            'groove_warning': value_color( base, 0.6, 0.6 ).name(),  # Darker and desaturated
             'handle_neutral': base.name(),
             'handle_warning': value_color( base, 1.4 ).name(),
             'border_hover': value_color( base, 1.6 ).name(),
             'border_neutral': QColor( 26, 26, 26 ).name(),
             'handle_disabled': value_color( base, 0.5, 0.8 ).name(),
             'border_disabled': value_color( base, 1.3, 0.0 ).name(),
-            'tick_mark': value_color( base, 0.6, 0.7 ).name(),  # Darker and desaturated
+            'tick_mark': value_color( base, 0.6, 0.6 ).name(),  # Darker and desaturated
             'ui_background': QColor( 43, 43, 43 ).name(),
             'ui_control_bg': QColor( 80, 43, 43 ).name()
         }
@@ -709,6 +737,7 @@ class CustomSlider( QSlider ):
             current_value = self.value()
             # print( 'normlized', value_position )
 
+            print( '' )
             print( '\nMouse Move Debug:' )
             print( 'Current Position: {0}'.format( current_pos ) )
             print( 'Value Position: {0}'.format( value_position ) )
@@ -745,7 +774,9 @@ class CustomSlider( QSlider ):
 
             # Handle negative threshold
             if current_value <= ( self.NEGATIVE_THRESHOLD + 1 ) and not self._lock_released:
+                print( 'try adjusting' )
                 if not self._mouse_beyond_threshold:
+                    print( 'adjust' )
                     self.setValue( self.NEGATIVE_THRESHOLD + 1 )
                     return
 
@@ -760,8 +791,9 @@ class CustomSlider( QSlider ):
             # print( 'neg: ', self._negative_locked, 'pos: ', self._positive_locked )
 
             # reset, didnt move beyond threshold but back between threshold ranges
-
+            print( 'Before super call - Current Value: {0}'.format( self.value() ) )
             super( CustomSlider, self ).mouseMoveEvent( event )
+            print( 'After super call - Current Value: {0}'.format( self.value() ) )
 
     def mouseReleaseEvent( self, event ):
         """Handle mouse release events"""
