@@ -374,18 +374,18 @@ class CustomSlider( QSlider ):
             # print( 'Hit positive threshold check:' )
             if not self._positive_locked:
                 # Engage lock at threshold
-                # print( 'Engaging positive lock' )
+                print( '___Engaging positive lock' )
                 self._positive_locked = True
                 # print( 'Setting value to: {0}'.format( self.POSITIVE_THRESHOLD - 1 ) )
                 self.setValue( self.POSITIVE_THRESHOLD - 1 )
             elif value >= self.POSITIVE_THRESHOLD + self.lock_release_margin:
                 # Release lock if we've moved past release point
-                # print( 'Releasing positive lock - beyond margin' )
+                print( '_________Releasing positive lock - beyond margin' )
                 self._positive_locked = False
                 self._lock_released = True
             elif self._positive_locked:
                 # Keep value at threshold while locked
-                # print( 'Maintaining positive lock at: {0}'.format( self.POSITIVE_THRESHOLD - 1 ) )
+                print( '___Maintaining positive lock at: {0}'.format( self.POSITIVE_THRESHOLD - 1 ) )
                 self.setValue( self.POSITIVE_THRESHOLD - 1 )
 
         # Check negative threshold
@@ -731,15 +731,56 @@ class CustomSlider( QSlider ):
                 super( CustomSlider, self ).mouseMoveEvent( event )
                 return
 
+            # Get style option for proper handle positioning
+            opt = QtWidgets.QStyleOptionSlider()
+            self.initStyleOption( opt )
+
+            # Get the slider regions
+            groove_rect = self.style().subControlRect( 
+                QtWidgets.QStyle.CC_Slider,
+                opt,
+                QtWidgets.QStyle.SC_SliderGroove,
+                self
+            )
+            handle_rect = self.style().subControlRect( 
+                QtWidgets.QStyle.CC_Slider,
+                opt,
+                QtWidgets.QStyle.SC_SliderHandle,
+                self
+            )
+
+            # Calculate relative position and convert to value
+            pos = event.pos().x()
+            groove_center = groove_rect.center().x()
+            available_width = groove_rect.width() - handle_rect.width()
+
+            # Adjust position to be relative to groove
+            pos_on_groove = pos - groove_rect.x() - ( handle_rect.width() / 2 )
+
+            # Convert to normalized value (0-1)
+            if available_width > 0:
+                normalized = max( 0.0, min( 1.0, pos_on_groove / float( available_width ) ) )
+                # Convert to actual slider value
+                value_position = int( normalized * ( self.maximum() - self.minimum() ) + self.minimum() )
+            else:
+                value_position = self.minimum()
+
+            current_value = self.value()
+
+            '''
             current_pos = event.pos().x()
             width = self.width() - self.style().pixelMetric( QtWidgets.QStyle.PM_SliderLength )
             value_position = ( current_pos / float( width ) ) * ( self.maximum() - self.minimum() ) + self.minimum()
             current_value = self.value()
             # print( 'normlized', value_position )
+            '''
 
             print( '' )
             print( '\nMouse Move Debug:' )
-            print( 'Current Position: {0}'.format( current_pos ) )
+            print( 'Mouse Position: {}'.format( pos ) )
+            print( 'Groove Center: {}'.format( groove_center ) )
+            print( 'Position on Groove: {}'.format( pos_on_groove ) )
+            # print( 'Current Position: {0}'.format( current_pos ) )
             print( 'Value Position: {0}'.format( value_position ) )
             print( 'Current Value: {0}'.format( current_value ) )
             print( 'Positive Lock: {0}'.format( self._positive_locked ) )
@@ -757,18 +798,32 @@ class CustomSlider( QSlider ):
 
             # check if the lock has been properly released, dont reset it if it has, this section unlocks the handle if the direction is reversed
             if not self._lock_released:
-                if value_position >= self.NEGATIVE_THRESHOLD + self.lock_release_margin and self._negative_locked or \
-                    value_position <= self.POSITIVE_THRESHOLD - self.lock_release_margin and self._positive_locked:
+                if value_position > self.NEGATIVE_THRESHOLD + 1 and self._negative_locked or \
+                    value_position < self.POSITIVE_THRESHOLD - 1 and self._positive_locked:
                     print( 'Direction reversal condition met:' )
                     print( 'Value Position vs Threshold: {0} vs {1}'.format( value_position, self.POSITIVE_THRESHOLD ) )
+                    '''
                     self._mouse_beyond_threshold = True
                     self._lock_released = True
                     self._soft_release = True
+                    '''
+                    self._mouse_beyond_threshold = False
+                    self._lock_released = False
+                    self._soft_release = False
+                    self._negative_locked = False
+                    self._positive_locked = False
+                    self.setValue( value_position )
+                    print( '___Before super call - Current Value: {}'.format( self.value() ) )
+                    super( CustomSlider, self ).mouseMoveEvent( event )
+                    print( '___After super call - Current Value: {}'.format( self.value() ) )
+                    return
                     # print( 'mouse', current_value )
 
             # Handle positive threshold
             if current_value >= ( self.POSITIVE_THRESHOLD - 1 ) and not self._lock_released:
+                print( 'pos try adjusting' )
                 if not self._mouse_beyond_threshold:
+                    print( 'pos adjust' )
                     self.setValue( self.POSITIVE_THRESHOLD - 1 )
                     return
 
@@ -780,6 +835,7 @@ class CustomSlider( QSlider ):
                     self.setValue( self.NEGATIVE_THRESHOLD + 1 )
                     return
 
+            '''
             if self._soft_release:
                 print( 'Soft release triggering reset' )
                 self._mouse_beyond_threshold = False
@@ -788,6 +844,7 @@ class CustomSlider( QSlider ):
                 self._soft_release = False
                 self._negative_locked = False
                 self._positive_locked = False
+            '''
             # print( 'neg: ', self._negative_locked, 'pos: ', self._positive_locked )
 
             # reset, didnt move beyond threshold but back between threshold ranges
