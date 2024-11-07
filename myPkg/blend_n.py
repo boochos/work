@@ -1,4 +1,5 @@
 # Version 1.5
+import imp
 import json
 import os
 import platform
@@ -12,11 +13,17 @@ from PySide2.QtWidgets import ( QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayo
                               QPushButton, QRadioButton, QButtonGroup, QGroupBox )
 from shiboken2 import wrapInstance
 
+import core
 import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
 import maya.OpenMayaUI as omui
 import maya.cmds as cmds
 import maya.mel as mel
+
+from .strategies import BlendStrategy, DirectKeyBlendStrategy, LinearBlendStrategy
+
+print( "Core module path:", core.__file__ )  # This will show where it's finding core.py
+imp.reload( core )
 
 # Initialize the global variable
 global custom_dialog
@@ -151,6 +158,13 @@ class CustomSlider( QSlider ):
 
     def __init__( self, parent = None, theme = 'orange' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
+
+        self.core = core.BlendToolCore()
+        print( "Core initialized with key_cache:", hasattr( self.core, 'key_cache' ) )  # Debug
+
+        self.blend_data = {}
+        self.update_queue = []
+        self.moved = False
         self._is_disabled = False  # Add state tracking
 
         # Initialize preference-based values using class defaults
@@ -909,6 +923,20 @@ class CustomSlider( QSlider ):
         self.current_time = cmds.currentTime( query = True )
         self._initialize_key_values()
 
+        # Clear and initialize blend data
+        self.blend_data = {}
+
+        # Batch collect data for all curves
+        for curve in self.all_curves:
+            curve_data = self.core.collect_curve_data( curve )
+            if curve_data['keys']:  # Only add if curve has keys
+                self.blend_data[curve] = {
+                    'data': curve_data,
+                    'prev_indices': self.core.calculate_prev_indices( curve_data['keys'] ),
+                    'next_indices': self.core.calculate_next_indices( curve_data['keys'] ),
+                    'curve': curve  # Add curve name to info
+                }
+
         # Process curves and their objects
         for obj in self.selected_objects:
             self._process_object_curves( obj )
@@ -946,23 +974,57 @@ class CustomSlider( QSlider ):
         self.initial_values = {}
 
     def _process_object_curves( self, obj ):
-        """
-        Process animation curves for a given object.
-        Stores previous, current, and next key values.
-        Questionable query
-        """
+        """Process curves for an object"""
         for curve in self.all_curves:
-            # Verify curve belongs to current object
-            connections = cmds.listHistory( curve, f = True )
-            # print( obj, connections )
-            if obj not in connections:
-                # print( '________out' )
+            if curve not in self.blend_data:
                 continue
 
-            current_val = self._get_current_value( curve )
-            self._initialize_object_storage( obj )
-            self._store_initial_value( obj, curve, current_val )
-            self._process_surrounding_keys( obj, curve, current_val )
+            # Get cached data
+            curve_info = self.blend_data[curve]
+            curve_data = curve_info['data']
+
+            # Get keys to update
+            selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
+            times_to_update = selected_keys if selected_keys else [self.current_time]
+
+            # Process in batches
+            for i in range( 0, len( times_to_update ), self.core.batch_size ):
+                batch = times_to_update[i:i + self.core.batch_size]
+
+                for time in batch:
+                    self._process_key_update( obj, curve, time, curve_data, curve_info )
+
+    def _process_key_update( self, obj, curve, time, curve_data, curve_info ):
+        """Process update for a single key"""
+        strategy = self.core.get_current_strategy()
+
+        # Get current value
+        current_idx = curve_data['key_map'].get( time )
+        if current_idx is None:
+            return
+
+        current_value = curve_data['values'][current_idx]
+
+        # Calculate targets using strategy
+        prev_target, next_target = strategy.calculate_target_value( 
+            time, current_value, curve_data, curve_info )
+
+        prev_tangents, next_tangents = strategy.calculate_target_tangents( 
+            time, curve_data, curve_info )
+
+        # Store for blending
+        if obj not in self.blend_data:
+            self.blend_data[obj] = {}
+
+        key_data = {
+            'current_value': current_value,
+            'prev_target': prev_target,
+            'next_target': next_target,
+            'prev_tangents': prev_tangents,
+            'next_tangents': next_tangents
+        }
+
+        self.blend_data[obj]["{0}_{1}".format( curve, time )] = key_data
 
     def _get_current_value( self, curve ):
         """
@@ -1182,72 +1244,197 @@ class CustomSlider( QSlider ):
         Adjust animation values based on slider position.
         Now handles both selected key and current time scenarios.
         """
+        # Convert to blend factor (-1 to 1)
+        blend_factor = value / 100.0
+        # Clear previous updates
+        self.update_queue = []
 
-        self.new_values = {}
+        # Process each object
         for obj in self.selected_objects:
-            self._process_object_values( obj, value )
+            self._process_object_updates( obj, blend_factor )
 
-        '''
-        if self.blend_nodes:
-            cmds.dgdirty( self.blend_nodes )
-            mel.eval( 'dgdirty;' )
-        else:
-            mel.eval( 'dgdirty;' )
-        '''
-        # optimized ??,
+        # Execute batched updates
+        if self.update_queue:
+            self._execute_batch_updates()
+
         # should precombine selected objects and belnds nodes to list to explcicity only call dgdirty oncecombine
         cmds.dgdirty( self.blend_nodes if self.blend_nodes else [] )
         mel.eval( 'dgdirty;' )
 
-    def _process_object_values( self, obj, value ):
-        """
-        Process value adjustments for a single object.
-        Now handles multiple groups of selected keys.
-        # TODO: optimize, slows down when too many curves are processed
-        """
-        self.new_values[obj] = {}
+    def _process_object_updates( self, obj, blend_factor ):
+        """Process updates for a single object"""
         for curve in self.all_curves:
-            # Check if we're working with selected keys
+            if curve not in self.blend_data:
+                continue
+
+            # Get cached data
+            curve_info = self.blend_data[curve]
+            curve_data = curve_info['data']
+
+            # Get keys to update
             selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
+            times_to_update = selected_keys if selected_keys else [self.current_time]
 
-            if selected_keys:
-                # Process each selected key
-                for key_time in selected_keys:
-                    curve_key = '{0}_{1}'.format( curve, key_time )
-                    if curve_key not in self.initial_values.get( obj, {} ):
-                        continue
+            # Process in batches
+            for i in range( 0, len( times_to_update ), self.core.batch_size ):
+                batch = times_to_update[i:i + self.core.batch_size]
 
-                    initial_val = self.initial_values[obj][curve_key]
-                    blended_val = self._calculate_blended_value( obj, curve_key, value, initial_val )
+                for time in batch:
+                    # Calculate new values using strategy
+                    new_value, new_tangents = self._calculate_blend( 
+                        curve_data, curve_info, time, blend_factor )
 
-                    self.new_values[obj][curve_key] = blended_val
-                    cmds.setKeyframe( curve, time = key_time, value = blended_val )
-            else:
-                # Handle current time case
-                if curve not in self.initial_values.get( obj, {} ):
-                    continue
+                    if new_value is not None:
+                        self.update_queue.append( {
+                            'curve': curve,
+                            'time': time,
+                            'value': new_value,
+                            'tangents': new_tangents
+                        } )
 
-                initial_val = self.initial_values[obj][curve]
-                blended_val = self._calculate_blended_value( obj, curve, value, initial_val )
+    def _execute_batch_updates( self ):
+        """Execute queued updates in optimized batches"""
+        # Group updates by curve
+        curve_updates = {}
+        for update in self.update_queue:
+            curve = update['curve']
+            if curve not in curve_updates:
+                curve_updates[curve] = []
+            curve_updates[curve].append( update )
 
-                self.new_values[obj][curve] = blended_val
-                cmds.setKeyframe( curve, time = self.current_time, value = blended_val )
+        # Process each curve's updates
+        for curve, updates in curve_updates.items():
+            # Set keyframes and tangents one at a time
+            for update in updates:
+                # Set keyframe
+                cmds.setKeyframe( curve,
+                               time = update['time'],
+                               value = update['value'] )
 
-    def _calculate_blended_value( self, obj, curve, value, initial_val ):
-        """Calculate the blended value based on slider position
-            # TODO: optimize, slows down when too many curves are processed
-        """
-        # Convert slider value directly to percentage (no normalization needed)
-        percentage = value / 100.0  # Direct percentage conversion
+                # Set tangents if they exist
+                if update['tangents']:
+                    in_angle, in_weight = update['tangents']['in']
+                    out_angle, out_weight = update['tangents']['out']
 
-        if value >= 0:
-            target_val = self.next_key_values.get( obj, {} ).get( curve, initial_val )
-            ratio = percentage
+                    # Set tangents individually
+                    cmds.keyTangent( curve,
+                                  time = ( update['time'], update['time'] ),  # Time needs to be a tuple
+                                  ia = in_angle,
+                                  iw = in_weight )
+                    cmds.keyTangent( curve,
+                                  time = ( update['time'], update['time'] ),
+                                  oa = out_angle,
+                                  ow = out_weight )
+
+    '''
+    def _batch_set_tangents( self, curve, times, tangents ):
+        """Set tangents in batches"""
+        # Filter out None tangents
+        valid_updates = [( time, tang ) for time, tang in zip( times, tangents ) if tang]
+
+        if not valid_updates:
+            return
+
+        # Unzip the valid updates
+        update_times, tangent_data = zip( *valid_updates )
+
+        # Extract tangent components
+        in_angles = [t['in'][0] for t in tangent_data]
+        in_weights = [t['in'][1] for t in tangent_data]
+        out_angles = [t['out'][0] for t in tangent_data]
+        out_weights = [t['out'][1] for t in tangent_data]
+
+        # Set all tangents in one command
+        cmds.keyTangent( curve, time = update_times,
+                       ia = in_angles, iw = in_weights,
+                       oa = out_angles, ow = out_weights )
+    '''
+
+    def _calculate_blend( self, curve_data, curve_info, time, blend_factor ):
+        """Calculate blended values using current strategy"""
+        current_idx = curve_data['key_map'].get( time )
+        if current_idx is None:
+            return None, None
+
+        # Get current value
+        current_value = curve_data['values'][current_idx]
+
+        # Get strategy
+        strategy = self.core.get_current_strategy()
+
+        curve_info['curve'] = curve_info.get( 'curve', '' )  # Make sure curve name is in info
+
+        # Calculate target values using strategy
+        prev_target, next_target = strategy.calculate_target_value( 
+            time, current_value, curve_data, curve_info )
+
+        # Calculate target tangents using strategy
+        prev_tangents, next_tangents = strategy.calculate_target_tangents( 
+            time, curve_data, curve_info )
+
+        # Determine which target to use based on blend direction
+        if blend_factor >= 0:
+            target_value = next_target
+            target_tangents = next_tangents
+            ratio = blend_factor
         else:
-            target_val = self.previous_key_values.get( obj, {} ).get( curve, initial_val )
-            ratio = abs( percentage )
+            target_value = prev_target
+            target_tangents = prev_tangents
+            ratio = abs( blend_factor )
 
-        return initial_val * ( 1 - ratio ) + target_val * ratio
+        # Calculate blended value
+        new_value = current_value * ( 1 - ratio ) + target_value * ratio
+
+        # Calculate blended tangents
+        new_tangents = None
+        if target_tangents:
+            new_tangents = self._blend_tangents( 
+                curve_data['tangents'],
+                current_idx,
+                target_tangents,
+                ratio
+            )
+
+        return new_value, new_tangents
+
+    def _blend_tangents( self, tangent_data, current_idx, target_tangents, ratio ):
+        """Blend between current tangents and target tangents"""
+        if not tangent_data:
+            return None
+
+        # Get current tangents
+        curr_in_angle = tangent_data['in_angles'][current_idx]
+        curr_in_weight = tangent_data['in_weights'][current_idx]
+        curr_out_angle = tangent_data['out_angles'][current_idx]
+        curr_out_weight = tangent_data['out_weights'][current_idx]
+
+        # Blend with target tangents
+        in_angle = self._blend_angles( curr_in_angle,
+                                    target_tangents['in'][0], ratio )
+        in_weight = curr_in_weight * ( 1 - ratio ) + \
+                   target_tangents['in'][1] * ratio
+
+        out_angle = self._blend_angles( curr_out_angle,
+                                     target_tangents['out'][0], ratio )
+        out_weight = curr_out_weight * ( 1 - ratio ) + \
+                    target_tangents['out'][1] * ratio
+
+        return {
+            'in': ( in_angle, in_weight ),
+            'out': ( out_angle, out_weight )
+        }
+
+    def _blend_angles( self, start_angle, end_angle, ratio ):
+        """Blend angles handling wrap-around"""
+        # Handle angle wrap-around
+        diff = end_angle - start_angle
+        if abs( diff ) > 180:
+            if diff > 0:
+                end_angle -= 360
+            else:
+                end_angle += 360
+
+        return start_angle * ( 1 - ratio ) + end_angle * ratio
 
     def __RELEASE__( self ):
         pass
@@ -1265,6 +1452,7 @@ class CustomSlider( QSlider ):
         """HOOK, Reset the state"""
         try:
             self._reset_state()
+            self.core.clear_caches()
         finally:
             pass
 
@@ -1290,6 +1478,8 @@ class CustomSlider( QSlider ):
         self.all_curves = []
         self.anim_layers = []
         self.blend_nodes = []  # mark as dirty for proper ui update
+        self.blend_data = {}  # Reset blend data
+        self.update_queue = []  # Clear update queue
         self.moved = False
 
         # Reset lock states
