@@ -22,7 +22,7 @@ import maya.mel as mel
 
 from .strategies import BlendStrategy, DirectKeyBlendStrategy, LinearBlendStrategy
 
-print( "Core module path:", core.__file__ )  # This will show where it's finding core.py
+# print( "Core module path:", core.__file__ )  # This will show where it's finding core.py
 imp.reload( core )
 
 # Initialize the global variable
@@ -160,7 +160,7 @@ class CustomSlider( QSlider ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
 
         self.core = core.BlendToolCore()
-        print( "Core initialized with key_cache:", hasattr( self.core, 'key_cache' ) )  # Debug
+        # print( "Core initialized with key_cache:", hasattr( self.core, 'key_cache' ) )  # Debug
 
         self.blend_data = {}
         self.update_queue = []
@@ -908,7 +908,7 @@ class CustomSlider( QSlider ):
         """HOOK, Query and store the current animation state"""
 
         # get curves
-        self.all_curves = self._get_visible_curves()
+        self.all_curves = self.core.get_curves()  # self._get_visible_curves()
 
         if not self.all_curves:
             message( 'No animation curves found', warning = True )
@@ -936,11 +936,15 @@ class CustomSlider( QSlider ):
                     'next_indices': self.core.calculate_next_indices( curve_data['keys'] ),
                     'curve': curve  # Add curve name to info
                 }
+            else:
+                print( 'no keys' )
+                pass
 
         # Process curves and their objects
         for obj in self.selected_objects:
             self._process_object_curves( obj )
 
+    '''
     def _get_visible_curves( self ):
         """Get all curves visible in graph editor"""
         curves = cmds.keyframe( q = True, name = True, sl = True )
@@ -952,8 +956,9 @@ class CustomSlider( QSlider ):
         ge_exists = cmds.animCurveEditor( ge, exists = True )
         if ge_exists:
             curves = cmds.animCurveEditor( ge, q = True, curvesShown = True )
-        # print( 'visible: ', curves )
+        print( 'visible: ', curves )
         return curves
+    '''
 
     def _get_blend_nodes( self ):
         """Finds blend nodes associated with anim layers in scope"""
@@ -1004,11 +1009,13 @@ class CustomSlider( QSlider ):
             return
 
         current_value = curve_data['values'][current_idx]
+        # print( '___', current_value )
 
         # Calculate targets using strategy
         prev_target, next_target = strategy.calculate_target_value( 
             time, current_value, curve_data, curve_info )
-
+        print( 'p___', prev_target )
+        print( 'n___', next_target )
         prev_tangents, next_tangents = strategy.calculate_target_tangents( 
             time, curve_data, curve_info )
 
@@ -1275,14 +1282,44 @@ class CustomSlider( QSlider ):
             selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
             times_to_update = selected_keys if selected_keys else [self.current_time]
 
+            print( "\nProcess Object Updates:" )
+            print( "Selected Keys:", selected_keys )
+            print( "Times to Update:", times_to_update )
+            print( "Current Time:", self.current_time )
+
+            # If no keys selected, insert key first and update curve_data
+            if not selected_keys:
+                current_value = cmds.keyframe( curve,
+                                            time = ( self.current_time, ),
+                                            q = True,
+                                            eval = True )[0]
+
+                # Insert the key
+                cmds.setKeyframe( curve, time = self.current_time, insert = True, value = current_value )
+
+                # Update curve_data to include new key
+                new_keys = cmds.keyframe( curve, q = True, tc = True ) or []
+                new_values = cmds.keyframe( curve, q = True, vc = True ) or []
+
+                # Update curve_data
+                curve_data['keys'] = new_keys
+                curve_data['values'] = new_values
+                curve_data['key_map'] = {time: i for i, time in enumerate( new_keys )}
+
+                # Update tangent data
+                tangent_data = self._batch_get_tangents( curve )  # You'll need this method
+                curve_data['tangents'] = tangent_data
+
             # Process in batches
             for i in range( 0, len( times_to_update ), self.core.batch_size ):
                 batch = times_to_update[i:i + self.core.batch_size]
-
                 for time in batch:
                     # Calculate new values using strategy
                     new_value, new_tangents = self._calculate_blend( 
                         curve_data, curve_info, time, blend_factor )
+
+                    print( "New Value:", new_value )
+                    print( "New Tangents:", new_tangents )
 
                     if new_value is not None:
                         self.update_queue.append( {
@@ -1291,9 +1328,23 @@ class CustomSlider( QSlider ):
                             'value': new_value,
                             'tangents': new_tangents
                         } )
+                        print( "Update Queued" )
+                    else:
+                        print( "No Update Queued - New Value was None" )
+
+    def _batch_get_tangents( self, curve ):
+        """Batch collect all tangent data for a curve"""
+        return {
+            'in_angles': cmds.keyTangent( curve, q = True, ia = True ) or [],
+            'in_weights': cmds.keyTangent( curve, q = True, iw = True ) or [],
+            'out_angles': cmds.keyTangent( curve, q = True, oa = True ) or [],
+            'out_weights': cmds.keyTangent( curve, q = True, ow = True ) or [],
+        }
 
     def _execute_batch_updates( self ):
         """Execute queued updates in optimized batches"""
+        print( "\nExecute Batch Updates:" )
+        print( "Update Queue:", self.update_queue )  # See all pending updates
         # Group updates by curve
         curve_updates = {}
         for update in self.update_queue:
@@ -1302,10 +1353,15 @@ class CustomSlider( QSlider ):
                 curve_updates[curve] = []
             curve_updates[curve].append( update )
 
+        print( "Curve Updates:", curve_updates )  # See how updates are grouped
         # Process each curve's updates
         for curve, updates in curve_updates.items():
             # Set keyframes and tangents one at a time
             for update in updates:
+                print( "\nSetting Key:" )
+                print( "Curve:", curve )
+                print( "Time:", update['time'] )
+                print( "Value:", update['value'] )
                 # Set keyframe
                 cmds.setKeyframe( curve,
                                time = update['time'],
@@ -1326,43 +1382,21 @@ class CustomSlider( QSlider ):
                                   oa = out_angle,
                                   ow = out_weight )
 
-    '''
-    def _batch_set_tangents( self, curve, times, tangents ):
-        """Set tangents in batches"""
-        # Filter out None tangents
-        valid_updates = [( time, tang ) for time, tang in zip( times, tangents ) if tang]
-
-        if not valid_updates:
-            return
-
-        # Unzip the valid updates
-        update_times, tangent_data = zip( *valid_updates )
-
-        # Extract tangent components
-        in_angles = [t['in'][0] for t in tangent_data]
-        in_weights = [t['in'][1] for t in tangent_data]
-        out_angles = [t['out'][0] for t in tangent_data]
-        out_weights = [t['out'][1] for t in tangent_data]
-
-        # Set all tangents in one command
-        cmds.keyTangent( curve, time = update_times,
-                       ia = in_angles, iw = in_weights,
-                       oa = out_angles, ow = out_weights )
-    '''
-
     def _calculate_blend( self, curve_data, curve_info, time, blend_factor ):
         """Calculate blended values using current strategy"""
+        print( "\nCalculate Blend:" )
+        print( "Time:", time )
+        print( "Blend Factor:", blend_factor )
+
         current_idx = curve_data['key_map'].get( time )
-        if current_idx is None:
-            return None, None
+        print( "Current Index:", current_idx )
 
         # Get current value
         current_value = curve_data['values'][current_idx]
 
         # Get strategy
         strategy = self.core.get_current_strategy()
-
-        curve_info['curve'] = curve_info.get( 'curve', '' )  # Make sure curve name is in info
+        curve_info['curve'] = curve_info.get( 'curve', '' )
 
         # Calculate target values using strategy
         prev_target, next_target = strategy.calculate_target_value( 
