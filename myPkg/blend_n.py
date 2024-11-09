@@ -1485,6 +1485,17 @@ class CustomSlider( QSlider ):
     def on_handle_release( self ):
         """HOOK, Reset the state"""
         try:
+            # Debug: Check curves after modification
+            if self.all_curves:
+                for curve in self.all_curves:
+                    # Get current selected keys
+                    selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True ) or []
+                    if selected_keys:
+                        for time in selected_keys:
+                            value = cmds.keyframe( curve, time = ( time, ), q = True, vc = True )[0]
+                            print( "Debug Release - Curve: {0}, Time: {1}, Final Value: {2}".format( 
+                                curve, time, value ) )
+
             self._reset_state()
             self.core.clear_caches()
         finally:

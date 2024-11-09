@@ -77,6 +77,7 @@ class BlendToolCore( object ):
         data = {
             'keys': cmds.keyframe( curve, q = True, tc = True ) or [],
             'values': cmds.keyframe( curve, q = True, vc = True ) or [],
+            'is_weighted': cmds.keyTangent( curve, q = True, weightedTangents = True )[0],
             'tangents': self._batch_get_tangents( curve )
         }
 
