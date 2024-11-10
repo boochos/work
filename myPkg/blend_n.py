@@ -125,6 +125,13 @@ class CustomSlider( QSlider ):
         '3': 3,
         '5': 5
     }
+    DEFAULT_CURVE_STRENGTH = {
+        '1.0': 1.0,  # Linear
+        '1.5': 1.5,  # Slight curve
+        '2.0': 2.0,  # Medium curve
+        '3.0': 3.0,  # Strong curve
+        '4.0': 4.0  # Extreme curve
+    }
 
     # Default text values
     DEFAULT_WIDTH_TXT = 'XL'
@@ -133,6 +140,7 @@ class CustomSlider( QSlider ):
     DEFAULT_TICK_INTERVAL_TXT = '50'
     DEFAULT_LOCK_RELEASE_MARGIN_TXT = '15'
     DEFAULT_GROOVE_CLICK_VALUE_TXT = '1'
+    DEFAULT_CURVE_STRENGTH_TXT = '2.0'
 
     # Colors
     # Groove
@@ -168,6 +176,7 @@ class CustomSlider( QSlider ):
         self._slider_range = self.DEFAULT_RANGE[self.DEFAULT_RANGE_TXT]
         self._lock_release_margin = self.DEFAULT_LOCK_RELEASE_MARGIN[self.DEFAULT_LOCK_RELEASE_MARGIN_TXT]
         self._groove_click_value = self.DEFAULT_GROOVE_CLICK_VALUE[self.DEFAULT_GROOVE_CLICK_VALUE_TXT]
+        self._curve_strength = self.DEFAULT_CURVE_STRENGTH[self.DEFAULT_CURVE_STRENGTH_TXT]
 
         # self.theme = theme
         self.set_theme( theme )
@@ -199,6 +208,14 @@ class CustomSlider( QSlider ):
         # print( self.COLOR_HANDLE_DISABLED )
 
     # Add property
+    @property
+    def curve_strength( self ):
+        return self._curve_strength
+
+    @curve_strength.setter
+    def curve_strength( self, value ):
+        self._curve_strength = value
+
     @property
     def slider_range( self ):
         """Get current slider range"""
@@ -253,6 +270,16 @@ class CustomSlider( QSlider ):
     @groove_click_value.setter
     def groove_click_value( self, value ):
         self._groove_click_value = value
+
+    @classmethod
+    def get_default_curve_strength_txt( cls ):
+        """Get default curve strength text value"""
+        return cls.DEFAULT_CURVE_STRENGTH_TXT
+
+    @classmethod
+    def get_default_curve_strength( cls ):
+        """Get default curve strength value"""
+        return cls.DEFAULT_CURVE_STRENGTH[cls.DEFAULT_CURVE_STRENGTH_TXT]
 
     @classmethod
     def get_default_width_txt( cls ):
@@ -1267,14 +1294,16 @@ class CustomSlider( QSlider ):
         Adjust animation values based on slider position.
         Now handles both selected key and current time scenarios.
         """
-        # Convert to blend factor (-1 to 1)
-        blend_factor = value / 100.0
-        # Clear previous updates
-        self.update_queue = []
+        # Convert to normalized blend factor (-1 to 1)
+        linear_blend = value / 100.0
 
-        # Process each object
+        # Apply easing curve
+        curved_blend = ease_value( linear_blend, self._curve_strength )
+
+        # Process each object with the curved blend factor
+        self.update_queue = []
         for obj in self.selected_objects:
-            self._process_object_updates( obj, blend_factor )
+            self._process_object_updates( obj, curved_blend )
 
         # Execute batched updates
         if self.update_queue:
@@ -1494,10 +1523,10 @@ class CustomSlider( QSlider ):
                     if selected_keys:
                         for time in selected_keys:
                             value = cmds.keyframe( curve, time = ( time, ), q = True, vc = True )[0]
-                            print( "Debug Release - Curve: {0}, Time: {1}, Final Value: {2}".format( curve, time, value ) )
+                            # print( "Debug Release - Curve: {0}, Time: {1}, Final Value: {2}".format( curve, time, value ) )
                             ref_curve = 'locator1_translateY'
                             ref_value = cmds.keyframe( ref_curve, time = ( time, ), q = True, eval = True )[0]
-                            print( "Debug Release - Ref Curve: {0}, Time: {1}, Final Value: {2}".format( ref_curve, time, ref_value ) )
+                            # print( "Debug Release - Ref Curve: {0}, Time: {1}, Final Value: {2}".format( ref_curve, time, ref_value ) )
 
             self._reset_state()
             self.core.clear_caches()
@@ -1624,6 +1653,11 @@ class BlendSlider( QWidget ):
             self.slider_name,
             'groove_click_value',
             self.slider.get_default_groove_click_value()
+        )
+        self.slider.curve_strength = self.prefs.get_tool_pref( 
+            self.slider_name,
+            'curve_strength',
+            self.slider.get_default_curve_strength()
         )
 
         # Load visibility
@@ -1996,6 +2030,33 @@ class PreferencesDialog( QDialog ):
 
         main_layout.addWidget( click_value_frame )
 
+        # Add Curve Strength section
+        curve_strength_label = QLabel( "EASE STRENGTH  - 1.0 is linear - " )
+        curve_strength_label.setStyleSheet( width_label.styleSheet() )
+        main_layout.addWidget( curve_strength_label )
+
+        # Curve strength radio buttons frame
+        strength_frame = QtWidgets.QFrame()
+        strength_layout = QHBoxLayout( strength_frame )
+        strength_layout.setSpacing( 10 )
+        strength_layout.setContentsMargins( 8, 4, 8, 4 )
+        self.curve_strength_button_group = QButtonGroup( self )
+
+        # Create radio buttons for curve strength options
+        strength_items = list( CustomSlider.DEFAULT_CURVE_STRENGTH.items() )
+        strength_items.sort( key = lambda x: float( x[0] ) )  # Sort by numeric value
+
+        for i, item in enumerate( strength_items ):
+            strength_name, value = item
+            radio = QRadioButton( strength_name )
+            radio.setStyleSheet( self.width_button_group.buttons()[0].styleSheet() )
+            radio.strength_value = value
+            radio.strength_name = strength_name
+            self.curve_strength_button_group.addButton( radio, i )
+            strength_layout.addWidget( radio )
+
+        main_layout.addWidget( strength_frame )
+
         # Connect signals
         self.width_button_group.buttonClicked.connect( self._on_width_changed )
         self.range_button_group.buttonClicked.connect( self._on_range_changed )
@@ -2003,6 +2064,7 @@ class PreferencesDialog( QDialog ):
         self.tick_interval_button_group.buttonClicked.connect( self._on_tick_interval_changed )
         self.lock_margin_button_group.buttonClicked.connect( self._on_lock_margin_changed )
         self.click_value_button_group.buttonClicked.connect( self._on_click_value_changed )
+        self.curve_strength_button_group.buttonClicked.connect( self._on_curve_strength_changed )
 
         self.setLayout( main_layout )
         self.setMinimumWidth( 200 )
@@ -2041,6 +2103,11 @@ class PreferencesDialog( QDialog ):
             'groove_click_value',
             CustomSlider.get_default_groove_click_value()
         )
+        current_curve_strength = self.prefs.get_tool_pref( 
+            self.slider_name,
+            'curve_strength_name',  # Note: getting name, not value
+            CustomSlider.get_default_curve_strength_txt()
+        )
         # Select appropriate width radio button
         for button in self.width_button_group.buttons():
             if button.width_value == current_width:
@@ -2071,6 +2138,11 @@ class PreferencesDialog( QDialog ):
         # Select appropriate click value radio button
         for button in self.click_value_button_group.buttons():
             if button.click_value == current_click_value:
+                button.setChecked( True )
+                break
+        # Select appropriate curve strength radio button
+        for button in self.curve_strength_button_group.buttons():
+            if button.strength_name == current_curve_strength:
                 button.setChecked( True )
                 break
 
@@ -2160,6 +2232,20 @@ class PreferencesDialog( QDialog ):
         if parent_dialog:
             parent_dialog.slider.groove_click_value = click_value
 
+    def _on_curve_strength_changed( self, radio_button ):
+        """Handle curve strength radio button selection"""
+        strength_value = radio_button.strength_value
+        strength_name = radio_button.strength_name
+
+        # Save to preferences
+        self.prefs.set_tool_pref( self.slider_name, 'curve_strength', strength_value )
+        self.prefs.set_tool_pref( self.slider_name, 'curve_strength_name', strength_name )
+
+        # Update slider immediately
+        parent_dialog = self.parent()
+        if parent_dialog:
+            parent_dialog.slider.curve_strength = strength_value
+
 
 class WebrToolsPrefs( object ):
     """
@@ -2199,7 +2285,11 @@ class WebrToolsPrefs( object ):
 
                 # Groove click value preferences
                 'groove_click_value': CustomSlider.get_default_groove_click_value(),
-                'groove_click_value_name': CustomSlider.get_default_groove_click_value_txt()
+                'groove_click_value_name': CustomSlider.get_default_groove_click_value_txt(),
+
+                # Curve strength preferences
+                'curve_strength': CustomSlider.get_default_curve_strength(),
+                'curve_strength_name': CustomSlider.get_default_curve_strength_txt()
             }
         }
 
@@ -2287,6 +2377,27 @@ class WebrToolsPrefs( object ):
 
         self.prefs[tool_name][pref_name] = value
         self._save_prefs( self.prefs )
+
+
+def ease_value( x, curve_strength = 2.0 ):
+    """
+    Apply an easing curve to the input value.
+    Args:
+        x (float): Input value between -1 and 1
+        curve_strength (float): Controls how aggressive the curve is (default: 2.0)
+                              Higher values make the curve more pronounced
+    Returns:
+        float: Eased value between -1 and 1
+    """
+    # Preserve the sign of the input
+    sign = 1 if x >= 0 else -1
+    x = abs( x )
+
+    # Apply power curve
+    eased = pow( x, curve_strength )
+
+    # Return with original sign
+    return sign * eased
 
 
 def desaturate_color( color, amount = 0.5 ):

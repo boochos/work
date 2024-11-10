@@ -222,6 +222,89 @@ class SplineBlendStrategy( BlendStrategy ):
         self._cached_controls.clear()
 
     def calculate_target_value( self, current_time, current_value, curve_data, blend_info ):
+        """Calculate bezier-based value for blending using direct solving"""
+        current_idx = curve_data['key_map'].get( current_time )
+
+        # Get selected keys
+        selected_keys = cmds.keyframe( blend_info['curve'], q = True, sl = True, tc = True ) or []
+
+        # Get curve data
+        all_keys = curve_data['keys']
+        all_values = curve_data['values']
+        tangent_data = curve_data['tangents']
+        using_weighted_tangents = curve_data['is_weighted']
+
+        # Find surrounding non-selected keys
+        prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
+                        if all_keys[i] not in selected_keys ), None )
+        next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
+                        if all_keys[i] not in selected_keys ), None )
+
+        if prev_key is not None and next_key is not None:
+            # Get points
+            p0 = [all_keys[prev_key], all_values[prev_key]]
+            p3 = [all_keys[next_key], all_values[next_key]]
+
+            # Get time gap
+            gap = p3[0] - p0[0]
+            mltp = 1.0 / 3.0  # Same as original code
+
+            # Get tangent data
+            prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
+            prev_out_weight = tangent_data['out_weights'][prev_key]
+            next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
+            next_in_weight = tangent_data['in_weights'][next_key]
+
+            print( "Debug - weights:" )
+            print( "prev_out_weight:", prev_out_weight )
+            print( "next_in_weight:", next_in_weight )
+
+            # Calculate control points using trig
+            # P1
+            adj = gap * mltp
+            opo = math.tan( prev_out_angle ) * adj
+            if using_weighted_tangents:
+                opo *= prev_out_weight
+            p1 = [p0[0] + adj, p0[1] + opo]
+
+            # P2
+            opo = math.tan( next_in_angle ) * adj
+            if using_weighted_tangents:
+                opo *= next_in_weight
+            p2 = [p3[0] - adj, p3[1] - opo]
+
+            # Calculate t directly from x (current_time)
+            # x = (1-t)³p0x + 3(1-t)²tp1x + 3(1-t)t²p2x + t³p3x
+            # Normalize t to 0-1 range
+            t = ( current_time - p0[0] ) / gap
+
+            # Calculate y value using t
+            mt = 1.0 - t
+            mt2 = mt * mt
+            mt3 = mt2 * mt
+            t2 = t * t
+            t3 = t2 * t
+
+            bezier_value = ( p0[1] * mt3 +
+                           3.0 * p1[1] * mt2 * t +
+                           3.0 * p2[1] * mt * t2 +
+                           p3[1] * t3 )
+
+            # Print debug info
+            print( "Debug - Control Points:" )
+            print( "P0:", p0 )
+            print( "P1:", p1 )
+            print( "P2:", p2 )
+            print( "P3:", p3 )
+            print( "t value:", t )
+
+            # Calculate blend targets
+            delta = bezier_value - current_value
+            return bezier_value, current_value - delta
+
+        return current_value, current_value
+
+    def calculate_target_value__( self, current_time, current_value, curve_data, blend_info ):
             """Calculate bezier-based value for blending with weighted tangent support"""
             current_idx = curve_data['key_map'].get( current_time )
 
@@ -249,51 +332,73 @@ class SplineBlendStrategy( BlendStrategy ):
                 time_scale = p3[0] - p0[0]
                 value_scale = p3[1] - p0[1]
 
+                # Store original values for denormalization
+                normalize_scale = abs( value_scale )
+                original_p0_val = p0[1]
+
+                # Normalize the values for calculation
+                norm_p0_val = 0.0
+                norm_p3_val = 1.0 if value_scale > 0 else -1.0  # Preserve direction
+
+                print( "Debug - Pre-normalization Values:" )
+                print( "P0 original:", p0[1] )
+                print( "P3 original:", p3[1] )
+                print( "Value scale:", value_scale )
+                print( "Normalize scale:", normalize_scale )
+
                 # Get tangent data
                 prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
                 prev_out_weight = tangent_data['out_weights'][prev_key]
                 next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
                 next_in_weight = tangent_data['in_weights'][next_key]
 
-                # Base x offsets are always 1/3 of time interval
-                x_scale = time_scale / 3.0
+                # Normalize both scales
+                norm_time_scale = time_scale / abs( value_scale )  # This makes time scale relative to value scale
+                x_scale = norm_time_scale / 3.0
 
-                # For y offsets, use tangent angle scaled by total value change
+                # Calculate normalized offsets
+                # Calculate normalized offsets
                 if using_weighted_tangents:
-                    y1_offset = 2.0 * value_scale * math.tan( prev_out_angle ) / 3.0
-                    y2_offset = 2.0 * value_scale * math.tan( next_in_angle ) / 3.0
+                    # Scale the tangent influence relative to normalized space
+                    y1_offset = 2.0 * math.tan( prev_out_angle ) / 3.0 * abs( norm_p3_val )
+                    y2_offset = 2.0 * math.tan( next_in_angle ) / 3.0 * abs( norm_p3_val )
 
                     # Apply weights
                     y1_offset *= prev_out_weight
                     y2_offset *= next_in_weight
                 else:
-                    y1_offset = 2.0 * value_scale * math.tan( prev_out_angle ) / 3.0
-                    y2_offset = 2.0 * value_scale * math.tan( next_in_angle ) / 3.0
+                    y1_offset = 2.0 * math.tan( prev_out_angle ) / 3.0 * abs( norm_p3_val )
+                    y2_offset = 2.0 * math.tan( next_in_angle ) / 3.0 * abs( norm_p3_val )
 
-                # Calculate control points
+                # Calculate control points in normalized space
                 p1 = np.array( [
                     p0[0] + x_scale,
-                    p0[1] + y1_offset
+                    norm_p0_val + y1_offset
                 ] )
 
                 p2 = np.array( [
                     p3[0] - x_scale,
-                    p3[1] - y2_offset
+                    norm_p3_val - y2_offset
                 ] )
+
+                print( "Debug - Normalized Control Points:" )
+                print( "P0 norm:", norm_p0_val )
+                print( "P1 norm:", p1[1] )
+                print( "P2 norm:", p2[1] )
+                print( "P3 norm:", norm_p3_val )
 
                 # Calculate parameter t
                 t = ( current_time - p0[0] ) / time_scale
 
                 # Print debug info
-                print( "Debug - Angle: {0}".format( math.degrees( prev_out_angle ) ) )
-                print( "Debug - Time Scale: {0}".format( time_scale ) )
-                print( "Debug - Value Scale: {0}".format( value_scale ) )
-                print( "Debug - Y1 Offset: {0}".format( y1_offset ) )
-                print( "Debug - Control Points:" )
-                print( "P0: {0}".format( p0 ) )
+                print( "Debug - Original Values: {0} -> {1}".format( p0[1], p3[1] ) )
+                print( "Debug - Normalized Values: {0} -> {1}".format( norm_p0_val, norm_p3_val ) )
+                print( "Debug - Scale: {0}".format( normalize_scale ) )
+                print( "Debug - Control Points (Normalized):" )
+                print( "P0: [{0}, {1}]".format( p0[0], norm_p0_val ) )
                 print( "P1: {0}".format( p1 ) )
                 print( "P2: {0}".format( p2 ) )
-                print( "P3: {0}".format( p3 ) )
+                print( "P3: [{0}, {1}]".format( p3[0], norm_p3_val ) )
 
                 # Calculate bezier value using optimized Bernstein basis
                 mt = 1.0 - t
@@ -302,10 +407,13 @@ class SplineBlendStrategy( BlendStrategy ):
                 t2 = t * t
                 t3 = t2 * t
 
-                bezier_value = ( p0[1] * mt3 +
+                bezier_value = ( norm_p0_val * mt3 +
                                3.0 * p1[1] * mt2 * t +
                                3.0 * p2[1] * mt * t2 +
-                               p3[1] * t3 )
+                               norm_p3_val * t3 )
+
+                # Denormalize the result
+                bezier_value = bezier_value * normalize_scale + original_p0_val
 
                 # Calculate blend targets
                 delta = bezier_value - current_value
@@ -314,6 +422,147 @@ class SplineBlendStrategy( BlendStrategy ):
             return current_value, current_value
 
     def calculate_target_tangents( self, current_time, curve_data, blend_info ):
+            """Calculate tangents matching reference implementation exactly"""
+            current_idx = curve_data['key_map'].get( current_time )
+
+            if not curve_data.get( 'tangents' ):
+                return None, None
+
+            # Get curve data
+            all_keys = curve_data['keys']
+            all_values = curve_data['values']
+            tangent_data = curve_data['tangents']
+            using_weighted_tangents = curve_data['is_weighted']
+
+            # Get selected keys
+            selected_keys = cmds.keyframe( blend_info['curve'], q = True, sl = True, tc = True ) or []
+
+            # Find surrounding non-selected keys
+            prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
+                            if all_keys[i] not in selected_keys ), None )
+            next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
+                            if all_keys[i] not in selected_keys ), None )
+
+            if prev_key is not None and next_key is not None:
+                # Get points
+                p0 = [all_keys[prev_key], all_values[prev_key]]
+                p3 = [all_keys[next_key], all_values[next_key]]
+
+                # Get gap and multiplier
+                gap = p3[0] - p0[0]
+                mltp = 1.0 / 3.0
+
+                # Get tangent data
+                prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
+                prev_out_weight = tangent_data['out_weights'][prev_key]
+                next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
+                next_in_weight = tangent_data['in_weights'][next_key]
+
+                # Calculate control points just like getControlPoints
+                adj = gap * mltp
+
+                # P1 calculation
+                opo = math.tan( prev_out_angle ) * adj
+                if using_weighted_tangents:
+                    opo *= prev_out_weight
+                p1 = [p0[0] + adj, p0[1] + opo]
+
+                # P2 calculation
+                opo = math.tan( next_in_angle ) * adj
+                if using_weighted_tangents:
+                    opo *= next_in_weight
+                p2 = [p3[0] - adj, p3[1] - opo]
+
+                # Calculate t for current time
+                t = ( current_time - p0[0] ) / gap
+                mt = 1.0 - t
+
+                # Get points exactly like getPoint function
+                # First level
+                AB_x = ( mt * p0[0] ) + ( t * p1[0] )
+                AB_y = ( mt * p0[1] ) + ( t * p1[1] )
+
+                BC_x = ( mt * p1[0] ) + ( t * p2[0] )
+                BC_y = ( mt * p1[1] ) + ( t * p2[1] )
+
+                CD_x = ( mt * p2[0] ) + ( t * p3[0] )
+                CD_y = ( mt * p2[1] ) + ( t * p3[1] )
+
+                # Second level - exactly like reference
+                tan_in_x = ( mt * AB_x ) + ( t * BC_x )
+                tan_in_y = ( mt * AB_y ) + ( t * BC_y )
+
+                tan_out_x = ( mt * BC_x ) + ( t * CD_x )
+                tan_out_y = ( mt * BC_y ) + ( t * CD_y )
+
+                # Final point
+                point_x = ( mt * tan_in_x ) + ( t * tan_out_x )
+                point_y = ( mt * tan_in_y ) + ( t * tan_out_y )
+
+                print( "Debug Control Points:" )
+                print( "P0:", p0 )
+                print( "P1:", p1 )
+                print( "P2:", p2 )
+                print( "P3:", p3 )
+
+                print( "Debug Intermediate:" )
+                print( "AB:", [AB_x, AB_y] )
+                print( "BC:", [BC_x, BC_y] )
+                print( "CD:", [CD_x, CD_y] )
+
+                print( "Debug Final Points:" )
+                print( "Tan In:", [tan_in_x, tan_in_y] )
+                print( "Point:", [point_x, point_y] )
+                print( "Tan Out:", [tan_out_x, tan_out_y] )
+
+                # Calculate tangent angles exactly like getPointTangents
+                # In tangent
+                xlength = point_x - tan_in_x
+                ylength = point_y - tan_in_y
+                tan = ylength / xlength
+                in_angle = math.degrees( math.atan( tan ) )
+                in_length = math.sqrt( xlength * xlength + ylength * ylength )
+
+                # Out tangent
+                xlength = tan_out_x - point_x
+                ylength = tan_out_y - point_y
+                tan = ylength / xlength
+                out_angle = math.degrees( math.atan( tan ) )
+                out_length = math.sqrt( xlength * xlength + ylength * ylength )
+
+                # Clamp weights to Maya's range
+                in_length = min( max( in_length, 0.1 ), 10.0 )
+                out_length = min( max( out_length, 0.1 ), 10.0 )
+
+                print( "Debug Angles:" )
+                print( "In angle:", in_angle )
+                print( "Out angle:", out_angle )
+                print( "In length:", in_length )
+                print( "Out length:", out_length )
+
+                # Build tangent targets
+                negative_tangents = {
+                    'in': ( in_angle, in_length ),
+                    'out': ( out_angle, out_length )
+                }
+
+                # For positive (exaggerate), calculate delta from current angles
+                curr_in_angle = tangent_data['in_angles'][current_idx]
+                curr_out_angle = tangent_data['out_angles'][current_idx]
+
+                in_delta = in_angle - curr_in_angle
+                out_delta = out_angle - curr_out_angle
+
+                positive_tangents = {
+                    'in': ( curr_in_angle - in_delta, in_length ),
+                    'out': ( curr_out_angle - out_delta, out_length )
+                }
+
+                return negative_tangents, positive_tangents
+
+            return None, None
+
+    def calculate_target_tangents__( self, current_time, curve_data, blend_info ):
             """Calculate bezier-based tangents matching Maya's behavior"""
             current_idx = curve_data['key_map'].get( current_time )
 
@@ -394,6 +643,7 @@ class SplineBlendStrategy( BlendStrategy ):
                 weight = abs( value_scale ) * 2.0 / 3.0
                 weight = min( max( weight, 0.1 ), 10.0 )
 
+                '''
                 print( "Debug Tangent - Input angle: {0}".format( math.degrees( prev_out_angle ) ) )
                 print( "Debug Tangent - Calculated angle: {0}".format( spline_angle ) )
                 print( "Debug Tangent - Control points:" )
@@ -401,7 +651,7 @@ class SplineBlendStrategy( BlendStrategy ):
                 print( "P1:", p1 )
                 print( "P2:", p2 )
                 print( "P3:", p3 )
-
+                '''
                 # Build tangent targets
                 negative_tangents = {
                     'in': ( spline_angle, weight ),
