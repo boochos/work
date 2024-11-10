@@ -6,11 +6,10 @@ import platform
 import time
 
 from PySide2 import QtCore, QtWidgets
-from PySide2.QtCore import Qt
 from PySide2.QtCore import Qt, QPoint
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import ( QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayout,
-                              QPushButton, QRadioButton, QButtonGroup, QGroupBox )
+                              QPushButton, QRadioButton, QButtonGroup, QGroupBox, QWidget )
 from shiboken2 import wrapInstance
 
 import core
@@ -27,9 +26,6 @@ imp.reload( core )
 
 # Initialize the global variable
 global custom_dialog
-
-# Constants
-TOOL_NAME = 'Blend_N'
 
 
 def cleanup_dialog():
@@ -91,8 +87,6 @@ class CustomSlider( QSlider ):
     Custom slider widget for blending between animation poses.
     Handles the core functionality of the blend pose tool.
     """
-    _TOOL_NAME = {'Blend_N': 'Bn'}  # TOOL_NAME.split( '_' )[0] + TOOL_NAME.split( '_' )[1]
-
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
     POSITIVE_THRESHOLD = 101  # Point where positive red zone starts
@@ -131,7 +125,6 @@ class CustomSlider( QSlider ):
         '3': 3,
         '5': 5
     }
-    TOOL_NAME = {'Blend_N': 'Bn'}  # TOOL_NAME.split( '_' )[0] + TOOL_NAME.split( '_' )[1]
 
     # Default text values
     DEFAULT_WIDTH_TXT = 'XL'
@@ -156,12 +149,13 @@ class CustomSlider( QSlider ):
     # Tick
     COLOR_TICK_MARK = QColor( 61, 69, 57 ).name()  # rgb(61, 69, 57)
 
-    def __init__( self, parent = None, theme = 'orange' ):
+    def __init__( self, parent = None, name = '', theme = 'orange' ):
         super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
 
         self.core = core.BlendToolCore()
         # print( "Core initialized with key_cache:", hasattr( self.core, 'key_cache' ) )  # Debug
 
+        self.slider_name = name[0:3]
         self.blend_data = {}
         self.update_queue = []
         self.moved = False
@@ -189,8 +183,7 @@ class CustomSlider( QSlider ):
 
         # Create and setup the handle label
         self.handle_label = HandleLabel( self )
-        self.handle_label.setText( '0' )
-        self.handle_label.hide()  # Initially hide the label
+        QtCore.QTimer.singleShot( 0, self._initial_handle_label_position )  # Defer position update
 
         # Update handle label position whenever the slider value changes
         self.valueChanged.connect( self._update_handle_label_position )
@@ -353,6 +346,28 @@ class CustomSlider( QSlider ):
         # Update label position
         self.handle_label.move( label_x, label_y )
         self.handle_label.setText( '{0}'.format( abs( self.value() ) ) )
+
+    def _initial_handle_label_position( self ):
+        """Update the position of the handle label to follow the slider handle"""
+        if not self.handle_label.isVisible():
+            self.handle_label.show()
+
+        # Calculate handle position
+        opt = QtWidgets.QStyleOptionSlider()
+        self.initStyleOption( opt )
+        handle_rect = self.style().subControlRect( QtWidgets.QStyle.CC_Slider, opt,
+                                                QtWidgets.QStyle.SC_SliderHandle, self )
+
+        # Position label centered over handle
+        label_x = handle_rect.center().x() - self.handle_label.width() // 2
+        label_y = handle_rect.center().y() - self.handle_label.height() // 2  # Center on handle
+
+        # Update label position
+        self.handle_label.move( label_x, label_y )
+
+        self.setValue( 0 )  # Ensure we're at zero
+        self.handle_label.show()  # Show instead of hide
+        self.handle_label.setText( self.slider_name )  # Show name initially
 
     def _connect_signals( self ):
         """Connect Qt signals to their handlers"""
@@ -902,6 +917,7 @@ class CustomSlider( QSlider ):
 
     def _before_handle_press( self ):
         """Start"""
+        self.handle_label.setText( '0' )  # Change to value when pressed
         self.on_handle_press()
 
     def on_handle_press( self ):
@@ -930,35 +946,35 @@ class CustomSlider( QSlider ):
         for curve in self.all_curves:
             curve_data = self.core.collect_curve_data( curve )
             if curve_data['keys']:  # Only add if curve has keys
+                selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True ) or []
+
+                # If no selection, handle current time key
+                if not selected_keys:
+                    if self.current_time not in curve_data['key_map']:
+                        # Insert key and update curve_data
+                        # print( curve, self.current_time )
+                        # Open undo chunk
+                        if not self.moved:
+                            self.moved = True
+                            cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
+                        # insert key
+                        current_value = cmds.keyframe( curve, time = ( self.current_time, ), q = True, eval = True )[0]
+                        cmds.setKeyframe( curve, time = self.current_time, insert = True, value = current_value )
+                        # Get updated curve data after key insertion
+                        curve_data = self.core.collect_curve_data( curve )
+
                 self.blend_data[curve] = {
                     'data': curve_data,
                     'prev_indices': self.core.calculate_prev_indices( curve_data['keys'] ),
                     'next_indices': self.core.calculate_next_indices( curve_data['keys'] ),
-                    'curve': curve  # Add curve name to info
+                    'curve': curve
                 }
-            else:
-                print( 'no keys' )
-                pass
 
+        # print( 'curve data__', curve_data )
+        # print( 'blend data__', self.blend_data )
         # Process curves and their objects
         for obj in self.selected_objects:
             self._process_object_curves( obj )
-
-    '''
-    def _get_visible_curves( self ):
-        """Get all curves visible in graph editor"""
-        curves = cmds.keyframe( q = True, name = True, sl = True )
-        if curves:
-            # print( 'sel curves ', selected_curves )
-            return curves
-
-        ge = 'graphEditor1GraphEd'
-        ge_exists = cmds.animCurveEditor( ge, exists = True )
-        if ge_exists:
-            curves = cmds.animCurveEditor( ge, q = True, curvesShown = True )
-        print( 'visible: ', curves )
-        return curves
-    '''
 
     def _get_blend_nodes( self ):
         """Finds blend nodes associated with anim layers in scope"""
@@ -1014,8 +1030,8 @@ class CustomSlider( QSlider ):
         # Calculate targets using strategy
         prev_target, next_target = strategy.calculate_target_value( 
             time, current_value, curve_data, curve_info )
-        print( 'p___', prev_target )
-        print( 'n___', next_target )
+        # print( 'p___', prev_target )
+        # print( 'n___', next_target )
         prev_tangents, next_tangents = strategy.calculate_target_tangents( 
             time, curve_data, curve_info )
 
@@ -1267,6 +1283,7 @@ class CustomSlider( QSlider ):
         # should precombine selected objects and belnds nodes to list to explcicity only call dgdirty oncecombine
         cmds.dgdirty( self.blend_nodes if self.blend_nodes else [] )
         mel.eval( 'dgdirty;' )
+        # print( value )
 
     def _process_object_updates( self, obj, blend_factor ):
         """Process updates for a single object"""
@@ -1281,45 +1298,25 @@ class CustomSlider( QSlider ):
             # Get keys to update
             selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
             times_to_update = selected_keys if selected_keys else [self.current_time]
-
-            print( "\nProcess Object Updates:" )
-            print( "Selected Keys:", selected_keys )
-            print( "Times to Update:", times_to_update )
-            print( "Current Time:", self.current_time )
-
-            # If no keys selected, insert key first and update curve_data
-            if not selected_keys:
-                current_value = cmds.keyframe( curve,
-                                            time = ( self.current_time, ),
-                                            q = True,
-                                            eval = True )[0]
-
-                # Insert the key
-                cmds.setKeyframe( curve, time = self.current_time, insert = True, value = current_value )
-
-                # Update curve_data to include new key
-                new_keys = cmds.keyframe( curve, q = True, tc = True ) or []
-                new_values = cmds.keyframe( curve, q = True, vc = True ) or []
-
-                # Update curve_data
-                curve_data['keys'] = new_keys
-                curve_data['values'] = new_values
-                curve_data['key_map'] = {time: i for i, time in enumerate( new_keys )}
-
-                # Update tangent data
-                tangent_data = self._batch_get_tangents( curve )  # You'll need this method
-                curve_data['tangents'] = tangent_data
-
+            '''
+            print( "\nInitial curve_data:" )
+            print( "Keys:", curve_data['keys'] )
+            print( "Values:", curve_data['values'] )
+            print( "Key map:", curve_data['key_map'] )
+            print( "Tangent data:", curve_data['tangents'] )
+            '''
             # Process in batches
             for i in range( 0, len( times_to_update ), self.core.batch_size ):
                 batch = times_to_update[i:i + self.core.batch_size]
                 for time in batch:
+                    # print( "\nProcessing time:", time )
+                    # print( "Current blend factor:", blend_factor )
                     # Calculate new values using strategy
                     new_value, new_tangents = self._calculate_blend( 
                         curve_data, curve_info, time, blend_factor )
 
-                    print( "New Value:", new_value )
-                    print( "New Tangents:", new_tangents )
+                    # print( "New Value:", new_value )
+                    # print( "New Tangents:", new_tangents )
 
                     if new_value is not None:
                         self.update_queue.append( {
@@ -1328,9 +1325,10 @@ class CustomSlider( QSlider ):
                             'value': new_value,
                             'tangents': new_tangents
                         } )
-                        print( "Update Queued" )
+                        # print( "Update Queued" )
                     else:
                         print( "No Update Queued - New Value was None" )
+                        pass
 
     def _batch_get_tangents( self, curve ):
         """Batch collect all tangent data for a curve"""
@@ -1343,8 +1341,8 @@ class CustomSlider( QSlider ):
 
     def _execute_batch_updates( self ):
         """Execute queued updates in optimized batches"""
-        print( "\nExecute Batch Updates:" )
-        print( "Update Queue:", self.update_queue )  # See all pending updates
+        # print( "\nExecute Batch Updates:" )
+        # print( "Update Queue:", self.update_queue )  # See all pending updates
         # Group updates by curve
         curve_updates = {}
         for update in self.update_queue:
@@ -1353,15 +1351,17 @@ class CustomSlider( QSlider ):
                 curve_updates[curve] = []
             curve_updates[curve].append( update )
 
-        print( "Curve Updates:", curve_updates )  # See how updates are grouped
+        # print( "Curve Updates:", curve_updates )  # See how updates are grouped
         # Process each curve's updates
         for curve, updates in curve_updates.items():
             # Set keyframes and tangents one at a time
             for update in updates:
+                '''
                 print( "\nSetting Key:" )
                 print( "Curve:", curve )
                 print( "Time:", update['time'] )
                 print( "Value:", update['value'] )
+                '''
                 # Set keyframe
                 cmds.setKeyframe( curve,
                                time = update['time'],
@@ -1384,12 +1384,13 @@ class CustomSlider( QSlider ):
 
     def _calculate_blend( self, curve_data, curve_info, time, blend_factor ):
         """Calculate blended values using current strategy"""
+        '''
         print( "\nCalculate Blend:" )
         print( "Time:", time )
         print( "Blend Factor:", blend_factor )
+        '''
 
         current_idx = curve_data['key_map'].get( time )
-        print( "Current Index:", current_idx )
 
         # Get current value
         current_value = curve_data['values'][current_idx]
@@ -1493,8 +1494,10 @@ class CustomSlider( QSlider ):
                     if selected_keys:
                         for time in selected_keys:
                             value = cmds.keyframe( curve, time = ( time, ), q = True, vc = True )[0]
-                            print( "Debug Release - Curve: {0}, Time: {1}, Final Value: {2}".format( 
-                                curve, time, value ) )
+                            print( "Debug Release - Curve: {0}, Time: {1}, Final Value: {2}".format( curve, time, value ) )
+                            ref_curve = 'locator1_translateY'
+                            ref_value = cmds.keyframe( ref_curve, time = ( time, ), q = True, eval = True )[0]
+                            print( "Debug Release - Ref Curve: {0}, Time: {1}, Final Value: {2}".format( ref_curve, time, ref_value ) )
 
             self._reset_state()
             self.core.clear_caches()
@@ -1505,8 +1508,8 @@ class CustomSlider( QSlider ):
         """Reset slider to initial position"""
         self.valueChanged.disconnect( self._before_handle_move )
         self.setValue( 0 )
-        # self.label.setText( '0%' )
-        self.handle_label.hide()  # Initially hide the label
+        self.handle_label.setText( self.slider_name )  # Change back to name on release
+        # self.handle_label.hide()  # Initially hide the label
         self.valueChanged.connect( self._before_handle_move )
 
     def _reset_state( self ):
@@ -1538,28 +1541,25 @@ class CustomSlider( QSlider ):
         pass
 
 
-class CustomDialog( QDialog ):
-    """Main dialog window for the Blend Pose Tool"""
+class BlendSlider( QWidget ):
+    """Self-contained slider widget with toggle button and preferences"""
 
-    def __init__( self, parent = None ):
-        super( CustomDialog, self ).__init__( parent )
-        self.prefs = WebrToolsPrefs()
-        self._setup_ui()
+    def __init__( self, parent = None, name = "Blend_N", strategy = "linear", theme = "orange" ):
+        super( BlendSlider, self ).__init__( parent )
+        self.slider_name = name
+        self.prefs = WebrToolsPrefs( name = self.slider_name )
 
-    def _setup_ui( self ):
-        """Setup the UI layout and widgets"""
-        self.setWindowTitle( "Blend Pose Tool" )
-        self.setFixedHeight( 70 )
-
-        # Create layout
-        layout = QHBoxLayout()
+        # Setup layout
+        self.layout = QHBoxLayout( self )
+        self.layout.setContentsMargins( 0, 0, 0, 0 )  # Tight layout
 
         # Create toggle button
         self.toggle_button = QPushButton()
         self.toggle_button.setFixedSize( 14, 14 )
-        self.toggle_button.setToolTip( TOOL_NAME )
-        self.toggle_button.setContextMenuPolicy( Qt.CustomContextMenu )  # Enable right-click menu
-        self.toggle_button.customContextMenuRequested.connect( self._show_context_menu )  # Connect right-click signal
+        self.toggle_button.setToolTip( name )
+        self.toggle_button.setContextMenuPolicy( Qt.CustomContextMenu )
+        self.toggle_button.customContextMenuRequested.connect( self._show_context_menu )
+        self.toggle_button.clicked.connect( self._toggle_slider_visibility )
         self.toggle_button.setStyleSheet( """
             QPushButton {
                 background-color: %s;
@@ -1579,102 +1579,135 @@ class CustomDialog( QDialog ):
             QColor( 90, 90, 90 ).name(),
             QColor( 26, 26, 26 ).name()
         ) )
-        self.toggle_button.clicked.connect( self._toggle_slider_visibility )
 
-        # Get preference values with class defaults
-        slider_width = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+        # Create slider with preferences
+        self.slider = CustomSlider( self, name = self.slider_name )
+        self.slider.core.set_blend_strategy( strategy )
+        self.slider.set_theme( theme )
+
+        # Load preferences
+        self._load_preferences()
+
+        # Add widgets to layout
+        self.layout.addWidget( self.toggle_button, 0, QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft )
+        self.layout.addWidget( self.slider, 0, QtCore.Qt.AlignCenter )
+
+    def _load_preferences( self ):
+        """Load preferences for this slider instance"""
+        # Load slider dimensions
+        self.slider.slider_width = self.prefs.get_tool_pref( 
+            self.slider_name,
             'slider_width',
-            CustomSlider.get_default_width()
+            self.slider.get_default_width()
         )
-        slider_range = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+        self.slider.slider_range = self.prefs.get_tool_pref( 
+            self.slider_name,
             'slider_range',
-            CustomSlider.get_default_range()
+            self.slider.get_default_range()
         )
-        slider_tick_width = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+        self.slider.tick_width = self.prefs.get_tool_pref( 
+            self.slider_name,
             'tick_width',
-            CustomSlider.get_default_tick_width()
+            self.slider.get_default_tick_width()
         )
-        slider_tick_interval = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+        self.slider.tick_interval = self.prefs.get_tool_pref( 
+            self.slider_name,
             'tick_interval',
-            CustomSlider.get_default_tick_interval()
+            self.slider.get_default_tick_interval()
         )
-        slider_lock_margin = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+        self.slider.lock_release_margin = self.prefs.get_tool_pref( 
+            self.slider_name,
             'lock_release_margin',
-            CustomSlider.get_default_lock_release_margin()
+            self.slider.get_default_lock_release_margin()
         )
-        slider_click_value = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+        self.slider.groove_click_value = self.prefs.get_tool_pref( 
+            self.slider_name,
             'groove_click_value',
-            CustomSlider.get_default_groove_click_value()
+            self.slider.get_default_groove_click_value()
         )
-        self.slider = CustomSlider()
-        self.slider.slider_width = slider_width
-        self.slider.slider_range = slider_range
-        self.slider.tick_width = slider_tick_width
-        self.slider.tick_interval = slider_tick_interval
-        self.slider.lock_release_margin = slider_lock_margin
-        self.slider.groove_click_value = slider_click_value
-        self.slider._update_stylesheet()  # Make sure to update the stylesheet after changing TICK_WIDTH
 
-        # Add widgets to layout with alignment
-        layout.addWidget( self.toggle_button, 0, QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft )
-        layout.addWidget( self.slider, 0, QtCore.Qt.AlignCenter )
-
-        self.setLayout( layout )
-        self.adjustSize()
-
-        # Load and apply saved slider visibility
-        slider_visible = self.prefs.get_tool_pref( TOOL_NAME, 'slider_visible', True )
+        # Load visibility
+        slider_visible = self.prefs.get_tool_pref( 
+            self.slider_name,
+            'slider_visible',
+            True
+        )
         self.slider.setVisible( slider_visible )
 
+        # Update stylesheet
+        self.slider._update_stylesheet()
+
     def _show_context_menu( self, position ):
-        """Show the context menu for preferences"""
-        # Create preferences dialog
-        prefs_dialog = PreferencesDialog( self )
-
-        # Get the global position of the toggle button
+        """Show preferences dialog for this slider"""
+        prefs_dialog = PreferencesDialog( self, self.slider_name )
+        prefs_dialog.finished.connect( self._reset_button_state )
         global_pos = self.toggle_button.mapToGlobal( position )
-
-        # Move dialog below the tool
         dialog_x = global_pos.x() - 20
-        dialog_y = global_pos.y() + self.height() / 3  # Add small gap
-
+        dialog_y = global_pos.y() + self.height() / 3
         prefs_dialog.move( dialog_x, dialog_y )
         prefs_dialog.show()
 
     def _toggle_slider_visibility( self ):
-        """Toggle the slider's visibility and save the state"""
+        """Toggle slider visibility and save state"""
         current_visible = self.slider.isVisible()
         self.slider.setVisible( not current_visible )
-        # Save the new visibility state
-        self.prefs.set_tool_pref( TOOL_NAME, 'slider_visible', not current_visible )
+        self.prefs.set_tool_pref( self.slider_name, 'slider_visible', not current_visible )
+
+    def _reset_button_state( self ):
+        """Reset button state after prefs dialog closes"""
+        self.toggle_button.setDown( False )
+        self.toggle_button.update()
+
+
+class CustomDialog( QDialog ):
+    """Main dialog managing multiple blend sliders"""
+
+    def __init__( self, parent = None ):
+        super( CustomDialog, self ).__init__( parent )
+        self.setWindowTitle( "Sliders" )
+
+        # Create horizontal layout
+        self.layout = QHBoxLayout( self )
+        self.layout.setSpacing( 4 )  # Space between sliders
+        self.layout.setContentsMargins( 4, 4, 4, 4 )  # Dialog margins
+
+        # Store slider references
+        self.sliders = {}
+
+        # Create initial slider
+        self.add_slider( "Direct", "direct", "magenta" )
+        self.add_slider( "Linear", "linear", "purple" )
+        self.add_slider( "Spline", "spline", "blue" )
+
+    def add_slider( self, name, strategy, theme ):
+        """Add a new slider to the dialog"""
+        blend_slider = BlendSlider( self, name, strategy, theme )
+        self.layout.addWidget( blend_slider )
+        self.sliders[name] = blend_slider
+        self.adjustSize()
+        return blend_slider
 
 
 class PreferencesDialog( QDialog ):
     """Dialog for managing Blend Pose Tool preferences"""
 
-    def __init__( self, parent = None ):
+    def __init__( self, parent = None, slider_name = None ):
         super( PreferencesDialog, self ).__init__( parent )
-        self.prefs = WebrToolsPrefs()
-        self._setup_ui()
-        self._load_current_values()
+        self.slider_name = slider_name or "Blend_N"
+        self.prefs = WebrToolsPrefs( name = self.slider_name )
 
         # Enable mouse tracking
         self.setMouseTracking( True )
-
+        self._mouse_inside = False
         # Remove the window frame
         self.setWindowFlags( Qt.Popup | Qt.FramelessWindowHint )
 
         # Set darker background
         self.setStyleSheet( "QDialog { background-color: #383838; }" )
 
-        # Track if mouse is inside dialog
-        self._mouse_inside = False
+        #
+        self._setup_ui()
+        self._load_current_values()
 
     def _get_stylesheet( self ):
         """Return the stylesheet for the preferences dialog"""
@@ -1759,7 +1792,7 @@ class PreferencesDialog( QDialog ):
         main_layout.setContentsMargins( 12, 8, 12, 8 )
 
         # Add title label
-        title_label = QLabel( "{0} Prefs".format( TOOL_NAME ) )
+        title_label = QLabel( "{0} Prefs".format( self.slider_name ) )
         title_label.setStyleSheet( """
             QLabel {
                 color: %s;
@@ -1979,32 +2012,32 @@ class PreferencesDialog( QDialog ):
         """Load current preference values and select appropriate radio buttons"""
         # Get current values from preferences with CustomSlider class defaults
         current_width = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+            self.slider_name,
             'slider_width',
             CustomSlider.get_default_width()
         )
         current_range = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+            self.slider_name,
             'slider_range',
             CustomSlider.get_default_range()
         )
         current_tick_width = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+            self.slider_name,
             'tick_width_name',  # Note: getting name, not value
             CustomSlider.get_default_tick_width_txt()
         )
         current_tick_interval = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+            self.slider_name,
             'tick_interval',
             CustomSlider.get_default_tick_interval()
         )
         current_lock_margin = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+            self.slider_name,
             'lock_release_margin',
             CustomSlider.get_default_lock_release_margin()
         )
         current_click_value = self.prefs.get_tool_pref( 
-            TOOL_NAME,
+            self.slider_name,
             'groove_click_value',
             CustomSlider.get_default_groove_click_value()
         )
@@ -2047,8 +2080,8 @@ class PreferencesDialog( QDialog ):
         size_name = radio_button.size_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( TOOL_NAME, 'slider_width', width_value )
-        self.prefs.set_tool_pref( TOOL_NAME, 'slider_width_name', size_name )
+        self.prefs.set_tool_pref( self.slider_name, 'slider_width', width_value )
+        self.prefs.set_tool_pref( self.slider_name, 'slider_width_name', size_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
@@ -2062,8 +2095,8 @@ class PreferencesDialog( QDialog ):
         range_name = radio_button.range_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( TOOL_NAME, 'slider_range', range_value )
-        self.prefs.set_tool_pref( TOOL_NAME, 'slider_range_name', range_name )
+        self.prefs.set_tool_pref( self.slider_name, 'slider_range', range_value )
+        self.prefs.set_tool_pref( self.slider_name, 'slider_range_name', range_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
@@ -2076,8 +2109,8 @@ class PreferencesDialog( QDialog ):
         width_name = radio_button.tick_width_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( TOOL_NAME, 'tick_width', width_value )
-        self.prefs.set_tool_pref( TOOL_NAME, 'tick_width_name', width_name )
+        self.prefs.set_tool_pref( self.slider_name, 'tick_width', width_value )
+        self.prefs.set_tool_pref( self.slider_name, 'tick_width_name', width_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
@@ -2091,8 +2124,8 @@ class PreferencesDialog( QDialog ):
         interval_name = radio_button.interval_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( TOOL_NAME, 'tick_interval', interval_value )
-        self.prefs.set_tool_pref( TOOL_NAME, 'tick_interval_name', interval_name )
+        self.prefs.set_tool_pref( self.slider_name, 'tick_interval', interval_value )
+        self.prefs.set_tool_pref( self.slider_name, 'tick_interval_name', interval_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
@@ -2105,8 +2138,8 @@ class PreferencesDialog( QDialog ):
         margin_name = radio_button.margin_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( TOOL_NAME, 'lock_release_margin', margin_value )
-        self.prefs.set_tool_pref( TOOL_NAME, 'lock_release_margin_name', margin_name )
+        self.prefs.set_tool_pref( self.slider_name, 'lock_release_margin', margin_value )
+        self.prefs.set_tool_pref( self.slider_name, 'lock_release_margin_name', margin_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
@@ -2119,8 +2152,8 @@ class PreferencesDialog( QDialog ):
         click_value_name = radio_button.click_value_name
 
         # Save to preferences
-        self.prefs.set_tool_pref( TOOL_NAME, 'groove_click_value', click_value )
-        self.prefs.set_tool_pref( TOOL_NAME, 'groove_click_value_name', click_value_name )
+        self.prefs.set_tool_pref( self.slider_name, 'groove_click_value', click_value )
+        self.prefs.set_tool_pref( self.slider_name, 'groove_click_value_name', click_value_name )
 
         # Update slider immediately
         parent_dialog = self.parent()
@@ -2134,12 +2167,13 @@ class WebrToolsPrefs( object ):
     Handles reading, writing, and default values for tool-specific preferences.
     """
 
-    def __init__( self ):
+    def __init__( self, name = None ):
         self.prefs_file = 'WebrToolsPrefs.json'
         self.prefs_path = self._get_prefs_path()
+        self.slider_name = name if name else "Blend_N"  # Default if no name provided
         # Initialize default preferences using CustomSlider class defaults
         self.default_prefs = {
-            TOOL_NAME: {
+            self.slider_name: {
                 # Visibility
                 'slider_visible': True,
 
@@ -2354,5 +2388,6 @@ if __name__ == '__main__':
 else:
     # print( 'here' )
     custom_dialog = CustomDialog( get_maya_main_window() )
+
     # print( custom_dialog )
     custom_dialog.show()

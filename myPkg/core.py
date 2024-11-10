@@ -8,20 +8,9 @@ imp.reload( strategies )
 
 
 class BlendToolCore( object ):
-    """Core singleton for centralized data management"""
-    _instance = None
+    """Core class for data management"""
 
     def __init__( self ):
-        """Initialize called automatically when instance is created"""
-        self._initialize()
-
-    def __new__( cls ):
-        if cls._instance is None:
-            cls._instance = super( BlendToolCore, cls ).__new__( cls )
-            cls._instance._initialize()
-        return cls._instance
-
-    def _initialize( self ):
         """Initialize core data structures"""
         # Storage
         self.curve_cache = {}
@@ -43,18 +32,10 @@ class BlendToolCore( object ):
             'linear': strategies.LinearBlendStrategy(),
             'spline': strategies.SplineBlendStrategy()
         }
-        self.current_strategy = 'spline'
+        self.current_strategy = 'linear'
 
     def get_curves( self ):
         """Get and cache visible/selected curves"""
-        cache_key = ( 
-            cmds.currentTime( q = True ),
-            tuple( cmds.ls( selection = True ) )
-        )
-
-        # Return cached if valid
-        if self.cache_key == cache_key:
-            return self.curve_cache.get( 'curves', [] )
 
         # Get curves
         curves = cmds.keyframe( q = True, name = True, sl = True ) or []
@@ -63,15 +44,10 @@ class BlendToolCore( object ):
             if cmds.animCurveEditor( ge, exists = True ):
                 curves = cmds.animCurveEditor( ge, q = True, curvesShown = True ) or []
 
-        # Cache results
-        self.cache_key = cache_key
-        self.curve_cache['curves'] = curves
         return curves
 
     def collect_curve_data( self, curve ):
         """Batch collect all data for a curve"""
-        if curve in self.key_cache:
-            return self.key_cache[curve]
 
         # Collect all curve data in one go
         data = {
@@ -83,11 +59,7 @@ class BlendToolCore( object ):
 
         # Create key map for quick lookups
         data['key_map'] = {time: i for i, time in enumerate( data['keys'] )}
-        '''
-        for k in data:
-            print( '____' )
-            print( data[k] )
-        '''
+
         self.key_cache[curve] = data
         return data
 
