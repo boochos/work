@@ -1461,27 +1461,89 @@ class CustomSlider( QSlider ):
 
         return new_value, new_tangents
 
+    def _cubic_bezier( self, p0, p1, p2, p3, t ):
+        """
+        Evaluate a point on a cubic bezier curve.
+        Args:
+            p0: Start point
+            p1: First control point
+            p2: Second control point
+            p3: End point
+            t: Parameter between 0 and 1
+        """
+        t2 = t * t
+        t3 = t2 * t
+        mt = 1 - t
+        mt2 = mt * mt
+        mt3 = mt2 * mt
+        return mt3 * p0 + 3 * mt2 * t * p1 + 3 * mt * t2 * p2 + t3 * p3
+
     def _blend_tangents( self, tangent_data, current_idx, target_tangents, ratio ):
-        """Blend between current tangents and target tangents"""
+        """
+        Blend tangents using a bezier curve with middle bias for start position
+        
+        Adjustable Parameters:
+        - CONTROL_INFLUENCE: Base curve shape (0.0 to 1.0)
+            - Lower: Sharp transitions
+            - Higher: Smooth transitions
+            
+        - ASYMMETRY: Start vs end timing (0.0 to 1.0)
+            - 0.0: Symmetric
+            - Positive: Slower start, quicker end
+            
+        - EASE_STRENGTH: Overall intensity (0.0 to 2.0)
+            - Lower: More linear
+            - Higher: More pronounced curve
+            
+        - MIDDLE_BIAS: Pull middle towards start (0.0 to 1.0)
+            - 0.0: Normal curve
+            - Higher: Middle stays closer to start position
+        """
         if not tangent_data:
             return None
 
-        # Get current tangents
+        # ADJUSTABLE PARAMETERS
+        CONTROL_INFLUENCE = 0.5  # Base influence distance
+        ASYMMETRY = 0.3  # Timing asymmetry
+        EASE_STRENGTH = 0.5  # Overall easing strength
+        MIDDLE_BIAS = 0.6  # How much middle stays at start position
+
+        # Calculate control point positions
+        start_influence = CONTROL_INFLUENCE * ( 1.0 - ASYMMETRY )
+        end_influence = CONTROL_INFLUENCE * ( 1.0 + ASYMMETRY )
+
+        # Create bezier curve points with middle bias
+        p0 = 0.0  # Start value
+        p3 = 1.0  # End value
+        p1 = p0 + start_influence - ( start_influence * MIDDLE_BIAS )  # Pull down first control
+        p2 = p3 - end_influence - ( end_influence * MIDDLE_BIAS )  # Pull down second control
+
+        # Get eased ratio using bezier curve
+        eased_ratio = self._cubic_bezier( p0, p1, p2, p3, ratio )
+
+        # Apply ease strength
+        if EASE_STRENGTH != 1.0:
+            eased_ratio = pow( eased_ratio, 1.0 / EASE_STRENGTH )
+
+        # Get current tangent values
         curr_in_angle = tangent_data['in_angles'][current_idx]
         curr_in_weight = tangent_data['in_weights'][current_idx]
         curr_out_angle = tangent_data['out_angles'][current_idx]
         curr_out_weight = tangent_data['out_weights'][current_idx]
 
-        # Blend with target tangents
-        in_angle = self._blend_angles( curr_in_angle,
-                                    target_tangents['in'][0], ratio )
-        in_weight = curr_in_weight * ( 1 - ratio ) + \
-                   target_tangents['in'][1] * ratio
+        # Blend angles with wrap-around handling
+        in_angle = self._blend_angles( curr_in_angle, target_tangents['in'][0], eased_ratio )
+        out_angle = self._blend_angles( curr_out_angle, target_tangents['out'][0], eased_ratio )
 
-        out_angle = self._blend_angles( curr_out_angle,
-                                     target_tangents['out'][0], ratio )
-        out_weight = curr_out_weight * ( 1 - ratio ) + \
-                    target_tangents['out'][1] * ratio
+        # Blend weights
+        in_weight = curr_in_weight * ( 1 - eased_ratio ) + target_tangents['in'][1] * eased_ratio
+        out_weight = curr_out_weight * ( 1 - eased_ratio ) + target_tangents['out'][1] * eased_ratio
+
+        # Debug output
+        print( "\nBezier Blend Debug:" )
+        print( "Params - Control: %.2f, Asymmetry: %.2f, Strength: %.2f, Bias: %.2f" % ( 
+            CONTROL_INFLUENCE, ASYMMETRY, EASE_STRENGTH, MIDDLE_BIAS ) )
+        print( "Ratio: %.2f -> Eased: %.2f" % ( ratio, eased_ratio ) )
 
         return {
             'in': ( in_angle, in_weight ),
@@ -1489,8 +1551,7 @@ class CustomSlider( QSlider ):
         }
 
     def _blend_angles( self, start_angle, end_angle, ratio ):
-        """Blend angles handling wrap-around"""
-        # Handle angle wrap-around
+        """Blend angles handling wrap-around for shortest path"""
         diff = end_angle - start_angle
         if abs( diff ) > 180:
             if diff > 0:
@@ -1498,7 +1559,15 @@ class CustomSlider( QSlider ):
             else:
                 end_angle += 360
 
-        return start_angle * ( 1 - ratio ) + end_angle * ratio
+        result = start_angle * ( 1 - ratio ) + end_angle * ratio
+
+        # Normalize result to 0-360 range
+        while result < 0:
+            result += 360
+        while result >= 360:
+            result -= 360
+
+        return result
 
     def __RELEASE__( self ):
         pass
