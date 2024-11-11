@@ -18,6 +18,7 @@ import maya.OpenMayaAnim as oma
 import maya.OpenMayaUI as omui
 import maya.cmds as cmds
 import maya.mel as mel
+import numpy as np
 
 from .strategies import BlendStrategy, DirectKeyBlendStrategy, LinearBlendStrategy
 
@@ -1461,89 +1462,54 @@ class CustomSlider( QSlider ):
 
         return new_value, new_tangents
 
-    def _cubic_bezier( self, p0, p1, p2, p3, t ):
-        """
-        Evaluate a point on a cubic bezier curve.
-        Args:
-            p0: Start point
-            p1: First control point
-            p2: Second control point
-            p3: End point
-            t: Parameter between 0 and 1
-        """
-        t2 = t * t
-        t3 = t2 * t
-        mt = 1 - t
-        mt2 = mt * mt
-        mt3 = mt2 * mt
-        return mt3 * p0 + 3 * mt2 * t * p1 + 3 * mt * t2 * p2 + t3 * p3
-
     def _blend_tangents( self, tangent_data, current_idx, target_tangents, ratio ):
-        """
-        Blend tangents using a bezier curve with middle bias for start position
-        
-        Adjustable Parameters:
-        - CONTROL_INFLUENCE: Base curve shape (0.0 to 1.0)
-            - Lower: Sharp transitions
-            - Higher: Smooth transitions
-            
-        - ASYMMETRY: Start vs end timing (0.0 to 1.0)
-            - 0.0: Symmetric
-            - Positive: Slower start, quicker end
-            
-        - EASE_STRENGTH: Overall intensity (0.0 to 2.0)
-            - Lower: More linear
-            - Higher: More pronounced curve
-            
-        - MIDDLE_BIAS: Pull middle towards start (0.0 to 1.0)
-            - 0.0: Normal curve
-            - Higher: Middle stays closer to start position
-        """
+        """Blend between current tangents and target tangents using rate curve"""
         if not tangent_data:
             return None
 
-        # ADJUSTABLE PARAMETERS
-        CONTROL_INFLUENCE = 0.5  # Base influence distance
-        ASYMMETRY = 0.3  # Timing asymmetry
-        EASE_STRENGTH = 0.5  # Overall easing strength
-        MIDDLE_BIAS = 0.6  # How much middle stays at start position
-
-        # Calculate control point positions
-        start_influence = CONTROL_INFLUENCE * ( 1.0 - ASYMMETRY )
-        end_influence = CONTROL_INFLUENCE * ( 1.0 + ASYMMETRY )
-
-        # Create bezier curve points with middle bias
-        p0 = 0.0  # Start value
-        p3 = 1.0  # End value
-        p1 = p0 + start_influence - ( start_influence * MIDDLE_BIAS )  # Pull down first control
-        p2 = p3 - end_influence - ( end_influence * MIDDLE_BIAS )  # Pull down second control
-
-        # Get eased ratio using bezier curve
-        eased_ratio = self._cubic_bezier( p0, p1, p2, p3, ratio )
-
-        # Apply ease strength
-        if EASE_STRENGTH != 1.0:
-            eased_ratio = pow( eased_ratio, 1.0 / EASE_STRENGTH )
-
-        # Get current tangent values
+        # Get current tangents
         curr_in_angle = tangent_data['in_angles'][current_idx]
         curr_in_weight = tangent_data['in_weights'][current_idx]
         curr_out_angle = tangent_data['out_angles'][current_idx]
         curr_out_weight = tangent_data['out_weights'][current_idx]
 
-        # Blend angles with wrap-around handling
+        try:
+            # Access the curve data correctly
+            current_value = self.blend_data[tangent_data['curve']]['data']['values'][current_idx]
+            values = self.blend_data[tangent_data['curve']]['data']['values']
+
+            # Find target value (next key value)
+            if current_idx < len( values ) - 1:
+                target_value = values[current_idx + 1]
+            else:
+                target_value = current_value
+
+            # Calculate distance from target
+            distance = abs( target_value - current_value )
+
+            # Get blend rate based on distance
+            blend_rate = rate_curve( distance )
+
+            # Apply rate to ratio for angle blending
+            eased_ratio = ratio * ( blend_rate / 89.5 )  # Normalize rate to 0-1
+
+            # Debug print
+            print( "Current Value: {:.1f}, Target Value: {:.1f}".format( current_value, target_value ) )
+            print( "Distance: {:.1f}, Rate: {:.1f}, Original Ratio: {:.3f}, Eased Ratio: {:.3f}".format( 
+                distance, blend_rate, ratio, eased_ratio ) )
+
+        except Exception as e:
+            print( "Error accessing values: {}".format( e ) )
+            # Fallback to regular ratio if we can't get the values
+            eased_ratio = ratio
+
+        # Blend angles using rate-adjusted ratio
         in_angle = self._blend_angles( curr_in_angle, target_tangents['in'][0], eased_ratio )
         out_angle = self._blend_angles( curr_out_angle, target_tangents['out'][0], eased_ratio )
 
-        # Blend weights
-        in_weight = curr_in_weight * ( 1 - eased_ratio ) + target_tangents['in'][1] * eased_ratio
-        out_weight = curr_out_weight * ( 1 - eased_ratio ) + target_tangents['out'][1] * eased_ratio
-
-        # Debug output
-        print( "\nBezier Blend Debug:" )
-        print( "Params - Control: %.2f, Asymmetry: %.2f, Strength: %.2f, Bias: %.2f" % ( 
-            CONTROL_INFLUENCE, ASYMMETRY, EASE_STRENGTH, MIDDLE_BIAS ) )
-        print( "Ratio: %.2f -> Eased: %.2f" % ( ratio, eased_ratio ) )
+        # Linear blend for weights
+        in_weight = curr_in_weight * ( 1 - ratio ) + target_tangents['in'][1] * ratio
+        out_weight = curr_out_weight * ( 1 - ratio ) + target_tangents['out'][1] * ratio
 
         return {
             'in': ( in_angle, in_weight ),
@@ -1593,8 +1559,8 @@ class CustomSlider( QSlider ):
                         for time in selected_keys:
                             value = cmds.keyframe( curve, time = ( time, ), q = True, vc = True )[0]
                             # print( "Debug Release - Curve: {0}, Time: {1}, Final Value: {2}".format( curve, time, value ) )
-                            ref_curve = 'locator1_translateY'
-                            ref_value = cmds.keyframe( ref_curve, time = ( time, ), q = True, eval = True )[0]
+                            # ref_curve = 'locator1_translateY'
+                            # ref_value = cmds.keyframe( ref_curve, time = ( time, ), q = True, eval = True )[0]
                             # print( "Debug Release - Ref Curve: {0}, Time: {1}, Final Value: {2}".format( ref_curve, time, ref_value ) )
 
             self._reset_state()
@@ -2228,6 +2194,7 @@ class PreferencesDialog( QDialog ):
         parent_dialog = self.parent()
         if parent_dialog:
             parent_dialog.slider.slider_width = width_value
+            parent_dialog.slider._initial_handle_label_position()
             parent_dialog.adjustSize()
 
     def _on_range_changed( self, radio_button ):
@@ -2448,21 +2415,39 @@ class WebrToolsPrefs( object ):
         self._save_prefs( self.prefs )
 
 
+def rate_curve( distance, power = 50 ):
+    """
+    Calculate angle change rate based on distance from target
+    Args:
+        distance: Distance from target value (0-6561)
+        power: Power for curve steepness
+    Returns:
+        Rate of angle change (0-89.5)
+    """
+    # Normalize distance to 0-1 range
+    x = min( distance / 6561.0, 1.0 )
+    # Calculate rate (inverted so closer = faster)
+    return ( 1 - np.power( x, power ) ) * 89.5
+
+
 def ease_value( x, curve_strength = 2.0 ):
     """
     Apply an easing curve to the input value.
     Args:
         x (float): Input value between -1 and 1
-        curve_strength (float): Controls how aggressive the curve is (default: 2.0)
-                              Higher values make the curve more pronounced
+        curve_strength (float): Controls how aggressive the curve is
     Returns:
         float: Eased value between -1 and 1
     """
+    # If value is at or beyond 100%, return without easing
+    if abs( x ) >= 1.0:
+        return x
+
     # Preserve the sign of the input
     sign = 1 if x >= 0 else -1
     x = abs( x )
 
-    # Apply power curve
+    # Apply power curve only to values less than 1
     eased = pow( x, curve_strength )
 
     # Return with original sign
