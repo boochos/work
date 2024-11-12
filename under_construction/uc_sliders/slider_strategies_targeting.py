@@ -5,10 +5,9 @@ import math
 import maya.cmds as cmds
 import maya.mel as mel
 import numpy as np
-import numpy as np
 
 
-class BlendStrategy:
+class TargetStrategy:
     """Base class for different blending behaviors"""
 
     def calculate_target_value( self, current_time, current_value, curve_data, blend_info ):
@@ -24,7 +23,7 @@ class BlendStrategy:
         pass
 
 
-class DirectKeyBlendStrategy( BlendStrategy ):
+class DirectTargetStrategy( TargetStrategy ):
     """Blend directly to prev/next keys"""
 
     def calculate_target_value( self, current_time, current_value, curve_data, blend_info ):
@@ -71,7 +70,7 @@ class DirectKeyBlendStrategy( BlendStrategy ):
         return flat_tangents, flat_tangents
 
 
-class LinearBlendStrategy( BlendStrategy ):
+class LinearTargetStrategy( TargetStrategy ):
 
     def calculate_target_value( self, current_time, current_value, curve_data, blend_info ):
         """
@@ -209,7 +208,7 @@ class LinearBlendStrategy( BlendStrategy ):
         return current_tangents, current_tangents
 
 
-class SplineBlendStrategy( BlendStrategy ):
+class SplineTargetStrategy( TargetStrategy ):
     """Blend strategy using cubic bezier spline interpolation to match Maya's behavior"""
 
     def __init__( self ):
@@ -274,7 +273,7 @@ class SplineBlendStrategy( BlendStrategy ):
             p2 = [p3[0] - adj, p3[1] - opo]
 
             # Calculate t directly from x (current_time)
-            # x = (1-t)Â³p0x + 3(1-t)Â²tp1x + 3(1-t)tÂ²p2x + tÂ³p3x
+            # x = (1-t)³p0x + 3(1-t)²tp1x + 3(1-t)t²p2x + t³p3x
             # Normalize t to 0-1 range
             t = ( current_time - p0[0] ) / gap
 

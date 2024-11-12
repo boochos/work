@@ -1,13 +1,13 @@
 import imp
 
+from under_construction.uc_sliders import slider_strategies_targeting
 import maya.cmds as cmds
 import maya.mel as mel
 
-import strategies
-imp.reload( strategies )
+imp.reload( slider_strategies_targeting )
 
 
-class BlendToolCore( object ):
+class SliderCore( object ):
     """Core class for data management"""
 
     def __init__( self ):
@@ -28,9 +28,9 @@ class BlendToolCore( object ):
 
         # Initialize strategies
         self.strategies = {
-            'direct': strategies.DirectKeyBlendStrategy(),
-            'linear': strategies.LinearBlendStrategy(),
-            'spline': strategies.SplineBlendStrategy()
+            'direct': slider_strategies_targeting.DirectTargetStrategy(),
+            'linear': slider_strategies_targeting.LinearTargetStrategy(),
+            'spline': slider_strategies_targeting.SplineTargetStrategy()
         }
         self.current_strategy = 'linear'
 
@@ -44,6 +44,7 @@ class BlendToolCore( object ):
             if cmds.animCurveEditor( ge, exists = True ):
                 curves = cmds.animCurveEditor( ge, q = True, curvesShown = True ) or []
 
+        # print( '___', curves )
         return curves
 
     def collect_curve_data( self, curve ):

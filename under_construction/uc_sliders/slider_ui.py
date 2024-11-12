@@ -12,7 +12,8 @@ from PySide2.QtWidgets import ( QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayo
                               QPushButton, QRadioButton, QButtonGroup, QGroupBox, QWidget )
 from shiboken2 import wrapInstance
 
-import core
+from under_construction.uc_prefs import uc_prefs_root
+from under_construction.uc_sliders import slider_core
 import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
 import maya.OpenMayaUI as omui
@@ -20,10 +21,9 @@ import maya.cmds as cmds
 import maya.mel as mel
 import numpy as np
 
-from .strategies import BlendStrategy, DirectKeyBlendStrategy, LinearBlendStrategy
-
-# print( "Core module path:", core.__file__ )  # This will show where it's finding core.py
-imp.reload( core )
+# print( "Core module path:", slider_core.__file__ )  # This will show where it's finding slider_core.py
+imp.reload( slider_core )
+imp.reload( uc_prefs_root )
 
 # Initialize the global variable
 global custom_dialog
@@ -83,10 +83,10 @@ class HandleLabel( QLabel ):
         """ )
 
 
-class CustomSlider( QSlider ):
+class Slider( QSlider ):
     """
     Custom slider widget for blending between animation poses.
-    Handles the core functionality of the blend pose tool.
+    Handles the slider_core functionality of the blend pose tool.
     """
     # Class variables for color transition points and colors
     NEGATIVE_THRESHOLD = -101  # Point where negative red zone starts
@@ -159,10 +159,10 @@ class CustomSlider( QSlider ):
     COLOR_TICK_MARK = QColor( 61, 69, 57 ).name()  # rgb(61, 69, 57)
 
     def __init__( self, parent = None, name = '', theme = 'orange' ):
-        super( CustomSlider, self ).__init__( QtCore.Qt.Horizontal, parent )
+        super( Slider, self ).__init__( QtCore.Qt.Horizontal, parent )
 
-        self.core = core.BlendToolCore()
-        # print( "Core initialized with key_cache:", hasattr( self.core, 'key_cache' ) )  # Debug
+        self.core = slider_core.SliderCore()
+        # print( "Core initialized with key_cache:", hasattr( self.slider_core, 'key_cache' ) )  # Debug
 
         self.slider_name = name[0:3]
         self.blend_data = {}
@@ -353,7 +353,7 @@ class CustomSlider( QSlider ):
 
     def setRange( self, minimum, maximum ):
         """Override setRange to update gradient when range changes"""
-        super( CustomSlider, self ).setRange( minimum, maximum )
+        super( Slider, self ).setRange( minimum, maximum )
         self._update_stylesheet()
 
     def _update_handle_label_position( self ):
@@ -754,7 +754,7 @@ class CustomSlider( QSlider ):
         if handle_rect.contains( event.pos() ):
             self._is_groove_click = False
             self._last_mouse_pos = event.pos().x()
-            super( CustomSlider, self ).mousePressEvent( event )
+            super( Slider, self ).mousePressEvent( event )
             return
 
         # Check if click is on groove
@@ -779,7 +779,7 @@ class CustomSlider( QSlider ):
             return
 
         self._is_groove_click = False
-        super( CustomSlider, self ).mousePressEvent( event )
+        super( Slider, self ).mousePressEvent( event )
 
     def mouseMoveEvent( self, event ):
         """
@@ -788,7 +788,7 @@ class CustomSlider( QSlider ):
         if not self._is_groove_click:
             if self._last_mouse_pos is None:
                 # print( 'last mouse pos: ', None )
-                super( CustomSlider, self ).mouseMoveEvent( event )
+                super( Slider, self ).mouseMoveEvent( event )
                 return
 
             # Get style option for proper handle positioning
@@ -863,7 +863,7 @@ class CustomSlider( QSlider ):
                     self._positive_locked = False
                     self.setValue( value_position )
                     # print( '___Before super call - Current Value: {}'.format( self.value() ) )
-                    super( CustomSlider, self ).mouseMoveEvent( event )
+                    super( Slider, self ).mouseMoveEvent( event )
                     # print( '___After super call - Current Value: {}'.format( self.value() ) )
                     return
                     # print( 'mouse', current_value )
@@ -898,7 +898,7 @@ class CustomSlider( QSlider ):
 
             # reset, didnt move beyond threshold but back between threshold ranges
             # print( 'Before super call - Current Value: {0}'.format( self.value() ) )
-            super( CustomSlider, self ).mouseMoveEvent( event )
+            super( Slider, self ).mouseMoveEvent( event )
             # print( 'After super call - Current Value: {0}'.format( self.value() ) )
 
     def mouseReleaseEvent( self, event ):
@@ -916,7 +916,7 @@ class CustomSlider( QSlider ):
             QtCore.QTimer.singleShot( 100, self._reset_after_click )
         else:
             self._last_mouse_pos = None
-            super( CustomSlider, self ).mouseReleaseEvent( event )
+            super( Slider, self ).mouseReleaseEvent( event )
 
     def _reset_after_click( self ):
         """Reset slider after a groove click"""
@@ -1604,13 +1604,13 @@ class CustomSlider( QSlider ):
         pass
 
 
-class BlendSlider( QWidget ):
+class SliderPkg( QWidget ):
     """Self-contained slider widget with toggle button and preferences"""
 
     def __init__( self, parent = None, name = "Blend_N", strategy = "linear", theme = "orange" ):
-        super( BlendSlider, self ).__init__( parent )
+        super( SliderPkg, self ).__init__( parent )
         self.slider_name = name
-        self.prefs = WebrToolsPrefs( name = self.slider_name )
+        self.prefs = SliderPreferences( name = self.slider_name )
 
         # Setup layout
         self.layout = QHBoxLayout( self )
@@ -1644,7 +1644,7 @@ class BlendSlider( QWidget ):
         ) )
 
         # Create slider with preferences
-        self.slider = CustomSlider( self, name = self.slider_name )
+        self.slider = Slider( self, name = self.slider_name )
         self.slider.core.set_blend_strategy( strategy )
         self.slider.set_theme( theme )
 
@@ -1707,7 +1707,7 @@ class BlendSlider( QWidget ):
 
     def _show_context_menu( self, position ):
         """Show preferences dialog for this slider"""
-        prefs_dialog = PreferencesDialog( self, self.slider_name )
+        prefs_dialog = SliderPreferencesDialog( self, self.slider_name )
         prefs_dialog.finished.connect( self._reset_button_state )
         global_pos = self.toggle_button.mapToGlobal( position )
         dialog_x = global_pos.x() - 20
@@ -1749,20 +1749,20 @@ class CustomDialog( QDialog ):
 
     def add_slider( self, name, strategy, theme ):
         """Add a new slider to the dialog"""
-        blend_slider = BlendSlider( self, name, strategy, theme )
+        blend_slider = SliderPkg( self, name, strategy, theme )
         self.layout.addWidget( blend_slider )
         self.sliders[name] = blend_slider
         self.adjustSize()
         return blend_slider
 
 
-class PreferencesDialog( QDialog ):
+class SliderPreferencesDialog( QDialog ):
     """Dialog for managing Blend Pose Tool preferences"""
 
     def __init__( self, parent = None, slider_name = None ):
-        super( PreferencesDialog, self ).__init__( parent )
+        super( SliderPreferencesDialog, self ).__init__( parent )
         self.slider_name = slider_name or "Blend_N"
-        self.prefs = WebrToolsPrefs( name = self.slider_name )
+        self.prefs = SliderPreferences( name = self.slider_name )
 
         # Enable mouse tracking
         self.setMouseTracking( True )
@@ -1838,13 +1838,13 @@ class PreferencesDialog( QDialog ):
         self._mouse_inside = False
         # Use a short timer to verify mouse hasn't re-entered before closing
         QtCore.QTimer.singleShot( 100, self._check_close )
-        super( PreferencesDialog, self ).leaveEvent( event )
+        super( SliderPreferencesDialog, self ).leaveEvent( event )
         # TODO: reset pref button to turn off hover color, set normal state.
 
     def enterEvent( self, event ):
         """Handle mouse entering the dialog window"""
         self._mouse_inside = True
-        super( PreferencesDialog, self ).enterEvent( event )
+        super( SliderPreferencesDialog, self ).enterEvent( event )
 
     def _check_close( self ):
         """Check if we should close the dialog"""
@@ -1896,7 +1896,7 @@ class PreferencesDialog( QDialog ):
         self.width_button_group = QButtonGroup( self )
 
         # Create radio buttons for width options
-        width_items = list( CustomSlider.DEFAULT_SLIDER_WIDTH.items() )
+        width_items = list( Slider.DEFAULT_SLIDER_WIDTH.items() )
         for i, item in enumerate( width_items ):
             size_name, value = item
             radio = QRadioButton( size_name )
@@ -1945,7 +1945,7 @@ class PreferencesDialog( QDialog ):
         self.range_button_group = QButtonGroup( self )
 
         # Create radio buttons for range options - sorted
-        range_items = list( CustomSlider.DEFAULT_RANGE.items() )
+        range_items = list( Slider.DEFAULT_RANGE.items() )
         # Sort by converting key to int for comparison
         range_items.sort( key = lambda x: int( x[0] ) )
         for i, item in enumerate( range_items ):
@@ -1972,7 +1972,7 @@ class PreferencesDialog( QDialog ):
         self.tick_width_button_group = QButtonGroup( self )
 
         # Sort tick width options by their values (thin to thick)
-        tick_items = list( CustomSlider.DEFAULT_TICK_WIDTH.items() )
+        tick_items = list( Slider.DEFAULT_TICK_WIDTH.items() )
         # Sort by value
         tick_items.sort( key = lambda x: x[1] )
         for i, item in enumerate( tick_items ):
@@ -1999,7 +1999,7 @@ class PreferencesDialog( QDialog ):
         self.tick_interval_button_group = QButtonGroup( self )
 
         # Create radio buttons for interval options
-        interval_items = list( CustomSlider.DEFAULT_TICK_INTERVAL.items() )
+        interval_items = list( Slider.DEFAULT_TICK_INTERVAL.items() )
         interval_items.sort( key = lambda x: int( x[0] ) )
         for i, item in enumerate( interval_items ):
             interval_name, value = item
@@ -2025,7 +2025,7 @@ class PreferencesDialog( QDialog ):
         self.lock_margin_button_group = QButtonGroup( self )
 
         # Create radio buttons for margin options
-        margin_items = list( CustomSlider.DEFAULT_LOCK_RELEASE_MARGIN.items() )
+        margin_items = list( Slider.DEFAULT_LOCK_RELEASE_MARGIN.items() )
         margin_items.sort( key = lambda x: int( x[0] ) )
         for i, item in enumerate( margin_items ):
             margin_name, value = item
@@ -2051,7 +2051,7 @@ class PreferencesDialog( QDialog ):
         self.click_value_button_group = QButtonGroup( self )
 
         # Create radio buttons for click value options
-        click_value_items = list( CustomSlider.DEFAULT_GROOVE_CLICK_VALUE.items() )
+        click_value_items = list( Slider.DEFAULT_GROOVE_CLICK_VALUE.items() )
         click_value_items.sort( key = lambda x: int( x[0] ) )
         for i, item in enumerate( click_value_items ):
             value_name, value = item
@@ -2077,7 +2077,7 @@ class PreferencesDialog( QDialog ):
         self.curve_strength_button_group = QButtonGroup( self )
 
         # Create radio buttons for curve strength options
-        strength_items = list( CustomSlider.DEFAULT_CURVE_STRENGTH.items() )
+        strength_items = list( Slider.DEFAULT_CURVE_STRENGTH.items() )
         strength_items.sort( key = lambda x: float( x[0] ) )  # Sort by numeric value
 
         for i, item in enumerate( strength_items ):
@@ -2106,41 +2106,41 @@ class PreferencesDialog( QDialog ):
 
     def _load_current_values( self ):
         """Load current preference values and select appropriate radio buttons"""
-        # Get current values from preferences with CustomSlider class defaults
+        # Get current values from preferences with Slider class defaults
         current_width = self.prefs.get_tool_pref( 
             self.slider_name,
             'slider_width',
-            CustomSlider.get_default_width()
+            Slider.get_default_width()
         )
         current_range = self.prefs.get_tool_pref( 
             self.slider_name,
             'slider_range',
-            CustomSlider.get_default_range()
+            Slider.get_default_range()
         )
         current_tick_width = self.prefs.get_tool_pref( 
             self.slider_name,
             'tick_width_name',  # Note: getting name, not value
-            CustomSlider.get_default_tick_width_txt()
+            Slider.get_default_tick_width_txt()
         )
         current_tick_interval = self.prefs.get_tool_pref( 
             self.slider_name,
             'tick_interval',
-            CustomSlider.get_default_tick_interval()
+            Slider.get_default_tick_interval()
         )
         current_lock_margin = self.prefs.get_tool_pref( 
             self.slider_name,
             'lock_release_margin',
-            CustomSlider.get_default_lock_release_margin()
+            Slider.get_default_lock_release_margin()
         )
         current_click_value = self.prefs.get_tool_pref( 
             self.slider_name,
             'groove_click_value',
-            CustomSlider.get_default_groove_click_value()
+            Slider.get_default_groove_click_value()
         )
         current_curve_strength = self.prefs.get_tool_pref( 
             self.slider_name,
             'curve_strength_name',  # Note: getting name, not value
-            CustomSlider.get_default_curve_strength_txt()
+            Slider.get_default_curve_strength_txt()
         )
         # Select appropriate width radio button
         for button in self.width_button_group.buttons():
@@ -2282,49 +2282,49 @@ class PreferencesDialog( QDialog ):
             parent_dialog.slider.curve_strength = strength_value
 
 
-class WebrToolsPrefs( object ):
+class SliderPreferences( object ):
     """
     Manages preferences for WebrTools across different platforms.
     Handles reading, writing, and default values for tool-specific preferences.
     """
 
     def __init__( self, name = None ):
-        self.prefs_file = 'WebrToolsPrefs.json'
+        self.prefs_file = 'uc_slider_prefs.json'
         self.prefs_path = self._get_prefs_path()
         self.slider_name = name if name else "Blend_N"  # Default if no name provided
-        # Initialize default preferences using CustomSlider class defaults
+        # Initialize default preferences using Slider class defaults
         self.default_prefs = {
             self.slider_name: {
                 # Visibility
                 'slider_visible': True,
 
                 # Width preferences
-                'slider_width': CustomSlider.get_default_width(),
-                'slider_width_name': CustomSlider.get_default_width_txt(),
+                'slider_width': Slider.get_default_width(),
+                'slider_width_name': Slider.get_default_width_txt(),
 
                 # Range preferences
-                'slider_range': CustomSlider.get_default_range(),
-                'slider_range_name': CustomSlider.get_default_range_txt(),
+                'slider_range': Slider.get_default_range(),
+                'slider_range_name': Slider.get_default_range_txt(),
 
                 # Tick width preferences
-                'tick_width': CustomSlider.get_default_tick_width(),
-                'tick_width_name': CustomSlider.get_default_tick_width_txt(),
+                'tick_width': Slider.get_default_tick_width(),
+                'tick_width_name': Slider.get_default_tick_width_txt(),
 
                 # Tick interval preferences
-                'tick_interval': CustomSlider.get_default_tick_interval(),
-                'tick_interval_name': CustomSlider.get_default_tick_interval_txt(),
+                'tick_interval': Slider.get_default_tick_interval(),
+                'tick_interval_name': Slider.get_default_tick_interval_txt(),
 
                 # Lock release margin preferences
-                'lock_release_margin': CustomSlider.get_default_lock_release_margin(),
-                'lock_release_margin_name': CustomSlider.get_default_lock_release_margin_txt(),
+                'lock_release_margin': Slider.get_default_lock_release_margin(),
+                'lock_release_margin_name': Slider.get_default_lock_release_margin_txt(),
 
                 # Groove click value preferences
-                'groove_click_value': CustomSlider.get_default_groove_click_value(),
-                'groove_click_value_name': CustomSlider.get_default_groove_click_value_txt(),
+                'groove_click_value': Slider.get_default_groove_click_value(),
+                'groove_click_value_name': Slider.get_default_groove_click_value_txt(),
 
                 # Curve strength preferences
-                'curve_strength': CustomSlider.get_default_curve_strength(),
-                'curve_strength_name': CustomSlider.get_default_curve_strength_txt()
+                'curve_strength': Slider.get_default_curve_strength(),
+                'curve_strength_name': Slider.get_default_curve_strength_txt()
             }
         }
 
@@ -2332,33 +2332,10 @@ class WebrToolsPrefs( object ):
 
     def _get_prefs_path( self ):
         """
-        Get the appropriate preferences directory path based on OS.
+        Get the preferences file path using the PreferencesManager.
         Returns full path to the preferences file.
         """
-        system = platform.system().lower()
-
-        if system == 'windows':
-            maya_app_dir = os.environ.get( 'MAYA_APP_DIR' )
-            if maya_app_dir:
-                base_path = maya_app_dir
-            else:
-                base_path = os.path.join( os.environ.get( 'USERPROFILE', '' ), 'Documents', 'maya' )
-
-        elif system == 'darwin':  # macOS
-            base_path = os.path.expanduser( '~/Library/Preferences/Autodesk/maya' )
-
-        elif system == 'linux':
-            base_path = os.path.expanduser( '~/maya' )
-
-        else:
-            raise OSError( 'Unsupported operating system: {}'.format( system ) )
-
-        # Create scripts directory if it doesn't exist
-        scripts_path = os.path.join( base_path, 'scripts' )
-        if not os.path.exists( scripts_path ):
-            os.makedirs( scripts_path )
-
-        return os.path.join( scripts_path, self.prefs_file )
+        return uc_prefs_root.prefs_dir_manager.get_pref_file_path( self.prefs_file )
 
     def _load_prefs( self ):
         """
