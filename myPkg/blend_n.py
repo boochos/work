@@ -991,12 +991,14 @@ class CustomSlider( QSlider ):
                         # Get updated curve data after key insertion
                         curve_data = self.core.collect_curve_data( curve )
 
+                # print( 'here', curve )
                 self.blend_data[curve] = {
                     'data': curve_data,
                     'prev_indices': self.core.calculate_prev_indices( curve_data['keys'] ),
                     'next_indices': self.core.calculate_next_indices( curve_data['keys'] ),
                     'curve': curve
                 }
+                # print( 'after' )
 
         # print( 'curve data__', curve_data )
         # print( 'blend data__', self.blend_data )
@@ -1029,7 +1031,9 @@ class CustomSlider( QSlider ):
                 continue
 
             # Get cached data
+            # print( '__h', curve )
             curve_info = self.blend_data[curve]
+            # print( '__h_', curve )
             curve_data = curve_info['data']
 
             # Get keys to update
@@ -1074,7 +1078,6 @@ class CustomSlider( QSlider ):
             'prev_tangents': prev_tangents,
             'next_tangents': next_tangents
         }
-
         self.blend_data[obj]["{0}_{1}".format( curve, time )] = key_data
 
     def _get_current_value( self, curve ):
@@ -1300,12 +1303,12 @@ class CustomSlider( QSlider ):
 
         # Apply easing curve
         curved_blend = ease_value( linear_blend, self._curve_strength )
-
+        # print( 'proc' )
         # Process each object with the curved blend factor
         self.update_queue = []
         for obj in self.selected_objects:
             self._process_object_updates( obj, curved_blend )
-
+        # print( 'exe' )
         # Execute batched updates
         if self.update_queue:
             self._execute_batch_updates()
@@ -1313,7 +1316,7 @@ class CustomSlider( QSlider ):
         # should precombine selected objects and belnds nodes to list to explcicity only call dgdirty oncecombine
         cmds.dgdirty( self.blend_nodes if self.blend_nodes else [] )
         mel.eval( 'dgdirty;' )
-        # print( value )
+        # print( 'move', value )
 
     def _process_object_updates( self, obj, blend_factor ):
         """Process updates for a single object"""
@@ -1344,7 +1347,6 @@ class CustomSlider( QSlider ):
                     # Calculate new values using strategy
                     new_value, new_tangents = self._calculate_blend( 
                         curve_data, curve_info, time, blend_factor )
-
                     # print( "New Value:", new_value )
                     # print( "New Tangents:", new_tangents )
 
@@ -1357,7 +1359,6 @@ class CustomSlider( QSlider ):
                         } )
                         # print( "Update Queued" )
                     else:
-                        print( "No Update Queued - New Value was None" )
                         pass
 
     def _batch_get_tangents( self, curve ):
@@ -1428,15 +1429,12 @@ class CustomSlider( QSlider ):
         # Get strategy
         strategy = self.core.get_current_strategy()
         curve_info['curve'] = curve_info.get( 'curve', '' )
-
         # Calculate target values using strategy
         prev_target, next_target = strategy.calculate_target_value( 
             time, current_value, curve_data, curve_info )
-
         # Calculate target tangents using strategy
         prev_tangents, next_tangents = strategy.calculate_target_tangents( 
             time, curve_data, curve_info )
-
         # Determine which target to use based on blend direction
         if blend_factor >= 0:
             target_value = next_target
@@ -1449,7 +1447,6 @@ class CustomSlider( QSlider ):
 
         # Calculate blended value
         new_value = current_value * ( 1 - ratio ) + target_value * ratio
-
         # Calculate blended tangents
         new_tangents = None
         if target_tangents:
@@ -1459,7 +1456,6 @@ class CustomSlider( QSlider ):
                 target_tangents,
                 ratio
             )
-
         return new_value, new_tangents
 
     def _blend_tangents( self, tangent_data, current_idx, target_tangents, ratio ):
@@ -1474,9 +1470,13 @@ class CustomSlider( QSlider ):
         curr_out_weight = tangent_data['out_weights'][current_idx]
 
         try:
-            # Access the curve data correctly
-            current_value = self.blend_data[tangent_data['curve']]['data']['values'][current_idx]
-            values = self.blend_data[tangent_data['curve']]['data']['values']
+            # Debug print to see available data
+            # print( "blend_data keys:", self.blend_data.keys() )
+
+            # Get the current curve (first one in blend_data)
+            curve = list( self.blend_data.keys() )[0]
+            current_value = self.blend_data[curve]['data']['values'][current_idx]
+            values = self.blend_data[curve]['data']['values']
 
             # Find target value (next key value)
             if current_idx < len( values ) - 1:
@@ -1494,9 +1494,8 @@ class CustomSlider( QSlider ):
             eased_ratio = ratio * ( blend_rate / 89.5 )  # Normalize rate to 0-1
 
             # Debug print
-            print( "Current Value: {:.1f}, Target Value: {:.1f}".format( current_value, target_value ) )
-            print( "Distance: {:.1f}, Rate: {:.1f}, Original Ratio: {:.3f}, Eased Ratio: {:.3f}".format( 
-                distance, blend_rate, ratio, eased_ratio ) )
+            # print( "Current Value: {:.1f}, Target Value: {:.1f}".format( current_value, target_value ) )
+            # print( "Distance: {:.1f}, Rate: {:.1f}, Original Ratio: {:.3f}, Eased Ratio: {:.3f}".format( distance, blend_rate, ratio, eased_ratio ) )
 
         except Exception as e:
             print( "Error accessing values: {}".format( e ) )
