@@ -998,7 +998,11 @@ class Slider( QSlider ):
                     'next_indices': self.core.calculate_next_indices( curve_data['keys'] ),
                     'curve': curve
                 }
-                # print( 'after' )
+                print( 'after, data' )
+                print( self.blend_data.keys() )
+                print( self.blend_data[curve]['data'] )
+            else:
+                print( '______no keys' )
 
         # print( 'curve data__', curve_data )
         # print( 'blend data__', self.blend_data )
@@ -1028,6 +1032,7 @@ class Slider( QSlider ):
         """Process curves for an object"""
         for curve in self.all_curves:
             if curve not in self.blend_data:
+                print( '__bs__' )
                 continue
 
             # Get cached data
@@ -1070,6 +1075,7 @@ class Slider( QSlider ):
         # Store for blending
         if obj not in self.blend_data:
             self.blend_data[obj] = {}
+            # print( '__obj__')
 
         key_data = {
             'current_value': current_value,
@@ -1450,53 +1456,54 @@ class Slider( QSlider ):
         # Calculate blended tangents
         new_tangents = None
         if target_tangents:
+            # print( '__curve_info__', curve_info['curve'] )
+            # print( '__curve_data__', curve_data['keys'][current_idx] )
+            # print( '__current_index__', current_idx )
             new_tangents = self._blend_tangents( 
-                curve_data['tangents'],
+                curve_data,
                 current_idx,
+                target_value,
                 target_tangents,
-                ratio
+                ratio,
+                curve_info['curve']
             )
         return new_value, new_tangents
 
-    def _blend_tangents( self, tangent_data, current_idx, target_tangents, ratio ):
-        """Blend between current tangents and target tangents using rate curve"""
-        if not tangent_data:
+    def _blend_tangents( self, curve_data, current_idx, target_value, target_tangents, ratio, curve ):
+        """Blend between current tangents and target tangents using rate curve
+            Ration = slider position, normalized
+        """
+        if not curve_data:
             return None
 
         # Get current tangents
-        curr_in_angle = tangent_data['in_angles'][current_idx]
-        curr_in_weight = tangent_data['in_weights'][current_idx]
-        curr_out_angle = tangent_data['out_angles'][current_idx]
-        curr_out_weight = tangent_data['out_weights'][current_idx]
+        curr_in_angle = curve_data['tangents']['in_angles'][current_idx]
+        curr_in_weight = curve_data['tangents']['in_weights'][current_idx]
+        curr_out_angle = curve_data['tangents']['out_angles'][current_idx]
+        curr_out_weight = curve_data['tangents']['out_weights'][current_idx]
 
         try:
-            # Debug print to see available data
-            # print( "blend_data keys:", self.blend_data.keys() )
 
-            # Get the current curve (first one in blend_data)
-            curve = list( self.blend_data.keys() )[0]
-            current_value = self.blend_data[curve]['data']['values'][current_idx]
-            values = self.blend_data[curve]['data']['values']
-
-            # Find target value (next key value)
-            if current_idx < len( values ) - 1:
-                target_value = values[current_idx + 1]
-            else:
-                target_value = current_value
+            current_value = cmds.keyframe( curve, q = True, time = ( curve_data['keys'][current_idx], ), eval = True )[0]
 
             # Calculate distance from target
             distance = abs( target_value - current_value )
 
             # Get blend rate based on distance
             blend_rate = rate_curve( distance )
+            # print( '__rate__', blend_rate )
 
-            # Apply rate to ratio for angle blending
-            eased_ratio = ratio * ( blend_rate / 89.5 )  # Normalize rate to 0-1
+            # Then in blend_tangents, we could try:
+            if ratio == 1.0:
+                eased_ratio = ratio
+            else:
+                eased_ratio = ratio * blend_rate / 89.5
+            # print( '__mltplier_ratio__', blend_rate / 89.5, ratio, eased_ratio )
 
             # Debug print
-            # print( "Current Value: {:.1f}, Target Value: {:.1f}".format( current_value, target_value ) )
-            # print( "Distance: {:.1f}, Rate: {:.1f}, Original Ratio: {:.3f}, Eased Ratio: {:.3f}".format( distance, blend_rate, ratio, eased_ratio ) )
-
+            '''
+            print( "Distance: %.1f, Ratio: %.3f, Eased: %.3f, Angle: %.1f -> %.1f" % ( 
+                distance, ratio, eased_ratio, curr_in_angle, target_tangents['in'][0] ) )'''
         except Exception as e:
             print( "Error accessing values: {}".format( e ) )
             # Fallback to regular ratio if we can't get the values
@@ -2400,10 +2407,10 @@ def rate_curve( distance, power = 50 ):
     Returns:
         Rate of angle change (0-89.5)
     """
-    # Normalize distance to 0-1 range
-    x = min( distance / 6561.0, 1.0 )
-    # Calculate rate (inverted so closer = faster)
-    return ( 1 - np.power( x, power ) ) * 89.5
+    x = min( distance / 6561.0, 1.0 )  # 6561.0 Try 100 as max meaningful distance
+    # Don't invert - let larger distances create smaller rates
+    # print( np.power( 1 - x, power ) * 89.5 )
+    return np.power( 1 - x, power ) * 89.5
 
 
 def ease_value( x, curve_strength = 2.0 ):
