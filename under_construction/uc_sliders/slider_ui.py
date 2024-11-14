@@ -1054,7 +1054,7 @@ class Slider( QSlider ):
 
     def _process_key_update( self, obj, curve, time, curve_data, curve_info ):
         """Process update for a single key"""
-        strategy = self.core.get_current_strategy()
+        strategy = self.core.get_current_targeting_strategy()
 
         # Get current value
         current_idx = curve_data['key_map'].get( time )
@@ -1261,7 +1261,7 @@ class Slider( QSlider ):
         current_value = curve_data['values'][current_idx]
 
         # Get strategy
-        strategy = self.core.get_current_strategy()
+        strategy = self.core.get_current_targeting_strategy()
         curve_info['curve'] = curve_info.get( 'curve', '' )
         # Calculate target values using strategy
         prev_target, next_target = strategy.calculate_target_value( 
@@ -1287,7 +1287,7 @@ class Slider( QSlider ):
             # print( '__curve_info__', curve_info['curve'] )
             # print( '__curve_data__', curve_data['keys'][current_idx] )
             # print( '__current_index__', current_idx )
-            new_tangents = self._blend_tangents( 
+            new_tangents = self.core._blend_tangents( 
                 curve_data,
                 current_idx,
                 target_value,
@@ -1297,6 +1297,7 @@ class Slider( QSlider ):
             )
         return new_value, new_tangents
 
+    '''
     def _blend_tangents( self, curve_data, current_idx, target_value, target_tangents, ratio, curve ):
         """Blend between current tangents and target tangents using rate curve
             Ration = slider position, normalized
@@ -1329,9 +1330,8 @@ class Slider( QSlider ):
             # print( '__mltplier_ratio__', blend_rate / 89.5, ratio, eased_ratio )
 
             # Debug print
-            '''
-            print( "Distance: %.1f, Ratio: %.3f, Eased: %.3f, Angle: %.1f -> %.1f" % ( 
-                distance, ratio, eased_ratio, curr_in_angle, target_tangents['in'][0] ) )'''
+            
+            #print( "Distance: %.1f, Ratio: %.3f, Eased: %.3f, Angle: %.1f -> %.1f" % ( distance, ratio, eased_ratio, curr_in_angle, target_tangents['in'][0] ) )
         except Exception as e:
             print( "Error accessing values: {}".format( e ) )
             # Fallback to regular ratio if we can't get the values
@@ -1368,6 +1368,7 @@ class Slider( QSlider ):
             result -= 360
 
         return result
+        '''
 
     def __RELEASE__( self ):
         pass
@@ -1442,7 +1443,7 @@ class Slider( QSlider ):
 class SliderPkg( QWidget ):
     """Self-contained slider widget with toggle button and preferences"""
 
-    def __init__( self, parent = None, name = "Blend_N", strategy = "linear", theme = "orange" ):
+    def __init__( self, parent = None, name = "Blend_N", strategy = "linear", theme = "orange", blend_strategy = "rate" ):
         super( SliderPkg, self ).__init__( parent )
         self.slider_name = name
         self.prefs = SliderPreferences( name = self.slider_name )
@@ -1480,7 +1481,11 @@ class SliderPkg( QWidget ):
 
         # Create slider with preferences
         self.slider = Slider( self, name = self.slider_name )
-        self.slider.core.set_blend_strategy( strategy )
+
+        # Set strategies
+        self.slider.core.set_targeting_strategy( strategy )
+        self.slider.core._set_blending_strategy( blend_strategy )  # Internal
+
         self.slider.set_theme( theme )
 
         # Load preferences
@@ -1578,17 +1583,17 @@ class CustomDialog( QDialog ):
         self.sliders = {}
 
         # Create initial slider
-        self.add_slider( "Direct", "direct", "magenta" )
-        self.add_slider( "Linear", "linear", "purple" )
-        self.add_slider( "Spline", "spline", "blue" )
+        self.add_slider( "Direct", "direct", "magenta", "rate" )
+        self.add_slider( "Linear", "linear", "purple", "rate" )
+        self.add_slider( "Spline", "spline", "blue", "rate" )
 
-    def add_slider( self, name, strategy, theme ):
+    def add_slider( self, name, target_strategy, theme, blend_strategy ):
         """Add a new slider to the dialog"""
-        blend_slider = SliderPkg( self, name, strategy, theme )
-        self.layout.addWidget( blend_slider )
-        self.sliders[name] = blend_slider
+        _slider = SliderPkg( self, name, target_strategy, theme, blend_strategy )
+        self.layout.addWidget( _slider )
+        self.sliders[name] = _slider
         self.adjustSize()
-        return blend_slider
+        return _slider
 
 
 class SliderPreferencesDialog( QDialog ):
