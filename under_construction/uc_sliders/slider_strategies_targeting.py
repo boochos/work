@@ -254,9 +254,11 @@ class SplineTargetStrategy( TargetStrategy ):
             next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
             next_in_weight = tangent_data['in_weights'][next_key]
 
+            '''
             print( "Debug - weights:" )
             print( "prev_out_weight:", prev_out_weight )
             print( "next_in_weight:", next_in_weight )
+            '''
 
             # Calculate control points using trig
             # P1
@@ -273,7 +275,7 @@ class SplineTargetStrategy( TargetStrategy ):
             p2 = [p3[0] - adj, p3[1] - opo]
 
             # Calculate t directly from x (current_time)
-            # x = (1-t)³p0x + 3(1-t)²tp1x + 3(1-t)t²p2x + t³p3x
+            # x = (1-t)Â³p0x + 3(1-t)Â²tp1x + 3(1-t)tÂ²p2x + tÂ³p3x
             # Normalize t to 0-1 range
             t = ( current_time - p0[0] ) / gap
 
@@ -290,12 +292,14 @@ class SplineTargetStrategy( TargetStrategy ):
                            p3[1] * t3 )
 
             # Print debug info
+            '''
             print( "Debug - Control Points:" )
             print( "P0:", p0 )
             print( "P1:", p1 )
             print( "P2:", p2 )
             print( "P3:", p3 )
             print( "t value:", t )
+            '''
 
             # Calculate blend targets
             delta = bezier_value - current_value
@@ -381,6 +385,7 @@ class SplineTargetStrategy( TargetStrategy ):
                 point_x = ( mt * tan_in_x ) + ( t * tan_out_x )
                 point_y = ( mt * tan_in_y ) + ( t * tan_out_y )
 
+                '''
                 print( "Debug Control Points:" )
                 print( "P0:", p0 )
                 print( "P1:", p1 )
@@ -396,6 +401,7 @@ class SplineTargetStrategy( TargetStrategy ):
                 print( "Tan In:", [tan_in_x, tan_in_y] )
                 print( "Point:", [point_x, point_y] )
                 print( "Tan Out:", [tan_out_x, tan_out_y] )
+                '''
 
                 # Calculate tangent angles exactly like getPointTangents
                 # In tangent
@@ -416,11 +422,13 @@ class SplineTargetStrategy( TargetStrategy ):
                 in_length = min( max( in_length, 0.1 ), 10.0 )
                 out_length = min( max( out_length, 0.1 ), 10.0 )
 
+                '''
                 print( "Debug Angles:" )
                 print( "In angle:", in_angle )
                 print( "Out angle:", out_angle )
                 print( "In length:", in_length )
                 print( "Out length:", out_length )
+                '''
 
                 # Build tangent targets
                 negative_tangents = {

@@ -39,9 +39,10 @@ class SliderCore( object ):
         # Initialize blending strategies
         self.blending_strategies = {
             'rate': slider_strategies_blending.RateBasedBlendStrategy(),
-            'linear': slider_strategies_blending.LinearBlendStrategy()
+            'linear': slider_strategies_blending.LinearBlendStrategy(),
+            'geom': slider_strategies_blending.GeometricBlendStrategy()  # Add new strategy
         }
-        self.current_blending_strategy = 'rate'  # Default to rate-based blending
+        self.current_blending_strategy = 'trig'  # Default to rate-based blending
 
     def get_curves( self ):
         """Get and cache visible/selected curves"""

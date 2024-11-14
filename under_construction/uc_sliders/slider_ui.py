@@ -102,7 +102,8 @@ class Slider( QSlider ):
     DEFAULT_RANGE = {
         '100': 100,
         '150': 150,  # default
-        '200': 200
+        '200': 200,
+        '300': 300
     }
     DEFAULT_TICK_WIDTH = {
         'thin': 0.01,
@@ -124,7 +125,9 @@ class Slider( QSlider ):
         '1': 1,  # default
         '2': 2,
         '3': 3,
-        '5': 5
+        '5': 5,
+        '25': 25,
+        '50': 50
     }
     DEFAULT_CURVE_STRENGTH = {
         '1.0': 1.0,  # Linear
@@ -1297,79 +1300,6 @@ class Slider( QSlider ):
             )
         return new_value, new_tangents
 
-    '''
-    def _blend_tangents( self, curve_data, current_idx, target_value, target_tangents, ratio, curve ):
-        """Blend between current tangents and target tangents using rate curve
-            Ration = slider position, normalized
-        """
-        if not curve_data:
-            return None
-
-        # Get current tangents
-        curr_in_angle = curve_data['tangents']['in_angles'][current_idx]
-        curr_in_weight = curve_data['tangents']['in_weights'][current_idx]
-        curr_out_angle = curve_data['tangents']['out_angles'][current_idx]
-        curr_out_weight = curve_data['tangents']['out_weights'][current_idx]
-
-        try:
-
-            current_value = cmds.keyframe( curve, q = True, time = ( curve_data['keys'][current_idx], ), eval = True )[0]
-
-            # Calculate distance from target
-            distance = abs( target_value - current_value )
-
-            # Get blend rate based on distance
-            blend_rate = rate_curve( distance )
-            # print( '__rate__', blend_rate )
-
-            # Then in blend_tangents, we could try:
-            if ratio == 1.0:
-                eased_ratio = ratio
-            else:
-                eased_ratio = ratio * blend_rate / 89.5
-            # print( '__mltplier_ratio__', blend_rate / 89.5, ratio, eased_ratio )
-
-            # Debug print
-            
-            #print( "Distance: %.1f, Ratio: %.3f, Eased: %.3f, Angle: %.1f -> %.1f" % ( distance, ratio, eased_ratio, curr_in_angle, target_tangents['in'][0] ) )
-        except Exception as e:
-            print( "Error accessing values: {}".format( e ) )
-            # Fallback to regular ratio if we can't get the values
-            eased_ratio = ratio
-
-        # Blend angles using rate-adjusted ratio
-        in_angle = self._blend_angles( curr_in_angle, target_tangents['in'][0], eased_ratio )
-        out_angle = self._blend_angles( curr_out_angle, target_tangents['out'][0], eased_ratio )
-
-        # Linear blend for weights
-        in_weight = curr_in_weight * ( 1 - ratio ) + target_tangents['in'][1] * ratio
-        out_weight = curr_out_weight * ( 1 - ratio ) + target_tangents['out'][1] * ratio
-
-        return {
-            'in': ( in_angle, in_weight ),
-            'out': ( out_angle, out_weight )
-        }
-
-    def _blend_angles( self, start_angle, end_angle, ratio ):
-        """Blend angles handling wrap-around for shortest path"""
-        diff = end_angle - start_angle
-        if abs( diff ) > 180:
-            if diff > 0:
-                end_angle -= 360
-            else:
-                end_angle += 360
-
-        result = start_angle * ( 1 - ratio ) + end_angle * ratio
-
-        # Normalize result to 0-360 range
-        while result < 0:
-            result += 360
-        while result >= 360:
-            result -= 360
-
-        return result
-        '''
-
     def __RELEASE__( self ):
         pass
 
@@ -1443,7 +1373,7 @@ class Slider( QSlider ):
 class SliderPkg( QWidget ):
     """Self-contained slider widget with toggle button and preferences"""
 
-    def __init__( self, parent = None, name = "Blend_N", strategy = "linear", theme = "orange", blend_strategy = "rate" ):
+    def __init__( self, parent = None, name = "Blend_N", strategy = "linear", theme = "orange", blend_strategy = "trig" ):
         super( SliderPkg, self ).__init__( parent )
         self.slider_name = name
         self.prefs = SliderPreferences( name = self.slider_name )
@@ -1583,7 +1513,7 @@ class CustomDialog( QDialog ):
         self.sliders = {}
 
         # Create initial slider
-        self.add_slider( "Direct", "direct", "magenta", "rate" )
+        self.add_slider( "Direct", "direct", "magenta", "geom" )
         self.add_slider( "Linear", "linear", "purple", "rate" )
         self.add_slider( "Spline", "spline", "blue", "rate" )
 
