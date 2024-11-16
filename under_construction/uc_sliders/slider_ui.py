@@ -165,12 +165,9 @@ class Slider( QSlider ):
         super( Slider, self ).__init__( QtCore.Qt.Horizontal, parent )
 
         self.core = slider_core.SliderCore()
-        # print( "Core initialized with key_cache:", hasattr( self.slider_core, 'key_cache' ) )  # Debug
-
         self.slider_name = name[0:3]
-        self.blend_data = {}
+
         self.update_queue = []
-        self.moved = False
         self._is_disabled = False  # Add state tracking
 
         # Initialize preference-based values using class defaults
@@ -768,7 +765,7 @@ class Slider( QSlider ):
             center = self.width() / 2
 
             # Trigger the selection query if not already done
-            if not self.all_curves:
+            if not self.core.curve_data:  # Check if we have any curve data
                 self._before_handle_press()
 
             # Store click direction
@@ -954,65 +951,12 @@ class Slider( QSlider ):
     def on_handle_press( self ):
         """HOOK, Query and store the current animation state"""
 
-        # get curves
-        self.all_curves = self.core.get_curves()  # self._get_visible_curves()
-
-        if not self.all_curves:
+        if not self.core.initialize_blend_session():
             message( 'No animation curves found', warning = True )
-            self._is_disabled = True  # Set disabled state
+            self._is_disabled = True
             self._update_stylesheet( self.value() )
-            return
 
-        # initialize
-        self.selected_objects = cmds.ls( selection = True )
-        self.anim_layers = cmds.ls( type = 'animLayer' )
-        self._get_blend_nodes()
-        self.current_time = cmds.currentTime( query = True )
-        self._initialize_key_values()
-
-        # Clear and initialize blend data
-        self.blend_data = {}
-
-        # Batch collect data for all curves
-        for curve in self.all_curves:
-            curve_data = self.core.collect_curve_data( curve )
-            if curve_data['keys']:  # Only add if curve has keys
-                selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True ) or []
-
-                # If no selection, handle current time key
-                if not selected_keys:
-                    if self.current_time not in curve_data['key_map']:
-                        # Insert key and update curve_data
-                        # print( curve, self.current_time )
-                        # Open undo chunk
-                        if not self.moved:
-                            self.moved = True
-                            cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
-                        # insert key
-                        current_value = cmds.keyframe( curve, time = ( self.current_time, ), q = True, eval = True )[0]
-                        cmds.setKeyframe( curve, time = self.current_time, insert = True, value = current_value )
-                        # Get updated curve data after key insertion
-                        curve_data = self.core.collect_curve_data( curve )
-
-                # print( 'here', curve )
-                self.blend_data[curve] = {
-                    'data': curve_data,
-                    'prev_indices': self.core.calculate_prev_indices( curve_data['keys'] ),
-                    'next_indices': self.core.calculate_next_indices( curve_data['keys'] ),
-                    'curve': curve
-                }
-                print( 'after, data' )
-                print( self.blend_data.keys() )
-                print( self.blend_data[curve]['data'] )
-            else:
-                print( '______no keys' )
-
-        # print( 'curve data__', curve_data )
-        # print( 'blend data__', self.blend_data )
-        # Process curves and their objects
-        for obj in self.selected_objects:
-            self._process_object_curves( obj )
-
+    '''
     def _get_blend_nodes( self ):
         """Finds blend nodes associated with anim layers in scope, need these to mark dirty so maya updates"""
         for layer in self.anim_layers:
@@ -1024,6 +968,7 @@ class Slider( QSlider ):
                 # print( 'no blends' )
                 pass
         # print( 'blends', self.blend_nodes )
+        '''
 
     def _initialize_key_values( self ):
         """Initialize storage dictionaries for key values"""
@@ -1031,6 +976,7 @@ class Slider( QSlider ):
         self.next_key_values = {}
         self.initial_values = {}
 
+    '''
     def _process_object_curves( self, obj ):
         """Process curves for an object"""
         for curve in self.all_curves:
@@ -1088,6 +1034,7 @@ class Slider( QSlider ):
             'next_tangents': next_tangents
         }
         self.blend_data[obj]["{0}_{1}".format( curve, time )] = key_data
+        '''
 
     def __MOVE__( self ):
         pass
@@ -1099,7 +1046,7 @@ class Slider( QSlider ):
         current_time = time.time()
         if hasattr( self, '_last_move_time' ):
             duration = ( current_time - self._last_move_time ) * 1000  # Convert to milliseconds
-            num_curves = len( self.all_curves ) if self.all_curves else 0
+            num_curves = len( self.core.curve_data ) if self.core.curve_data else 0
 
             # Initialize or update running average
             if not hasattr( self, '_move_counts' ):
@@ -1117,17 +1064,8 @@ class Slider( QSlider ):
         # Store new start time
         self._last_move_time = current_time
 
-        #
-        if not self.all_curves:
-            return
-
-        if not self.moved:
-            # set moved
-            self.moved = True
-            # open chunk
-            cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
-        # if qualified
-        self.on_handle_move( value )
+        if self.core.prepare_handle_move():
+            self.on_handle_move( value )
 
     def on_handle_move( self, value ):
         """
@@ -1135,57 +1073,45 @@ class Slider( QSlider ):
         Adjust animation values based on slider position.
         Now handles both selected key and current time scenarios.
         """
+        print( "Handle move value:", value )
         # Convert to normalized blend factor (-1 to 1)
-        linear_blend = value / 100.0
+        blend_factor = value / 100.0
 
         # Apply easing curve
-        curved_blend = ease_value( linear_blend, self._curve_strength )
-        # print( 'proc' )
+        curved_blend = ease_value( blend_factor, self._curve_strength )
+
         # Process each object with the curved blend factor
         self.update_queue = []
-        for obj in self.selected_objects:
+        for obj in self.core.selected_objects:
             self._process_object_updates( obj, curved_blend )
-        # print( 'exe' )
+
         # Execute batched updates
         if self.update_queue:
             self._execute_batch_updates()
 
-        # should precombine selected objects and belnds nodes to list to explcicity only call dgdirty oncecombine
-        cmds.dgdirty( self.blend_nodes if self.blend_nodes else [] )
+        # Mark nodes dirty for proper UI update
+        cmds.dgdirty( self.core.blend_nodes if self.core.blend_nodes else [] )
         mel.eval( 'dgdirty;' )
-        # print( 'move', value )
 
     def _process_object_updates( self, obj, blend_factor ):
         """Process updates for a single object"""
-        for curve in self.all_curves:
-            if curve not in self.blend_data:
+        for curve in self.core.curve_data:
+            if curve not in self.core.curve_data:
                 continue
 
-            # Get cached data
-            curve_info = self.blend_data[curve]
-            curve_data = curve_info['data']
-
             # Get keys to update
-            selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True )
-            times_to_update = selected_keys if selected_keys else [self.current_time]
-            '''
-            print( "\nInitial curve_data:" )
-            print( "Keys:", curve_data['keys'] )
-            print( "Values:", curve_data['values'] )
-            print( "Key map:", curve_data['key_map'] )
-            print( "Tangent data:", curve_data['tangents'] )
-            '''
+            selected_keys = self.core.get_selected_keys( curve )  # Use core method
+            times_to_update = selected_keys if selected_keys else [self.core.current_time]
+
             # Process in batches
             for i in range( 0, len( times_to_update ), self.core.batch_size ):
                 batch = times_to_update[i:i + self.core.batch_size]
                 for time in batch:
-                    # print( "\nProcessing time:", time )
-                    # print( "Current blend factor:", blend_factor )
-                    # Calculate new values using strategy
-                    new_value, new_tangents = self._calculate_blend( 
-                        curve_data, curve_info, time, blend_factor )
-                    # print( "New Value:", new_value )
-                    # print( "New Tangents:", new_tangents )
+                    new_value, new_tangents = self.core.calculate_blend( # Use core calculation
+                        curve,
+                        time,
+                        blend_factor
+                    )
 
                     if new_value is not None:
                         self.update_queue.append( {
@@ -1194,10 +1120,8 @@ class Slider( QSlider ):
                             'value': new_value,
                             'tangents': new_tangents
                         } )
-                        # print( "Update Queued" )
-                    else:
-                        pass
 
+    '''
     def _batch_get_tangents( self, curve ):
         """Batch collect all tangent data for a curve"""
         return {
@@ -1206,12 +1130,10 @@ class Slider( QSlider ):
             'out_angles': cmds.keyTangent( curve, q = True, oa = True ) or [],
             'out_weights': cmds.keyTangent( curve, q = True, ow = True ) or [],
         }
+        '''
 
     def _execute_batch_updates( self ):
         """Execute queued updates in optimized batches"""
-        # print( "\nExecute Batch Updates:" )
-        # print( "Update Queue:", self.update_queue )  # See all pending updates
-        # Group updates by curve
         curve_updates = {}
         for update in self.update_queue:
             curve = update['curve']
@@ -1219,44 +1141,37 @@ class Slider( QSlider ):
                 curve_updates[curve] = []
             curve_updates[curve].append( update )
 
-        # print( "Curve Updates:", curve_updates )  # See how updates are grouped
-        # Process each curve's updates
         for curve, updates in curve_updates.items():
-            # Set keyframes and tangents one at a time
             for update in updates:
-                '''
-                print( "\nSetting Key:" )
-                print( "Curve:", curve )
-                print( "Time:", update['time'] )
-                print( "Value:", update['value'] )
-                '''
-                # Set keyframe
-                cmds.setKeyframe( curve,
-                               time = update['time'],
-                               value = update['value'] )
+                cmds.setKeyframe( 
+                    curve,
+                    time = update['time'],
+                    value = update['value']
+                )
 
-                # Set tangents if they exist
                 if update['tangents']:
                     in_angle, in_weight = update['tangents']['in']
                     out_angle, out_weight = update['tangents']['out']
 
-                    # Set tangents individually
-                    cmds.keyTangent( curve,
-                                  time = ( update['time'], update['time'] ),  # Time needs to be a tuple
-                                  ia = in_angle,
-                                  iw = in_weight )
-                    cmds.keyTangent( curve,
-                                  time = ( update['time'], update['time'] ),
-                                  oa = out_angle,
-                                  ow = out_weight )
+                    cmds.keyTangent( 
+                        curve,
+                        time = ( update['time'], update['time'] ),
+                        ia = in_angle,
+                        iw = in_weight
+                    )
+                    cmds.keyTangent( 
+                        curve,
+                        time = ( update['time'], update['time'] ),
+                        oa = out_angle,
+                        ow = out_weight
+                    )
 
+    '''
     def _calculate_blend( self, curve_data, curve_info, time, blend_factor ):
         """Calculate blended values using current strategy"""
-        '''
         print( "\nCalculate Blend:" )
         print( "Time:", time )
         print( "Blend Factor:", blend_factor )
-        '''
 
         current_idx = curve_data['key_map'].get( time )
 
@@ -1299,39 +1214,23 @@ class Slider( QSlider ):
                 curve_info['curve']
             )
         return new_value, new_tangents
+        '''
 
     def __RELEASE__( self ):
         pass
 
     def _before_handle_release( self ):
-        # if chunk, close
-        #
-        if self.moved:
-            cmds.undoInfo( closeChunk = True, cn = 'Blend_N' )
-        #
+        """Clean up after blend operation"""
         self._reset_slider()
         self.on_handle_release()
 
     def on_handle_release( self ):
         """HOOK, Reset the state"""
+        """Clean up after blend operation"""
         try:
-            # Debug: Check curves after modification
-            if self.all_curves:
-                for curve in self.all_curves:
-                    # Get current selected keys
-                    selected_keys = cmds.keyframe( curve, q = True, sl = True, tc = True ) or []
-                    if selected_keys:
-                        for time in selected_keys:
-                            value = cmds.keyframe( curve, time = ( time, ), q = True, vc = True )[0]
-                            # print( "Debug Release - Curve: {0}, Time: {1}, Final Value: {2}".format( curve, time, value ) )
-                            # ref_curve = 'locator1_translateY'
-                            # ref_value = cmds.keyframe( ref_curve, time = ( time, ), q = True, eval = True )[0]
-                            # print( "Debug Release - Ref Curve: {0}, Time: {1}, Final Value: {2}".format( ref_curve, time, ref_value ) )
-
-            self._reset_state()
-            self.core.clear_caches()
+            self.core.finish_blend()
         finally:
-            pass
+            self._reset_slider()
 
     def _reset_slider( self ):
         """Reset slider to initial position"""
@@ -1342,29 +1241,15 @@ class Slider( QSlider ):
         self.valueChanged.connect( self._before_handle_move )
 
     def _reset_state( self ):
-        """Reset all state variables to their default values"""
-        self._selected_keys_cache = {}  # Clear the cache
-        self._move_counts = 0  # Reset timing stats
-        self._move_total_time = 0  # Reset timing stats
-        self.previous_key_values = None
-        self.next_key_values = None
-        self.initial_values = {}
-        self.current_time = None
-        self.selected_objects = []
-        self.new_values = {}
-        self.all_curves = []
-        self.anim_layers = []
-        self.blend_nodes = []  # mark as dirty for proper ui update
-        self.blend_data = {}  # Reset blend data
-        self.update_queue = []  # Clear update queue
-        self.moved = False
-
-        # Reset lock states
+        """Reset UI state"""
+        self._move_counts = 0
+        self._move_total_time = 0
         self._positive_locked = False
         self._negative_locked = False
         self._lock_released = False
         self._mouse_beyond_threshold = False
         self._last_mouse_pos = None
+        self.update_queue = []
 
     def __MISC__( self ):
         pass
@@ -1414,7 +1299,7 @@ class SliderPkg( QWidget ):
 
         # Set strategies
         self.slider.core.set_targeting_strategy( strategy )
-        self.slider.core._set_blending_strategy( blend_strategy )  # Internal
+        self.slider.core.set_blending_strategy( blend_strategy )  # Internal
 
         self.slider.set_theme( theme )
 
@@ -1514,8 +1399,8 @@ class CustomDialog( QDialog ):
 
         # Create initial slider
         self.add_slider( "Direct", "direct", "magenta", "geom" )
-        self.add_slider( "Linear", "linear", "purple", "rate" )
-        self.add_slider( "Spline", "spline", "blue", "rate" )
+        self.add_slider( "Linear", "linear", "purple", "linear" )
+        self.add_slider( "Spline", "spline", "blue", "linear" )
 
     def add_slider( self, name, target_strategy, theme, blend_strategy ):
         """Add a new slider to the dialog"""
