@@ -126,6 +126,7 @@ class Slider( QSlider ):
         '2': 2,
         '3': 3,
         '5': 5,
+        '10': 10,
         '25': 25,
         '50': 50
     }
@@ -476,7 +477,11 @@ class Slider( QSlider ):
     def _handle_value_change( self, value ):
         """Update handle color when value changes"""
         self._update_stylesheet( value )
-        self.handle_label.setText( '{0}'.format( abs( value ) ) )
+        # print( 'eased___', ease_value( value / 100.0, self._curve_strength ) * 100, self._curve_strength )
+        eased = ease_value( value / 100.0, self._curve_strength ) * 100
+        # print( eased )
+        # self.handle_label.setText( '{0}'.format( abs( value ) ) )
+        self.handle_label.setText( '{0}'.format( abs( round( eased ) ) ) )
 
     def _calculate_position( self, value ):
         """Convert absolute value to relative position (0-1)"""
@@ -952,7 +957,7 @@ class Slider( QSlider ):
         """HOOK, Query and store the current animation state"""
 
         if not self.core.initialize_blend_session():
-            message( 'No animation curves found', warning = True )
+            # message( 'No animation curves found', warning = True )
             self._is_disabled = True
             self._update_stylesheet( self.value() )
 
@@ -1073,7 +1078,7 @@ class Slider( QSlider ):
         Adjust animation values based on slider position.
         Now handles both selected key and current time scenarios.
         """
-        print( "Handle move value:", value )
+        # print( "Handle move value:", value )
         # Convert to normalized blend factor (-1 to 1)
         blend_factor = value / 100.0
 
@@ -1095,6 +1100,7 @@ class Slider( QSlider ):
 
     def _process_object_updates( self, obj, blend_factor ):
         """Process updates for a single object"""
+        # print( '___', blend_factor )
         for curve in self.core.curve_data:
             if curve not in self.core.curve_data:
                 continue
@@ -1112,7 +1118,7 @@ class Slider( QSlider ):
                         time,
                         blend_factor
                     )
-
+                    # print( '___', blend_factor, new_value )
                     if new_value is not None:
                         self.update_queue.append( {
                             'curve': curve,
@@ -1398,9 +1404,9 @@ class CustomDialog( QDialog ):
         self.sliders = {}
 
         # Create initial slider
-        self.add_slider( "Direct", "direct", "magenta", "geom" )
-        self.add_slider( "Linear", "linear", "purple", "linear" )
-        self.add_slider( "Spline", "spline", "blue", "linear" )
+        self.add_slider( "Dir", "direct", "magenta", "contract" )
+        self.add_slider( "G3", "linear", "purple", "geom3" )
+        self.add_slider( "Spl", "spline", "blue", "linear" )
 
     def add_slider( self, name, target_strategy, theme, blend_strategy ):
         """Add a new slider to the dialog"""
