@@ -1095,8 +1095,10 @@ class Slider( QSlider ):
             self._execute_batch_updates()
 
         # Mark nodes dirty for proper UI update
-        cmds.dgdirty( self.core.blend_nodes if self.core.blend_nodes else [] )
-        mel.eval( 'dgdirty;' )
+        # print( self.core.blend_nodes )
+        if self.core.blend_nodes:
+            cmds.dgeval( self.core.blend_nodes )
+        # mel.eval( 'dgdirty;' )
 
     def _process_object_updates( self, obj, blend_factor ):
         """Process updates for a single object"""
@@ -1404,9 +1406,9 @@ class CustomDialog( QDialog ):
         self.sliders = {}
 
         # Create initial slider
-        self.add_slider( "Dir", "direct", "magenta", "contract" )
-        self.add_slider( "G3", "linear", "purple", "geom3" )
-        self.add_slider( "Spl", "spline", "blue", "linear" )
+        self.add_slider( "Dir", "direct", "magenta", "geom6" )
+        self.add_slider( "G5", "linear", "purple", "geom5" )
+        self.add_slider( "Spl", "spline", "blue", "geom5" )
 
     def add_slider( self, name, target_strategy, theme, blend_strategy ):
         """Add a new slider to the dialog"""

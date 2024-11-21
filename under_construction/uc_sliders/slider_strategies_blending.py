@@ -173,7 +173,7 @@ class LinearBlendStrategy( BlendStrategy ):
             print( "Error blending tangents: {0}".format( e ) )
             return None
 
-
+'''
 class GeometricBlendStrategy__( BlendStrategy ):
     """Uses geometric relationships for blending"""
 
@@ -284,6 +284,7 @@ class GeometricBlendStrategy__( BlendStrategy ):
         except Exception as e:
             print( "Error in geometric blending: {0}".format( e ) )
             return current_value, None
+            '''
 
 
 class ContractingBlendStrategy( BlendStrategy ):
@@ -487,6 +488,255 @@ class ContractingBlendStrategy( BlendStrategy ):
             print( "================\n" )
 
 
+class ExpandingBlendStrategy( BlendStrategy ):
+    """
+    Blend strategy using geometric relationships between points A, B, C where:
+    A: Target point (target_time, target_value)
+    B: Intersection point of A's angle with C's y-value
+    C: Current point (current_time, current_value)
+    
+    Unlike ContractingBlendStrategy, this maintains the target angle rather than 
+    flattening to zero by constructing B at C's height using A's angle.
+    """
+
+    def __init__( self, core ):
+        BlendStrategy.__init__( self, core )
+        self.debug = False
+        self.uses_signed_blend = True
+
+    def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            point_c_time = curve_data.keys[current_idx]
+            running_value = curve_data.get_running_value( current_idx )
+
+            self._log_initial_state( blend_factor, point_c_time, current_value, running_value, target_value )
+
+            # Get initial angle from curve data
+            current_angle = curve_data.tangents['in_angles'][current_idx]
+            target_angle = target_tangents['in'][0]
+
+            # Get point B by projecting A's angle to C's y-value
+            point_b = self._find_point_b( curve, curve_data, current_idx, point_c_time,
+                                       current_value, target_value, target_tangents )
+            self._log_anchor_info( point_b )
+
+            self._log_angle_info( target_angle )
+
+            # Calculate new position for C based on blend factor
+            moving_c_value = self._calculate_point_c_position( current_value, target_value, blend_factor )
+            self._log_position_calculation( abs( blend_factor ), moving_c_value )
+
+            # Blend between current and target angle
+            blend_factor_abs = abs( blend_factor )
+            blended_angle = current_angle * ( 1.0 - blend_factor_abs ) + target_angle * blend_factor_abs
+
+            tangents = {
+                'in': ( blended_angle, target_tangents['in'][1] ),
+                'out': ( blended_angle, target_tangents['out'][1] )
+            }
+
+            self._update_curve_state( curve_data, current_idx, moving_c_value, tangents )
+            self._log_final_result( moving_c_value, blended_angle )
+
+            return moving_c_value, tangents
+
+        except Exception as e:
+            print( "Error in geometric4 blending: {0}".format( str( e ) ) )
+            return current_value, None
+
+    def _find_point_b( self, curve, curve_data, current_idx, point_c_time, current_value,
+                     target_value, target_tangents ):
+        """Project from A using target angle to find intersection with C's y-value"""
+        try:
+            MIN_DELTA = 0.001
+
+            # Get angle from target/point A
+            angle_a = math.radians( target_tangents['in'][0] )
+
+            # Calculate delta_y from A down to C's y-value
+            vertical_distance_a_to_c = abs( target_value - current_value )
+            if vertical_distance_a_to_c < MIN_DELTA:
+                vertical_distance_a_to_c = MIN_DELTA
+
+            # Ensure we have a valid angle to work with
+            if abs( angle_a ) < math.radians( 0.1 ):
+                angle_a = math.radians( 0.1 ) * ( 1 if angle_a >= 0 else -1 )
+
+            # Project from A to find B at C's height using angle_a
+            horizontal_distance_a_to_b = vertical_distance_a_to_c / math.tan( abs( angle_a ) )
+
+            # Determine direction based on angle sign
+            if angle_a < 0:
+                horizontal_distance_a_to_b = -horizontal_distance_a_to_b
+
+            # B shares C's y-value but is offset horizontally
+            point_b_time = point_c_time - horizontal_distance_a_to_b  # Changed to subtract
+            point_b_value = current_value  # B matches C's value
+
+            if self.debug:
+                print( "\n=== Point B Projection ===" )
+                print( "Starting Configuration:" )
+                print( "  C - Time: {0}, Value: {1}".format( point_c_time, current_value ) )
+                print( "  A - Target Value: {0}".format( target_value ) )
+                print( "  A's Angle: {0}".format( math.degrees( angle_a ) ) )
+                print( "Projection Calculations:" )
+                print( "  Vertical Distance (A to C): {0}".format( vertical_distance_a_to_c ) )
+                print( "  Horizontal Distance (A to B): {0}".format( horizontal_distance_a_to_b ) )
+                print( "Resulting Point B:" )
+                print( "  Time: {0}".format( point_b_time ) )
+                print( "  Value: {0}".format( point_b_value ) )
+
+            return {
+                'time': point_b_time,
+                'value': point_b_value
+            }
+
+        except Exception as e:
+            print( "Error in _find_point_b: {0}".format( str( e ) ) )
+            raise
+
+    def _calculate_point_c_position( self, current_value, target_value, blend_factor ):
+        """Calculate new position for point C based on blend factor"""
+        merge_mult = abs( blend_factor )
+        return current_value * ( 1 - merge_mult ) + target_value * merge_mult
+
+    def _calculate_triangle_abc( self, time_c, value_c, time_b, value_b, moving_c_value, angle_a ):
+        """Calculate geometric relationships based on A's angle projection"""
+        # Initial triangle calculations using A's angle
+        initial_opposite = abs( value_c - value_b )  # Should be 0 as they share y-value
+        initial_adjacent = abs( time_c - time_b )
+        initial_raw = math.degrees( math.atan( initial_opposite / initial_adjacent ) ) if initial_adjacent != 0 else 90.0
+
+        # Scale factor based on A's angle
+        scale_factor = abs( angle_a / initial_raw ) if initial_raw != 0 else 1.0
+
+        # New triangle calculations as C moves towards A
+        opposite = abs( moving_c_value - value_b )
+        adjacent = abs( time_c - time_b )
+
+        return {
+            'initial_opposite': initial_opposite,
+            'initial_adjacent': initial_adjacent,
+            'initial_raw': initial_raw,
+            'scale_factor': scale_factor,
+            'opposite': opposite,
+            'adjacent': adjacent
+        }
+
+    def _calculate_abc_angles( self, triangle_abc, angle_a, value_c, moving_c_value, value_b ):
+        """Calculate angles maintaining A's angle relationship"""
+        raw_angle = math.degrees( math.atan( 
+            triangle_abc['opposite'] / triangle_abc['adjacent']
+        ) ) if triangle_abc['adjacent'] != 0 else 90.0
+
+        scaled_angle = raw_angle * triangle_abc['scale_factor']
+
+        # Since B and C share y-value initially, we mainly care about direction relative to A
+        started_below_a = value_c <= value_b
+        ended_below_a = moving_c_value <= value_b
+
+        if started_below_a != ended_below_a:
+            scaled_angle = -scaled_angle
+
+        final_angle = -scaled_angle if angle_a < 0 else scaled_angle
+
+        return {
+            'raw_angle': raw_angle,
+            'scaled_angle': scaled_angle,
+            'final_angle': final_angle
+        }
+
+    def _prepare_tangent_result( self, angles, target_tangents ):
+        """Prepare tangent result structure"""
+        return {
+            'in': ( angles['final_angle'], target_tangents['in'][1] ),
+            'out': ( angles['final_angle'], target_tangents['out'][1] )
+        }
+
+    def _update_curve_state( self, curve_data, current_idx, moving_c_value, tangents ):
+        """Update the running state of the curve"""
+        curve_data.update_running_state( current_idx, moving_c_value, tangents )
+
+    def _log_initial_state( self, blend_factor, point_c_time, current_value,
+                          running_value, target_value ):
+        if self.debug:
+            print( "\n=== Geometric4 Frame Start ===" )
+            print( "Blend Factor: {0}".format( blend_factor ) )
+            print( "Time C: {0}".format( point_c_time ) )
+            print( "Value C (current): {0}".format( current_value ) )
+            print( "Value C (running): {0}".format( running_value ) )
+            print( "Value A (target): {0}".format( target_value ) )
+
+    def _log_anchor_info( self, point_b ):
+        if self.debug:
+            print( "\n=== Point B Info ===" )
+            print( "B Time: {0}".format( point_b['time'] ) )
+            print( "B Value: {0}".format( point_b['value'] ) )
+            print( "Note: B shares y-value with C" )
+
+    def _log_angle_info( self, angle_a ):
+        if self.debug:
+            print( "\n=== Target Angle Info ===" )
+            print( "A's Angle: {0}".format( angle_a ) )
+            print( "Note: This angle will be maintained through blend" )
+
+    def _log_position_calculation( self, merge_mult, moving_c_value ):
+        if self.debug:
+            print( "\n=== C Position Update ===" )
+            print( "Blend Multiplier: {0}".format( merge_mult ) )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Note: C moving towards A while maintaining angle relationship" )
+
+    def _log_geometry_data( self, triangle_abc ):
+        if self.debug:
+            print( "\n=== Triangle Geometry ===" )
+            print( "Initial State:" )
+            print( "  Opposite (B-C vertical): {0} (should be near 0)".format( 
+                triangle_abc['initial_opposite'] ) )
+            print( "  Adjacent (B-C horizontal): {0}".format( 
+                triangle_abc['initial_adjacent'] ) )
+            print( "Current State:" )
+            print( "  Opposite (moving): {0}".format( triangle_abc['opposite'] ) )
+            print( "  Adjacent: {0}".format( triangle_abc['adjacent'] ) )
+            print( "  Scale Factor: {0}".format( triangle_abc['scale_factor'] ) )
+            print( "Note: Triangle formed by B at C's level" )
+
+    def _log_angle_calculation( self, angles ):
+        if self.debug:
+            print( "\n=== Angle Calculations ===" )
+            print( "Raw Angle: {0}".format( angles['raw_angle'] ) )
+            print( "Scaled Angle: {0}".format( angles['scaled_angle'] ) )
+            print( "Final Angle: {0}".format( angles['final_angle'] ) )
+            print( "Note: Maintaining angle relationship from A" )
+
+    def _log_final_result( self, moving_c_value, final_angle ):
+        if self.debug:
+            print( "\n=== Final Frame Result ===" )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Final Angle: {0}".format( final_angle ) )
+            print( "Note: Non-zero final angle preserved from A's angle" )
+            print( "================\n" )
+
+    def _log_point_b_projection( self, point_c_time, current_value, target_value,
+                              angle_a_deg, vert_dist, horz_dist, point_b_time, point_b_value ):
+        if self.debug:
+            print( "\n=== Point B Projection Details ===" )
+            print( "Starting Point C:" )
+            print( "  Time: {0}".format( point_c_time ) )
+            print( "  Value: {0}".format( current_value ) )
+            print( "Target Point A:" )
+            print( "  Value: {0}".format( target_value ) )
+            print( "Projection:" )
+            print( "  A's Angle (degrees): {0}".format( angle_a_deg ) )
+            print( "  Vertical Distance (A to C): {0}".format( vert_dist ) )
+            print( "  Horizontal Distance (A to B): {0}".format( horz_dist ) )
+            print( "Resulting Point B:" )
+            print( "  Time: {0}".format( point_b_time ) )
+            print( "  Value: {0}".format( point_b_value ) )
+            print( "  Note: B created at C's height using A's angle" )
+
+
 def __DEV_STRATEGIES__():
     pass
 
@@ -609,7 +859,7 @@ class GeometricBlendStrategy( BlendStrategy ):
             print( "Error in geometric blending: {0}".format( e ) )
             return current_value, None
 
-
+'''
 class ___ContractingBlendStrategy( BlendStrategy ):
     """Uses geometric relationships for blending with projected point B"""
 
@@ -705,8 +955,9 @@ class ___ContractingBlendStrategy( BlendStrategy ):
         except Exception as e:
             print( "Error in geometric blending: {0}".format( e ) )
             return current_value, None
+            '''
 
-
+'''
 class ExpandingBlendStrategy( BlendStrategy ):
     """Uses geometric relationships for blending, expanding from point A"""
 
@@ -804,7 +1055,9 @@ class ExpandingBlendStrategy( BlendStrategy ):
             print( "Error in geometric blending: {0}".format( e ) )
             return current_value, None
 
+'''
 
+'''
 class ___ExpandingBlendStrategy( BlendStrategy ):
     """Uses geometric relationships for blending, expanding from point A"""
 
@@ -906,6 +1159,7 @@ class ___ExpandingBlendStrategy( BlendStrategy ):
         except Exception as e:
             print( "Error in geometric blending: {0}".format( e ) )
             return current_value, None
+            '''
 
 
 class Geometric2BlendStrategy( BlendStrategy ):
@@ -1160,42 +1414,47 @@ class Geometric3BlendStrategy( BlendStrategy ):
 
     def __init__( self, core ):
         BlendStrategy.__init__( self, core )
-        self.debug = True
+        self.debug = False
         self.uses_signed_blend = True
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
-        """Main blending method - C starts at A, moves towards target_value"""
+        """
+        Blend using three key points:
+        A: Target point (target_value)
+        B: Anchor point (projected from C's angle)
+        C: Starting at current_value and moving towards target
+        """
         try:
             curve_data = self.core.get_curve_data( curve )
-            time_c = curve_data.keys[current_idx]
+            point_c_time = curve_data.keys[current_idx]
             running_value = curve_data.get_running_value( current_idx )
 
-            # Starting at A (target_value), moving towards original current_value
-            self._log_initial_state( blend_factor, time_c, target_value, running_value, current_value )
+            # Start from current position and move towards target
+            self._log_initial_state( blend_factor, point_c_time, current_value, running_value, target_value )
 
-            # Project from target position to find B
-            point_b = self._get_projected_point_b( curve, curve_data, current_idx, time_c,
-                                                target_value, current_value, target_tangents, blend_factor )
+            # Project from current position to find B
+            point_b = self._get_projected_point_b( curve, curve_data, current_idx, point_c_time,
+                                                current_value, target_value, target_tangents, blend_factor )
             self._log_anchor_info( point_b )
 
-            # Starting angle is at A (target_value)
+            # Starting angle is at current position
             angle_c = curve_data.tangents['in_angles'][current_idx]
             self._log_angle_info( angle_c )
 
-            # Move C from A towards target position
-            moving_c_value = self._calculate_point_c_position( target_value, current_value, blend_factor )
+            # Move from current towards target
+            moving_c_value = self._calculate_point_c_position( current_value, target_value, blend_factor )
             self._log_position_calculation( abs( blend_factor ), moving_c_value )
 
             # Calculate geometric relationships
             triangle_abc = self._calculate_triangle_abc( 
-                time_c, target_value,  # Starting at A
+                point_c_time, current_value,  # Starting at current
                 point_b['time'], point_b['value'],
-                moving_c_value, target_tangents['in'][0]  # Using target tangent
+                moving_c_value, target_tangents['in'][0]
             )
             self._log_geometry_data( triangle_abc )
 
-            angles = self._calculate_abc_angles( triangle_abc, angle_c, target_value, moving_c_value,
-                                             point_b['value'], target_tangents )
+            angles = self._calculate_abc_angles( triangle_abc, angle_c, current_value, moving_c_value,
+                                            point_b['value'], target_tangents, blend_factor )
             self._log_angle_calculation( angles )
 
             tangents = self._prepare_tangent_result( angles, target_tangents )
@@ -1288,10 +1547,8 @@ class Geometric3BlendStrategy( BlendStrategy ):
         }
 
     def _calculate_abc_angles( self, triangle_abc, start_angle, value_a, moving_c_value,
-                            value_b, target_tangents ):
+                            value_b, target_tangents, blend_factor ):  # Added blend_factor parameter
         """Calculate angles, blending from start to target tangents"""
-        MIN_DELTA = 0.001
-
         if self.debug:
             print( "\n=== ABC Angle Calculation Debug ===" )
             print( "Triangle Data:" )
@@ -1332,24 +1589,12 @@ class Geometric3BlendStrategy( BlendStrategy ):
             if self.debug:
                 print( "  Flipped scaled_angle: {0}".format( scaled_angle ) )
 
-        # Blend between start angle and target angle
+        # Use blend_factor directly for angle interpolation
         target_angle = target_tangents['in'][0]
-
-        value_difference = abs( moving_c_value - value_a )
-        value_range = abs( value_b - value_a )
+        blend_mult = abs( blend_factor )
 
         if self.debug:
             print( "\nBlend Calculation:" )
-            print( "  value difference: {0}".format( value_difference ) )
-            print( "  value range: {0}".format( value_range ) )
-
-        # If value_range is too small, use value_difference to determine blend
-        if value_range < MIN_DELTA:
-            blend_mult = min( value_difference / MIN_DELTA, 1.0 )
-        else:
-            blend_mult = value_difference / value_range
-
-        if self.debug:
             print( "  blend_mult: {0}".format( blend_mult ) )
 
         final_angle = start_angle * ( 1 - blend_mult ) + target_angle * blend_mult
@@ -1421,3 +1666,767 @@ class Geometric3BlendStrategy( BlendStrategy ):
             print( "New Value: {0}".format( moving_c_value ) )
             print( "Final Angle: {0}".format( final_angle ) )
             print( "================\n" )
+
+
+class Geometric4BlendStrategy( BlendStrategy ):
+
+    def __init__( self, core ):
+        BlendStrategy.__init__( self, core )
+        self.debug = False
+        self.uses_signed_blend = True
+
+    def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            point_c_time = curve_data.keys[current_idx]
+            running_value = curve_data.get_running_value( current_idx )
+
+            self._log_initial_state( blend_factor, point_c_time, current_value, running_value, target_value )
+
+            # Get angle at C and A
+            angle_c = curve_data.tangents['in_angles'][current_idx]
+            angle_a = target_tangents['in'][0]
+
+            # Get point B by projecting A's angle to C's y-value
+            point_b = self._find_point_b( curve, curve_data, current_idx, point_c_time,
+                                       current_value, target_value, angle_a )
+            self._log_anchor_info( point_b )
+            self._log_angle_info( angle_c )
+
+            moving_c_value = self._calculate_point_c_position( current_value, target_value, blend_factor )
+            self._log_position_calculation( abs( blend_factor ), moving_c_value )
+
+            # Calculate geometric relationships between A, B, C
+            triangle_abc = self._calculate_triangle_abc( 
+                point_c_time, current_value,
+                point_b['time'], point_b['value'],
+                moving_c_value, angle_c, target_value
+            )
+            self._log_geometry_data( triangle_abc )
+
+            angles = self._calculate_abc_angles( triangle_abc, angle_c, current_value, moving_c_value,
+                                             point_b['time'], point_c_time, angle_a )
+            self._log_angle_calculation( angles )
+
+            tangents = self._prepare_tangent_result( angles, target_tangents )
+            self._update_curve_state( curve_data, current_idx, moving_c_value, tangents )
+            self._log_final_result( moving_c_value, angles['final_angle'] )
+
+            return moving_c_value, tangents
+
+        except Exception as e:
+            print( "Error in geometric4 blending: {0}".format( str( e ) ) )
+            return current_value, None
+
+    def _find_point_b( self, curve, curve_data, current_idx, point_c_time, current_value,
+                     target_value, angle_a ):
+        """Project from A using target angle to find intersection with C's y-value"""
+        MIN_DELTA = 0.001
+
+        # Calculate delta_y from A to C's y-value
+        vertical_distance_a_to_c = abs( target_value - current_value )
+        if vertical_distance_a_to_c < MIN_DELTA:
+            vertical_distance_a_to_c = MIN_DELTA
+
+        # Get angle from target/point A
+        angle_a_rad = math.radians( angle_a )
+        if abs( angle_a_rad ) < math.radians( 0.1 ):
+            angle_a_rad = math.radians( 0.1 ) * ( 1 if angle_a_rad >= 0 else -1 )
+
+        # Project from A to find B at C's height
+        horizontal_distance_a_to_b = vertical_distance_a_to_c / math.tan( abs( angle_a_rad ) )
+
+        # Determine B position relative to C based on angle and blend direction
+        moving_up = target_value > current_value
+
+        # For positive target angle:
+        #   moving up -> B left of C
+        #   moving down -> B right of C
+        # For negative target angle:
+        #   moving up -> B right of C
+        #   moving down -> B left of C
+        if ( angle_a > 0 and moving_up ) or ( angle_a < 0 and not moving_up ):
+            point_b_time = point_c_time - horizontal_distance_a_to_b  # B left of C
+        else:
+            point_b_time = point_c_time + horizontal_distance_a_to_b  # B right of C
+
+        point_b_value = current_value  # B matches C's value
+
+        return {
+            'time': point_b_time,
+            'value': point_b_value
+        }
+
+    def _calculate_triangle_abc( self, time_c, value_c, time_b, value_b, moving_c_value, angle_c, target_value ):
+        """Calculate geometric relationships with sign preservation"""
+        # Initial triangle measurements
+        initial_opposite = abs( value_b - target_value )
+        initial_adjacent = abs( time_c - time_b )
+        initial_raw = math.degrees( math.atan( 
+            initial_opposite / initial_adjacent
+        ) ) if initial_adjacent != 0 else 90.0
+
+        # Match the sign of initial_raw to angle_c for scale factor calculation
+        initial_raw = abs( initial_raw ) * ( -1 if angle_c < 0 else 1 )
+
+        # Calculate scale factor using absolute values to preserve sign relationships
+        scale_factor = abs( angle_c / initial_raw ) if initial_raw != 0 else 1.0
+
+        # Current triangle measurements
+        opposite = abs( moving_c_value - target_value )
+        adjacent = abs( time_c - time_b )
+
+        if self.debug:
+            print( "Triangle ABC Analysis:" )
+            print( "Initial opposite: {0}".format( initial_opposite ) )
+            print( "Initial adjacent: {0}".format( initial_adjacent ) )
+            print( "Initial raw angle: {0}".format( initial_raw ) )
+            print( "Incoming angle_c: {0}".format( angle_c ) )
+            print( "Scale factor: {0}".format( scale_factor ) )
+            print( "Current opposite: {0}".format( opposite ) )
+            print( "Current adjacent: {0}".format( adjacent ) )
+
+        return {
+            'initial_opposite': initial_opposite,
+            'initial_adjacent': initial_adjacent,
+            'initial_raw': initial_raw,
+            'scale_factor': scale_factor,
+            'opposite': opposite,
+            'adjacent': adjacent
+        }
+
+    def _calculate_abc_angles( self, triangle_abc, angle_c, current_value, moving_c_value,
+                           time_b, time_c, angle_a ):
+        # Get current triangle angle
+        raw_angle = math.degrees( math.atan( 
+            triangle_abc['opposite'] / triangle_abc['adjacent']
+        ) ) if triangle_abc['adjacent'] != 0 else 90.0
+
+        # Match sign of raw angle to incoming angle_c
+        raw_angle = abs( raw_angle ) * ( -1 if angle_c < 0 else 1 )
+
+        # Apply scale factor while preserving sign
+        scaled_angle = raw_angle * abs( triangle_abc['scale_factor'] )
+
+        # Simply add target angle to what's being reduced
+        final_angle = scaled_angle + angle_a
+
+        if self.debug:
+            print( "=== Angle Calculation Details ===" )
+            print( "Raw Triangle Angle: {0}".format( raw_angle ) )
+            print( "Scale Factor: {0}".format( triangle_abc['scale_factor'] ) )
+            print( "Scaled Angle: {0}".format( scaled_angle ) )
+            print( "Target Angle: {0}".format( angle_a ) )
+            print( "Final Angle: {0}".format( final_angle ) )
+
+        return {
+            'raw_angle': raw_angle,
+            'scaled_angle': scaled_angle,
+            'final_angle': final_angle
+        }
+
+    def _prepare_tangent_result( self, angles, target_tangents ):
+        """Prepare tangent result structure"""
+        return {
+            'in': ( angles['final_angle'], target_tangents['in'][1] ),
+            'out': ( angles['final_angle'], target_tangents['out'][1] )
+        }
+
+    def _calculate_point_c_position( self, current_value, target_value, blend_factor ):
+        """Calculate new position for point C based on blend factor"""
+        merge_mult = abs( blend_factor )
+        return current_value * ( 1 - merge_mult ) + target_value * merge_mult
+
+    def _update_curve_state( self, curve_data, current_idx, moving_c_value, tangents ):
+        """Update the running state of the curve"""
+        curve_data.update_running_state( current_idx, moving_c_value, tangents )
+
+    # [Logging methods remain the same]
+
+    def _log_initial_state( self, blend_factor, point_c_time, current_value,
+                          running_value, target_value ):
+        if self.debug:
+            print( "\n=== Geometric4 Frame Start ===" )
+            print( "Blend Factor: {0}".format( blend_factor ) )
+            print( "Time C: {0}".format( point_c_time ) )
+            print( "Value C (current): {0}".format( current_value ) )
+            print( "Value C (running): {0}".format( running_value ) )
+            print( "Value A (target): {0}".format( target_value ) )
+
+    def _log_anchor_info( self, point_b ):
+        if self.debug:
+            print( "\n=== Point B Info ===" )
+            print( "B Time: {0}".format( point_b['time'] ) )
+            print( "B Value: {0}".format( point_b['value'] ) )
+            print( "Note: B shares y-value with C" )
+
+    def _log_angle_info( self, angle_a ):
+        if self.debug:
+            print( "\n=== Target Angle Info ===" )
+            print( "A's Angle: {0}".format( angle_a ) )
+            print( "Note: This angle will be maintained through blend" )
+
+    def _log_position_calculation( self, merge_mult, moving_c_value ):
+        if self.debug:
+            print( "\n=== C Position Update ===" )
+            print( "Blend Multiplier: {0}".format( merge_mult ) )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Note: C moving towards A while maintaining angle relationship" )
+
+    def _log_geometry_data( self, triangle_abc ):
+        if self.debug:
+            print( "\n=== Triangle Geometry ===" )
+            print( "Initial State:" )
+            print( "  Opposite (B-C vertical): {0} (should be near 0)".format( 
+                triangle_abc['initial_opposite'] ) )
+            print( "  Adjacent (B-C horizontal): {0}".format( 
+                triangle_abc['initial_adjacent'] ) )
+            print( "Current State:" )
+            print( "  Opposite (moving): {0}".format( triangle_abc['opposite'] ) )
+            print( "  Adjacent: {0}".format( triangle_abc['adjacent'] ) )
+            print( "  Scale Factor: {0}".format( triangle_abc['scale_factor'] ) )
+            print( "Note: Triangle formed by B at C's level" )
+
+    def _log_angle_calculation( self, angles ):
+        if self.debug:
+            print( "\n=== Angle Calculations ===" )
+            print( "Raw Angle: {0}".format( angles['raw_angle'] ) )
+            print( "Scaled Angle: {0}".format( angles['scaled_angle'] ) )
+            print( "Final Angle: {0}".format( angles['final_angle'] ) )
+            print( "Note: Maintaining angle relationship from A" )
+
+    def _log_final_result( self, moving_c_value, final_angle ):
+        if self.debug:
+            print( "\n=== Final Frame Result ===" )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Final Angle: {0}".format( final_angle ) )
+            print( "Note: Non-zero final angle preserved from A's angle" )
+            print( "================\n" )
+
+    def _log_point_b_projection( self, point_c_time, current_value, target_value,
+                              angle_a_deg, vert_dist, horz_dist, point_b_time, point_b_value ):
+        if self.debug:
+            print( "\n=== Point B Projection Details ===" )
+            print( "Starting Point C:" )
+            print( "  Time: {0}".format( point_c_time ) )
+            print( "  Value: {0}".format( current_value ) )
+            print( "Target Point A:" )
+            print( "  Value: {0}".format( target_value ) )
+            print( "Projection:" )
+            print( "  A's Angle (degrees): {0}".format( angle_a_deg ) )
+            print( "  Vertical Distance (A to C): {0}".format( vert_dist ) )
+            print( "  Horizontal Distance (A to B): {0}".format( horz_dist ) )
+            print( "Resulting Point B:" )
+            print( "  Time: {0}".format( point_b_time ) )
+            print( "  Value: {0}".format( point_b_value ) )
+            print( "  Note: B created at C's height using A's angle" )
+
+
+class Geometric6BlendStrategy( BlendStrategy ):
+    """variation on geom5 for direct blend"""
+
+    def __init__( self, core ):
+        BlendStrategy.__init__( self, core )
+        self.debug = False
+        self.uses_signed_blend = True
+
+    def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
+        """
+        Blend using three key points:
+        A: Target point (current_time, target_value)
+        B: Intersection point of C's angle and target's angle
+        C: Current point (current_time, current_value)
+        """
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            point_c_time = curve_data.keys[current_idx]
+            running_value = curve_data.get_running_value( current_idx )
+
+            self._log_initial_state( blend_factor, point_c_time, current_value, running_value, target_value )
+
+            # Get point B by finding intersection of angles
+            point_b = self._find_point_b( curve, curve_data, current_idx, point_c_time, current_value, target_value, target_tangents, blend_factor )
+            self._log_anchor_info( point_b )
+
+            # Get angle at C and calculate new position
+            angle_c = curve_data.tangents['in_angles'][current_idx]
+            self._log_angle_info( angle_c )
+
+            moving_c_value = self._calculate_point_c_position( current_value, target_value, blend_factor )
+            self._log_position_calculation( abs( blend_factor ), moving_c_value )
+
+            # Calculate geometric relationships between A, B, C
+            triangle_abc = self._calculate_triangle_abc( 
+                point_c_time, current_value,
+                point_b['time'], point_b['value'],
+                moving_c_value, angle_c
+            )
+            self._log_geometry_data( triangle_abc )
+
+            angles = self._calculate_abc_angles( triangle_abc, angle_c, current_value, moving_c_value, point_b['value'], target_tangents, target_value )
+            self._log_angle_calculation( angles )
+
+            tangents = self._prepare_tangent_result( angles, target_tangents )
+            self._update_curve_state( curve_data, current_idx, moving_c_value, tangents )
+            self._log_final_result( moving_c_value, angles['final_angle'] )
+
+            return moving_c_value, tangents
+
+        except Exception as e:
+            print( "Error in geometric blending: {0}".format( e ) )
+            return current_value, None
+
+    def _find_point_b( self, curve, curve_data, current_idx, point_c_time, current_value, target_value, target_tangents, blend_factor ):
+        """Find point B as intersection of two lines: one from C with angle_c, one from target with target angle"""
+        MIN_DELTA = 0.001
+
+        # Get angles for both lines
+        angle_c = math.radians( curve_data.tangents['in_angles'][current_idx] )
+        target_angle = math.radians( target_tangents['in'][0] )
+
+        # If angles are effectively parallel, we're already at the right angle
+        if abs( angle_c - target_angle ) < math.radians( 0.1 ):
+            # Angles match - no intersection needed
+            point_b_time = point_c_time
+            point_b_value = target_value
+        else:
+            # Convert angles to slopes
+            slope_c = math.tan( angle_c )
+            slope_target = math.tan( target_angle )
+
+            # Calculate intersection
+            point_b_time = ( 
+                ( target_value - current_value + slope_c * point_c_time - slope_target * point_c_time )
+                / ( slope_c - slope_target )
+            )
+            point_b_value = current_value + slope_c * ( point_b_time - point_c_time )
+
+        if self.debug:
+            print( "\n=== Point B Intersection ===" )
+            print( "Point C - Time: {0}, Value: {1}".format( point_c_time, current_value ) )
+            print( "Target - Value: {0}".format( target_value ) )
+            print( "Point B - Time: {0}, Value: {1}".format( point_b_time, point_b_value ) )
+
+        return {
+            'time': point_b_time,
+            'value': point_b_value
+        }
+
+    def _calculate_point_c_position( self, current_value, target_value, blend_factor ):
+        """Calculate new position for point C based on blend factor"""
+        merge_mult = abs( blend_factor )
+        return current_value * ( 1 - merge_mult ) + target_value * merge_mult
+
+    def _calculate_triangle_abc( self, time_c, value_c, time_b, value_b, moving_c_value, angle_c ):
+        """Calculate geometric relationships between points A, B, and C for any triangle"""
+
+        def normalize_angle( angle ):
+            while angle > 90:
+                angle = angle - 180
+            while angle < -90:
+                angle = angle + 180
+            return angle
+
+        # Calculate vector from C to B
+        dx = time_b - time_c
+        dy = value_b - moving_c_value
+
+        # Calculate raw angle from C to B
+        # This should remain constant regardless of C's movement
+        raw_angle = normalize_angle( math.degrees( math.atan2( dy, dx ) ) )
+
+        # Store initial relationship for reference
+        initial_opposite = abs( value_c - value_b )
+        initial_adjacent = abs( time_c - time_b )
+        initial_raw = normalize_angle( math.degrees( math.atan2( value_b - value_c, dx ) ) )
+
+        if self.debug:
+            print( "\n=== Triangle Geometry ===" )
+            print( "Vector C->B: dx={0}, dy={1}".format( dx, dy ) )
+            print( "Moving C value: {0}".format( moving_c_value ) )
+            print( "B value: {0}".format( value_b ) )
+            print( "Raw angle C->B: {0}".format( raw_angle ) )
+            print( "Initial raw angle: {0}".format( initial_raw ) )
+
+        return {
+            'initial_opposite': initial_opposite,
+            'initial_adjacent': initial_adjacent,
+            'initial_raw': initial_raw,
+            'scale_factor': 1.0,
+            'opposite': abs( dy ),
+            'adjacent': abs( dx ),
+            'raw_angle': raw_angle  # This angle should remain consistent as C moves
+        }
+
+    def _calculate_abc_angles( self, triangle_abc, angle_c, current_value, moving_c_value, value_b, target_tangents, target_value ):
+        """Calculate angles based on geometric relationships for any triangle"""
+        # Use the raw angle directly - it's already what we want
+        MIN_DELTA = 0.1  # Same threshold as in _find_point_b
+
+        # If original angles were parallel, just use the target angle
+        if abs( angle_c - target_tangents['in'][0] ) < MIN_DELTA:
+            final_angle = target_tangents['in'][0]
+        else:
+            final_angle = triangle_abc['raw_angle']
+
+        if self.debug:
+            print( "\n=== Angle Calculations ===" )
+            print( "Raw angle C->B: {0}".format( final_angle ) )
+            print( "Current value: {0}".format( current_value ) )
+            print( "Moving value: {0}".format( moving_c_value ) )
+            print( "Target value: {0}".format( target_value ) )
+
+        return {
+            'raw_angle': final_angle,
+            'scaled_angle': final_angle,
+            'final_angle': final_angle
+        }
+
+    def _prepare_tangent_result( self, angles, target_tangents ):
+        """Prepare tangent result structure"""
+        return {
+            'in': ( angles['final_angle'], target_tangents['in'][1] ),
+            'out': ( angles['final_angle'], target_tangents['out'][1] )
+        }
+
+    def _update_curve_state( self, curve_data, current_idx, moving_c_value, tangents ):
+        """Update the running state of the curve"""
+        curve_data.update_running_state( current_idx, moving_c_value, tangents )
+
+    # [Logging methods remain the same]
+
+    def _log_initial_state( self, blend_factor, point_c_time, current_value,
+                          running_value, target_value ):
+        if self.debug:
+            print( "\n=== Geometric4 Frame Start ===" )
+            print( "Blend Factor: {0}".format( blend_factor ) )
+            print( "Time C: {0}".format( point_c_time ) )
+            print( "Value C (current): {0}".format( current_value ) )
+            print( "Value C (running): {0}".format( running_value ) )
+            print( "Value A (target): {0}".format( target_value ) )
+
+    def _log_anchor_info( self, point_b ):
+        if self.debug:
+            print( "\n=== Point B Info ===" )
+            print( "B Time: {0}".format( point_b['time'] ) )
+            print( "B Value: {0}".format( point_b['value'] ) )
+            print( "Note: B shares y-value with C" )
+
+    def _log_angle_info( self, angle_a ):
+        if self.debug:
+            print( "\n=== Target Angle Info ===" )
+            print( "A's Angle: {0}".format( angle_a ) )
+            print( "Note: This angle will be maintained through blend" )
+
+    def _log_position_calculation( self, merge_mult, moving_c_value ):
+        if self.debug:
+            print( "\n=== C Position Update ===" )
+            print( "Blend Multiplier: {0}".format( merge_mult ) )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Note: C moving towards A while maintaining angle relationship" )
+
+    def _log_geometry_data( self, triangle_abc ):
+        if self.debug:
+            print( "\n=== Triangle Geometry ===" )
+            print( "Initial State:" )
+            print( "  Opposite (B-C vertical): {0} (should be near 0)".format( 
+                triangle_abc['initial_opposite'] ) )
+            print( "  Adjacent (B-C horizontal): {0}".format( 
+                triangle_abc['initial_adjacent'] ) )
+            print( "Current State:" )
+            print( "  Opposite (moving): {0}".format( triangle_abc['opposite'] ) )
+            print( "  Adjacent: {0}".format( triangle_abc['adjacent'] ) )
+            print( "  Scale Factor: {0}".format( triangle_abc['scale_factor'] ) )
+            print( "Note: Triangle formed by B at C's level" )
+
+    def _log_angle_calculation( self, angles ):
+        if self.debug:
+            print( "\n=== Angle Calculations ===" )
+            print( "Raw Angle: {0}".format( angles['raw_angle'] ) )
+            print( "Scaled Angle: {0}".format( angles['scaled_angle'] ) )
+            print( "Final Angle: {0}".format( angles['final_angle'] ) )
+            print( "Note: Maintaining angle relationship from A" )
+
+    def _log_final_result( self, moving_c_value, final_angle ):
+        if self.debug:
+            print( "\n=== Final Frame Result ===" )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Final Angle: {0}".format( final_angle ) )
+            print( "Note: Non-zero final angle preserved from A's angle" )
+            print( "================\n" )
+
+    def _log_point_b_projection( self, point_c_time, current_value, target_value,
+                              angle_a_deg, vert_dist, horz_dist, point_b_time, point_b_value ):
+        if self.debug:
+            print( "\n=== Point B Projection Details ===" )
+            print( "Starting Point C:" )
+            print( "  Time: {0}".format( point_c_time ) )
+            print( "  Value: {0}".format( current_value ) )
+            print( "Target Point A:" )
+            print( "  Value: {0}".format( target_value ) )
+            print( "Projection:" )
+            print( "  A's Angle (degrees): {0}".format( angle_a_deg ) )
+            print( "  Vertical Distance (A to C): {0}".format( vert_dist ) )
+            print( "  Horizontal Distance (A to B): {0}".format( horz_dist ) )
+            print( "Resulting Point B:" )
+            print( "  Time: {0}".format( point_b_time ) )
+            print( "  Value: {0}".format( point_b_value ) )
+            print( "  Note: B created at C's height using A's angle" )
+
+
+class Geometric5BlendStrategy( BlendStrategy ):
+    """Uses geometric relationships between points A, B, C for blending with intersection-based point B"""
+
+    def __init__( self, core ):
+        BlendStrategy.__init__( self, core )
+        self.debug = False
+        self.uses_signed_blend = True
+
+    def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
+        """
+        Blend using three key points:
+        A: Target point (current_time, target_value)
+        B: Intersection point of C's angle and target's angle
+        C: Current point (current_time, current_value)
+        """
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            point_c_time = curve_data.keys[current_idx]
+            running_value = curve_data.get_running_value( current_idx )
+
+            self._log_initial_state( blend_factor, point_c_time, current_value, running_value, target_value )
+
+            # Get point B by finding intersection of angles
+            point_b = self._find_point_b( curve, curve_data, current_idx, point_c_time, current_value, target_value, target_tangents, blend_factor )
+            self._log_anchor_info( point_b )
+
+            # Get angle at C and calculate new position
+            angle_c = curve_data.tangents['in_angles'][current_idx]
+            self._log_angle_info( angle_c )
+
+            moving_c_value = self._calculate_point_c_position( current_value, target_value, blend_factor )
+            self._log_position_calculation( abs( blend_factor ), moving_c_value )
+
+            # Calculate geometric relationships between A, B, C
+            triangle_abc = self._calculate_triangle_abc( 
+                point_c_time, current_value,
+                point_b['time'], point_b['value'],
+                moving_c_value, angle_c
+            )
+            self._log_geometry_data( triangle_abc )
+
+            angles = self._calculate_abc_angles( triangle_abc, angle_c, current_value, moving_c_value, point_b['value'], target_tangents, target_value )
+            self._log_angle_calculation( angles )
+
+            tangents = self._prepare_tangent_result( angles, target_tangents )
+            self._update_curve_state( curve_data, current_idx, moving_c_value, tangents )
+            self._log_final_result( moving_c_value, angles['final_angle'] )
+
+            return moving_c_value, tangents
+
+        except Exception as e:
+            print( "Error in geometric blending: {0}".format( e ) )
+            return current_value, None
+
+    def _find_point_b( self, curve, curve_data, current_idx, point_c_time, current_value, target_value, target_tangents, blend_factor ):
+        """Find point B as intersection of two lines: one from C with angle_c, one from target with target angle"""
+        MIN_DELTA = 0.001
+
+        # Get angles for both lines
+        angle_c = math.radians( curve_data.tangents['in_angles'][current_idx] )
+        target_angle = math.radians( target_tangents['in'][0] )
+
+        # If angles are effectively parallel, we're already at the right angle
+        if abs( angle_c - target_angle ) < math.radians( 0.1 ):
+            # Angles match - no intersection needed
+            point_b_time = point_c_time
+            point_b_value = target_value
+        else:
+            # Convert angles to slopes
+            slope_c = math.tan( angle_c )
+            slope_target = math.tan( target_angle )
+
+            # Calculate intersection
+            point_b_time = ( 
+                ( target_value - current_value + slope_c * point_c_time - slope_target * point_c_time )
+                / ( slope_c - slope_target )
+            )
+            point_b_value = current_value + slope_c * ( point_b_time - point_c_time )
+
+        if self.debug:
+            print( "\n=== Point B Intersection ===" )
+            print( "Point C - Time: {0}, Value: {1}".format( point_c_time, current_value ) )
+            print( "Target - Value: {0}".format( target_value ) )
+            print( "Point B - Time: {0}, Value: {1}".format( point_b_time, point_b_value ) )
+
+        return {
+            'time': point_b_time,
+            'value': point_b_value
+        }
+
+    def _calculate_point_c_position( self, current_value, target_value, blend_factor ):
+        """Calculate new position for point C based on blend factor. 
+        Negative blend: pull towards target
+        Positive blend: push away from target by the same amount"""
+
+        # Calculate the distance from current to target
+        delta = target_value - current_value
+
+        # For negative blend: move toward target by blend_factor * delta
+        # For positive blend: move away from target by blend_factor * delta
+        return current_value - blend_factor * delta
+
+    def _calculate_triangle_abc( self, time_c, value_c, time_b, value_b, moving_c_value, angle_c ):
+        """Calculate geometric relationships between points A, B, and C for any triangle"""
+
+        def normalize_angle( angle ):
+            while angle > 90:
+                angle = angle - 180
+            while angle < -90:
+                angle = angle + 180
+            return angle
+
+        # Calculate vector from C to B
+        dx = time_b - time_c
+        dy = value_b - moving_c_value
+
+        # Calculate raw angle from C to B
+        # This should remain constant regardless of C's movement
+        raw_angle = normalize_angle( math.degrees( math.atan2( dy, dx ) ) )
+
+        # Store initial relationship for reference
+        initial_opposite = abs( value_c - value_b )
+        initial_adjacent = abs( time_c - time_b )
+        initial_raw = normalize_angle( math.degrees( math.atan2( value_b - value_c, dx ) ) )
+
+        if self.debug:
+            print( "\n=== Triangle Geometry ===" )
+            print( "Vector C->B: dx={0}, dy={1}".format( dx, dy ) )
+            print( "Moving C value: {0}".format( moving_c_value ) )
+            print( "B value: {0}".format( value_b ) )
+            print( "Raw angle C->B: {0}".format( raw_angle ) )
+            print( "Initial raw angle: {0}".format( initial_raw ) )
+
+        return {
+            'initial_opposite': initial_opposite,
+            'initial_adjacent': initial_adjacent,
+            'initial_raw': initial_raw,
+            'scale_factor': 1.0,
+            'opposite': abs( dy ),
+            'adjacent': abs( dx ),
+            'raw_angle': raw_angle  # This angle should remain consistent as C moves
+        }
+
+    def _calculate_abc_angles( self, triangle_abc, angle_c, current_value, moving_c_value, value_b, target_tangents, target_value ):
+        """Calculate angles based on geometric relationships for any triangle"""
+        MIN_DELTA = 0.1  # Same threshold as in _find_point_b
+
+        # If original angles were parallel, just use the target angle
+        if abs( angle_c - target_tangents['in'][0] ) < MIN_DELTA:
+            final_angle = target_tangents['in'][0]
+        else:
+            final_angle = triangle_abc['raw_angle']
+
+        if self.debug:
+            print( "\n=== Angle Calculations ===" )
+            print( "Raw angle C->B: {0}".format( final_angle ) )
+            print( "Current value: {0}".format( current_value ) )
+            print( "Moving value: {0}".format( moving_c_value ) )
+            print( "Target value: {0}".format( target_value ) )
+
+        return {
+            'raw_angle': final_angle,
+            'scaled_angle': final_angle,
+            'final_angle': final_angle
+        }
+
+    def _prepare_tangent_result( self, angles, target_tangents ):
+        """Prepare tangent result structure"""
+        return {
+            'in': ( angles['final_angle'], target_tangents['in'][1] ),
+            'out': ( angles['final_angle'], target_tangents['out'][1] )
+        }
+
+    def _update_curve_state( self, curve_data, current_idx, moving_c_value, tangents ):
+        """Update the running state of the curve"""
+        curve_data.update_running_state( current_idx, moving_c_value, tangents )
+
+    # [Logging methods remain the same]
+
+    def _log_initial_state( self, blend_factor, point_c_time, current_value,
+                          running_value, target_value ):
+        if self.debug:
+            print( "\n=== Geometric4 Frame Start ===" )
+            print( "Blend Factor: {0}".format( blend_factor ) )
+            print( "Time C: {0}".format( point_c_time ) )
+            print( "Value C (current): {0}".format( current_value ) )
+            print( "Value C (running): {0}".format( running_value ) )
+            print( "Value A (target): {0}".format( target_value ) )
+
+    def _log_anchor_info( self, point_b ):
+        if self.debug:
+            print( "\n=== Point B Info ===" )
+            print( "B Time: {0}".format( point_b['time'] ) )
+            print( "B Value: {0}".format( point_b['value'] ) )
+            print( "Note: B shares y-value with C" )
+
+    def _log_angle_info( self, angle_a ):
+        if self.debug:
+            print( "\n=== Target Angle Info ===" )
+            print( "A's Angle: {0}".format( angle_a ) )
+            print( "Note: This angle will be maintained through blend" )
+
+    def _log_position_calculation( self, merge_mult, moving_c_value ):
+        if self.debug:
+            print( "\n=== C Position Update ===" )
+            print( "Blend Multiplier: {0}".format( merge_mult ) )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Note: C moving towards A while maintaining angle relationship" )
+
+    def _log_geometry_data( self, triangle_abc ):
+        if self.debug:
+            print( "\n=== Triangle Geometry ===" )
+            print( "Initial State:" )
+            print( "  Opposite (B-C vertical): {0} (should be near 0)".format( 
+                triangle_abc['initial_opposite'] ) )
+            print( "  Adjacent (B-C horizontal): {0}".format( 
+                triangle_abc['initial_adjacent'] ) )
+            print( "Current State:" )
+            print( "  Opposite (moving): {0}".format( triangle_abc['opposite'] ) )
+            print( "  Adjacent: {0}".format( triangle_abc['adjacent'] ) )
+            print( "  Scale Factor: {0}".format( triangle_abc['scale_factor'] ) )
+            print( "Note: Triangle formed by B at C's level" )
+
+    def _log_angle_calculation( self, angles ):
+        if self.debug:
+            print( "\n=== Angle Calculations ===" )
+            print( "Raw Angle: {0}".format( angles['raw_angle'] ) )
+            print( "Scaled Angle: {0}".format( angles['scaled_angle'] ) )
+            print( "Final Angle: {0}".format( angles['final_angle'] ) )
+            print( "Note: Maintaining angle relationship from A" )
+
+    def _log_final_result( self, moving_c_value, final_angle ):
+        if self.debug:
+            print( "\n=== Final Frame Result ===" )
+            print( "New C Value: {0}".format( moving_c_value ) )
+            print( "Final Angle: {0}".format( final_angle ) )
+            print( "Note: Non-zero final angle preserved from A's angle" )
+            print( "================\n" )
+
+    def _log_point_b_projection( self, point_c_time, current_value, target_value,
+                              angle_a_deg, vert_dist, horz_dist, point_b_time, point_b_value ):
+        if self.debug:
+            print( "\n=== Point B Projection Details ===" )
+            print( "Starting Point C:" )
+            print( "  Time: {0}".format( point_c_time ) )
+            print( "  Value: {0}".format( current_value ) )
+            print( "Target Point A:" )
+            print( "  Value: {0}".format( target_value ) )
+            print( "Projection:" )
+            print( "  A's Angle (degrees): {0}".format( angle_a_deg ) )
+            print( "  Vertical Distance (A to C): {0}".format( vert_dist ) )
+            print( "  Horizontal Distance (A to B): {0}".format( horz_dist ) )
+            print( "Resulting Point B:" )
+            print( "  Time: {0}".format( point_b_time ) )
+            print( "  Value: {0}".format( point_b_value ) )
+            print( "  Note: B created at C's height using A's angle" )

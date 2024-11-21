@@ -117,7 +117,11 @@ class LinearTargetStrategy( TargetStrategy ):
 
                 # For negative (towards linear), use linear value
                 # For positive (away from linear), exaggerate from linear
+                '''
+                # this doesnt work for this strategy, in its current state, relic from direct methodology
                 return linear_value, current_value + delta
+                '''
+                return linear_value, linear_value
 
             return current_value, current_value
 
@@ -166,7 +170,8 @@ class LinearTargetStrategy( TargetStrategy ):
                     'in': ( curr_in_angle + in_diff, 1.0 ),
                     'out': ( curr_out_angle + out_diff, 1.0 )
                 }
-
+                # TODO: relic from direct methodology, im pretty sure both should be the same, likely only one should be returned, its causing issues in blending
+                # return negative_tangents, positive_tangents
                 return negative_tangents, positive_tangents
 
             # Fallback to current tangents

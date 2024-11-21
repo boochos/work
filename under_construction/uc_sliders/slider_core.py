@@ -35,10 +35,10 @@ class SliderCore( object ):
         self.blending_strategies = {
             'rate': slider_strategies_blending.RateBasedBlendStrategy( self ),
             'linear': slider_strategies_blending.LinearBlendStrategy( self ),
-            'geom': slider_strategies_blending.GeometricBlendStrategy( self ),
             'expand': slider_strategies_blending.ExpandingBlendStrategy( self ),
             'contract': slider_strategies_blending.ContractingBlendStrategy( self ),
-            'geom3': slider_strategies_blending.Geometric3BlendStrategy( self )
+            'geom5': slider_strategies_blending.Geometric5BlendStrategy( self ),
+            'geom6': slider_strategies_blending.Geometric6BlendStrategy( self )
         }
         self.current_targeting_strategy = 'linear'
         self.current_blending_strategy = 'rate'
@@ -65,6 +65,7 @@ class SliderCore( object ):
         self.anim_layers = cmds.ls( type = 'animLayer' )
         self.current_time = cmds.currentTime( query = True )
         self.blend_nodes = self._get_blend_nodes()
+        # print(self.blend_nodes)
 
         # Process each curve
         for curve in curves:
