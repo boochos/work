@@ -35,13 +35,11 @@ class SliderCore( object ):
         self.blending_strategies = {
             'rate': slider_strategies_blending.RateBasedBlendStrategy( self ),
             'linear': slider_strategies_blending.LinearBlendStrategy( self ),
-            'expand': slider_strategies_blending.ExpandingBlendStrategy( self ),
-            'contract': slider_strategies_blending.ContractingBlendStrategy( self ),
             'geom5': slider_strategies_blending.Geometric5BlendStrategy( self ),
-            'geom6': slider_strategies_blending.Geometric6BlendStrategy( self )
+            'geom7': slider_strategies_blending.Geometric7BlendStrategy( self )
         }
         self.current_targeting_strategy = 'linear'
-        self.current_blending_strategy = 'rate'
+        self.current_blending_strategy = 'linear'
 
     def get_curve_tangents( self, curve ):
         return self.curve_data[curve].tangents

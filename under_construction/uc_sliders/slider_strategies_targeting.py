@@ -172,7 +172,7 @@ class LinearTargetStrategy( TargetStrategy ):
                 }
                 # TODO: relic from direct methodology, im pretty sure both should be the same, likely only one should be returned, its causing issues in blending
                 # return negative_tangents, positive_tangents
-                return negative_tangents, positive_tangents
+                return negative_tangents, negative_tangents
 
             # Fallback to current tangents
             current_tangents = {
@@ -267,7 +267,9 @@ class SplineTargetStrategy( TargetStrategy ):
                 # Calculate blend targets
                 current_value = all_values[current_idx]
                 delta = bezier_value - current_value
-                return bezier_value, current_value - delta
+                # changing to return the same value to make compatible with triangle blending strategy
+                # return bezier_value, current_value - delta
+                return bezier_value, bezier_value
 
             return all_values[current_idx], all_values[current_idx]
 
@@ -390,8 +392,9 @@ class SplineTargetStrategy( TargetStrategy ):
                 'in': ( curr_in_angle - in_delta, in_length ),
                 'out': ( curr_out_angle - out_delta, out_length )
             }
-
-            return negative_tangents, positive_tangents
+            # changing to make compatible with triangle blending strategy
+            # return negative_tangents, positive_tangents
+            return negative_tangents, negative_tangents
 
         return None, None
 
