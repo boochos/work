@@ -5,21 +5,22 @@ import sys
 import maya.cmds as cmds
 
 
-class PrefsDirectoryManager:
+class DataDirectoryManager:
     """
-    Manages preference paths and directories for the Under Construction tools.
-    Uses main Maya directory as the root location for preferences.
+    Manages data and preference paths for the Under Construction tools.
+    Uses main Maya directory as the root location.
     Compatible with Python 2.7 and 3.x and different operating systems.
     """
 
     def __init__( self ):
-        self.prefs_dir_name = 'under_construction_prefs'  # Name of preferences directory
+        self.data_dir_name = 'under_construction_data'  # Name of main data directory
+        self.prefs_dir_name = 'prefs'  # Name of preferences subdirectory
         self.root_dir = self._get_maya_main_directory()
 
     def _get_maya_main_directory( self ):
         """
         Get Maya's main directory path based on OS.
-        This will be used as the root for preferences.
+        This will be used as the root for data directory.
         Returns the main scripts directory path.
         """
         system = platform.system().lower()
@@ -43,7 +44,7 @@ class PrefsDirectoryManager:
             sys.stderr.flush()
             return None
 
-        # Get the scripts directory in the main Maya path (not version specific)
+        # Get the scripts directory in the main Maya path
         scripts_path = os.path.join( base_path, 'scripts' )
 
         # Ensure scripts directory exists
@@ -61,27 +62,25 @@ class PrefsDirectoryManager:
 
         return scripts_path
 
-    def create_prefs_directory( self ):
+    def create_data_directory( self ):
         """
-        Create the preferences directory in Maya's main scripts directory if it doesn't exist.
-        Returns the full path to the preferences directory.
+        Create the main data directory in Maya's scripts directory if it doesn't exist.
+        Returns the full path to the data directory.
         """
         if self.root_dir:
-            prefs_path = os.path.join( self.root_dir, self.prefs_dir_name )
+            data_path = os.path.join( self.root_dir, self.data_dir_name )
+            return self.ensure_directory_exists( data_path )
+        return None
 
-            if not os.path.exists( prefs_path ):
-                try:
-                    os.makedirs( prefs_path )
-                    message = "Created preferences directory at: {0}".format( prefs_path )
-                    sys.stdout.write( message + "\n" )
-                    sys.stdout.flush()
-                except OSError as e:
-                    message = "Error creating preferences directory: {0}".format( e )
-                    sys.stderr.write( message + "\n" )
-                    sys.stderr.flush()
-                    return None
-
-            return prefs_path
+    def create_prefs_directory( self ):
+        """
+        Create the preferences directory inside the data directory.
+        Returns the full path to the preferences directory.
+        """
+        data_dir = self.create_data_directory()
+        if data_dir:
+            prefs_path = os.path.join( data_dir, self.prefs_dir_name )
+            return self.ensure_directory_exists( prefs_path )
         return None
 
     def get_pref_file_path( self, filename ):
@@ -99,6 +98,27 @@ class PrefsDirectoryManager:
             return os.path.join( prefs_dir, filename )
         return None
 
+    def get_data_file_path( self, filename, subdirectory = None ):
+        """
+        Get the full path for a data file.
+        
+        Args:
+            filename (str): Name of the data file
+            subdirectory (str, optional): Subdirectory within the data directory
+            
+        Returns:
+            str: Full path to the data file
+        """
+        data_dir = self.create_data_directory()
+        if data_dir:
+            if subdirectory:
+                subdir_path = os.path.join( data_dir, subdirectory )
+                if self.ensure_directory_exists( subdir_path ):
+                    return os.path.join( subdir_path, filename )
+                return None
+            return os.path.join( data_dir, filename )
+        return None
+
     @staticmethod
     def ensure_directory_exists( directory ):
         """
@@ -108,19 +128,21 @@ class PrefsDirectoryManager:
             directory (str): Path to directory
             
         Returns:
-            bool: True if directory exists or was created successfully
+            str or None: Directory path if successful, None if failed
         """
         if not os.path.exists( directory ):
             try:
                 os.makedirs( directory )
-                return True
+                message = "Created directory: {0}".format( directory )
+                sys.stdout.write( message + "\n" )
+                sys.stdout.flush()
             except OSError as e:
                 message = "Error creating directory {0}: {1}".format( directory, e )
                 sys.stderr.write( message + "\n" )
                 sys.stderr.flush()
-                return False
-        return True
+                return None
+        return directory
 
 
 # Create singleton instance
-prefs_dir_manager = PrefsDirectoryManager()
+data_dir_manager = DataDirectoryManager()
