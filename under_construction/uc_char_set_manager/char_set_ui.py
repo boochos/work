@@ -1,585 +1,847 @@
-from __future__ import with_statement
-
-from subprocess import call
-import fnmatch
+# -*- coding: utf-8 -*-
 import imp
+import json
 import os
-import subprocess
+import shutil
+import time
+
+from PySide2.QtCore import Qt, QSize
+from PySide2.QtGui import QColor
+from PySide2.QtWidgets import ( QWidget, QVBoxLayout, QHBoxLayout,
+                              QRadioButton, QButtonGroup, QTreeWidget,
+                              QTreeWidgetItem, QListWidget, QLabel,
+                              QSplitter, QMenu, QFrame, QPushButton, QComboBox, QToolButton, QLineEdit, QGridLayout )
+from shiboken2 import wrapInstance
 
 from under_construction.uc_char_set_manager import char_set_core as core
+from under_construction.uc_data import data_root
+from under_construction.uc_theme import theme_colors as tc
+import maya.OpenMayaUI as omui
 import maya.cmds as cmds
-import maya.mel as mel
+import os.path as osPath
 
-#
-imp.reload( core )
-
-# TODO: ui overhaul
-# include import export in one window
-# easier string replacement, include char sets in replace consideration
-# include membership editing in ui
-# remove location editing, force paths
-# add multi namespace remapping
-# fix problem with reopening window while its open
+imp.reload( tc )
 
 
-def message( what = '', maya = True ):
-    what = '-- ' + what + ' --'
-    if maya:
-        mel.eval( 'print \"' + what + '\";' )
-    else:
-        print( what )
+def maya_main_window():
+    """Return Maya's main window"""
+    main_window = omui.MQtUtil.mainWindow()
+    return wrapInstance( int( main_window ), QWidget )
 
 
-class CSUI( object ):
-    '''
-    Build CharacterSet UI
-    '''
+class CharacterSetDirectoryManager:
+    """Manages the directory structure and file operations for character sets"""
 
-    def __init__( self, export = False, path = '', filters = ['.json', '.txt', '.mb', '.ma', '*.*'], columnWidth = 200 ):
-        # external
-        self.export = export
-        self.path = core.defaultPath()
-        self.filters = filters
-        self.columnWidth = columnWidth
-        # internal
-        self.windowName = 'CharacterSetManager'
-        self.shortcutsFile = '/var/tmp/custom_info.txt'
-        self.shortcuts = []
-        self.actionLabel = 'import'
-        self.dirStr = ' / '
-        self.par = ' '
-        self.mem = '   '
-        # execute
-        self.cleanUI()
-        self.whichContext()
+    def __init__( self ):
+        self.data_manager = data_root.data_dir_manager
+        self.base_dir = None
+        self.flushed_dir = None
+        self.archived_dir = None
+        self.setup_directories()
 
-    def whichContext( self ):
-        if self.export:
-            self.actionLabel = 'export'
-            self.browser()
-            self.drawWindow()
-            self.populateSets()
-        else:
-            self.browser()
-            self.drawWindow()
-            self.populateNamespace()
-        self.populateShortcuts()
-        self.populateBrowse()
-
-    def message( self, what = '', maya = True, ui = True, *args ):
-        if what != '':
-            if maya:
-                mel.eval( 'print \"' + '-- ' + what + ' --' + '\";' )
-        else:
-            # print ''
-            pass
-        if ui:
-            cmds.text( self.messageForm.heading, edit = True, l = '   ' + what + '   ' )
-            # cmds.form(self.messageForm.form, edit=True, )
-
-    def cleanUI( self, *args ):
+    def setup_directories( self ):
+        """Create the necessary directory structure"""
         try:
-            cmds.deleteUI( self.windowName )
-        except:
-            pass
+            # Get base directory and create characterSets subdirectory
+            data_dir = self.data_manager.create_data_directory()
+            self.base_dir = os.path.join( data_dir, 'characterSets' )
 
-    def browser( self ):
-        self.win = cmds.window( self.windowName, w = 700 )
-        # main form
-        self.mainForm = cmds.formLayout( 'mainForm' )
-        # bottom form
-        cmds.setParent( self.mainForm )
-        self.mainBottomForm = cmds.formLayout( 'mainBottomForm', h = 100 )
-        attachForm = [( self.mainBottomForm, 'left', 5 ), ( self.mainBottomForm, 'bottom', 15 ), ( self.mainBottomForm, 'right', 5 )]
-        cmds.formLayout( self.mainForm, edit = True, attachForm = attachForm )
-        # action
-        self.actionForm = Action( 'action', parent = self.mainBottomForm, filters = self.filters, cmdCancel = self.cleanUI, cmdAction = self.cmdAction, cmdOpen = self.cmdOpen, label = self.actionLabel )
-        attachForm = [( self.actionForm.form, 'left', 0 ), ( self.actionForm.form, 'bottom', 0 ), ( self.actionForm.form, 'right', 0 )]
-        cmds.formLayout( self.mainBottomForm, edit = True, attachForm = attachForm )
-        # message
-        self.messageForm = Form( label = '', name = 'message', parent = self.mainBottomForm )
-        cmds.formLayout( self.messageForm.form, edit = True, h = 20 )
-        cmds.text( self.messageForm.heading, edit = True, al = 'right' )
-        attachForm = [( self.messageForm.form, 'left', 0 ), ( self.messageForm.form, 'right', 2 ), ( self.messageForm.form, 'bottom', self.actionForm.heightForm )]
-        cmds.formLayout( self.mainBottomForm, edit = True, attachForm = attachForm )
-        # path
-        self.pathForm = Form( text = self.path, label = 'Path', name = 'path', parent = self.mainBottomForm, createField = True )
-        attachForm = [( self.pathForm.form, 'left', 0 ), ( self.pathForm.form, 'right', 0 ), ( self.pathForm.form, 'bottom', self.actionForm.heightForm + self.messageForm.heightForm )]
-        cmds.formLayout( self.mainBottomForm, edit = True, attachForm = attachForm )
-        # edit form height
-        h = cmds.formLayout( self.actionForm.form, q = True, h = True ) + cmds.formLayout( self.pathForm.form, q = True, h = True ) + cmds.formLayout( self.messageForm.form, q = True, h = True )
-        cmds.formLayout( self.mainBottomForm, edit = True, h = h )
-        # left form
-        cmds.setParent( self.mainForm )
-        self.mainTopLeftForm = cmds.formLayout( 'mainTopLeftForm', w = self.columnWidth, h = 80 )
-        attachForm = [( self.mainTopLeftForm, 'left', 5 ), ( self.mainTopLeftForm, 'top', 5 ), ( self.mainTopLeftForm, 'bottom', 5 )]
-        attachControl = [( self.mainTopLeftForm, 'bottom', 5, self.mainBottomForm )]
-        cmds.formLayout( self.mainForm, edit = True, attachForm = attachForm, attachControl = attachControl )
-        # custom paths
-        self.shortcutsForm = Form( label = 'Shortcuts', name = 'customPaths', parent = self.mainTopLeftForm, createList = True, cmdSingle = self.cmdShortcuts )
-        cmds.formLayout( self.shortcutsForm.form, edit = True, h = 60 )
-        attachForm = [( self.shortcutsForm.form, 'left', 0 ), ( self.shortcutsForm.form, 'top', 0 ), ( self.shortcutsForm.form, 'right', 0 )]
-        cmds.formLayout( self.mainTopLeftForm, edit = True, attachForm = attachForm )
-        # browse paths
-        self.browseForm = Form( label = 'Browse', name = 'browse', parent = self.mainTopLeftForm, createList = True, cmdSingle = self.cmdBrowse, h = 80 )
-        attachForm = [( self.browseForm.form, 'left', 0 ), ( self.browseForm.form, 'bottom', 0 ), ( self.browseForm.form, 'right', 0 )]
-        attachControl = [( self.browseForm.form, 'top', 0, self.shortcutsForm.form )]
-        cmds.formLayout( self.mainTopLeftForm, edit = True, attachForm = attachForm, attachControl = attachControl )
-        # modular form
-        cmds.setParent( self.mainForm )
-        self.mainModularForm = cmds.formLayout( 'mainTopRightForm', w = 150, h = 80 )
-        attachForm = [( self.mainModularForm, 'top', 5 ), ( self.mainModularForm, 'right', 5 )]
-        attachControl = [( self.mainModularForm, 'left', 20, self.mainTopLeftForm ), ( self.mainModularForm, 'bottom', 5, self.mainBottomForm )]
-        cmds.formLayout( self.mainForm, edit = True, attachForm = attachForm, attachControl = attachControl )
+            # Create subdirectories
+            self.flushed_dir = os.path.join( self.base_dir, 'flushed' )
+            self.archived_dir = os.path.join( self.base_dir, 'archived' )
 
-    def drawWindow( self ):
-        # fill mainModularForm
-        if not self.export:
-            self.importCS( self.mainModularForm )
-        else:
-            self.exportCS( self.mainModularForm )
-        # launch window
-        cmds.showWindow( self.win )
+            # Ensure directories exist
+            for directory in [self.base_dir, self.flushed_dir, self.archived_dir]:
+                if not os.path.exists( directory ):
+                    os.makedirs( directory )
 
-    def importCS( self, *args ):
-        # replace
-        self.replaceForm = Form( label = "Build Replace String (  ie. search:replace,search:replace  )", name = 'replace', parent = self.mainModularForm, createField = True )
-        attachForm = [( self.replaceForm.form, 'left', 0 ), ( self.replaceForm.form, 'right', 0 ), ( self.replaceForm.form, 'bottom', self.replaceForm.heightForm )]
-        cmds.formLayout( self.mainModularForm, edit = True, attachForm = attachForm )
-        # prefix
-        self.prefixForm = Form( label = 'Add Prefix', name = 'prefix', parent = self.mainModularForm, createField = True )
-        attachForm = [( self.prefixForm.form, 'left', 0 ), ( self.prefixForm.form, 'right', 0 ), ( self.prefixForm.form, 'bottom', 0 )]
-        cmds.formLayout( self.mainModularForm, edit = True, attachForm = attachForm )
-        # nameSpace, right attach
-        self.namespaceForm = Form( label = 'Use In Scene Namespace', name = 'nameSpace', parent = self.mainModularForm, createList = True, h = 80 )
-        cmds.formLayout( self.namespaceForm.form, edit = True, w = 150 )
-        attachForm = [( self.namespaceForm.form, 'top', 0 ), ( self.namespaceForm.form, 'right', 0 ), ( self.namespaceForm.form, 'bottom', 0 )]
-        attachControl = [( self.namespaceForm.form, 'bottom', 0, self.replaceForm.form )]
-        cmds.formLayout( self.mainModularForm, edit = True, attachForm = attachForm, attachControl = attachControl )
-        # preview section, middle attach
-        self.previewForm = Form( label = 'File Preview', name = 'read', parent = self.mainModularForm, createList = True, h = 80 )
-        cmds.formLayout( self.previewForm.form, edit = True, w = 1 )
-        attachForm = [( self.previewForm.form, 'left', 0 ), ( self.previewForm.form, 'top', 0 ), ( self.previewForm.form, 'bottom', 0 )]
-        attachControl = [( self.previewForm.form, 'right', 5, self.namespaceForm.form ), ( self.previewForm.form, 'bottom', 0, self.replaceForm.form )]
-        cmds.formLayout( self.mainModularForm, edit = True, attachForm = attachForm, attachControl = attachControl )
+        except Exception as e:
+            cmds.warning( "Failed to setup directories: {}".format( str( e ) ) )
 
-    def exportCS( self, *args ):
-        # in scene character sets, middle attach
-        self.setsForm = Form( label = 'Select Character Set to Export', name = 'characterSets', parent = self.mainModularForm, createList = True, h = 80, cmdSingle = self.cmdSets )
-        cmds.formLayout( self.setsForm.form, edit = True, w = 200 )
-        attachForm = [( self.setsForm.form, 'left', 0 ), ( self.setsForm.form, 'top', 0 ), ( self.setsForm.form, 'bottom', 0 )]
-        # attachControl = [(self.setsForm.form,'right',5, self.membersForm.form)]
-        cmds.formLayout( self.mainModularForm, edit = True, attachForm = attachForm )
-        # character set members, right attach
-        self.membersForm = Form( label = 'Set Members', name = 'characterSetMembers', parent = self.mainModularForm, createList = True, h = 80 )
-        cmds.formLayout( self.membersForm.form, edit = True, w = 1 )
-        attachForm = [( self.membersForm.form, 'top', 0 ), ( self.membersForm.form, 'right', 0 ), ( self.membersForm.form, 'bottom', 0 )]
-        attachControl = [( self.membersForm.form, 'left', 5, self.setsForm.form )]
-        cmds.formLayout( self.mainModularForm, edit = True, attachForm = attachForm, attachControl = attachControl )
+    def get_files( self, directory_type = 'main' ):
+        """Get list of character set files from specified directory"""
+        try:
+            directory = {
+                'main': self.base_dir,
+                'flushed': self.flushed_dir,
+                'archived': self.archived_dir
+            }.get( directory_type )
 
-    def format( self, line = '' ):
-        if 'ParentInfo' in line:
-            return self.par + line
-        else:
-            return self.mem + line
+            if not directory or not os.path.exists( directory ):
+                return []
 
-    def buildDict( self ):
-        rp = cmds.textField( self.replaceForm.field, q = True, tx = True )
-        rp = rp.replace( ' ', '' )
-        dic = {}
-        if rp:
-            try:
-                if ',' in rp:
-                    rp = rp.split( ',' )
-                    for d in rp:
-                        dic[d.split( ':' )[0]] = d.split( ':' )[1]
-                    return dic
-                else:
-                    dic[rp.split( ':' )[0]] = rp.split( ':' )[1]
-                    return dic
-            except:
-                self.message( "FAIL  --  Replace string failed. --  Use colons,commas  --    ie.    search1:replace1,search2:replace2" )
-        else:
+            # Get only json files and strip extension
+            files = []
+            for f in os.listdir( directory ):
+                if os.path.isfile( os.path.join( directory, f ) ) and f.endswith( '.json' ):
+                    # Strip .json extension
+                    name = os.path.splitext( f )[0]
+                    files.append( name )
+
+            return sorted( files )  # Return sorted list
+
+        except Exception as e:
+            cmds.warning( "Failed to get files from {}: {}".format( directory_type, str( e ) ) )
+            return []
+
+    def get_file_content( self, filename, directory_type = 'main' ):
+        """Read and return the content of a character set file"""
+        try:
+            directory = {
+                'main': self.base_dir,
+                'flushed': self.flushed_dir,
+                'archived': self.archived_dir
+            }.get( directory_type )
+
+            if not directory:
+                return None
+
+            # Add .json extension if it's not there
+            if not filename.endswith( '.json' ):
+                filename = "{}.json".format( filename )
+
+            file_path = os.path.join( directory, filename )
+
+            if not os.path.exists( file_path ):
+                cmds.warning( "File not found: {}".format( file_path ) )
+                return None
+
+            with open( file_path, 'r' ) as f:
+                return json.load( f )
+
+        except Exception as e:
+            cmds.warning( "Failed to read file {}: {}".format( filename, str( e ) ) )
             return None
 
-    def populatePath( self ):
-        cmds.textField( self.pathForm.field, edit = True, text = self.path )
+    def get_directory( self, directory_type ):
+        """Get directory path for given type"""
+        return {
+            'main': self.base_dir,
+            'flushed': self.flushed_dir,
+            'archived': self.archived_dir
+        }.get( directory_type )
 
-    def populateShortcuts( self ):
-        if not os.path.exists( self.shortcutsFile ):
-            self.shortcuts.append( ['Home', os.environ['HOME']] )
-            # self.shortcuts.append(['Desktop', os.path.join(os.environ['USERPROFILE'],'Desktop')])
-            self.shortcuts.append( ['Character Sets', os.path.join( os.environ['HOME'], core.defaultPath() )] )
-            core.createDefaultPath()
-        else:
-            _file = open( self.shortcutsFile, 'r' )
-            lines = _file.readlines()
-            for l in lines:
-                line = eval( l.strip( '\n' ) )
-                self.shortcuts.append( [line[0], line[1]] )
-        for path in self.shortcuts:
-            cmds.textScrollList( self.shortcutsForm.scroll, edit = True, append = path[0] )
 
-    def populateBrowse( self ):
-        # Make sure the path exists and access is permitted
-        if os.path.isdir( self.path ) and os.access( self.path, os.R_OK ):
-            # Clear the textScrollList
-            cmds.textScrollList( self.browseForm.scroll, edit = True, ra = True )
-            # Append the '..'(move up a director) as the first item
-            cmds.textScrollList( self.browseForm.scroll, edit = True, append = '..' )
-            # Populate the directories and non-directories for organization
-            dirs = []
-            nonDir = []
-            # list the files in the path
-            files = os.listdir( str( self.path ) )
-            if len( files ) > 0:
-                # Sort the directory list based on the names in lowercase
-                # This will error if 'u' objects are fed into a list
-                files.sort( key = str.lower )
-                # pick out the directories
-                for i in files:
-                    if i[0] != '.':
-                        if os.path.isdir( os.path.join( self.path, i ) ):
-                            dirs.append( i )
-                        else:
-                            nonDir.append( i )
-                # Add the directories first
-                for i in dirs:
-                    cmds.textScrollList( self.browseForm.scroll, edit = True, append = self.dirStr + i )
-                # Add the files next
-                for i in nonDir:
-                    # print i
-                    # show the files based on the current filter
-                    if fnmatch.fnmatch( i, '*' + cmds.optionMenuGrp( self.actionForm.opt, query = True, v = True ) ):
-                        cmds.textScrollList( self.browseForm.scroll, edit = True, append = i )
+class CharSetThemeManager:
+    """
+    Minimal theme manager for Character Set UI components.
+    Focuses only on specific UI elements while leveraging existing ThemeColorManager.
+    """
 
-    def populatePreview( self ):
-        cmds.textScrollList( self.previewForm.scroll, edit = True, ra = True )
-        path = os.path.join( self.path, cmds.textScrollList( self.browseForm.scroll, query = True, si = True )[0] )
-        for line in open( path ):
-            cmds.textScrollList( self.previewForm.scroll, edit = True, append = self.format( line ).strip( '\n' ) )
+    def __init__( self ):
+        self.theme_manager = tc.ThemeColorManager( 'orange' )
 
-    def populateMembers( self ):
-        stp = '  '
-        self.message( '' )
-        cmds.textScrollList( self.membersForm.scroll, edit = True, ra = True )
-        charSet = cmds.textScrollList( self.setsForm.scroll, query = True, si = True )
-        members = cmds.character( charSet, query = True )
-        if members:
-            members.sort()
-            for member in members:
-                if cmds.nodeType( member ) != 'character':
-                    cmds.textScrollList( self.membersForm.scroll, edit = True, append = member )
-                else:
-                    cmds.textScrollList( self.membersForm.scroll, edit = True, append = stp + member )
-        else:
-            cmds.textScrollList( self.membersForm.scroll, edit = True, append = 'None' )
+    def get_title_bar_style( self ):
+        """Get stylesheet for title bar"""
+        return ( 
+            "border-radius: 2px;"
+        )
 
-    def populateSets( self, string = '', sets = core.listTop(), *args ):
-        for char in sets:
-            if char in core.listTop():
-                cmds.textScrollList( self.setsForm.scroll, edit = True, append = char )
-            subSets = cmds.listConnections( char, d = False, s = True, t = 'character' )
-            if subSets:
-                subSets.sort()
-                string = string + '   '
-                for sub in subSets:
-                    cmds.textScrollList( self.setsForm.scroll, edit = True, append = string + sub )
-                    if cmds.listConnections( sub, d = False, s = True, t = 'character' ):
-                        self.populateSets( string, [sub] )
-
-    def populateNamespace( self ):
-        namespace = []
-        ref = cmds.ls( type = 'reference' )
-        for s in ref:
-            f = None
-            try:
-                f = cmds.referenceQuery( s, filename = True )
-            except:
-                pass
-            if f is not None:
-                namespace.append( cmds.file( f, q = True, namespace = True ) )
-        for ns in namespace:
-            cmds.textScrollList( self.namespaceForm.scroll, edit = True, append = ns )
-
-    def cmdShortcuts( self, *args ):
-        tsl = cmds.textScrollList
-        tmp = tsl( self.shortcutsForm.scroll, query = True, sii = True )
-        if tmp is not None:
-            idx = tmp[0]
-            self.path = self.shortcuts[idx - 1][1]
-            self.populatePath()
-            self.populateBrowse()
-
-    def cmdBrowse( self, *args ):
-        tmp = cmds.textScrollList( self.browseForm.scroll, query = True, si = True )
-        if tmp is not None:
-            item = tmp[0]
-            # find if the current item is a directory
-            if item[:len( self.dirStr )] == self.dirStr:
-                item = item[len( self.dirStr ):]
-                path = os.path.join( self.path, item )
-                if os.path.exists( path ):
-                    if os.access( path, os.R_OK ):
-                        self.path = str( path )
-                        cmds.textField( self.pathForm.field, edit = True, tx = self.path )
-                        try:
-                            cmds.textScrollList( self.previewForm.scroll, edit = True, ra = True )
-                        except:
-                            pass
-                        self.populateBrowse()
-            elif item == '..':
-                path = os.path.split( self.path )[0]
-                # go up a directory
-                if os.path.exists( path ):
-                    if os.access( path, os.R_OK ):
-                        self.path = path
-                        cmds.textField( self.pathForm.field, edit = True, tx = path )
-                        try:
-                            cmds.textScrollList( self.previewForm.scroll, edit = True, ra = True )
-                        except:
-                            pass
-                        self.populateBrowse()
-            else:
-                # this is a file
-                path = os.path.join( self.path, item )
-                if os.path.isfile( path ):
-                    cmds.textField( self.pathForm.field, edit = True, tx = path )
-                    try:
-                        self.populatePreview()
-                    except:
-                        pass
-
-    def cmdSets( self, *args ):
-        self.populateMembers()
-
-    def cmdImport( self, *args ):
-        selFile = cmds.textScrollList( self.browseForm.scroll, q = True, si = True )
-        if selFile and '.json' in selFile[0]:
-            path = path = os.path.join( self.path, selFile[0] )
-            prefix = cmds.textField( self.prefixForm.field, q = True, tx = True )
-            try:
-                ns = cmds.textScrollList( self.namespaceForm.scroll, q = True, si = True )[0]
-            except:
-                ns = ''
-            dic = self.buildDict()
-            core.importFileFromJSON( path, prefix = prefix, ns = ns, rp = dic )
-        else:
-            self.message( 'Click a file with   \'.chr\'   extension' )
-
-    def cmdExport( self, *args ):
-        # this needs to account for user fed file name into path field
-        charSet = cmds.textScrollList( self.setsForm.scroll, q = True, si = True )
-        # file = cmds.textScrollList(self.browseForm.scroll, q=True, si=True)
-        path = cmds.textField( self.pathForm.field, q = True, tx = True )
+    def get_title_label_style( self ):
+        """Get stylesheet for title text"""
+        # return "color: white; font-weight: bold;"
         '''
-        if file:
-            print self.path
-            path = os.path.join(self.path, file[0])
-        else:
-            self.message('Select a character Set in the middle column.')
-            '''
-        if charSet:
-            if not os.path.isdir( path ):
-                charSet = charSet[0].replace( ' ', '' )
-                core.exportFileToJSON( charSet, path )
-                self.populateBrowse()
-                self.message( 'Set   ' + charSet + '   exported to   ' + path )
+        return ( 
+            "color: " +
+            self.theme_manager.base_color.name() +
+            ";"
+            "font-weight: bold;"
+        )'''
+
+        return ( 
+            "color: " +
+            self.theme_manager.get_color_for_state( 'hover' ).name() +
+            ";"
+            "font-weight: normal;"
+        )
+        '''
+        return ( 
+            "font-weight: bold;"
+        )'''
+
+    def get_import_button_style( self ):
+        """Get stylesheet for import button"""
+        return self.theme_manager.get_stylesheet_colors( "QPushButton" )
+
+    def get_close_button_style( self ):
+        """Get stylesheet for close button"""
+        return ( 
+            "QPushButton {"
+            "background-color: transparent;"
+            "color: " + self.theme_manager.get_color( 'greyDark' ).name() + ";"
+            "border: none;"
+            "font-size: 12px;"
+            "}"
+            "QPushButton:hover {"
+            "color: " + self.theme_manager.get_color_for_state( 'error' ).name() + ";"
+            "}"
+        )
+
+    def get_refresh_button_style( self ):
+        """Get stylesheet for close button"""
+        return ( 
+            "QPushButton {"
+            "background-color: transparent;"
+            "color: " + self.theme_manager.get_color( 'greyDark' ).name() + ";"
+            "border: none;"
+            "font-size: 12px;"
+            "}"
+            "QPushButton:hover {"
+            "color: " + self.theme_manager.get_color_for_state( 'error' ).name() + ";"
+            "}"
+        )
+
+    def get_list_view_style( self ):
+        """Get stylesheet for list view focus state"""
+        return ( 
+            "QListWidget:focus {"
+            "border: 1px solid " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
+            "}"
+            "QListWidget::item:selected {"
+            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
+            "}"
+        )
+
+    def get_tree_view_style( self ):
+        """Get stylesheet for tree view focus state"""
+        return ( 
+            "QTreeWidget:focus {"
+            "border: 1px solid " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
+            "}"
+            "QTreeWidget::item:selected {"
+            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
+            "}"
+            "QTreeWidget::branch:selected {"
+            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
+            "}"
+        )
+
+    def get_radio_button_style( self ):
+        """Get stylesheet for radio buttons"""
+        return ( 
+            "QRadioButton {"
+            "color: " + self.theme_manager.get_color( 'grey' ).name() + ";"
+            "}"
+            "QRadioButton::indicator {"
+            "width: 9px;"
+            "height: 9px;"
+            "border-radius: 4px;"
+            "background-color: " + self.theme_manager.get_color( 'greyDarkest' ).name() + ";"
+            "}"
+            "QRadioButton::indicator:hover {"
+            "border-radius: 4px;"
+            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
+            "}"
+            "QRadioButton::indicator:checked {"
+            "border-radius: 4px;"
+            "background-color: " + self.theme_manager.base_color.name() + ";"
+            "}"
+        )
+
+    def get_combo_box_style( self ):
+        """Get stylesheet for combo box selection color"""
+        return ( 
+            "QComboBox QAbstractItemView {"
+            "selection-background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
+            "}"
+        )
+
+
+class CharacterSetManagerUI( QWidget ):
+
+    def __init__( self, parent = maya_main_window() ):
+        super( CharacterSetManagerUI, self ).__init__( parent )
+        self.theme = CharSetThemeManager()
+
+        # Remove window frame and keep it as tool window
+        self.setWindowFlags( Qt.Window | Qt.FramelessWindowHint )
+
+        # Variables to track mouse position for moving window
+        self.drag_position = None
+
+        # rgb(56, 56, 56 )
+        self.setObjectName( "CharacterSetImporter" )
+        self.setStyleSheet( "QWidget { background-color: #383838; }" )
+        self.setStyleSheet( """
+            #CharacterSetImporter {
+                background-color: rgb(56, 56, 56 );
+            }
+        """ )
+
+        self.char_set_manager = CharacterSetDirectoryManager()
+
+        # self.setWindowTitle( "Character Set Manager" )
+        # self.setWindowFlags( Qt.Window )
+        self.resize( 450, 400 )
+
+        self.create_widgets()
+        self.create_layouts()
+        self.create_connections()
+
+        # Initial update
+        self.update_file_list( 'main' )
+        self.update_namespace_dropdown()
+
+    # Add these new methods for window dragging
+    def mousePressEvent( self, event ):
+        if event.button() == Qt.LeftButton:
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent( self, event ):
+        if event.buttons() == Qt.LeftButton and self.drag_position is not None:
+            self.move( event.globalPos() - self.drag_position )
+            event.accept()
+
+    def mouseReleaseEvent( self, event ):
+        self.drag_position = None
+
+    def create_widgets( self ):
+        # Radio buttons for directory selection
+        self.main_radio = QRadioButton( "M A I N" )
+        self.flushed_radio = QRadioButton( "F L U S H E D " )
+        self.archived_radio = QRadioButton( "A R K" )
+        self.main_radio.setChecked( True )
+        self.main_radio.setStyleSheet( self.theme.get_radio_button_style() )
+        self.flushed_radio.setStyleSheet( self.theme.get_radio_button_style() )
+        self.archived_radio.setStyleSheet( self.theme.get_radio_button_style() )
+
+        # Create button group
+        self.directory_group = QButtonGroup()
+        self.directory_group.addButton( self.main_radio, 0 )
+        self.directory_group.addButton( self.flushed_radio, 1 )
+        self.directory_group.addButton( self.archived_radio, 2 )
+
+        # File list widget
+        self.file_list = QListWidget()
+
+        self.file_list.setContextMenuPolicy( Qt.CustomContextMenu )
+        self.file_list.setStyleSheet( self.theme.get_list_view_style() )
+
+        # Tree widget for character set content
+        self.content_tree = QTreeWidget()
+        self.content_tree.setHeaderLabel( "C O N T E N T S" )
+        self.content_tree.setStyleSheet( self.theme.get_tree_view_style() )
+
+        # Create metadata panel with modern styling
+        self.metadata_frame = QFrame()
+        self.metadata_frame.setFrameStyle( QFrame.StyledPanel | QFrame.Raised )
+
+        # Style the labels
+        label_style = "QLabel { color: rgb(150, 150, 150); font-size: 12px;}"  # Slightly lighter than before
+
+        # Create metadata labels with headers and content
+        self.created_label = QLabel()
+        self.created_label.setStyleSheet( label_style )
+
+        self.modified_label = QLabel()
+        self.modified_label.setStyleSheet( label_style )
+
+        self.size_label = QLabel()
+        self.size_label.setStyleSheet( label_style )
+
+        self.char_count_label = QLabel()
+        self.char_count_label.setStyleSheet( label_style )
+
+        self.attr_count_label = QLabel()
+        self.attr_count_label.setStyleSheet( label_style )
+
+        #
+        self.sets_label = QLabel( "Sets:" )
+
+        # Add import button
+        self.import_button = QPushButton( "I M P O R T" )
+        self.import_button.setStyleSheet( self.theme.get_import_button_style() )
+
+        # Add namespace dropdown
+        self.namespace_label = QLabel( "N S:" )
+        self.namespace_combo = QComboBox()
+        self.namespace_combo.setStyleSheet( self.theme.get_combo_box_style() )
+        self.namespace_label.setStyleSheet( "color: rgb(200, 200, 200);" )
+
+        # Add refresh button for namespaces
+        self.refresh_namespace_btn = QPushButton( "@" )
+        self.refresh_namespace_btn.setFixedWidth( 25 )
+        self.refresh_namespace_btn.setStyleSheet
+        self.refresh_namespace_btn.setStyleSheet( self.theme.get_refresh_button_style() )
+
+        # In create_widgets method, add:
+        self.search_replace_toggle = QToolButton()
+        self.search_replace_toggle.setArrowType( Qt.RightArrow )  # Collapsed state arrow
+        # self.search_replace_toggle.setText( "S / R" )
+        # self.search_replace_toggle.setToolButtonStyle( Qt.ToolButtonTextBesideIcon )
+        self.search_replace_toggle.setFixedHeight( 12 )  # Even smaller height
+
+        # Make the arrow smaller
+        self.search_replace_toggle.setIconSize( QSize( 6, 6 ) )  # Smaller arrow
+
+        # Create the collapsible widget that will contain our search/replace fields
+        self.search_replace_widget = QWidget()
+        self.search_replace_widget.setVisible( False )  # Hidden by default
+
+        # Add the rest of the search/replace widgets as before
+        self.search_label = QLabel( "S E A R C H" )
+        self.replace_label = QLabel( "R E P L A C E" )
+        self.search_label.setStyleSheet( "color: rgb(200, 200, 200);" )
+        self.replace_label.setStyleSheet( "color: rgb(200, 200, 200);" )
+
+        self.search_field = QLineEdit()
+        self.replace_field = QLineEdit()
+
+        text_field_style = """
+            QLineEdit {
+                background-color: rgb(45, 45, 45);
+                border: 1px solid rgb(80, 80, 80);
+                border-radius: 2px;
+                color: rgb(200, 200, 200);
+                padding: 3px;
+            }
+            QLineEdit:focus {
+                border: 1px solid rgb(90, 90, 90);
+            }
+        """
+        self.search_field.setStyleSheet( text_field_style )
+        self.replace_field.setStyleSheet( text_field_style )
+
+    def create_layouts( self ):
+        main_layout = QVBoxLayout( self )
+
+        # Add custom title bar
+        title_bar = QWidget()
+        title_bar.setFixedHeight( 25 )
+        title_bar.setStyleSheet( self.theme.get_title_bar_style() )
+
+        # Title bar layout
+        title_layout = QHBoxLayout( title_bar )
+        title_layout.setContentsMargins( 6, 0, 6, 0 )
+
+        # Add title label
+        title_label = QLabel( "C h a r a c t e r   S e t   M a n a g e r".upper() )
+        title_label.setStyleSheet( self.theme.get_title_label_style() )
+        title_layout.addWidget( title_label )
+
+        # Add close button
+        close_button = QPushButton( "X" )
+        close_button.setFixedSize( 19, 19 )
+        close_button.setStyleSheet( self.theme.get_close_button_style() )
+        close_button.clicked.connect( self.close )
+        title_layout.addWidget( close_button )
+
+        # Add title bar to main layout
+        main_layout.addWidget( title_bar )
+
+        # Create splitter
+        self.splitter = QSplitter( Qt.Horizontal )
+
+        # Left widget container
+        left_widget = QWidget()
+        left_layout = QVBoxLayout( left_widget )
+        left_layout.setContentsMargins( 2, 2, 2, 2 )
+
+        # Radio button layout
+        radio_layout = QHBoxLayout()
+        radio_layout.addWidget( self.main_radio )
+        radio_layout.addWidget( self.flushed_radio )
+        radio_layout.addWidget( self.archived_radio )
+
+        left_layout.addLayout( radio_layout )
+        left_layout.addWidget( self.sets_label )
+        left_layout.addWidget( self.file_list )
+
+        # Metadata section
+        metadata_layout = QVBoxLayout( self.metadata_frame )
+        metadata_layout.setContentsMargins( 8, 8, 8, 8 )
+        metadata_layout.setSpacing( 4 )
+
+        # Add a header
+        header_label = QLabel( "M E T A" )
+        header_label.setStyleSheet( "QLabel { color: rgb(140, 140, 140); font-weight: bold; }" )  # Darker for better contrast )
+        metadata_layout.addWidget( header_label )
+
+        # Add separator line
+        separatorH = QFrame()
+        separatorH.setFrameStyle( QFrame.HLine | QFrame.Plain )
+        separatorH.setStyleSheet( "QFrame { color: rgb(230, 230, 230); }" )  # Brighter for better visibility
+        metadata_layout.addWidget( separatorH )
+
+        # Add metadata labels with some spacing
+        metadata_layout.addWidget( separatorH )
+        metadata_layout.addWidget( self.char_count_label )
+        metadata_layout.addWidget( self.attr_count_label )
+        metadata_layout.addWidget( self.created_label )
+        metadata_layout.addWidget( self.modified_label )
+        metadata_layout.addWidget( self.size_label )
+
+        metadata_layout.addStretch()
+
+        self.metadata_frame.setFixedHeight( 100 )
+        left_layout.addWidget( self.metadata_frame )
+
+        # Right widget container
+        right_widget = QWidget()
+        right_layout = QVBoxLayout( right_widget )
+        right_layout.setContentsMargins( 2, 2, 2, 2 )
+        right_layout.addWidget( self.content_tree )
+
+        # Create search/replace section
+        search_replace_container = QWidget()
+        search_replace_container_layout = QVBoxLayout( search_replace_container )
+        search_replace_container_layout.setContentsMargins( 0, 0, 0, 0 )
+        search_replace_container_layout.setSpacing( 0 )
+
+        # Add toggle button
+        search_replace_container_layout.addWidget( self.search_replace_toggle )
+
+        # Setup the collapsible widget
+        search_replace_layout = QGridLayout( self.search_replace_widget )
+        search_replace_layout.setContentsMargins( 20, 5, 0, 5 )  # Left margin for indentation
+        search_replace_layout.setSpacing( 5 )
+
+        # Add labels in first row
+        search_replace_layout.addWidget( self.search_label, 0, 0 )
+        search_replace_layout.addWidget( self.replace_label, 0, 1 )
+
+        # Add text fields in second row
+        search_replace_layout.addWidget( self.search_field, 1, 0 )
+        search_replace_layout.addWidget( self.replace_field, 1, 1 )
+
+        # Add collapsible widget to container
+        search_replace_container_layout.addWidget( self.search_replace_widget )
+
+        # Add namespace section
+        namespace_widget = QWidget()
+        namespace_layout = QHBoxLayout( namespace_widget )
+        namespace_layout.setContentsMargins( 0, 5, 0, 5 )
+        namespace_layout.addWidget( self.namespace_label )
+        namespace_layout.addWidget( self.namespace_combo )
+        namespace_layout.addWidget( self.refresh_namespace_btn )
+
+        right_layout.addWidget( search_replace_container )
+        right_layout.addWidget( namespace_widget )
+        right_layout.addWidget( self.import_button )  # Add import button below content tree
+
+        # Add widgets to splitter
+        self.splitter.addWidget( left_widget )
+        self.splitter.addWidget( right_widget )
+
+        # Set initial sizes (1:2 ratio)
+        self.splitter.setSizes( [300, 500] )
+
+        # Add splitter to main layout
+        main_layout.addWidget( self.splitter )
+
+    def create_connections( self ):
+        self.directory_group.buttonClicked.connect( self.on_directory_changed )
+        self.file_list.itemClicked.connect( self.on_file_selected )
+        self.file_list.customContextMenuRequested.connect( self.show_context_menu )
+        self.import_button.clicked.connect( self.import_character_set )
+        self.refresh_namespace_btn.clicked.connect( self.update_namespace_dropdown )
+        self.search_replace_toggle.clicked.connect( self.toggle_search_replace )
+
+    def show_context_menu( self, position ):
+        """Show context menu for file list items"""
+        item = self.file_list.itemAt( position )
+        if not item:
+            return
+
+        menu = QMenu()
+        current_dir = self.get_current_directory()
+
+        if current_dir in ['main', 'flushed']:
+            archive_action = menu.addAction( "Archive" )
+            archive_action.triggered.connect( lambda: self.archive_file( item.text() ) )
+        elif current_dir == 'archived':
+            unarchive_action = menu.addAction( "Un-archive" )
+            unarchive_action.triggered.connect( lambda: self.unarchive_file( item.text() ) )
+
+        cursor = self.file_list.mapToGlobal( position )
+        menu.exec_( cursor )
+
+    def get_current_directory( self ):
+        """Get currently selected directory type"""
+        if self.main_radio.isChecked():
+            return 'main'
+        elif self.flushed_radio.isChecked():
+            return 'flushed'
+        elif self.archived_radio.isChecked():
+            return 'archived'
+        return None
+
+    def update_metadata( self, filename = None ):
+        """Update metadata panel with file information"""
+        try:
+            if not filename:
+                # Clear metadata if no file selected
+                self.created_label.setText( "Created: --" )
+                self.modified_label.setText( "Modified: --" )
+                self.size_label.setText( "File Size: --" )
+                self.char_count_label.setText( "Character Sets: --" )
+                self.attr_count_label.setText( "Attributes: --" )
+                return
+
+            # Get file path
+            current_dir = self.get_current_directory()
+            filepath = osPath.join( self.char_set_manager.get_directory( current_dir ), filename + '.json' )
+
+            if not osPath.exists( filepath ):
+                return
+
+            # Get file stats
+            stats = os.stat( filepath )
+
+            # Format timestamps
+            created_time = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime( stats.st_ctime ) )
+            modified_time = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime( stats.st_mtime ) )
+
+            # Format file size
+            size_bytes = stats.st_size
+            if size_bytes < 1024:
+                size_str = "{} bytes".format( size_bytes )
+            elif size_bytes < 1024 * 1024:
+                size_str = "{:.1f} KB".format( size_bytes / 1024.0 )
             else:
-                self.message( 'Add file name to path field. Action aborted.' )
-        else:
-            self.message( 'Select a character Set in the middle column.' )
+                size_str = "{:.1f} MB".format( size_bytes / ( 1024.0 * 1024.0 ) )
 
-    def cmdAction( self, *args ):
-        if self.export:
-            # print self.path
-            self.cmdExport()
-        else:
-            self.cmdImport()
+            # Get content stats
+            content = self.char_set_manager.get_file_content( filename, current_dir )
+            counts = [0, 0]  # [char_count, attr_count]
 
-    def cmdFilter( self, *args ):
+            def count_items( data, counts ):
+                if isinstance( data, dict ):
+                    if 'character' in data:
+                        counts[0] += 1
+                    if 'attribute' in data:
+                        counts[1] += 1
+                    if 'members' in data and isinstance( data['members'], list ):
+                        for member in data['members']:
+                            count_items( member, counts )
+                return counts
+
+            if content:
+                counts = count_items( content, counts )
+
+            # Update labels
+            self.created_label.setText( "Created: {}".format( created_time ) )
+            self.modified_label.setText( "Modified: {}".format( modified_time ) )
+            self.size_label.setText( "File Size: {}".format( size_str ) )
+            self.char_count_label.setText( "Character Sets: {}".format( counts[0] ) )
+            self.attr_count_label.setText( "Attributes: {}".format( counts[1] ) )
+
+        except Exception as e:
+            cmds.warning( "Failed to update metadata: {}".format( str( e ) ) )
+
+    def update_file_list( self, directory_type ):
+        """Update the file list based on selected directory"""
+        self.file_list.clear()
+        files = self.char_set_manager.get_files( directory_type )
+        self.file_list.addItems( files )
+
+    def update_content_tree( self, content ):
+        """Update the tree widget with character set hierarchy"""
+        try:
+            self.content_tree.clear()
+
+            if not content:
+                return
+
+            def add_character_set( parent_item, data ):
+                """Recursively add character sets and their members to the tree"""
+                if not isinstance( data, dict ):
+                    return
+
+                # If this is a simple attribute entry
+                if 'attribute' in data:
+                    QTreeWidgetItem( parent_item, [data['attribute']] )
+                    return
+
+                # For character sets
+                if 'character' in data:
+                    # Create character set item
+                    char_item = QTreeWidgetItem( parent_item, [data['character']] )
+
+                    # Process members
+                    has_attributes = False
+                    if 'members' in data and isinstance( data['members'], list ):
+                        for member in data['members']:
+                            if isinstance( member, dict ) and 'attribute' in member:
+                                has_attributes = True
+                            add_character_set( char_item, member )
+
+                    # Collapse if it has attributes
+                    if has_attributes:
+                        char_item.setExpanded( False )
+                    else:
+                        char_item.setExpanded( True )
+
+                    return char_item
+
+            # Start with root character set
+            root_item = add_character_set( self.content_tree, content )
+            if root_item:
+                root_item.setExpanded( True )  # Always expand root
+
+        except Exception as e:
+            cmds.warning( "Failed to update content tree: {}".format( str( e ) ) )
+
+    def on_file_selected( self, item ):
+        """Handle file selection"""
+        try:
+            # Update metadata
+            self.update_metadata( item.text() )
+
+            # Update content tree
+            current_dir = self.get_current_directory()
+            filename = item.text()
+            content = self.char_set_manager.get_file_content( filename, current_dir )
+            self.update_content_tree( content )
+
+            # Find and select matching namespace
+            self.match_namespace_from_content( content )
+
+        except Exception as e:
+            cmds.warning( "Failed to handle file selection: {}".format( str( e ) ) )
+
+    def on_directory_changed( self, button ):
+        """Handle directory radio button selection"""
+        directory_map = {
+            self.main_radio: 'main',
+            self.flushed_radio: 'flushed',
+            self.archived_radio: 'archived'
+        }
+        self.update_file_list( directory_map[button] )
+
+    def archive_file( self, filename ):
+        """Move file to archive directory"""
+        try:
+            src_filename = filename + '.json'
+            current_dir = self.get_current_directory()
+
+            src_path = os.path.join( self.char_set_manager.get_directory( current_dir ), src_filename )
+            dst_path = os.path.join( self.char_set_manager.archived_dir, src_filename )
+
+            shutil.move( src_path, dst_path )
+            self.update_file_list( current_dir )
+            cmds.warning( "File archived: {}".format( filename ) )
+
+        except Exception as e:
+            cmds.warning( "Failed to archive file: {}".format( str( e ) ) )
+
+    def unarchive_file( self, filename ):
+        """Move file back to main directory"""
+        try:
+            src_filename = filename + '.json'
+
+            src_path = os.path.join( self.char_set_manager.archived_dir, src_filename )
+            dst_path = os.path.join( self.char_set_manager.base_dir, src_filename )
+
+            shutil.move( src_path, dst_path )
+            self.update_file_list( 'archived' )
+            cmds.warning( "File un-archived: {}".format( filename ) )
+
+        except Exception as e:
+            cmds.warning( "Failed to un-archive file: {}".format( str( e ) ) )
+
+    def import_character_set( self ):
+        """Import the selected character set"""
+        try:
+            # Get selected file
+            selected_items = self.file_list.selectedItems()
+            if not selected_items:
+                cmds.warning( "Please select a character set to import." )
+                return
+
+            filename = selected_items[0].text()
+            current_dir = self.get_current_directory()
+
+            # Import the character set
+            import_path = os.path.join( self.char_set_manager.get_directory( current_dir ), filename + '.json' )
+            core.importFileFromJSON( path = import_path )
+
+            cmds.warning( "Successfully imported character set: {}".format( filename ) )
+
+        except Exception as e:
+            cmds.warning( "Failed to import character set: {}".format( str( e ) ) )
+
+    # Add this method for tooltip functionality
+    def update_namespace_dropdown( self ):
+        """Update the namespace dropdown with current Maya scene namespaces"""
+        try:
+            self.namespace_combo.clear()
+            self.namespace_combo.addItem( ":" )
+
+            namespaces = cmds.namespaceInfo( listOnlyNamespaces = True, recurse = True ) or []
+
+            if namespaces:
+                namespaces.sort()
+                for namespace in namespaces:
+                    if namespace not in ['UI', 'shared']:
+                        self.namespace_combo.addItem( namespace )
+                        # Add tooltip for each item
+                        index = self.namespace_combo.count() - 1
+                        self.namespace_combo.setItemData( index, namespace, Qt.ToolTipRole )
+        except Exception as e:
+            cmds.warning( "Failed to update namespaces: {}".format( str( e ) ) )
+
+    def match_namespace_from_content( self, content ):
+        """Find and select matching namespace from content"""
+        try:
+            if not content or 'members' not in content:
+                return
+
+            # Extract first attribute path to get namespace
+            attr_namespace = None
+
+            def find_first_attribute( data ):
+                """Recursively find first attribute in content"""
+                if isinstance( data, dict ):
+                    if 'attribute' in data:
+                        attr_path = data['attribute']
+                        # Split by : and get namespace if exists
+                        if ':' in attr_path:
+                            return attr_path.split( ':' )[0]
+                    elif 'members' in data:
+                        for member in data['members']:
+                            result = find_first_attribute( member )
+                            if result:
+                                return result
+                return None
+
+            attr_namespace = find_first_attribute( content )
+
+            # If we found a namespace in the attributes
+            if attr_namespace:
+                # Get index of matching namespace in combo box
+                index = self.namespace_combo.findText( attr_namespace )
+                if index >= 0:
+                    self.namespace_combo.setCurrentIndex( index )
+                    print( "Found and selected namespace: {}".format( attr_namespace ) )
+                else:
+                    print( "Namespace in file {} not found in scene".format( attr_namespace ) )
+
+        except Exception as e:
+            cmds.warning( "Failed to match namespace: {}".format( str( e ) ) )
+
+    def toggle_search_replace( self ):
+        """Toggle the visibility of search/replace section"""
+        is_visible = self.search_replace_widget.isVisible()
+        self.search_replace_widget.setVisible( not is_visible )
+
+        # Change arrow direction
+        if is_visible:
+            self.search_replace_toggle.setArrowType( Qt.RightArrow )
+        else:
+            self.search_replace_toggle.setArrowType( Qt.DownArrow )
+
+
+def show():
+    """Show the Character Set Manager UI"""
+    global character_set_manager_ui
+
+    try:
+        character_set_manager_ui.close()
+        character_set_manager_ui.deleteLater()
+    except:
         pass
 
-    def cmdOpen( self, *args ):
-        if os.name == 'nt':
-            path = self.path.replace( '/', '\\' )
-            if os.path.isdir( path ):
-                subprocess.Popen( r'explorer /open, ' + path )
-        else:
-            self.message( 'Close file window to regain control over MAYA.' )
-            app = "nautilus"
-            call( [app, self.path] )
-
-    def cmdUnflush( self, *args ):
-        import webrImport as web
-        cs = web.mod( "characterSet_lib" )
-        core.unflush()
-        self.message( core.tell, maya = False )
-
-    def cmdFlush( self, *args ):
-        import webrImport as web
-        cs = web.mod( "characterSet_lib" )
-        core.flush()
-        self.message( core.tell, maya = False )
-
-
-class Form( object ):
-    # builds text field or list with heading
-
-    def __init__( self, text = '', label = '', name = '', parent = None, h = 15, w = 15, createField = False, createList = False, allowMultiSelection = False, cmdSingle = 'print( \'single click\')', cmdDouble = 'print( \'double click\')' ):
-        self.parent = parent
-        self.text = text
-        self.label = label
-        self.form = name + '_form'
-        self.heading = name + '_heading'
-        self.field = name + '_field'
-        self.scroll = name + '_scroll'
-        self.ams = allowMultiSelection
-        self.cmdSingle = cmdSingle
-        self.cmdDouble = cmdDouble
-        self.ui = [self.form, self.heading, self.field]
-        self.m = 0
-        self.h = h
-        self.w = w
-        self.heightHeading = 15
-        self.heightField = 20
-        self.heightForm = self.heightHeading + self.heightField
-        self.cleanUI()
-        self.buildForm()
-        self.buildHeading()
-        if createField:
-            self.buildField()
-        if createList:
-            self.buildList()
-
-    def cleanUI( self ):
-        cmds.setParent( self.parent )
-        for ui in self.ui:
-            if cmds.control( ui, q = True, exists = True ):
-                cmds.deleteUI( ui )
-
-    def buildForm( self ):
-        cmds.setParent( self.parent )
-        f = cmds.formLayout( self.form, h = self.heightForm )
-
-    def buildHeading( self ):
-        self.heading = cmds.text( self.heading, l = self.label, fn = 'obliqueLabelFont', al = 'left', h = 15, w = 10 )
-        attachForm = [( self.heading, 'top', 0 ), ( self.heading, 'left', 3 ), ( self.heading, 'right', 0 )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm )
-
-    def buildField( self ):
-        self.field = cmds.textField( self.field, tx = self.text, h = 20 )
-        attachForm = [( self.field, 'left', 0 ), ( self.field, 'right', 0 )]
-        attachControl = [( self.field, 'top', 0, self.heading )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm, attachControl = attachControl )
-
-    def buildList( self ):
-        if self.cmdSingle:
-            self.scroll = cmds.textScrollList( self.scroll, sc = self.cmdSingle, allowMultiSelection = self.ams, dcc = self.cmdDouble, fn = 'plainLabelFont', h = 10, w = 10 )
-        else:
-            self.scroll = cmds.textScrollList( self.scroll, allowMultiSelection = self.ams, dcc = self.cmdDouble, fn = 'plainLabelFont', h = 10, w = 10 )
-        attachForm = [( self.scroll, 'bottom', 0 ), ( self.scroll, 'left', 0 ), ( self.scroll, 'right', 0 )]
-        attachControl = [( self.scroll, 'top', 0, self.heading )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm, attachControl = attachControl )
-
-
-class Button( object ):
-
-    def __init__( self, name = '', label = '', cmd = '', parent = '', moveUp = 20, h = 20, bgc = None ):
-        self.name = name
-        self.label = label
-        self.cmd = cmd
-        self.parent = parent
-        self.moveUp = moveUp
-        self.h = h
-        self.bgc = bgc
-        self.new()
-
-    def new( self ):
-        cmds.setParent( self.parent )
-        self.name = cmds.button( self.name, label = self.label, c = self.cmd, h = self.h )
-        if self.bgc:
-            cmds.button( self.name, e = True, bgc = self.bgc )
-        attachForm = [( self.name, 'bottom', self.moveUp ), ( self.name, 'right', 0 ), ( self.name, 'left', 0 )]
-        cmds.formLayout( self.parent, edit = True, attachForm = attachForm )
-
-
-class Action( object ):
-    # builds row of buttons for bottom of window
-    # removed from variables: cmdFlush='print \'None\'', cmdUnflush='print \'None\'',
-
-    def __init__( self, name, parent = None, h = 15, w = 80,
-                 cmdAction = '', cmdCancel = '', cmdOpen = '', cmdFilter = 'print( \'None\')',
-                 filters = ['.chr', '.txt', '.mb', '.ma', '*.*'], label = '' ):
-        self.parent = parent
-        self.filters = filters
-        self.illegalChar = ['.', '*']
-        self.form = name + '_form'
-        self.opt = name + '_opt'
-        self.cancelButton = name + '_cancelButton'
-        self.actionButton = name + '_actionButton'
-        self.openButton = name + '_openButton'
-        self.actionMessage = name + '_actionMessage'
-        self.label = label
-        self.cmdFilter = cmdFilter
-        self.cmdCancel = cmdCancel
-        self.cmdAction = cmdAction
-        self.cmdOpen = cmdOpen
-        self.ui = [self.form, self.opt, self.cancelButton, self.actionButton]
-        self.h = h
-        self.w = w
-        self.heightForm = 30
-        self.cleanUI()
-        self.buildForm()
-        self.buildFilter()
-        self.buildAction()
-        self.buildCancel()
-        self.buildOpen()
-
-    def cleanUI( self ):
-        cmds.setParent( self.parent )
-        for ui in self.ui:
-            if cmds.control( ui, q = True, exists = True ):
-                cmds.deleteUI( ui )
-
-    def buildForm( self ):
-        cmds.setParent( self.parent )
-        self.form = cmds.formLayout( self.form, h = self.heightForm )
-
-    def buildFilter( self ):
-        self.opt = cmds.optionMenuGrp( self.opt, label = 'Filter:', cc = self.cmdFilter, cw2 = [40, 75], height = 20 )
-        for i, item in enumerate( self.filters ):
-            itm = ( item + '_%02d_menuItem' % i )
-            cmds.menuItem( itm, l = item )
-        attachForm = [( self.opt, 'bottom', 5 ), ( self.opt, 'left', 0 )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm )
-
-    def buildAction( self ):
-        self.actionButton = cmds.button( self.actionButton, label = self.label.upper(), c = self.cmdAction )
-        attachForm = [( self.actionButton, 'bottom', 0 ), ( self.actionButton, 'right', 0 )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm )
-
-    def buildCancel( self ):
-        self.cancelButton = cmds.button( self.cancelButton, label = 'CLOSE', c = self.cmdCancel )
-        attachForm = [( self.cancelButton, 'bottom', 0 )]
-        attachControl = [( self.cancelButton, 'right', 5, self.actionButton )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm, attachControl = attachControl )
-
-    def buildOpen( self ):
-        self.openButton = cmds.button( self.openButton, label = '  Open Folder  ', c = self.cmdOpen )
-        attachForm = [( self.openButton, 'bottom', 0 )]
-        attachControl = [( self.openButton, 'right', 50, self.cancelButton )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm, attachControl = attachControl )
-
-    def buildFlush( self ):
-        self.flushButton = cmds.button( self.flushButton, label = '  Flush Sets  ', c = self.cmdFlush )
-        attachForm = [( self.flushButton, 'bottom', 0 )]
-        attachControl = [( self.flushButton, 'right', 5, self.openButton )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm, attachControl = attachControl )
-
-    def buildUnflush( self ):
-        self.unflushButton = cmds.button( self.unflushButton, label = '  Un-flush Sets  ', c = self.cmdUnflush )
-        attachForm = [( self.unflushButton, 'bottom', 0 )]
-        attachControl = [( self.unflushButton, 'right', 5, self.flushButton )]
-        cmds.formLayout( self.form, edit = True, attachForm = attachForm, attachControl = attachControl )
-
+    character_set_manager_ui = CharacterSetManagerUI()
+    character_set_manager_ui.show()
