@@ -6,6 +6,8 @@ import maya.cmds as cmds
 import maya.mel as mel
 import numpy as np
 
+# TODO: add support for weighted tangents, investigate tangent weight issues when targeting
+
 
 class TargetStrategy:
     """Base class for targeting strategies"""

@@ -10,6 +10,8 @@ imp.reload( slider_strategies_targeting )
 imp.reload( slider_strategies_blending )
 
 
+# TODO: cleanup module, audit functions and data structures for usage
+# TODO: refactor how curves are gathered, should have 3 options, via selected vurves, active layers, selected objects, active char sets
 class SliderCore( object ):
     """Core class for data management"""
 

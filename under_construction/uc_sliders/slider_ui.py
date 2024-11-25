@@ -12,7 +12,7 @@ from PySide2.QtWidgets import ( QDialog, QLabel, QSlider, QHBoxLayout, QVBoxLayo
                               QPushButton, QRadioButton, QButtonGroup, QGroupBox, QWidget )
 from shiboken2 import wrapInstance
 
-from under_construction.uc_prefs import uc_prefs_root
+from under_construction.uc_data import data_root
 from under_construction.uc_sliders import slider_core
 import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
@@ -23,10 +23,16 @@ import numpy as np
 
 # print( "Core module path:", slider_core.__file__ )  # This will show where it's finding slider_core.py
 imp.reload( slider_core )
-imp.reload( uc_prefs_root )
+imp.reload( data_root )
 
 # Initialize the global variable
 global custom_dialog
+
+# TODO: conext menu, add theme from color module
+# TODO: may need custom hover dialog, standard doesnt work in maya
+# TODO: prep slider packages to be added to other dialogs
+# TODO: use code provided to imporove lock margin logic
+# TODO: update handle lable to properly use eased value, check code provided
 
 
 def cleanup_dialog():
@@ -648,7 +654,7 @@ class Slider( QSlider ):
 
         theme_colors = {
             'groove_neutral': QColor( 55, 55, 55 ).name(),
-            'groove_warning': value_color( base, 0.6, 0.6 ).name(),  # Darker and desaturated
+            'groove_warning': value_color( base, 0.525, 0.6 ).name(),  # Darker and desaturated
             'handle_neutral': base.name(),
             'handle_warning': value_color( base, 1.4 ).name(),
             'border_hover': value_color( base, 1.6 ).name(),
@@ -730,6 +736,7 @@ class Slider( QSlider ):
 
     def mousePressEvent( self, event ):
         """Handle mouse press events for both handle and groove"""
+        # TODO: if right click do nothing. currently handle label resets value to '0'
         self._before_handle_press()
 
         # If disabled, don't process the event
@@ -1028,6 +1035,7 @@ class Slider( QSlider ):
 
     def _process_object_updates( self, obj, blend_factor ):
         """Process updates for a single object"""
+        # TODO: move to core module
         # print( '___', blend_factor )
         for curve in self.core.curve_data:
             if curve not in self.core.curve_data:
@@ -1057,6 +1065,7 @@ class Slider( QSlider ):
 
     def _execute_batch_updates( self ):
         """Execute queued updates in optimized batches"""
+        # TODO: move to core module
         curve_updates = {}
         for update in self.update_queue:
             curve = update['curve']
@@ -1863,7 +1872,7 @@ class SliderPreferences( object ):
         Get the preferences file path using the PreferencesManager.
         Returns full path to the preferences file.
         """
-        return uc_prefs_root.prefs_dir_manager.get_pref_file_path( self.prefs_file )
+        return data_root.data_dir_manager.get_pref_file_path( self.prefs_file )
 
     def _load_prefs( self ):
         """

@@ -10,7 +10,7 @@ from PySide2.QtGui import QColor
 from PySide2.QtWidgets import ( QWidget, QVBoxLayout, QHBoxLayout,
                               QRadioButton, QButtonGroup, QTreeWidget,
                               QTreeWidgetItem, QListWidget, QLabel,
-                              QSplitter, QMenu, QFrame, QPushButton, QComboBox, QToolButton, QLineEdit, QGridLayout )
+                              QSplitter, QMenu, QFrame, QPushButton, QComboBox, QToolButton, QLineEdit, QGridLayout, QSizePolicy )
 from shiboken2 import wrapInstance
 
 from under_construction.uc_char_set_manager import char_set_core as core
@@ -22,6 +22,8 @@ import os.path as osPath
 
 imp.reload( tc )
 
+# TODO: build list of buttons cahracter set toolbox needs. ie, import, export/edit, member toggle, flush/unflush, select objects in set, prefs, activate cycle
+
 
 def maya_main_window():
     """Return Maya's main window"""
@@ -31,6 +33,7 @@ def maya_main_window():
 
 class CharacterSetDirectoryManager:
     """Manages the directory structure and file operations for character sets"""
+    # TODO: flushed directory needs to support directory handling when arcgived/unarchived
 
     def __init__( self ):
         self.data_manager = data_root.data_dir_manager
@@ -122,136 +125,21 @@ class CharacterSetDirectoryManager:
         }.get( directory_type )
 
 
-class CharSetThemeManager:
-    """
-    Minimal theme manager for Character Set UI components.
-    Focuses only on specific UI elements while leveraging existing ThemeColorManager.
-    """
-
-    def __init__( self ):
-        self.theme_manager = tc.ThemeColorManager( 'orange' )
-
-    def get_title_bar_style( self ):
-        """Get stylesheet for title bar"""
-        return ( 
-            "border-radius: 2px;"
-        )
-
-    def get_title_label_style( self ):
-        """Get stylesheet for title text"""
-        # return "color: white; font-weight: bold;"
-        '''
-        return ( 
-            "color: " +
-            self.theme_manager.base_color.name() +
-            ";"
-            "font-weight: bold;"
-        )'''
-
-        return ( 
-            "color: " +
-            self.theme_manager.get_color_for_state( 'hover' ).name() +
-            ";"
-            "font-weight: normal;"
-        )
-        '''
-        return ( 
-            "font-weight: bold;"
-        )'''
-
-    def get_import_button_style( self ):
-        """Get stylesheet for import button"""
-        return self.theme_manager.get_stylesheet_colors( "QPushButton" )
-
-    def get_close_button_style( self ):
-        """Get stylesheet for close button"""
-        return ( 
-            "QPushButton {"
-            "background-color: transparent;"
-            "color: " + self.theme_manager.get_color( 'greyDark' ).name() + ";"
-            "border: none;"
-            "font-size: 12px;"
-            "}"
-            "QPushButton:hover {"
-            "color: " + self.theme_manager.get_color_for_state( 'error' ).name() + ";"
-            "}"
-        )
-
-    def get_refresh_button_style( self ):
-        """Get stylesheet for close button"""
-        return ( 
-            "QPushButton {"
-            "background-color: transparent;"
-            "color: " + self.theme_manager.get_color( 'greyDark' ).name() + ";"
-            "border: none;"
-            "font-size: 12px;"
-            "}"
-            "QPushButton:hover {"
-            "color: " + self.theme_manager.get_color_for_state( 'error' ).name() + ";"
-            "}"
-        )
-
-    def get_list_view_style( self ):
-        """Get stylesheet for list view focus state"""
-        return ( 
-            "QListWidget:focus {"
-            "border: 1px solid " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
-            "}"
-            "QListWidget::item:selected {"
-            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
-            "}"
-        )
-
-    def get_tree_view_style( self ):
-        """Get stylesheet for tree view focus state"""
-        return ( 
-            "QTreeWidget:focus {"
-            "border: 1px solid " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
-            "}"
-            "QTreeWidget::item:selected {"
-            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
-            "}"
-            "QTreeWidget::branch:selected {"
-            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
-            "}"
-        )
-
-    def get_radio_button_style( self ):
-        """Get stylesheet for radio buttons"""
-        return ( 
-            "QRadioButton {"
-            "color: " + self.theme_manager.get_color( 'grey' ).name() + ";"
-            "}"
-            "QRadioButton::indicator {"
-            "width: 9px;"
-            "height: 9px;"
-            "border-radius: 4px;"
-            "background-color: " + self.theme_manager.get_color( 'greyDarkest' ).name() + ";"
-            "}"
-            "QRadioButton::indicator:hover {"
-            "border-radius: 4px;"
-            "background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
-            "}"
-            "QRadioButton::indicator:checked {"
-            "border-radius: 4px;"
-            "background-color: " + self.theme_manager.base_color.name() + ";"
-            "}"
-        )
-
-    def get_combo_box_style( self ):
-        """Get stylesheet for combo box selection color"""
-        return ( 
-            "QComboBox QAbstractItemView {"
-            "selection-background-color: " + self.theme_manager.get_color_for_state( 'disabled' ).name() + ";"
-            "}"
-        )
-
-
 class CharacterSetManagerUI( QWidget ):
 
     def __init__( self, parent = maya_main_window() ):
+        # TODO: expansion button is too white, copy what was done, the triangle stylesheet in combobox
+        # TODO: try increasing selected content color vibrancy
+        # TODO: add some templates sets, biped, quadraped, face, insect, use a dict keep in module.
+        # TODO: build import/edit version of the ui
+        # TODO: resizing drag button, bottom right corner
+        # TODO: ? help button, top left corner
+        # TODO: slightly brighter edge border, or darker, around window
+        # TODO: move refresh functionality to 'N S:' label, get rid of other button.
+        # TODO: if file is deselected in the file list. the treeview should clear its contents
         super( CharacterSetManagerUI, self ).__init__( parent )
-        self.theme = CharSetThemeManager()
+        # self.theme = CharSetThemeManager()
+        self.themes = tc.ThemeColorManager( 'orange' )
 
         # Remove window frame and keep it as tool window
         self.setWindowFlags( Qt.Window | Qt.FramelessWindowHint )
@@ -261,7 +149,7 @@ class CharacterSetManagerUI( QWidget ):
 
         # rgb(56, 56, 56 )
         self.setObjectName( "CharacterSetImporter" )
-        self.setStyleSheet( "QWidget { background-color: #383838; }" )
+        # TODO: this color should come from the theme module.
         self.setStyleSheet( """
             #CharacterSetImporter {
                 background-color: rgb(56, 56, 56 );
@@ -272,7 +160,7 @@ class CharacterSetManagerUI( QWidget ):
 
         # self.setWindowTitle( "Character Set Manager" )
         # self.setWindowFlags( Qt.Window )
-        self.resize( 450, 400 )
+        self.resize( 500, 450 )
 
         self.create_widgets()
         self.create_layouts()
@@ -302,9 +190,9 @@ class CharacterSetManagerUI( QWidget ):
         self.flushed_radio = QRadioButton( "F L U S H E D " )
         self.archived_radio = QRadioButton( "A R K" )
         self.main_radio.setChecked( True )
-        self.main_radio.setStyleSheet( self.theme.get_radio_button_style() )
-        self.flushed_radio.setStyleSheet( self.theme.get_radio_button_style() )
-        self.archived_radio.setStyleSheet( self.theme.get_radio_button_style() )
+        self.main_radio.setStyleSheet( self.themes.get_stylesheet_colors( "QRadioButton" ) )
+        self.flushed_radio.setStyleSheet( self.themes.get_stylesheet_colors( "QRadioButton" ) )
+        self.archived_radio.setStyleSheet( self.themes.get_stylesheet_colors( "QRadioButton" ) )
 
         # Create button group
         self.directory_group = QButtonGroup()
@@ -316,57 +204,62 @@ class CharacterSetManagerUI( QWidget ):
         self.file_list = QListWidget()
 
         self.file_list.setContextMenuPolicy( Qt.CustomContextMenu )
-        self.file_list.setStyleSheet( self.theme.get_list_view_style() )
+        self.file_list.setMouseTracking( True )  # Add this line
+        self.file_list.setFocusPolicy( Qt.NoFocus )
+        self.file_list.setStyleSheet( self.themes.get_stylesheet_colors( "QListWidget" ) )
 
         # Tree widget for character set content
         self.content_tree = QTreeWidget()
+        self.content_tree.setMouseTracking( True )  # Add this line
         self.content_tree.setHeaderLabel( "C O N T E N T S" )
-        self.content_tree.setStyleSheet( self.theme.get_tree_view_style() )
+        self.content_tree.header().setDefaultAlignment( Qt.AlignCenter )  # Add this line
+        self.content_tree.setFocusPolicy( Qt.NoFocus )
+        self.content_tree.setStyleSheet( self.themes.get_stylesheet_colors( "QTreeWidget" ) )
 
         # Create metadata panel with modern styling
         self.metadata_frame = QFrame()
         self.metadata_frame.setFrameStyle( QFrame.StyledPanel | QFrame.Raised )
 
-        # Style the labels
-        label_style = "QLabel { color: rgb(150, 150, 150); font-size: 12px;}"  # Slightly lighter than before
-
         # Create metadata labels with headers and content
         self.created_label = QLabel()
-        self.created_label.setStyleSheet( label_style )
+        self.created_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         self.modified_label = QLabel()
-        self.modified_label.setStyleSheet( label_style )
+        self.modified_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         self.size_label = QLabel()
-        self.size_label.setStyleSheet( label_style )
+        self.size_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         self.char_count_label = QLabel()
-        self.char_count_label.setStyleSheet( label_style )
+        self.char_count_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         self.attr_count_label = QLabel()
-        self.attr_count_label.setStyleSheet( label_style )
+        self.attr_count_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         #
-        self.sets_label = QLabel( "Sets:" )
+        self.sets_label = QLabel( "Sets :" )
+        self.sets_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         # Add import button
         self.import_button = QPushButton( "I M P O R T" )
-        self.import_button.setStyleSheet( self.theme.get_import_button_style() )
+        self.import_button.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton" ) )
 
         # Add namespace dropdown
         self.namespace_label = QLabel( "N S:" )
+        self.namespace_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
         self.namespace_combo = QComboBox()
-        self.namespace_combo.setStyleSheet( self.theme.get_combo_box_style() )
-        self.namespace_label.setStyleSheet( "color: rgb(200, 200, 200);" )
+        self.namespace_combo.setSizePolicy( QSizePolicy.Expanding, QSizePolicy.Fixed )
+        self.namespace_combo.setStyleSheet( self.themes.get_stylesheet_colors( "QComboBox" ) )
 
         # Add refresh button for namespaces
         self.refresh_namespace_btn = QPushButton( "@" )
-        self.refresh_namespace_btn.setFixedWidth( 25 )
+        self.refresh_namespace_btn.setFixedSize( 19, 19 )
         self.refresh_namespace_btn.setStyleSheet
-        self.refresh_namespace_btn.setStyleSheet( self.theme.get_refresh_button_style() )
+        self.refresh_namespace_btn.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_alt1" ) )
 
         # In create_widgets method, add:
         self.search_replace_toggle = QToolButton()
+        self.search_replace_toggle.setFocusPolicy( Qt.NoFocus )
         self.search_replace_toggle.setArrowType( Qt.RightArrow )  # Collapsed state arrow
         # self.search_replace_toggle.setText( "S / R" )
         # self.search_replace_toggle.setToolButtonStyle( Qt.ToolButtonTextBesideIcon )
@@ -380,28 +273,15 @@ class CharacterSetManagerUI( QWidget ):
         self.search_replace_widget.setVisible( False )  # Hidden by default
 
         # Add the rest of the search/replace widgets as before
-        self.search_label = QLabel( "S E A R C H" )
-        self.replace_label = QLabel( "R E P L A C E" )
-        self.search_label.setStyleSheet( "color: rgb(200, 200, 200);" )
-        self.replace_label.setStyleSheet( "color: rgb(200, 200, 200);" )
+        self.search_label = QLabel( "S E A R C H :" )
+        self.search_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
+        self.replace_label = QLabel( "R E P L A C E :" )
+        self.replace_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         self.search_field = QLineEdit()
         self.replace_field = QLineEdit()
-
-        text_field_style = """
-            QLineEdit {
-                background-color: rgb(45, 45, 45);
-                border: 1px solid rgb(80, 80, 80);
-                border-radius: 2px;
-                color: rgb(200, 200, 200);
-                padding: 3px;
-            }
-            QLineEdit:focus {
-                border: 1px solid rgb(90, 90, 90);
-            }
-        """
-        self.search_field.setStyleSheet( text_field_style )
-        self.replace_field.setStyleSheet( text_field_style )
+        self.search_field.setStyleSheet( self.themes.get_stylesheet_colors( "QLineEdit" ) )
+        self.replace_field.setStyleSheet( self.themes.get_stylesheet_colors( "QLineEdit" ) )
 
     def create_layouts( self ):
         main_layout = QVBoxLayout( self )
@@ -409,7 +289,7 @@ class CharacterSetManagerUI( QWidget ):
         # Add custom title bar
         title_bar = QWidget()
         title_bar.setFixedHeight( 25 )
-        title_bar.setStyleSheet( self.theme.get_title_bar_style() )
+        # title_bar.setStyleSheet( self.theme.get_title_bar_style() )
 
         # Title bar layout
         title_layout = QHBoxLayout( title_bar )
@@ -417,13 +297,13 @@ class CharacterSetManagerUI( QWidget ):
 
         # Add title label
         title_label = QLabel( "C h a r a c t e r   S e t   M a n a g e r".upper() )
-        title_label.setStyleSheet( self.theme.get_title_label_style() )
+        title_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_title" ) )
         title_layout.addWidget( title_label )
 
         # Add close button
         close_button = QPushButton( "X" )
         close_button.setFixedSize( 19, 19 )
-        close_button.setStyleSheet( self.theme.get_close_button_style() )
+        close_button.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_alt1" ) )
         close_button.clicked.connect( self.close )
         title_layout.addWidget( close_button )
 
@@ -455,12 +335,13 @@ class CharacterSetManagerUI( QWidget ):
 
         # Add a header
         header_label = QLabel( "M E T A" )
-        header_label.setStyleSheet( "QLabel { color: rgb(140, 140, 140); font-weight: bold; }" )  # Darker for better contrast )
+        header_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_subtitle" ) )
         metadata_layout.addWidget( header_label )
 
         # Add separator line
         separatorH = QFrame()
         separatorH.setFrameStyle( QFrame.HLine | QFrame.Plain )
+        # TODO: color should come from the theme module
         separatorH.setStyleSheet( "QFrame { color: rgb(230, 230, 230); }" )  # Brighter for better visibility
         metadata_layout.addWidget( separatorH )
 
@@ -545,6 +426,7 @@ class CharacterSetManagerUI( QWidget ):
             return
 
         menu = QMenu()
+        menu.setStyleSheet( self.themes.get_stylesheet_colors( "QMenu" ) )  # Add this line
         current_dir = self.get_current_directory()
 
         if current_dir in ['main', 'flushed']:

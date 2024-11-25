@@ -3,7 +3,8 @@
 Provides blending strategies for animation curve manipulation.
 Handles interpolation of values and tangents between animation states.
 """
-
+# TODO: add support to blend broken tangents individually
+# TODO: add support for weighted tangents, investigate issues when blending
 import math
 
 import maya.cmds as cmds
@@ -2431,7 +2432,7 @@ class Geometric5BlendStrategy( BlendStrategy ):
 
 
 class Geometric7BlendStrategy( BlendStrategy ):
-    """Uses geometric relationships between points A, B, C for blending with intersection-based point B"""
+    """same as the other geom5, only changed _calculate_point_c_position to make it compatible with direct targeting strategy"""
 
     def __init__( self, core ):
         BlendStrategy.__init__( self, core )

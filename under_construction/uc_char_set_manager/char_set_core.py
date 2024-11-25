@@ -7,6 +7,8 @@ import maya.mel as mel
 
 #
 
+# TODO: audit code on char set import.
+
 # var for UI
 tell = ''
 
