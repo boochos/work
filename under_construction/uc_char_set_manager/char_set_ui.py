@@ -5,8 +5,8 @@ import os
 import shutil
 import time
 
-from PySide2.QtCore import Qt, QSize
-from PySide2.QtGui import QColor
+from PySide2.QtCore import Qt, QSize, QPoint
+from PySide2.QtGui import QPainter, QColor, QPen, QBrush
 from PySide2.QtWidgets import ( QWidget, QVBoxLayout, QHBoxLayout,
                               QRadioButton, QButtonGroup, QTreeWidget,
                               QTreeWidgetItem, QListWidget, QLabel,
@@ -29,6 +29,60 @@ def maya_main_window():
     """Return Maya's main window"""
     main_window = omui.MQtUtil.mainWindow()
     return wrapInstance( int( main_window ), QWidget )
+
+
+# Add this new class above your main UI class
+class ResizeHandle( QWidget ):
+
+    def __init__( self, parent = None ):
+        QWidget.__init__( self, parent )
+        self.setFixedSize( 14, 14 )
+        self.setCursor( Qt.SizeFDiagCursor )
+
+    def paintEvent( self, event ):
+        painter = QPainter( self )
+        try:
+            # Get color string and parse RGB values
+            color_str = self.parent().themes.colors.get( 'grey_04', 'rgb(150, 150, 150)' )
+            # Parse RGB values from string
+            rgb_str = color_str.strip( 'rgb()' ).split( ',' )
+            r = int( rgb_str[0] )
+            g = int( rgb_str[1] )
+            b = int( rgb_str[2] )
+
+            color = QColor( r, g, b )
+            brush = QBrush( color )
+
+        except:
+            brush = QBrush( QColor( 150, 150, 150 ) )
+
+        points = [
+            QPoint( self.width(), self.height() ),
+            QPoint( self.width(), self.height() - 10 ),
+            QPoint( self.width() - 10, self.height() )
+        ]
+
+        painter.setBrush( brush )
+        painter.setPen( Qt.NoPen )
+        painter.drawPolygon( points )
+
+    def mousePressEvent( self, event ):
+        if event.button() == Qt.LeftButton:
+            self.parent().resize_start = event.globalPos()
+            self.parent().resize_initial_size = self.parent().size()
+            event.accept()
+
+    def mouseMoveEvent( self, event ):
+        if event.buttons() == Qt.LeftButton:
+            diff = event.globalPos() - self.parent().resize_start
+            new_width = self.parent().resize_initial_size.width() + diff.x()
+            new_height = self.parent().resize_initial_size.height() + diff.y()
+
+            # Set minimum size
+            new_width = max( 300, new_width )
+            new_height = max( 200, new_height )
+
+            self.parent().resize( new_width, new_height )
 
 
 class CharacterSetDirectoryManager:
@@ -128,33 +182,39 @@ class CharacterSetDirectoryManager:
 class CharacterSetManagerUI( QWidget ):
 
     def __init__( self, parent = maya_main_window() ):
-        # TODO: expansion button is too white, copy what was done, the triangle stylesheet in combobox
-        # TODO: try increasing selected content color vibrancy
         # TODO: add some templates sets, biped, quadraped, face, insect, use a dict keep in module.
         # TODO: build import/edit version of the ui
-        # TODO: resizing drag button, bottom right corner
-        # TODO: ? help button, top left corner
-        # TODO: slightly brighter edge border, or darker, around window
-        # TODO: move refresh functionality to 'N S:' label, get rid of other button.
-        # TODO: if file is deselected in the file list. the treeview should clear its contents
+        # TODO: make window a base class
+        # TODO: add stylesheet for conext menus
         super( CharacterSetManagerUI, self ).__init__( parent )
-        # self.theme = CharSetThemeManager()
-        self.themes = tc.ThemeColorManager( 'orange' )
+        #
+        # self.themes = tc.ThemeColorManager( 'orange' ) # StylesheetManager
+        self.themes = tc.StylesheetManager( 'orange' )
 
         # Remove window frame and keep it as tool window
         self.setWindowFlags( Qt.Window | Qt.FramelessWindowHint )
+
+        # Add resize handle
+        self.resize_handle = ResizeHandle( self )
+        self.resize_start = QPoint()
+        self.resize_initial_size = QSize()
 
         # Variables to track mouse position for moving window
         self.drag_position = None
 
         # rgb(56, 56, 56 )
         self.setObjectName( "CharacterSetImporter" )
-        # TODO: this color should come from the theme module.
         self.setStyleSheet( """
             #CharacterSetImporter {
-                background-color: rgb(56, 56, 56 );
+                background-color: %s;
+                border: 5px solid %s;
             }
-        """ )
+        """ % ( 
+            self.themes.colors['bg'],  # Main text color
+            self.themes.colors['grey_01']  # Or another color from your theme, doesnt work
+            )
+
+        )
 
         self.char_set_manager = CharacterSetDirectoryManager()
 
@@ -185,10 +245,14 @@ class CharacterSetManagerUI( QWidget ):
         self.drag_position = None
 
     def create_widgets( self ):
+        # Add help button
+        self.help_button = QPushButton( "?" )
+        self.help_button.setFixedSize( 19, 19 )
+        self.help_button.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_text" ) )
         # Radio buttons for directory selection
-        self.main_radio = QRadioButton( "M A I N" )
-        self.flushed_radio = QRadioButton( "F L U S H E D " )
-        self.archived_radio = QRadioButton( "A R K" )
+        self.main_radio = QRadioButton( "MAIN" )
+        self.flushed_radio = QRadioButton( "FLUSHED " )
+        self.archived_radio = QRadioButton( "ARK" )
         self.main_radio.setChecked( True )
         self.main_radio.setStyleSheet( self.themes.get_stylesheet_colors( "QRadioButton" ) )
         self.flushed_radio.setStyleSheet( self.themes.get_stylesheet_colors( "QRadioButton" ) )
@@ -211,7 +275,7 @@ class CharacterSetManagerUI( QWidget ):
         # Tree widget for character set content
         self.content_tree = QTreeWidget()
         self.content_tree.setMouseTracking( True )  # Add this line
-        self.content_tree.setHeaderLabel( "C O N T E N T S" )
+        self.content_tree.setHeaderLabel( "CONTENTS" )
         self.content_tree.header().setDefaultAlignment( Qt.AlignCenter )  # Add this line
         self.content_tree.setFocusPolicy( Qt.NoFocus )
         self.content_tree.setStyleSheet( self.themes.get_stylesheet_colors( "QTreeWidget" ) )
@@ -222,40 +286,44 @@ class CharacterSetManagerUI( QWidget ):
 
         # Create metadata labels with headers and content
         self.created_label = QLabel()
-        self.created_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
+        self.created_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_compact" ) )
 
         self.modified_label = QLabel()
-        self.modified_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
+        self.modified_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_compact" ) )
 
         self.size_label = QLabel()
-        self.size_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
+        self.size_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_compact" ) )
 
         self.char_count_label = QLabel()
-        self.char_count_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
+        self.char_count_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_compact" ) )
 
         self.attr_count_label = QLabel()
-        self.attr_count_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
+        self.attr_count_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_compact" ) )
 
         #
         self.sets_label = QLabel( "Sets :" )
         self.sets_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         # Add import button
-        self.import_button = QPushButton( "I M P O R T" )
+        self.import_button = QPushButton( "IMPORT" )
         self.import_button.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton" ) )
 
         # Add namespace dropdown
-        self.namespace_label = QLabel( "N S:" )
-        self.namespace_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
+        self.namespace_btn = QPushButton( "NS" )
+        self.namespace_btn.setFixedWidth( 30 )  # Adjust width as needed
+        self.namespace_btn.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_text" ) )
         self.namespace_combo = QComboBox()
         self.namespace_combo.setSizePolicy( QSizePolicy.Expanding, QSizePolicy.Fixed )
         self.namespace_combo.setStyleSheet( self.themes.get_stylesheet_colors( "QComboBox" ) )
+        # TODO: default selection should be 'auto', refresh button behaviour should refresh the list and try to select the right namespace
 
+        '''
         # Add refresh button for namespaces
         self.refresh_namespace_btn = QPushButton( "@" )
         self.refresh_namespace_btn.setFixedSize( 19, 19 )
         self.refresh_namespace_btn.setStyleSheet
-        self.refresh_namespace_btn.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_alt1" ) )
+        self.refresh_namespace_btn.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_text" ) )
+        '''
 
         # In create_widgets method, add:
         self.search_replace_toggle = QToolButton()
@@ -263,19 +331,20 @@ class CharacterSetManagerUI( QWidget ):
         self.search_replace_toggle.setArrowType( Qt.RightArrow )  # Collapsed state arrow
         # self.search_replace_toggle.setText( "S / R" )
         # self.search_replace_toggle.setToolButtonStyle( Qt.ToolButtonTextBesideIcon )
-        self.search_replace_toggle.setFixedHeight( 12 )  # Even smaller height
+        self.search_replace_toggle.setFixedHeight( 11 )  # Even smaller height
 
         # Make the arrow smaller
         self.search_replace_toggle.setIconSize( QSize( 6, 6 ) )  # Smaller arrow
+        self.search_replace_toggle.setStyleSheet( self.themes.get_stylesheet_colors( "QToolButton_collapse" ) )
 
         # Create the collapsible widget that will contain our search/replace fields
         self.search_replace_widget = QWidget()
         self.search_replace_widget.setVisible( False )  # Hidden by default
 
         # Add the rest of the search/replace widgets as before
-        self.search_label = QLabel( "S E A R C H :" )
+        self.search_label = QLabel( "SEARCH :" )
         self.search_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
-        self.replace_label = QLabel( "R E P L A C E :" )
+        self.replace_label = QLabel( "REPLACE :" )
         self.replace_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel" ) )
 
         self.search_field = QLineEdit()
@@ -295,15 +364,18 @@ class CharacterSetManagerUI( QWidget ):
         title_layout = QHBoxLayout( title_bar )
         title_layout.setContentsMargins( 6, 0, 6, 0 )
 
+        # Add help button to the left
+        title_layout.addWidget( self.help_button )
+
         # Add title label
-        title_label = QLabel( "C h a r a c t e r   S e t   M a n a g e r".upper() )
+        title_label = QLabel( "Char Sets".upper() )
         title_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_title" ) )
         title_layout.addWidget( title_label )
 
         # Add close button
         close_button = QPushButton( "X" )
         close_button.setFixedSize( 19, 19 )
-        close_button.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_alt1" ) )
+        close_button.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton_text" ) )
         close_button.clicked.connect( self.close )
         title_layout.addWidget( close_button )
 
@@ -334,15 +406,14 @@ class CharacterSetManagerUI( QWidget ):
         metadata_layout.setSpacing( 4 )
 
         # Add a header
-        header_label = QLabel( "M E T A" )
+        header_label = QLabel( "META" )
         header_label.setStyleSheet( self.themes.get_stylesheet_colors( "QLabel_subtitle" ) )
         metadata_layout.addWidget( header_label )
 
         # Add separator line
         separatorH = QFrame()
         separatorH.setFrameStyle( QFrame.HLine | QFrame.Plain )
-        # TODO: color should come from the theme module
-        separatorH.setStyleSheet( "QFrame { color: rgb(230, 230, 230); }" )  # Brighter for better visibility
+        separatorH.setStyleSheet( self.themes.get_stylesheet_colors( "QFrame" ) )
         metadata_layout.addWidget( separatorH )
 
         # Add metadata labels with some spacing
@@ -393,9 +464,8 @@ class CharacterSetManagerUI( QWidget ):
         namespace_widget = QWidget()
         namespace_layout = QHBoxLayout( namespace_widget )
         namespace_layout.setContentsMargins( 0, 5, 0, 5 )
-        namespace_layout.addWidget( self.namespace_label )
+        namespace_layout.addWidget( self.namespace_btn )
         namespace_layout.addWidget( self.namespace_combo )
-        namespace_layout.addWidget( self.refresh_namespace_btn )
 
         right_layout.addWidget( search_replace_container )
         right_layout.addWidget( namespace_widget )
@@ -413,11 +483,13 @@ class CharacterSetManagerUI( QWidget ):
 
     def create_connections( self ):
         self.directory_group.buttonClicked.connect( self.on_directory_changed )
-        self.file_list.itemClicked.connect( self.on_file_selected )
+        # self.file_list.itemClicked.connect( self.on_file_selected )
+        self.file_list.itemSelectionChanged.connect( self.on_selection_changed )
         self.file_list.customContextMenuRequested.connect( self.show_context_menu )
         self.import_button.clicked.connect( self.import_character_set )
-        self.refresh_namespace_btn.clicked.connect( self.update_namespace_dropdown )
+        self.namespace_btn.clicked.connect( self.update_namespace_dropdown )
         self.search_replace_toggle.clicked.connect( self.toggle_search_replace )
+        self.help_button.clicked.connect( self.show_help_menu )
 
     def show_context_menu( self, position ):
         """Show context menu for file list items"""
@@ -454,11 +526,18 @@ class CharacterSetManagerUI( QWidget ):
         try:
             if not filename:
                 # Clear metadata if no file selected
+                '''
                 self.created_label.setText( "Created: --" )
                 self.modified_label.setText( "Modified: --" )
                 self.size_label.setText( "File Size: --" )
                 self.char_count_label.setText( "Character Sets: --" )
                 self.attr_count_label.setText( "Attributes: --" )
+                '''
+                self.created_label.setText( "" )
+                self.modified_label.setText( "" )
+                self.size_label.setText( "" )
+                self.char_count_label.setText( "" )
+                self.attr_count_label.setText( "" )
                 return
 
             # Get file path
@@ -517,6 +596,11 @@ class CharacterSetManagerUI( QWidget ):
         self.file_list.clear()
         files = self.char_set_manager.get_files( directory_type )
         self.file_list.addItems( files )
+        # Clear the tree view and metadata when switching directories
+        self.content_tree.clear()
+        self.update_metadata( None )
+        # Reset namespace combo box
+        self.namespace_combo.setCurrentIndex( 0 )
 
     def update_content_tree( self, content ):
         """Update the tree widget with character set hierarchy"""
@@ -582,6 +666,34 @@ class CharacterSetManagerUI( QWidget ):
 
         except Exception as e:
             cmds.warning( "Failed to handle file selection: {}".format( str( e ) ) )
+
+    def on_selection_changed( self ):
+        """Handle when selection changes in the file list"""
+        selected_items = self.file_list.selectedItems()
+
+        if not selected_items:
+            # Clear everything if no selection
+            self.content_tree.clear()
+            self.update_metadata( None )
+            self.namespace_combo.setCurrentIndex( 0 )
+        else:
+            # Update with selected item's data
+            selected_item = selected_items[0]
+            try:
+                # Update metadata
+                self.update_metadata( selected_item.text() )
+
+                # Update content tree
+                current_dir = self.get_current_directory()
+                filename = selected_item.text()
+                content = self.char_set_manager.get_file_content( filename, current_dir )
+                self.update_content_tree( content )
+
+                # Find and select matching namespace
+                self.match_namespace_from_content( content )
+
+            except Exception as e:
+                cmds.warning( "Failed to handle file selection: {}".format( str( e ) ) )
 
     def on_directory_changed( self, button ):
         """Handle directory radio button selection"""
@@ -713,6 +825,103 @@ class CharacterSetManagerUI( QWidget ):
             self.search_replace_toggle.setArrowType( Qt.RightArrow )
         else:
             self.search_replace_toggle.setArrowType( Qt.DownArrow )
+
+    def resizeEvent( self, event ):
+        super( CharacterSetManagerUI, self ).resizeEvent( event )
+        # Update resize handle position
+        self.resize_handle.move( 
+            self.width() - self.resize_handle.width(),
+            self.height() - self.resize_handle.height()
+        )
+
+    def show_help_menu( self ):
+        """Show help context menu"""
+        # TODO: should auto hide when mouse leaves menu. use slider code. should also reset hover state on help button
+        # TODO: additional dialogs that open should use this window as a base class.
+        menu = QMenu( self )
+        menu.setStyleSheet( self.themes.get_stylesheet_colors( "QMenu" ) )
+
+        # Add menu items
+        usage_action = menu.addAction( "Guide" )
+        # menu.addSeparator()
+        report_action = menu.addAction( "Report Issue" )
+
+        # Connect actions
+        usage_action.triggered.connect( self.show_usage_guide )
+        report_action.triggered.connect( self.report_issue )
+
+        # Show menu at button position
+        button_pos = self.help_button.mapToGlobal( QPoint( 0, self.help_button.height() ) )
+        menu.exec_( button_pos )
+
+    def show_usage_guide( self ):
+        """Show usage guide"""
+        usage_text = """
+Basic Usage:
+1. Select directory type (Main/Flushed/Archived)
+2. Select a character set file from the list
+3. Review contents in the tree view
+4. Set namespace if needed
+5. Click Import to load the character set
+
+Tips:
+- Right-click files to archive/unarchive
+- Use search/replace for namespace updates
+- Check metadata for file details
+        """
+        self.show_info_dialog( "Usage Guide", usage_text )
+
+    def report_issue( self ):
+        """Open issue reporting dialog"""
+        report_text = """
+To report an issue:
+
+Please contact your technical support team or
+submit a bug report through your studio's
+tracking system.
+
+Include:
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Maya version
+- Any error messages
+        """
+        self.show_info_dialog( "Report Issue", report_text )
+
+    def show_info_dialog( self, title, text ):
+        """Show a styled information dialog"""
+        from PySide2.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton
+
+        dialog = QDialog( self )
+        dialog.setWindowTitle( title )
+        dialog.setMinimumSize( 300, 200 )
+        dialog.setStyleSheet( """
+            QDialog {
+                background-color: %s;
+                border: 2px solid %s;
+            }
+        """ % ( 
+            self.themes.colors['bg'],
+            self.themes.colors['grey_01']
+        ) )
+
+        layout = QVBoxLayout( dialog )
+
+        # Text display
+        text_edit = QTextEdit()
+        text_edit.setReadOnly( True )
+        text_edit.setText( text )
+        text_edit.setStyleSheet( self.themes.get_stylesheet_colors( "QTextEdit" ) )
+        layout.addWidget( text_edit )
+
+        # Close button
+        close_btn = QPushButton( "Close" )
+        close_btn.setStyleSheet( self.themes.get_stylesheet_colors( "QPushButton" ) )
+        close_btn.clicked.connect( dialog.close )
+        layout.addWidget( close_btn )
+
+        dialog.exec_()
 
 
 def show():

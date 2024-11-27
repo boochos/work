@@ -14,6 +14,7 @@ from shiboken2 import wrapInstance
 
 from under_construction.uc_data import data_root
 from under_construction.uc_sliders import slider_core
+from under_construction.uc_theme import theme_colors as tc
 import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
 import maya.OpenMayaUI as omui
@@ -24,6 +25,7 @@ import numpy as np
 # print( "Core module path:", slider_core.__file__ )  # This will show where it's finding slider_core.py
 imp.reload( slider_core )
 imp.reload( data_root )
+imp.reload( tc )
 
 # Initialize the global variable
 global custom_dialog
@@ -81,7 +83,7 @@ class HandleLabel( QLabel ):
                 color: white;
                 background-color: transparent;
                 padding: 2px;
-                font-weight: bold;
+                font-weight: normal;
                 font-size: 12px;
                 border: 0px solid #333333;
                 border-radius: 2px;
@@ -172,6 +174,7 @@ class Slider( QSlider ):
         super( Slider, self ).__init__( QtCore.Qt.Horizontal, parent )
 
         self.core = slider_core.SliderCore()
+        self.themes = tc.StylesheetManager( theme )  # coming from theme module
         self.slider_name = name[0:3]
 
         self.update_queue = []
@@ -633,6 +636,7 @@ class Slider( QSlider ):
 
     def _setup_theme( self, theme = 'blue' ):
         """Set up color theme for the slider"""
+        '''
         base_colors = {
             'blue': QColor( 60, 112, 175 ),  # Original blue
             'blueLight': QColor( 60, 147, 176 ),  # Original blue !
@@ -677,6 +681,19 @@ class Slider( QSlider ):
         self.COLOR_BORDER_DISABLED = theme_colors['border_disabled']
         self.COLOR_TICK_MARK = theme_colors['tick_mark']
         self._current_theme = theme_colors
+        '''
+
+        self.themes.theme_manager.set_theme( theme )
+        # print( theme )
+        self.COLOR_GROOVE_NEUTRAL = self.themes.theme_manager.themed['bg']
+        self.COLOR_GROOVE_WARNING = self.themes.theme_manager.themed['darker_05']
+        self.COLOR_HANDLE_NEUTRAL = self.themes.theme_manager.themed['base']
+        self.COLOR_HANDLE_WARNING = self.themes.theme_manager.themed['brighter_05']
+        self.COLOR_HANDLE_BORDER_HOVER = self.themes.theme_manager.themed['brighter_07']
+        self.COLOR_BORDER_NEUTRAL = self.themes.theme_manager.themed['grey_10']
+        self.COLOR_HANDLE_DISABLED = self.themes.theme_manager.themed['darker_05']
+        self.COLOR_BORDER_DISABLED = self.themes.theme_manager.themed['brighter_04']
+        self.COLOR_TICK_MARK = self.themes.theme_manager.themed['darker_03']
 
     def _update_stylesheet( self, value = None ):
         """Update the stylesheet with current gradient stops and handle color"""
@@ -692,7 +709,7 @@ class Slider( QSlider ):
         else:
             handle_color = self._get_handle_color( current_value )
             border_hover_color = self.COLOR_HANDLE_BORDER_HOVER
-
+        # TODO: add color for groove border
         stylesheet = """
             QSlider::handle:horizontal {
                 background-color: %s;
@@ -1156,34 +1173,16 @@ class SliderPkg( QWidget ):
         self.toggle_button.setContextMenuPolicy( Qt.CustomContextMenu )
         self.toggle_button.customContextMenuRequested.connect( self._show_context_menu )
         self.toggle_button.clicked.connect( self._toggle_slider_visibility )
-        self.toggle_button.setStyleSheet( """
-            QPushButton {
-                background-color: %s;
-                border: none;
-                border-radius: 4px;
-                margin-bottom: 4px;
-                margin-right: 4px;
-            }
-            QPushButton:hover {
-                background-color: %s;
-            }
-            QPushButton:pressed {
-                background-color: %s;
-            }
-        """ % ( 
-            QColor( 42, 42, 42 ).name(),
-            QColor( 90, 90, 90 ).name(),
-            QColor( 26, 26, 26 ).name()
-        ) )
 
         # Create slider with preferences
-        self.slider = Slider( self, name = self.slider_name )
+        self.slider = Slider( self, name = self.slider_name, theme = theme )
 
         # Set strategies
         self.slider.core.set_targeting_strategy( strategy )
         self.slider.core.set_blending_strategy( blend_strategy )  # Internal
 
-        self.slider.set_theme( theme )
+        # self.slider.set_theme( theme )
+        self.toggle_button.setStyleSheet( self.slider.themes.get_stylesheet_colors( "QPushButton_pref" ) )
 
         # Load preferences
         self._load_preferences()
@@ -1244,7 +1243,7 @@ class SliderPkg( QWidget ):
 
     def _show_context_menu( self, position ):
         """Show preferences dialog for this slider"""
-        prefs_dialog = SliderPreferencesDialog( self, self.slider_name )
+        prefs_dialog = SliderPreferencesDialog( self, self.slider_name, self.slider.themes )
         prefs_dialog.finished.connect( self._reset_button_state )
         global_pos = self.toggle_button.mapToGlobal( position )
         dialog_x = global_pos.x() - 20
@@ -1268,6 +1267,7 @@ class CustomDialog( QDialog ):
     """Main dialog managing multiple blend sliders"""
 
     def __init__( self, parent = None ):
+        # TODO: sliders should be placed in a container that automatically resized if one slider is hidden
         super( CustomDialog, self ).__init__( parent )
         self.setWindowTitle( "Sliders" )
 
@@ -1281,7 +1281,7 @@ class CustomDialog( QDialog ):
 
         # Create initial slider
         self.add_slider( "Dir", "direct", "magenta", "geom7" )
-        self.add_slider( "G5", "linear", "purple", "geom5" )
+        self.add_slider( "G5", "linear", "pink", "geom5" )
         self.add_slider( "Spl", "spline", "blue", "geom5" )
 
     def add_slider( self, name, target_strategy, theme, blend_strategy ):
@@ -1296,9 +1296,11 @@ class CustomDialog( QDialog ):
 class SliderPreferencesDialog( QDialog ):
     """Dialog for managing Blend Pose Tool preferences"""
 
-    def __init__( self, parent = None, slider_name = None ):
+    def __init__( self, parent = None, slider_name = None, theme = None ):
+        # TODO: add separators to the pref sections, QFrame
         super( SliderPreferencesDialog, self ).__init__( parent )
         self.slider_name = slider_name or "Blend_N"
+        self.theme = theme
         self.prefs = SliderPreferences( name = self.slider_name )
 
         # Enable mouse tracking
@@ -1314,69 +1316,12 @@ class SliderPreferencesDialog( QDialog ):
         self._setup_ui()
         self._load_current_values()
 
-    def _get_stylesheet( self ):
-        """Return the stylesheet for the preferences dialog"""
-        return """
-            QDialog {
-                background-color: %s;
-                border: 1px solid %s;
-            }
-            QGroupBox {
-                background-color: transparent;
-                border: none;
-                color: %s;
-                font-weight: bold;
-                margin-top: 8px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 7px;
-                padding: 0px 5px 0px 5px;
-            }
-            QRadioButton {
-                color: %s;
-                spacing: 5px;
-            }
-            QRadioButton::indicator {
-                width: 13px;
-                height: 13px;
-            }
-            QRadioButton::indicator::unchecked {
-                background-color: %s;
-                border: 2px solid %s;
-                border-radius: 7px;
-            }
-            QRadioButton::indicator::checked {
-                background-color: %s;
-                border: 2px solid %s;
-                border-radius: 7px;
-            }
-            QRadioButton:checked {
-                color: %s;
-            }
-            QRadioButton:hover {
-                color: %s;
-            }
-        """ % ( 
-            QColor( 43, 43, 43 ).name(),  # #2b2b2b
-            QColor( 64, 64, 64 ).name(),  # #404040
-            QColor( 204, 204, 204 ).name(),  # #cccccc
-            QColor( 204, 204, 204 ).name(),  # #cccccc
-            QColor( 43, 43, 43 ).name(),  # #2b2b2b
-            QColor( 64, 64, 64 ).name(),  # #404040
-            QColor( 75, 75, 75 ).name(),  # #4b4b4b
-            QColor( 102, 102, 102 ).name(),  # #666666
-            QColor( 255, 255, 255 ).name(),  # #ffffff
-            QColor( 255, 255, 255 ).name()  # #ffffff
-        )
-
     def leaveEvent( self, event ):
         """Handle mouse leaving the dialog window"""
         self._mouse_inside = False
         # Use a short timer to verify mouse hasn't re-entered before closing
         QtCore.QTimer.singleShot( 100, self._check_close )
         super( SliderPreferencesDialog, self ).leaveEvent( event )
-        # TODO: reset pref button to turn off hover color, set normal state.
 
     def enterEvent( self, event ):
         """Handle mouse entering the dialog window"""
@@ -1405,7 +1350,7 @@ class SliderPreferencesDialog( QDialog ):
                 font-size: 13px;
             }
         """ % QColor( 204, 204, 204 ).name() )
-
+        title_label.setStyleSheet( self.theme.get_stylesheet_colors( "QLabel_title" ) )
         main_layout.addWidget( title_label )
 
         # Width section
@@ -1423,6 +1368,7 @@ class SliderPreferencesDialog( QDialog ):
             QColor( 140, 140, 140 ).name(),
             QColor( 43, 43, 43 ).name()
         ) )
+        width_label.setStyleSheet( self.theme.get_stylesheet_colors( "QLabel" ) )
         main_layout.addWidget( width_label )
 
         # Width radio buttons frame
@@ -1462,6 +1408,7 @@ class SliderPreferencesDialog( QDialog ):
                 QColor( 75, 75, 75 ).name(),
                 QColor( 102, 102, 102 ).name()
             ) )
+            radio.setStyleSheet( self.theme.get_stylesheet_colors( "QRadioButton" ) )
             radio.width_value = value
             radio.size_name = size_name
             self.width_button_group.addButton( radio, i )

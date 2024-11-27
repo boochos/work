@@ -2,226 +2,162 @@ from PySide2.QtGui import QColor
 
 
 class ThemeColorManager:
-    """
-    Manages color themes and variations for UI elements.
-    Provides methods to generate different color states for UI components.
-    """
-    # TODO: gonna need icon module to use for buttons, make one, workout logic.
+    """Manages themed color variants with simple dictionary access."""
 
-    # Default colors from the original code
-    DEFAULT_COLORS = {
-        'blue': QColor( 60, 112, 175 ),  # Original blue
-        'blueLight': QColor( 60, 147, 176 ),  # Lighter blue
-        'red': QColor( 175, 67, 67 ),  # Original red
-        'teal': QColor( 83, 181, 178 ),  # Teal
-        'purple': QColor( 89, 95, 179 ),  # Purple
-        'green': QColor( 82, 171, 92 ),  # Original green
-        'greenLight': QColor( 120, 176, 60 ),  # Lighter green
-        'magenta': QColor( 149, 60, 176 ),  # Magenta
-        'orange': QColor( 175, 120, 48 ),  # Orange
-        'yellow': QColor( 175, 164, 60 ),  # Yellow
-        'pink': QColor( 189, 115, 185 ),  # Pink
-        'grey': QColor( 147, 150, 150 ),  # Grey
-        'greyDark': QColor( 109, 110, 110 ),  # Dark grey
-        'greyDarkr': QColor( 75, 77, 77 ),  # Dark grey
-        'greyDarker': QColor( 45, 47, 47 ),  # Dark grey
-        'greyDarkest': QColor( 35, 37, 37 ),  # Dark grey
-        'greyMid': QColor( 150, 150, 150 ),  # New mid grey
-        'greyDarkr1': QColor( 45, 45, 45 ),  # Dark grey
-        'white': QColor( 255, 255, 255 ),  # Dark grey
-        'greyDarkest1': QColor( 26, 26, 26 ),  # Dark grey
-    }
-
-    # Default UI colors
-    DEFAULT_UI_COLORS = {
-        'background': QColor( 43, 43, 43 ),  # Dark background
-        'border': QColor( 26, 26, 26 ),  # Dark border
-        'groove': QColor( 55, 55, 55 ),  # Groove color
-        'control': QColor( 80, 43, 43 )  # Control background
-    }
-
-    # Default adjustment values for different states
-    DEFAULT_ADJUSTMENTS = {
-        'disabled': {'value': 0.7, 'desat': 0.6},  # Darkest (0.7)
-        'pressed': {'value': 0.8, 'desat': 0.0},  # Dark (0.8)
-        'focus': {'value': 1.1, 'desat': 0.0},  # Bright (1.1)
-        'active': {'value': 1.15, 'desat': 0.0},  # Brighter (1.15)
-        'hover': {'value': 1.2, 'desat': 0.0},  # Even brighter (1.2)
-        'selected': {'value': 1.3, 'desat': 0.0},  # Very bright (1.3)
-        'warning': {'value': 1.4, 'desat': 0.0},  # Extra bright (1.4)
-        'error': {'value': 1.5, 'desat': 0.0},  # Brightest (1.5)
-    }
+    # TODO: think about adding a complimentary accent color, opposite side on the color wheel ie orange/blue
 
     def __init__( self, color_name = 'blue' ):
-        """
-        Initialize with a base color.
-        Args:
-            color_name (str|QColor): Base color name from DEFAULT_COLORS or QColor object
-        """
-        # TODO: cleanup ui colors, the greys, should called same way as the rest of the base color variants are called
-        # TODO: rename base color variant naming, should follow naming convention, lighter01, lighter02, increasing in brightness, reverse for darkner colors ie. darker01. 01 being closest to base
-        # TODO: remove all individually called colors in the stylesheets, they should come from the predefined base color variants, or grey variants
-        # TODO: rename DEFAULT_ADJUSTMENts, DEFAULT_VARIANTS
-        # TODO: think about adding a complimentary accent color, opposite side on the color wheel ie orange/blue
-        if isinstance( color_name, QColor ):
-            self._base_color = color_name
-        else:
-            self._base_color = self.DEFAULT_COLORS.get( color_name, self.DEFAULT_COLORS['blue'] )
-        self._adjustments = self.DEFAULT_ADJUSTMENTS.copy()
-
-    @classmethod
-    def get_color( cls, color_name ):
-        """
-        Get a color from the default colors.
-        Args:
-            color_name (str): Name of the color from DEFAULT_COLORS
-        Returns:
-            QColor: The requested color or blue if not found
-        """
-        return cls.DEFAULT_COLORS.get( color_name, cls.DEFAULT_COLORS['blue'] )
-
-    @classmethod
-    def get_ui_color( cls, color_name ):
-        """
-        Get a UI color from the default UI colors.
-        Args:
-            color_name (str): Name of the color from DEFAULT_UI_COLORS
-        Returns:
-            QColor: The requested color or background if not found
-        """
-        return cls.DEFAULT_UI_COLORS.get( color_name, cls.DEFAULT_UI_COLORS['background'] )
-
-    @classmethod
-    def list_colors( cls ):
-        """
-        Get a list of available color names.
-        Returns:
-            list: Names of all available default colors
-        """
-        return list( cls.DEFAULT_COLORS.keys() )
-
-    @property
-    def base_color( self ):
-        """Get the base color"""
-        return self._base_color
-
-    @base_color.setter
-    def base_color( self, color ):
-        """Set the base color from name or QColor"""
-        if isinstance( color, str ):
-            self._base_color = self.DEFAULT_COLORS.get( color, self._base_color )
-        else:
-            self._base_color = QColor( color )
-
-    def set_state_adjustment( self, state, value_factor, desat_amount = 0.0 ):
-        """
-        Set custom adjustment values for a state.
-        Args:
-            state (str): State name ('hover', 'pressed', etc.)
-            value_factor (float): Brightness adjustment (0.0-2.0)
-            desat_amount (float): Desaturation amount (0.0-1.0)
-        """
-        self._adjustments[state] = {
-            'value': value_factor,
-            'desat': desat_amount
+        # Define base colors dictionary
+        self._base_colors = {
+            'blue': ( 60, 112, 175 ),  # Original blue
+            'blueLight': ( 60, 147, 176 ),  # Lighter blue
+            'red': ( 175, 67, 67 ),  # Original red
+            'teal': ( 83, 181, 178 ),  # Teal
+            'purple': ( 101, 76, 228 ),  # Purple
+            'green': ( 82, 171, 92 ),  # Original green
+            'greenLight': ( 120, 176, 60 ),  # Lighter green
+            'magenta': ( 149, 60, 176 ),  # Magenta
+            'orange': ( 175, 120, 48 ),  # Orange
+            'yellow': ( 175, 164, 60 ),  # Yellow
+            'pink': ( 189, 115, 185 ),  # Pink
         }
+        '''
+        # Get base color tuple
+        self._base = self._base_colors.get( color_name, self._base_colors['blue'] )
 
-    def get_color_for_state( self, state ):
-        """
-        Get the adjusted color for a specific state.
-        Args:
-            state (str): State name ('hover', 'pressed', etc.)
-        Returns:
-            QColor: Adjusted color for the state
-        """
-        if state not in self._adjustments:
-            return self._base_color
+        # Generate and store all colors
+        self.themed = self._generate_colors()
+        '''
+        self.set_theme( color_name )
 
-        adj = self._adjustments[state]
-        return self._adjust_color( 
-            self._base_color,
-            adj['value'],
-            adj['desat']
-        )
-
-    def get_stylesheet_colors( self, widget_type = 'QPushButton' ):
-        """
-        Get a complete stylesheet with all state colors.
-        Args:
-            widget_type (str): Qt widget class name
-        Returns:
-            str: Complete stylesheet with all states
-        """
-        colors = {
-            state: self.get_color_for_state( state ).name()
-            for state in self._adjustments.keys()
-        }
-
-        if widget_type == 'QPushButton':
-            return self._get_button_stylesheet( colors )
-        elif widget_type == 'QPushButton_alt1':  # Add this new condition
-            return self._get_button_alt1_stylesheet( colors )
-        elif widget_type == 'QLineEdit':
-            return self._get_line_edit_stylesheet( colors )
-        elif widget_type == 'QListWidget':  # Add this new condition
-            return self._get_list_widget_stylesheet( colors )
-        elif widget_type == 'QTreeWidget':  # Add this new condition
-            return self._get_tree_widget_stylesheet( colors )
-        elif widget_type == 'QRadioButton':  # Add this new condition
-            return self._get_radio_button_stylesheet( colors )
-        elif widget_type == 'QComboBox':  # Add this new condition
-            return self._get_combo_box_stylesheet( colors )
-        elif widget_type == 'QLabel_title':  # Add this new condition
-            return self._get_label_title_stylesheet( colors )
-        elif widget_type == 'QLabel_subtitle':  # Add this new condition
-            return self._get_label_title_stylesheet( colors )
-        elif widget_type == 'QLabel':  # Add this new condition
-            return self._get_label_stylesheet( colors )
-        elif widget_type == 'QMenu':  # Add this new condition
-            return self._get_menu_stylesheet( colors )
-        # Add more widget types as needed
-        return ""
-
-    def get_all_colors( self ):
-        """
-        Get all color variations as a dictionary.
-        Returns:
-            dict: State names mapped to their QColors
-        """
-        return {
-            state: self.get_color_for_state( state )
-            for state in self._adjustments.keys()
-        }
-
-    def _adjust_color( self, color, value_factor, desat_amount ):
-        """
-        Adjust a color's brightness and saturation.
-        Args:
-            color (QColor): Color to adjust
-            value_factor (float): Brightness multiplier
-            desat_amount (float): Desaturation amount
-        Returns:
-            QColor: Adjusted color
-        """
-        new_color = QColor( color )
-        h, s, v, a = new_color.getHsv()
+    def _adjust_color( self, rgb_tuple, value_factor, desat_amount = 0.0 ):
+        """Adjust rgb color values."""
+        # Convert to QColor for HSV manipulation
+        color = QColor( *rgb_tuple )
+        h, s, v, a = color.getHsv()
 
         # Adjust value (brightness)
-        new_v = int( v * value_factor )
-        new_v = max( 0, min( 255, new_v ) )
+        new_v = min( 255, max( 0, int( v * value_factor ) ) )
 
-        # Adjust saturation
+        # Adjust saturation if needed
         if desat_amount > 0:
-            new_s = int( s * ( 1.0 - desat_amount ) )
-            new_s = max( 0, min( 255, new_s ) )
+            new_s = min( 255, max( 0, int( s * ( 1.0 - desat_amount ) ) ) )
         else:
             new_s = s
 
-        new_color.setHsv( h, new_s, new_v, a )
-        return new_color
+        # Convert back to RGB
+        color.setHsv( h, new_s, new_v, a )
+        return ( color.red(), color.green(), color.blue() )
 
-    def _get_button_stylesheet( self, colors ):
-        """Generate stylesheet for QPushButton"""
+    def _generate_colors( self ):
+        """Generate all theme colors as rgb strings."""
+        colors = {
+            # Theme color variants
+            'base': 'rgb%s' % str( self._base ),
+            #
+            'white': 'rgb(255, 255, 255)',
+
+            # Brighter
+            'brighter_00': 'rgb%s' % str( self._adjust_color( self._base, 1.05 ) ),
+            'brighter_01': 'rgb%s' % str( self._adjust_color( self._base, 1.1 ) ),  # 1
+            'brighter_02': 'rgb%s' % str( self._adjust_color( self._base, 1.15 ) ),  # 2
+            'brighter_03': 'rgb%s' % str( self._adjust_color( self._base, 1.2 ) ),  # 3
+            'brighter_04': 'rgb%s' % str( self._adjust_color( self._base, 1.3 ) ),  # 4
+            'brighter_05': 'rgb%s' % str( self._adjust_color( self._base, 1.4 ) ),  # 5
+            'brighter_06': 'rgb%s' % str( self._adjust_color( self._base, 1.5 ) ),  # 6
+            'brighter_07': 'rgb%s' % str( self._adjust_color( self._base, 1.6 ) ),  # 7 brightest
+
+            # Darker
+            'darker_00': 'rgb%s' % str( self._adjust_color( self._base, 0.9, 0.1 ) ),  # 1
+            'darker_01': 'rgb%s' % str( self._adjust_color( self._base, 0.85, 0.4 ) ),  # 1
+            'darker_02': 'rgb%s' % str( self._adjust_color( self._base, 0.7, 0.6 ) ),  # 2
+            'darker_03': 'rgb%s' % str( self._adjust_color( self._base, 0.6, 0.6 ) ),  # 3
+            'darker_04': 'rgb%s' % str( self._adjust_color( self._base, 0.55, 0.6 ) ),  # 4
+            'darker_05': 'rgb%s' % str( self._adjust_color( self._base, 0.5, 0.7 ) ),  # 5
+            'darker_06': 'rgb%s' % str( self._adjust_color( self._base, 0.4, 0.8 ) ),  # 6
+            'darker_07': 'rgb%s' % str( self._adjust_color( self._base, 0.3, 0.9 ) ),  # 7 darkest
+
+            # Greys from lightest to darkest
+            'grey_00': 'rgb(240, 240, 240)',
+            'grey_01': 'rgb(230, 230, 230)',
+            'grey_02': 'rgb(200, 200, 200)',
+            'grey_03': 'rgb(170, 170, 170)',
+            'grey_04': 'rgb(147, 150, 150)',  #
+            'grey_05': 'rgb(109, 110, 110)',  #
+            'grey_06': 'rgb(75, 77, 77)',  #
+            'grey_07': 'rgb(55, 55, 55)',  # 7
+            'grey_08': 'rgb(43, 43, 43)',  # 8
+            'grey_09': 'rgb(35, 37, 37)',  # 9
+            'grey_10': 'rgb(26, 26, 26)',  # 10
+
+            # bg
+            'bg': 'rgb(56, 56, 56)',
+            'bg_light': 'rgb(68, 68, 68)',
+        }
+        return colors
+
+    def set_theme( self, color_name ):
+        """set theme color, generate new colors"""
+        # Get base color tuple
+        self._base = self._base_colors.get( color_name, self._base_colors['blue'] )
+
+        # Generate and store all colors
+        self.themed = self._generate_colors()
+
+
+class StylesheetManager:
+    """Generates stylesheets using ThemeColorManager colors."""
+
+    def __init__( self, color_name = 'blue' ):
+        # Create theme manager internally if given a string
+        if isinstance( color_name, str ):
+            self.theme_manager = ThemeColorManager( color_name )
+            self.colors = self.theme_manager.themed
+        else:
+            # Still support passing a theme manager directly
+            self.colors = color_name.themed
+
+    def get_stylesheet_colors( self, widget_type = 'QPushButton' ):
+        """
+        Get a complete stylesheet for specified widget type.
+        Args:
+            widget_type (str): Qt widget class name
+        Returns:
+            str: Complete stylesheet
+        """
+        if widget_type == 'QPushButton':
+            return self.get_button_stylesheet()
+        elif widget_type == 'QPushButton_text':
+            return self.get_button_text_stylesheet()
+        elif widget_type == 'QPushButton_pref':
+            return self.get_button_pref_stylesheet()
+        elif widget_type == 'QLineEdit':
+            return self.get_line_edit_stylesheet()
+        elif widget_type == 'QListWidget':
+            return self.get_list_widget_stylesheet()
+        elif widget_type == 'QTreeWidget':
+            return self.get_tree_widget_stylesheet()
+        elif widget_type == 'QRadioButton':
+            return self.get_radio_button_stylesheet()
+        elif widget_type == 'QComboBox':
+            return self.get_combo_box_stylesheet()
+        elif widget_type == 'QLabel_title':
+            return self.get_label_title_stylesheet()
+        elif widget_type == 'QLabel_subtitle':
+            return self.get_label_subtitle_stylesheet()
+        elif widget_type == 'QLabel_compact':
+            return self.get_label_compact_stylesheet()
+        elif widget_type == 'QLabel':
+            return self.get_label_stylesheet()
+        elif widget_type == 'QMenu':
+            return self.get_menu_context_stylesheet()
+        elif widget_type == 'QToolButton_collapse':
+            return self.get_button_collapse_stylesheet()
+        elif widget_type == 'QFrame':
+            return self.get_separator_stylesheet()
+        return ""
+
+    def get_button_stylesheet( self ):
         return """
             QPushButton {
                 background-color: %s;
@@ -229,6 +165,8 @@ class ThemeColorManager:
                 border-radius: 4px;
                 padding: 5px 15px;
                 color: white;
+                font-size: 12px;
+                letter-spacing: 3.0px;
             }
             QPushButton:hover {
                 background-color: %s;
@@ -249,19 +187,19 @@ class ThemeColorManager:
                 border-width: 2px;
             }
         """ % ( 
-            self.base_color.name(),
-            colors['disabled'],
-            self.base_color.name(),
-            colors['hover'],
-            colors['pressed'],
-            colors['selected'],
-            colors['disabled'],
-            self._adjust_color( self.base_color, 0.5, 0.8 ).name(),
-            colors['focus']
+            self.colors['base'],
+            self.colors['grey_10'],
+            self.colors['base'],
+            self.colors['brighter_07'],
+            self.colors['brighter_02'],
+            self.colors['brighter_04'],
+            self.colors['darker_02'],
+            self.colors['darker_05'],
+            self.colors['brighter_02']
+            # letter-spacing: 1.5px;
         )
 
-    def _get_button_alt1_stylesheet( self, colors ):
-        """Generate stylesheet for alternate button style"""
+    def get_button_text_stylesheet( self ):
         return """
             QPushButton {
                 background-color: transparent;
@@ -269,23 +207,47 @@ class ThemeColorManager:
                 border-radius: 4px;
                 border: none;
                 font-size: 12px;
+                letter-spacing: 3.0px;
             }
             QPushButton:hover {
                 color: %s;
             }
         """ % ( 
-            self.get_color( 'greyDark' ).name(),
-            colors['error']
+            self.colors['grey_03'],
+            self.colors['brighter_06']
         )
 
-    def _get_line_edit_stylesheet( self, colors ):
-        """Generate stylesheet for QLineEdit"""
+    def get_button_pref_stylesheet( self ):
+        return """
+            QPushButton {
+                border: 1px solid %s;
+                background-color: %s;
+                border-radius: 2px;
+                margin-bottom: 4px;
+                margin-right: 4px;
+            }
+            QPushButton:hover {
+                background-color: %s;
+            }
+            QPushButton:pressed {
+                background-color: %s;
+            }
+        """ % ( 
+            self.colors['bg'],
+            self.colors['bg_light'],  # QColor( 42, 42, 42 ).name(),
+            self.colors['grey_08'],  # QColor( 90, 90, 90 ).name(),
+            self.colors['grey_04']  # QColor( 26, 26, 26 ).name()
+        )
+
+    def get_line_edit_stylesheet( self ):
         return """
             QLineEdit {
                 border: 1px solid %s;
                 border-radius: 4px;
                 padding: 3px 5px;
-                color: white;
+                color: %s;
+                font-size: 13px;
+                letter-spacing: 1.0px;
             }
             QLineEdit:hover {
                 border-color: %s;
@@ -299,47 +261,63 @@ class ThemeColorManager:
                 border-color: %s;
             }
         """ % ( 
-            self._adjust_color( self.base_color, 0.4, 0.3 ).name(),  # Changed from 0.6 to 0.4 for darker border
-            self.get_color( 'greyDarkr' ).name(),
-            colors['disabled'],
-            self.get_color( 'grey' ).name(),
-            self._adjust_color( self.base_color, 0.4, 0.8 ).name()
+            self.colors['darker_06'],
+            self.colors['grey_03'],
+            self.colors['darker_05'],
+            self.colors['darker_02'],
+            self.colors['grey_04'],
+            self.colors['darker_05']
         )
 
-    def _get_list_widget_stylesheet( self, colors ):
-        """Generate stylesheet for QListWidget"""
+    def get_list_widget_stylesheet( self ):
         return """
             QListWidget {
+                border: 1px solid %s;
                 color: %s;
                 font-size: 13px;
+            }
+            QListWidget:hover {
+                border: 1px solid %s;
             }
             QListWidget:focus {
                 border: 1px solid %s;
             }
+            QListWidget::item {
+                border: none;  /* Remove item borders */
+            }
             QListWidget::item:hover {
-                background-color: rgb(65, 65, 65);  /* Slightly lighter than base for hover */
+                background-color: %s;
             }
             QListWidget::item:selected {
                 background-color: %s;
             }
         """ % ( 
-            self.get_color( 'greyMid' ).name(),  # for list item text
-            colors['disabled'],  # for focus border
-            colors['disabled']  # for selected item
+            self.colors['darker_06'],
+            self.colors['grey_03'],
+            self.colors['darker_06'],
+            self.colors['darker_06'],
+            self.colors['darker_06'],
+            self.colors['darker_02']
         )
 
-    def _get_tree_widget_stylesheet( self, colors ):
-        """Generate stylesheet for QTreeWidget"""
+    def get_tree_widget_stylesheet( self ):
         return """
             QTreeWidget {
+                border: 1px solid %s;
                 color: %s;
                 font-size: 13px;
+            }
+            QTreeWidget:hover {
+                border: 1px solid %s;
             }
             QTreeWidget:focus {
                 border: 1px solid %s;
             }
+            QTreeWidget::item {
+                border: none;  /* Remove item borders */
+            }
             QTreeWidget::item:hover {
-                background-color: rgb(65, 65, 65);  /* Slightly lighter than base for hover */
+                background-color: %s;
             }
             QTreeWidget::item:selected {
                 background-color: %s;
@@ -351,22 +329,26 @@ class ThemeColorManager:
                 color: %s;
                 background-color: %s;
                 padding: 4px;
-                font-size: 11px;  /* Added for header too */
+                font-size: 11px;
+                letter-spacing: 3.0px;
             }
         """ % ( 
-            self.get_color( 'greyMid' ).name(),  # for tree item text
-            colors['disabled'],  # for focus border
-            colors['disabled'],  # for selected item
-            colors['disabled'],  # for selected branch
-            colors['disabled'],
-            self.get_color( 'greyDarkr1' ).name()  # for header background
+            self.colors['darker_06'],
+            self.colors['grey_03'],
+            self.colors['darker_06'],
+            self.colors['darker_06'],
+            self.colors['darker_06'],
+            self.colors['darker_02'],
+            self.colors['darker_02'],
+            self.colors['darker_02'],
+            self.colors['grey_09']
         )
 
-    def _get_radio_button_stylesheet( self, colors ):
-        """Generate stylesheet for QRadioButton"""
+    def get_radio_button_stylesheet( self ):
         return """
             QRadioButton {
                 color: %s;
+                letter-spacing: 1.5px;
             }
             QRadioButton::indicator {
                 width: 9px;
@@ -383,78 +365,209 @@ class ThemeColorManager:
                 background-color: %s;
             }
         """ % ( 
-            self.get_color( 'grey' ).name(),
-            self.get_color( 'greyDarkest' ).name(),
-            self.get_color_for_state( 'disabled' ).name(),
-            self.base_color.name()
+            self.colors['grey_04'],
+            self.colors['grey_09'],
+            self.colors['darker_02'],
+            self.colors['base']
         )
 
-    def _get_combo_box_stylesheet( self, colors ):
-        """Generate stylesheet for QComboBox"""
+    def get_combo_box_stylesheet( self ):
         return """
             QComboBox {
                 color: %s;
                 background-color: %s;
                 selection-color: %s;
                 selection-background-color: %s;
-                font-size: 12px;
+                font-size: 13px;
+                border: 1px solid %s;
+                border-radius: 2px;
+                padding: 3px 5px;
+                padding-right: 20px;  /* Make room for the dropdown button */
+                letter-spacing: 0.25px;
             }
+            
+            QComboBox:hover {
+                border-color: %s;
+            }
+            
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            
+            QComboBox::down-arrow {
+                image: none;
+                width: 8px;
+                height: 8px;
+                background: %s;
+                border-radius: 4px;
+            }
+            
+            QComboBox::down-arrow:hover {
+                background: %s;
+            }
+            
+            QComboBox::down-arrow:on {
+                background: %s;
+            }            
+
             QComboBox QAbstractItemView {
                 color: %s;
                 selection-color: %s;
                 selection-background-color: %s;
-                background-color: rgb(45, 45, 45);
+                background-color: %s;
                 font-size: 12px;
+                border: 1px solid %s;
+                border-radius: 4px;
+                padding: 2px;
             }
-        """ % ( 
-            self.get_color( 'grey' ).name(),  # Main text color
-            self.get_color( 'greyDarkr1' ).name(),  # Background color
-            self.get_color( 'grey' ).name(),  # Selected text color
-            colors['disabled'],  # Selected background color
-            self.get_color( 'grey' ).name(),  # Dropdown text color
-            self.get_color( 'white' ).name(),  # Selected dropdown text color
-            colors['disabled']  # Selected dropdown background color
-        )
-
-    def _get_label_title_stylesheet( self, colors ):
-        """Generate stylesheet for title label"""
-        return """
-            QLabel {
-                color: %s;
-                font-weight: normal;
+            
+            QComboBox QAbstractItemView::item {
+                padding: 4px;
+                border-radius: 2px;
             }
-        """ % ( 
-            colors['hover']
-        )
-
-    def _get_label_subtitle_stylesheet( self, colors ):
-        """Generate stylesheet for title label"""
-        return """
-            QLabel {
-                color: %s;
-                font-weight: normal;
+            
+            QComboBox QAbstractItemView::item:hover {
+                background-color: %s;
             }
-        """ % ( 
-            colors['pressed']
-        )
-
-    def _get_label_stylesheet( self, colors ):
-        """Generate stylesheet for standard QLabel"""
-        return """
-            QLabel {
-                color: %s;
-                font-size: 12px;
-            }
-        """ % ( 
-            self.get_color( 'greyMid' ).name()
-        )
-
-    def _get_menu_stylesheet( self, colors ):
-        """Generate stylesheet for context menu"""
-        return """
-            QMenu::item:selected {
+            
+            QComboBox QAbstractItemView::item:selected {
                 background-color: %s;
             }
         """ % ( 
-            colors['disabled']  # Selection background color
+            self.colors['grey_03'],  # Main text color
+            self.colors['grey_08'],  # Background color
+            self.colors['grey_03'],  # Selected text color
+            self.colors['darker_02'],  # Selected background color
+            self.colors['darker_06'],  # Border color
+            self.colors['darker_05'],  # Hover border color
+            self.colors['grey_05'],  # Down arrow color
+            self.colors['grey_03'],  # Down arrow hover color
+            self.colors['base'],  # Down arrow when dropdown is open
+            self.colors['grey_03'],  # Dropdown text color
+            self.colors['grey_01'],  # Selected dropdown text color
+            self.colors['darker_02'],  # Selected dropdown background color
+            self.colors['grey_08'],  # Dropdown background color
+            self.colors['grey_06'],  # Dropdown border color
+            self.colors['darker_06'],  # Dropdown item hover color
+            self.colors['darker_02']  # Dropdown item selected color
         )
+
+    def get_label_title_stylesheet( self ):
+        return """
+            QLabel {
+                color: %s;
+                font-weight: normal;
+                font-size: 13px;
+                letter-spacing: 3.5px;
+            }
+        """ % ( 
+            self.colors['brighter_02']
+        )
+
+    def get_label_subtitle_stylesheet( self ):
+        return """
+            QLabel {
+                color: %s;
+                font-weight: normal;
+                ont-size: 13px;
+                letter-spacing: 3.0px;
+            }
+        """ % ( 
+            self.colors['darker_01']
+        )
+
+    def get_label_stylesheet( self ):
+        return """
+            QLabel {
+                color: %s;
+                font-size: 12px;
+                letter-spacing: 1.5px;
+            }
+        """ % ( 
+            self.colors['grey_04']
+        )
+
+    def get_label_compact_stylesheet( self ):
+        return """
+            QLabel {
+                color: %s;
+                font-size: 12px;
+                letter-spacing: 0.0px;
+            }
+        """ % ( 
+            self.colors['grey_04']
+        )
+
+    def get_menu_context_stylesheet( self ):
+        return """
+            QMenu {
+                color: %s;
+                background-color: %s;
+                font-size: 13px;
+                border: 1px solid %s;
+            }
+            QMenu::item {
+                background-color: %s;
+            }
+            QMenu::item:selected {
+                background-color: %s;
+                color: %s;
+            }
+        """ % ( 
+            self.colors['grey_04'],
+            self.colors['grey_09'],
+            self.colors['grey_06'],
+            self.colors['grey_09'],
+            self.colors['darker_07'],
+            self.colors['white']
+        )
+
+    def get_button_collapse_stylesheet( self ):
+        return """
+            QToolButton {
+                background: transparent;
+                border: none;
+                border-radius: 2px;
+                margin: 0;
+                padding: 0;
+            }
+            
+            QToolButton::right-arrow {
+                image: none;
+                width: 8px;
+                height: 8px;
+                background: %s;
+                border-radius: 2px;
+            }
+            
+            QToolButton::right-arrow:hover {
+                background: %s;
+            }
+            
+            QToolButton::down-arrow {
+                image: none;
+                width: 8px;
+                height: 8px;
+                background: %s;
+                border-radius: 2px;
+            }
+            
+            QToolButton::down-arrow:hover {
+                background: %s;
+            }
+        """ % ( 
+            self.colors['grey_05'],  # Arrow normal color - using theme color
+            self.colors['grey_03'],  # Arrow hover color - using theme base color
+            self.colors['base'],  # Arrow normal color (down state)
+            self.colors['darker_02']  # Arrow hover color (down state)
+        )
+
+    def get_separator_stylesheet( self ):
+        return """
+            QFrame {
+                background-color: %s;
+                border: none;
+                max-height: 2px;
+            }
+        """ % ( self.colors['grey_08'] )
