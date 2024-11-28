@@ -1019,101 +1019,14 @@ class Slider( QSlider ):
         # Store new start time
         self._last_move_time = current_time
 
-        if self.core.prepare_handle_move():
-            self.on_handle_move( value )
+        # Call move handler
+        self.on_handle_move( value )
 
     def on_handle_move( self, value ):
-        """
-        HOOK
-        Adjust animation values based on slider position.
-        Now handles both selected key and current time scenarios.
-        """
-        # print( "Handle move value:", value )
-        # Convert to normalized blend factor (-1 to 1)
+        """Bridge to core movement handler"""
         blend_factor = value / 100.0
-
-        # Apply easing curve
         curved_blend = ease_value( blend_factor, self._curve_strength )
-
-        # Process each object with the curved blend factor
-        self.update_queue = []
-        for obj in self.core.selected_objects:
-            self._process_object_updates( obj, curved_blend )
-
-        # Execute batched updates
-        if self.update_queue:
-            self._execute_batch_updates()
-
-        # Mark nodes dirty for proper UI update
-        # print( self.core.blend_nodes )
-        if self.core.blend_nodes:
-            cmds.dgeval( self.core.blend_nodes )
-        # mel.eval( 'dgdirty;' )
-
-    def _process_object_updates( self, obj, blend_factor ):
-        """Process updates for a single object"""
-        # TODO: move to core module
-        # print( '___', blend_factor )
-        for curve in self.core.curve_data:
-            if curve not in self.core.curve_data:
-                continue
-
-            # Get keys to update
-            selected_keys = self.core.get_selected_keys( curve )  # Use core method
-            times_to_update = selected_keys if selected_keys else [self.core.current_time]
-
-            # Process in batches
-            for i in range( 0, len( times_to_update ), self.core.batch_size ):
-                batch = times_to_update[i:i + self.core.batch_size]
-                for time in batch:
-                    new_value, new_tangents = self.core.calculate_blend( # Use core calculation
-                        curve,
-                        time,
-                        blend_factor
-                    )
-                    # print( '___', blend_factor, new_value )
-                    if new_value is not None:
-                        self.update_queue.append( {
-                            'curve': curve,
-                            'time': time,
-                            'value': new_value,
-                            'tangents': new_tangents
-                        } )
-
-    def _execute_batch_updates( self ):
-        """Execute queued updates in optimized batches"""
-        # TODO: move to core module
-        curve_updates = {}
-        for update in self.update_queue:
-            curve = update['curve']
-            if curve not in curve_updates:
-                curve_updates[curve] = []
-            curve_updates[curve].append( update )
-
-        for curve, updates in curve_updates.items():
-            for update in updates:
-                cmds.setKeyframe( 
-                    curve,
-                    time = update['time'],
-                    value = update['value']
-                )
-
-                if update['tangents']:
-                    in_angle, in_weight = update['tangents']['in']
-                    out_angle, out_weight = update['tangents']['out']
-
-                    cmds.keyTangent( 
-                        curve,
-                        time = ( update['time'], update['time'] ),
-                        ia = in_angle,
-                        iw = in_weight
-                    )
-                    cmds.keyTangent( 
-                        curve,
-                        time = ( update['time'], update['time'] ),
-                        oa = out_angle,
-                        ow = out_weight
-                    )
+        self.core.on_handle_move( curved_blend )
 
     def __RELEASE__( self ):
         pass
@@ -1280,9 +1193,9 @@ class CustomDialog( QDialog ):
         self.sliders = {}
 
         # Create initial slider
-        self.add_slider( "Dir", "direct", "magenta", "geom7" )
-        self.add_slider( "G5", "linear", "pink", "geom5" )
-        self.add_slider( "Spl", "spline", "blue", "geom5" )
+        self.add_slider( "Dir", "direct", "magenta", "triad" )
+        self.add_slider( "Lin", "linear", "pink", "tria" )
+        self.add_slider( "Spl", "spline", "blue", "tria" )
 
     def add_slider( self, name, target_strategy, theme, blend_strategy ):
         """Add a new slider to the dialog"""
@@ -1771,6 +1684,7 @@ class SliderPreferences( object ):
     Manages preferences for WebrTools across different platforms.
     Handles reading, writing, and default values for tool-specific preferences.
     """
+    # TODO: pref saving seems buggy
 
     def __init__( self, name = None ):
         self.prefs_file = 'uc_slider_prefs.json'

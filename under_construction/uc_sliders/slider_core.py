@@ -19,6 +19,7 @@ class SliderCore( object ):
         # Data management
         self.curve_data = {}  # Map of curve to CurveData
         self.blend_data = BlendData()
+        self.update_queue = []  # Add this line to initialize update_queue
 
         # State tracking
         self.selected_objects = []
@@ -37,8 +38,8 @@ class SliderCore( object ):
         self.blending_strategies = {
             'rate': slider_strategies_blending.RateBasedBlendStrategy( self ),
             'linear': slider_strategies_blending.LinearBlendStrategy( self ),
-            'geom5': slider_strategies_blending.Geometric5BlendStrategy( self ),
-            'geom7': slider_strategies_blending.Geometric7BlendStrategy( self )
+            'tria': slider_strategies_blending.TriangleBlendStrategy( self ),
+            'triad': slider_strategies_blending.TriangleDirectBlendStrategy( self )
         }
         self.current_targeting_strategy = 'linear'
         self.current_blending_strategy = 'linear'
@@ -51,7 +52,7 @@ class SliderCore( object ):
 
     def initialize_blend_session( self ):
         """Initialize data for a new blend operation"""
-        print( '___current blend strategy', self.current_blending_strategy )
+        # print( '___current blend strategy', self.current_blending_strategy )
         # Clear previous data
         self.curve_data.clear()
         self.blend_data.clear()
@@ -200,7 +201,7 @@ class SliderCore( object ):
 
     def set_blending_strategy( self, strategy_name ):
         """Set current blending strategy"""
-        print( '___', strategy_name )
+        # print( '___', strategy_name )
         if strategy_name in self.blending_strategies:
             self.current_blending_strategy = strategy_name
             return True
@@ -229,6 +230,7 @@ class SliderCore( object ):
         self.curve_data.clear()
         self.blend_data.clear()
         self.moved = False
+        self.update_queue = []
 
     def prepare_handle_move( self ):
         """Prepare for handle movement"""
@@ -248,85 +250,84 @@ class SliderCore( object ):
             self.moved = False
         self.clear_caches()
 
+    def _process_object_updates( self, obj, blend_factor ):
+        """Process updates for a single object"""
+        # print( '___', blend_factor )
+        for curve in self.curve_data:
+            if curve not in self.curve_data:
+                continue
+
+            # Get keys to update
+            selected_keys = self.get_selected_keys( curve )  # Use core method
+            times_to_update = selected_keys if selected_keys else [self.current_time]
+
+            # Process in batches
+            for i in range( 0, len( times_to_update ), self.batch_size ):
+                batch = times_to_update[i:i + self.batch_size]
+                for time in batch:
+                    new_value, new_tangents = self.calculate_blend( # Use core calculation
+                        curve,
+                        time,
+                        blend_factor
+                    )
+                    # print( '___', blend_factor, new_value )
+                    if new_value is not None:
+                        self.update_queue.append( {
+                            'curve': curve,
+                            'time': time,
+                            'value': new_value,
+                            'tangents': new_tangents
+                        } )
+
+    def _execute_batch_updates( self ):
+        """Execute queued updates in optimized batches"""
+        curve_updates = {}
+        for update in self.update_queue:
+            curve = update['curve']
+            if curve not in curve_updates:
+                curve_updates[curve] = []
+            curve_updates[curve].append( update )
+
+        for curve, updates in curve_updates.items():
+            for update in updates:
+                cmds.setKeyframe( 
+                    curve,
+                    time = update['time'],
+                    value = update['value']
+                )
+
+                if update['tangents']:
+                    in_angle, in_weight = update['tangents']['in']
+                    out_angle, out_weight = update['tangents']['out']
+
+                    cmds.keyTangent( 
+                        curve,
+                        time = ( update['time'], update['time'] ),
+                        ia = in_angle,
+                        iw = in_weight
+                    )
+                    cmds.keyTangent( 
+                        curve,
+                        time = ( update['time'], update['time'] ),
+                        oa = out_angle,
+                        ow = out_weight
+                    )
+
+    def on_handle_move( self, blend_factor ):
+        """Core movement handler"""
+        if self.prepare_handle_move():
+            # Process updates
+            for obj in self.selected_objects:
+                self._process_object_updates( obj, blend_factor )
+
+            if self.update_queue:
+                self._execute_batch_updates()
+
+            if self.blend_nodes:
+                cmds.dgeval( self.blend_nodes )
+
     def __NOT_SURE_THIS_ARE_STILL_NEEDED___start( self ):
         pass
-
-    '''
-    def collect_curve_data( self, curve ):
-        """Batch collect all data for a curve"""
-
-        # Collect all curve data in one go
-        data = {
-            'keys': cmds.keyframe( curve, q = True, tc = True ) or [],
-            'values': cmds.keyframe( curve, q = True, vc = True ) or [],
-            'is_weighted': cmds.keyTangent( curve, q = True, weightedTangents = True )[0],
-            'tangents': self._batch_get_tangents( curve )
-        }
-
-        # Create key map for quick lookups
-        data['key_map'] = {time: i for i, time in enumerate( data['keys'] )}
-
-        self.key_cache[curve] = data
-        return data
-
-    def _batch_get_tangents( self, curve ):
-        """Batch collect all tangent data for a curve"""
-        return {
-            'in_angles': cmds.keyTangent( curve, q = True, ia = True ) or [],
-            'in_weights': cmds.keyTangent( curve, q = True, iw = True ) or [],
-            'out_angles': cmds.keyTangent( curve, q = True, oa = True ) or [],
-            'out_weights': cmds.keyTangent( curve, q = True, ow = True ) or [],
-            'in_types': cmds.keyTangent( curve, q = True, itt = True ) or [],
-            'out_types': cmds.keyTangent( curve, q = True, ott = True ) or []
-        }
-
-    def _set_blending_strategy( self, strategy_name ):
-        """Change the current blend strategy"""
-        if strategy_name in self.blending_strategies:
-            self.current_blending_strategy = strategy_name
-            return True
-        return False
-
-    def _get_current_blending_strategy( self ):
-        # NOT SURE THIS IS STILL BEING USED
-        """Get the current blend strategy"""
-        return self.blending_strategies[self.current_blending_strategy]
-
-    def calculate_prev_indices( self, times ):
-        """Calculate previous key indices for all times"""
-        indices = {}
-        for i, time in enumerate( times ):
-            indices[time] = i - 1 if i > 0 else i
-        return indices
-
-    def calculate_next_indices( self, times ):
-        """Calculate next key indices for all times"""
-        indices = {}
-        for i, time in enumerate( times[:-1] ):
-            indices[time] = i + 1
-        # Handle last key
-        indices[times[-1]] = len( times ) - 1
-        return indices
-
-    def _blend_tangents( self, curve_data, current_idx, target_value, target_tangents, ratio, curve ):
-        """
-        Blend tangents using current strategy
-        
-        Args:
-            curve_data (dict): Current curve data including keys and tangent information
-            current_idx (int): Index of current key being modified
-            target_value (float): Target value being blended towards
-            target_tangents (dict): Target tangent angles and weights
-            ratio (float): Blend ratio between current and target (0-1)
-            curve (str): Name of curve being modified
-            
-        Returns:
-            dict: Blended tangent values with 'in' and 'out' data
-        """
-        strategy = self._get_current_blending_strategy()
-        return strategy.blend_tangents( curve_data, current_idx, target_value,
-                                     target_tangents, ratio, curve )
-    '''
 
     def __NOT_SURE_THIS_ARE_STILL_NEEDED___end( self ):
         pass
