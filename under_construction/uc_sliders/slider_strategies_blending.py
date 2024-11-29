@@ -18,6 +18,7 @@ class BlendStrategy( object ):
     def __init__( self, core ):
         self.core = core
         self.uses_signed_blend = False  # Default behavior
+        self.PARALLEL_THRESHOLD_DEG = 0.001
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         """
@@ -86,6 +87,7 @@ class TriangleBlendStrategy( BlendStrategy ):
 
             # Get initial tangent at C's position
             initial_tangent = curve_data.tangents['in_angles'][current_idx]
+            # print( curve_data.tangents )
             self._log_angle_info( initial_tangent )
 
             # Get point B by finding intersection of angles
@@ -118,7 +120,6 @@ class TriangleBlendStrategy( BlendStrategy ):
 
     def _find_point_b( self, curve, curve_data, current_idx, point_c_time, current_value, target_value, target_tangents, blend_factor ):
         """Find point B as intersection of two lines: one from C with angle_c, one from target with target angle"""
-        MIN_DELTA = 0.001
 
         # Get angles for both lines
         angle_c = math.radians( curve_data.tangents['in_angles'][current_idx] )
@@ -126,7 +127,8 @@ class TriangleBlendStrategy( BlendStrategy ):
         # print( target_angle, angle_c )
 
         # If angles are effectively parallel, we're already at the right angle
-        if abs( angle_c - target_angle ) < math.radians( 0.1 ):
+        if abs( math.degrees( angle_c ) - math.degrees( target_angle ) ) < self.PARALLEL_THRESHOLD_DEG:
+            # print( 'point b, less', abs( math.degrees( angle_c ) - math.degrees( target_angle ) ) )
             # Angles match - no intersection needed
             point_b_time = point_c_time
             point_b_value = target_value
@@ -208,12 +210,13 @@ class TriangleBlendStrategy( BlendStrategy ):
 
     def _calculate_abc_angles( self, triangle_abc, angle_c, current_value, moving_c_value, value_b, target_tangents, target_value ):
         """Calculate angles based on geometric relationships for any triangle"""
-        MIN_DELTA = 0.1  # Same threshold as in _find_point_b
 
         # If original angles were parallel, just use the target angle
-        if abs( angle_c - target_tangents['in'][0] ) < MIN_DELTA:
+        if abs( angle_c - target_tangents['in'][0] ) < self.PARALLEL_THRESHOLD_DEG:
+            # print( 'abc angles, less', abs( angle_c - target_tangents['in'][0] ) )
             running_calculated_tangent = target_tangents['in'][0]
         else:
+            # print( 'abc no' )
             running_calculated_tangent = triangle_abc['running_calculated_tangent']
 
         if self.debug:
@@ -317,7 +320,16 @@ class TriangleBlendStrategy( BlendStrategy ):
             print( "  Value: {0}".format( point_b_value ) )
 
 
-class TriangleDirectBlendStrategy( BlendStrategy ):
+class TriangleDirectBlendStrategy( TriangleBlendStrategy ):
+    """Triangle blend strategy optimized for direct targeting"""
+
+    def _calculate_point_c_position( self, current_value, target_value, blend_factor ):
+        """Calculate new position for point C based on blend factor"""
+        merge_mult = abs( blend_factor )
+        return current_value * ( 1 - merge_mult ) + target_value * merge_mult
+
+'''
+class TriangleDirectBlendStrategy__( BlendStrategy ):
     """same as the other geom5, only changed _calculate_point_c_position to make it compatible with direct targeting strategy"""
 
     # TODO: this should inhereit from the other tiangle strategy and only change _calculate_point_c_position otherwise its all duplicate code
@@ -383,7 +395,7 @@ class TriangleDirectBlendStrategy( BlendStrategy ):
         # print( target_angle, angle_c )
 
         # If angles are effectively parallel, we're already at the right angle
-        if abs( angle_c - target_angle ) < math.radians( 0.1 ):
+        if abs( math.degrees( angle_c ) - math.degrees( target_angle ) ) < self.PARALLEL_THRESHOLD_DEG:
             # Angles match - no intersection needed
             point_b_time = point_c_time
             point_b_value = target_value
@@ -461,7 +473,7 @@ class TriangleDirectBlendStrategy( BlendStrategy ):
         MIN_DELTA = 0.1  # Same threshold as in _find_point_b
 
         # If original angles were parallel, just use the target angle
-        if abs( angle_c - target_tangents['in'][0] ) < MIN_DELTA:
+        if abs( angle_c - target_tangents['in'][0] ) < self.PARALLEL_THRESHOLD_DEG:
             running_calculated_tangent = target_tangents['in'][0]
         else:
             running_calculated_tangent = triangle_abc['running_calculated_tangent']
@@ -565,6 +577,7 @@ class TriangleDirectBlendStrategy( BlendStrategy ):
             print( "Resulting Point B:" )
             print( "  Time: {0}".format( point_b_time ) )
             print( "  Value: {0}".format( point_b_value ) )
+'''
 
 
 class RateBasedBlendStrategy( BlendStrategy ):
