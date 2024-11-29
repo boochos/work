@@ -3,7 +3,7 @@
 Provides blending strategies for animation curve manipulation.
 Handles interpolation of values and tangents between animation states.
 """
-# TODO: add support for weighted tangents, investigate issues when blending, weights dont blend they snap
+# TODO: add support for weighted tangents
 import math
 
 import maya.cmds as cmds
@@ -17,7 +17,8 @@ class BlendStrategy( object ):
     def __init__( self, core ):
         self.core = core
         self.uses_signed_blend = False  # Default behavior
-        self.PARALLEL_THRESHOLD_DEG = 0.001  # if initial and target angle are less than this range, snap to target.
+        self.PARALLEL_THRESHOLD_DEG = 0.0001  # if initial and target angle are less than this range, snap to target.
+        self.VALUE_MATCH_THRESHOLD = 0.000001  # when value matches, only blend
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         """
@@ -87,6 +88,8 @@ class TriangleBlendStrategy( BlendStrategy ):
             initial_in_tangent = curve_data.tangents['in_angles'][current_idx]
             initial_out_tangent = curve_data.tangents['out_angles'][current_idx]
             self._log_angle_info( initial_in_tangent, initial_out_tangent )
+            initial_in_weight = curve_data.tangents['in_weights'][current_idx]
+            initial_out_weight = curve_data.tangents['out_weights'][current_idx]
 
             # Get point B by finding intersection of angles for both in and out tangents
             point_b = self._find_point_b( 
@@ -119,7 +122,9 @@ class TriangleBlendStrategy( BlendStrategy ):
                 triangle_abc_in, triangle_abc_out,
                 initial_in_tangent, initial_out_tangent,
                 initial_value, moving_c_value,
-                point_b, target_tangents, target_value
+                point_b, target_tangents, target_value,
+                blend_factor,
+                initial_in_weight, initial_out_weight
             )
             self._log_angle_calculation( angles )
 
@@ -243,30 +248,45 @@ class TriangleBlendStrategy( BlendStrategy ):
         }
 
     def _calculate_abc_angles( self, triangle_abc_in, triangle_abc_out, initial_in_tangent, initial_out_tangent,
-                             current_value, moving_c_value, value_b, target_tangents, target_value ):
+                             current_value, moving_c_value, value_b, target_tangents, target_value, blend_factor, initial_in_weight, initial_out_weight ):
         """Calculate angles based on geometric relationships"""
-        # Calculate in angle
-        if abs( initial_in_tangent - target_tangents['in'][0] ) < self.PARALLEL_THRESHOLD_DEG:
-            running_calculated_in = target_tangents['in'][0]
+        # If values match within threshold, use direct angle interpolation
+        if abs( moving_c_value - target_value ) < self.VALUE_MATCH_THRESHOLD:
+            running_calculated_in = self._blend_angles( initial_in_tangent, target_tangents['in'][0], abs( blend_factor ) )
+            running_calculated_out = self._blend_angles( initial_out_tangent, target_tangents['out'][0], abs( blend_factor ) )
         else:
-            running_calculated_in = triangle_abc_in['running_calculated_tangent']
+            # Use geometric angle calculation when points are distinct
+            if abs( initial_in_tangent - target_tangents['in'][0] ) < self.PARALLEL_THRESHOLD_DEG:
+                running_calculated_in = target_tangents['in'][0]
+            else:
+                running_calculated_in = triangle_abc_in['running_calculated_tangent']
 
-        # Calculate out angle
-        if abs( initial_out_tangent - target_tangents['out'][0] ) < self.PARALLEL_THRESHOLD_DEG:
-            running_calculated_out = target_tangents['out'][0]
-        else:
-            running_calculated_out = triangle_abc_out['running_calculated_tangent']
+            if abs( initial_out_tangent - target_tangents['out'][0] ) < self.PARALLEL_THRESHOLD_DEG:
+                running_calculated_out = target_tangents['out'][0]
+            else:
+                running_calculated_out = triangle_abc_out['running_calculated_tangent']
+
+        # Add weight calculations
+        weight_blend = abs( blend_factor )
+        running_calculated_in_weight = initial_in_weight * ( 1.0 - weight_blend ) + target_tangents['in'][1] * weight_blend
+        running_calculated_out_weight = initial_out_weight * ( 1.0 - weight_blend ) + target_tangents['out'][1] * weight_blend
+
+        # Clamp weights to Maya's valid range
+        running_calculated_in_weight = min( max( running_calculated_in_weight, 0.1 ), 10.0 )
+        running_calculated_out_weight = min( max( running_calculated_out_weight, 0.1 ), 10.0 )
 
         return {
             'running_calculated_in': running_calculated_in,
-            'running_calculated_out': running_calculated_out
+            'running_calculated_out': running_calculated_out,
+            'running_calculated_in_weight': running_calculated_in_weight,
+            'running_calculated_out_weight': running_calculated_out_weight
         }
 
     def _prepare_tangent_result( self, angles, target_tangents ):
-        """Prepare tangent result structure"""
+        """Package calculated angles and weights into result format"""
         return {
-            'in': ( angles['running_calculated_in'], target_tangents['in'][1] ),
-            'out': ( angles['running_calculated_out'], target_tangents['out'][1] )
+            'in': ( angles['running_calculated_in'], angles['running_calculated_in_weight'] ),
+            'out': ( angles['running_calculated_out'], angles['running_calculated_out_weight'] )
         }
 
     def _update_curve_state( self, curve_data, current_idx, moving_c_value, tangents ):
