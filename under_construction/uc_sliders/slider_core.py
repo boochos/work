@@ -300,15 +300,12 @@ class SliderCore( object ):
                     in_angle, in_weight = update['tangents']['in']
                     out_angle, out_weight = update['tangents']['out']
 
+                    # Set both tangents in a single command
                     cmds.keyTangent( 
                         curve,
                         time = ( update['time'], update['time'] ),
                         ia = in_angle,
-                        iw = in_weight
-                    )
-                    cmds.keyTangent( 
-                        curve,
-                        time = ( update['time'], update['time'] ),
+                        iw = in_weight,
                         oa = out_angle,
                         ow = out_weight
                     )
