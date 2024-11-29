@@ -289,7 +289,11 @@ class SliderCore( object ):
             curve_updates[curve].append( update )
 
         for curve, updates in curve_updates.items():
+            curve_data = self.curve_data[curve]
             for update in updates:
+                # Get key index to access stored data
+                time = update['time']
+                key_idx = curve_data.key_map[time]
                 cmds.setKeyframe( 
                     curve,
                     time = update['time'],
@@ -307,7 +311,8 @@ class SliderCore( object ):
                         ia = in_angle,
                         iw = in_weight,
                         oa = out_angle,
-                        ow = out_weight
+                        ow = out_weight,
+                        lock = curve_data.tangents['lock'][key_idx]
                     )
 
     def on_handle_move( self, blend_factor ):
@@ -347,8 +352,16 @@ class CurveData:
             'out_angles': [],
             'out_weights': [],
             'in_types': [],
-            'out_types': []
+            'out_types': [],
+
+            # Additional attributes
+            'weight_lock': [],  # weightLock
+            'weighted_tangents': [],  # weightedTangents
+            'lock': [],  # lockTangents
+            'unify': [],  # tangentLock
+            'breakdown': []  # breakdown state
         }
+
         self.prev_indices = {}
         self.next_indices = {}
         self.cache_timestamp = None
@@ -463,12 +476,20 @@ class CurveData:
     def _collect_tangents( self, curve ):
         """Collect all tangent data for the curve"""
         self.tangents = {
+            # Current queries
             'in_angles': cmds.keyTangent( curve, q = True, ia = True ) or [],
             'in_weights': cmds.keyTangent( curve, q = True, iw = True ) or [],
             'out_angles': cmds.keyTangent( curve, q = True, oa = True ) or [],
             'out_weights': cmds.keyTangent( curve, q = True, ow = True ) or [],
             'in_types': cmds.keyTangent( curve, q = True, itt = True ) or [],
-            'out_types': cmds.keyTangent( curve, q = True, ott = True ) or []
+            'out_types': cmds.keyTangent( curve, q = True, ott = True ) or [],
+
+            # Additional queries
+            'weight_lock': cmds.keyTangent( curve, q = True, weightLock = True ) or [],
+            'weighted_tangents': cmds.keyTangent( curve, q = True, weightedTangents = True ) or [],
+            'lock': cmds.keyTangent( curve, q = True, lock = True ) or [],
+            'unify': cmds.keyTangent( curve, q = True, unify = True ) or [],
+            'breakdown': cmds.keyframe( curve, q = True, breakdown = True ) or []
         }
 
     def _calculate_indices( self ):

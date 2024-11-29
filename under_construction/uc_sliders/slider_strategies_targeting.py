@@ -172,7 +172,7 @@ class LinearTargetStrategy( TargetStrategy ):
                     'in': ( curr_in_angle + in_diff, 1.0 ),
                     'out': ( curr_out_angle + out_diff, 1.0 )
                 }
-                # TODO: relic from direct methodology, im pretty sure both should be the same, likely only one should be returned, its causing issues in blending
+                # TODO: relic from direct methodology, both should be the same, likely only one should be returned, its causing issues in blending
                 # return negative_tangents, positive_tangents
                 return negative_tangents, negative_tangents
 
@@ -200,61 +200,17 @@ class SplineTargetStrategy( TargetStrategy ):
         self._cached_controls = {}
 
     def calculate_target_value( self, curve, time ):
-        """Calculate bezier-based value for blending using direct solving"""
+        """Calculate bezier-based value for blending"""
         try:
             current_idx = self.core.get_curve_data( curve ).key_map[time]
 
-            # Get selected keys
-            selected_keys = self.core.get_selected_keys( curve )
-
-            # Get curve data
-            curve_data = self.core.get_curve_data( curve )
-            all_keys = curve_data.keys
-            all_values = curve_data.values
-            tangent_data = curve_data.tangents
-            using_weighted_tangents = curve_data.is_weighted
-
-            # Find surrounding non-selected keys
-            prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
-                           if all_keys[i] not in selected_keys ), None )
-            next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
-                           if all_keys[i] not in selected_keys ), None )
-
+            prev_key, next_key = self._find_anchor_keys( curve, current_idx )
             if prev_key is not None and next_key is not None:
-                # Get points
-                p0 = [all_keys[prev_key], all_values[prev_key]]
-                p3 = [all_keys[next_key], all_values[next_key]]
+                curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
+                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
 
-                # Get time gap
-                gap = p3[0] - p0[0]
-                mltp = 1.0 / 3.0  # Same as original code
-
-                # Get tangent data
-                prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
-                prev_out_weight = tangent_data['out_weights'][prev_key]
-                next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
-                next_in_weight = tangent_data['in_weights'][next_key]
-
-                # Calculate control points using trig
-                # P1
-                adj = gap * mltp
-                opo = math.tan( prev_out_angle ) * adj
-                if using_weighted_tangents:
-                    opo *= prev_out_weight
-                p1 = [p0[0] + adj, p0[1] + opo]
-
-                # P2
-                opo = math.tan( next_in_angle ) * adj
-                if using_weighted_tangents:
-                    opo *= next_in_weight
-                p2 = [p3[0] - adj, p3[1] - opo]
-
-                # Calculate t directly from x (current_time)
-                # x = (1-t)³p0x + 3(1-t)²tp1x + 3(1-t)t²p2x + t³p3x
-                # Normalize t to 0-1 range
+                # Calculate t parameter and bezier value
                 t = ( time - p0[0] ) / gap
-
-                # Calculate y value using t
                 mt = 1.0 - t
                 mt2 = mt * mt
                 mt3 = mt2 * mt
@@ -266,140 +222,133 @@ class SplineTargetStrategy( TargetStrategy ):
                               3.0 * p2[1] * mt * t2 +
                               p3[1] * t3 )
 
-                # Calculate blend targets
-                current_value = all_values[current_idx]
-                delta = bezier_value - current_value
-                # changing to return the same value to make compatible with triangle blending strategy
-                # return bezier_value, current_value - delta
                 return bezier_value, bezier_value
 
-            return all_values[current_idx], all_values[current_idx]
+            return curve_data.values[current_idx], curve_data.values[current_idx]
 
         except Exception as e:
             print( "Error in spline target calculation: {0}".format( e ) )
             return None, None
 
     def calculate_target_tangents( self, curve, time ):
-        """Calculate tangents matching reference implementation exactly"""
-        current_idx = self.core.get_curve_data( curve ).key_map[time]
+        """Calculate tangents for the bezier curve"""
+        try:
+            current_idx = self.core.get_curve_data( curve ).key_map[time]
+            if not self.core.get_curve_data( curve ).tangents:
+                return None, None
 
-        if not self.core.get_curve_data( curve ).tangents:
+            prev_key, next_key = self._find_anchor_keys( curve, current_idx )
+            if prev_key is not None and next_key is not None:
+                curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
+                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
+
+                # Calculate t for current time
+                t = ( time - p0[0] ) / gap
+                mt = 1.0 - t
+
+                # Calculate intermediate points
+                AB_x = ( mt * p0[0] ) + ( t * p1[0] )
+                AB_y = ( mt * p0[1] ) + ( t * p1[1] )
+
+                BC_x = ( mt * p1[0] ) + ( t * p2[0] )
+                BC_y = ( mt * p1[1] ) + ( t * p2[1] )
+
+                CD_x = ( mt * p2[0] ) + ( t * p3[0] )
+                CD_y = ( mt * p2[1] ) + ( t * p3[1] )
+
+                # Calculate tangent points
+                tan_in_x = ( mt * AB_x ) + ( t * BC_x )
+                tan_in_y = ( mt * AB_y ) + ( t * BC_y )
+
+                tan_out_x = ( mt * BC_x ) + ( t * CD_x )
+                tan_out_y = ( mt * BC_y ) + ( t * CD_y )
+
+                point_x = ( mt * tan_in_x ) + ( t * tan_out_x )
+                point_y = ( mt * tan_in_y ) + ( t * tan_out_y )
+
+                # Calculate angles and lengths
+                xlength = point_x - tan_in_x
+                ylength = point_y - tan_in_y
+                tan = ylength / xlength
+                in_angle = math.degrees( math.atan( tan ) )
+                in_length = math.sqrt( xlength * xlength + ylength * ylength )
+
+                xlength = tan_out_x - point_x
+                ylength = tan_out_y - point_y
+                tan = ylength / xlength
+                out_angle = math.degrees( math.atan( tan ) )
+                out_length = math.sqrt( xlength * xlength + ylength * ylength )
+
+                # Clamp weights
+                in_length = min( max( in_length, 0.1 ), 10.0 )
+                out_length = min( max( out_length, 0.1 ), 10.0 )
+
+                negative_tangents = {
+                    'in': ( in_angle, in_length ),
+                    'out': ( out_angle, out_length )
+                }
+
+                return negative_tangents, negative_tangents
+
             return None, None
 
-        # Get curve data
+        except Exception as e:
+            print( "Error calculating tangents: {0}".format( e ) )
+            return None, None
+
+    def _find_anchor_keys( self, curve, current_idx ):
+        """Find surrounding non-selected keys to use as anchors"""
         curve_data = self.core.get_curve_data( curve )
         all_keys = curve_data.keys
-        all_values = curve_data.values
+        selected_keys = self.core.get_selected_keys( curve )
+
+        prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
+                      if all_keys[i] not in selected_keys ), None )
+        next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
+                      if all_keys[i] not in selected_keys ), None )
+
+        return prev_key, next_key
+
+    def _get_curve_points( self, curve, prev_key, next_key ):
+        """Get anchor points and curve data"""
+        curve_data = self.core.get_curve_data( curve )
+        p0 = [curve_data.keys[prev_key], curve_data.values[prev_key]]
+        p3 = [curve_data.keys[next_key], curve_data.values[next_key]]
+
+        return ( curve_data, p0, p3 )
+
+    def _calculate_control_points( self, curve_data, p0, p3, prev_key, next_key ):
+        """Calculate bezier control points P1 and P2"""
+        gap = p3[0] - p0[0]
+        mltp = 1.0 / 3.0
         tangent_data = curve_data.tangents
         using_weighted_tangents = curve_data.is_weighted
 
-        # Get selected keys
-        selected_keys = self.core.get_selected_keys( curve )
+        # Get tangent data
+        prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
+        prev_out_weight = tangent_data['out_weights'][prev_key]
+        next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
+        next_in_weight = tangent_data['in_weights'][next_key]
 
-        # Find surrounding non-selected keys
-        prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
-                       if all_keys[i] not in selected_keys ), None )
-        next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
-                       if all_keys[i] not in selected_keys ), None )
-
-        if prev_key is not None and next_key is not None:
-            # Get points
-            p0 = [all_keys[prev_key], all_values[prev_key]]
-            p3 = [all_keys[next_key], all_values[next_key]]
-
-            # Get gap and multiplier
-            gap = p3[0] - p0[0]
-            mltp = 1.0 / 3.0
-
-            # Get tangent data
-            prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
-            prev_out_weight = tangent_data['out_weights'][prev_key]
-            next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
-            next_in_weight = tangent_data['in_weights'][next_key]
-
-            # Calculate control points just like getControlPoints
+        # Calculate P1
+        if using_weighted_tangents:
+            adj = prev_out_weight
+        else:
             adj = gap * mltp
+        opo = math.tan( prev_out_angle ) * adj
+        p1 = [p0[0] + adj, p0[1] + opo]
 
-            # P1 calculation
-            opo = math.tan( prev_out_angle ) * adj
-            if using_weighted_tangents:
-                opo *= prev_out_weight
-            p1 = [p0[0] + adj, p0[1] + opo]
+        # Calculate P2
+        if using_weighted_tangents:
+            adj = next_in_weight
+        else:
+            adj = gap * mltp
+        opo = math.tan( next_in_angle ) * adj
+        p2 = [p3[0] - adj, p3[1] - opo]
 
-            # P2 calculation
-            opo = math.tan( next_in_angle ) * adj
-            if using_weighted_tangents:
-                opo *= next_in_weight
-            p2 = [p3[0] - adj, p3[1] - opo]
+        return p1, p2, gap
 
-            # Calculate t for current time
-            t = ( time - p0[0] ) / gap
-            mt = 1.0 - t
-
-            # Get points exactly like getPoint function
-            # First level
-            AB_x = ( mt * p0[0] ) + ( t * p1[0] )
-            AB_y = ( mt * p0[1] ) + ( t * p1[1] )
-
-            BC_x = ( mt * p1[0] ) + ( t * p2[0] )
-            BC_y = ( mt * p1[1] ) + ( t * p2[1] )
-
-            CD_x = ( mt * p2[0] ) + ( t * p3[0] )
-            CD_y = ( mt * p2[1] ) + ( t * p3[1] )
-
-            # Second level - exactly like reference
-            tan_in_x = ( mt * AB_x ) + ( t * BC_x )
-            tan_in_y = ( mt * AB_y ) + ( t * BC_y )
-
-            tan_out_x = ( mt * BC_x ) + ( t * CD_x )
-            tan_out_y = ( mt * BC_y ) + ( t * CD_y )
-
-            # Final point
-            point_x = ( mt * tan_in_x ) + ( t * tan_out_x )
-            point_y = ( mt * tan_in_y ) + ( t * tan_out_y )
-
-            # Calculate tangent angles exactly like getPointTangents
-            # In tangent
-            xlength = point_x - tan_in_x
-            ylength = point_y - tan_in_y
-            tan = ylength / xlength
-            in_angle = math.degrees( math.atan( tan ) )
-            in_length = math.sqrt( xlength * xlength + ylength * ylength )
-
-            # Out tangent
-            xlength = tan_out_x - point_x
-            ylength = tan_out_y - point_y
-            tan = ylength / xlength
-            out_angle = math.degrees( math.atan( tan ) )
-            out_length = math.sqrt( xlength * xlength + ylength * ylength )
-
-            # Clamp weights to Maya's range
-            in_length = min( max( in_length, 0.1 ), 10.0 )
-            out_length = min( max( out_length, 0.1 ), 10.0 )
-
-            # Build tangent targets
-            negative_tangents = {
-                'in': ( in_angle, in_length ),
-                'out': ( out_angle, out_length )
-            }
-
-            # For positive (exaggerate), calculate delta from current angles
-            curr_in_angle = tangent_data['in_angles'][current_idx]
-            curr_out_angle = tangent_data['out_angles'][current_idx]
-
-            in_delta = in_angle - curr_in_angle
-            out_delta = out_angle - curr_out_angle
-
-            positive_tangents = {
-                'in': ( curr_in_angle - in_delta, in_length ),
-                'out': ( curr_out_angle - out_delta, out_length )
-            }
-            # changing to make compatible with triangle blending strategy
-            # return negative_tangents, positive_tangents
-            return negative_tangents, negative_tangents
-
-        return None, None
-
+    '''
     def _bezier_value( self, t, p0, p1, p2, p3 ):
         """Calculate point on standard bezier curve"""
         mt = 1.0 - t
@@ -460,3 +409,4 @@ class SplineTargetStrategy( TargetStrategy ):
             tangent = tangent / length * scale
 
         return tangent
+        '''

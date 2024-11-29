@@ -3,8 +3,7 @@
 Provides blending strategies for animation curve manipulation.
 Handles interpolation of values and tangents between animation states.
 """
-# TODO: add support to blend broken tangents individually
-# TODO: add support for weighted tangents, investigate issues when blending
+# TODO: add support for weighted tangents, investigate issues when blending, weights dont blend they snap
 import math
 
 import maya.cmds as cmds
@@ -18,7 +17,7 @@ class BlendStrategy( object ):
     def __init__( self, core ):
         self.core = core
         self.uses_signed_blend = False  # Default behavior
-        self.PARALLEL_THRESHOLD_DEG = 0.001
+        self.PARALLEL_THRESHOLD_DEG = 0.001  # if initial and target angle are less than this range, snap to target.
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         """
