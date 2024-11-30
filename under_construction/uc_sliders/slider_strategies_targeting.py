@@ -209,6 +209,11 @@ class SplineTargetStrategy( TargetStrategy ):
                 curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
                 p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
 
+                print( "P0: time={0}, value={1}".format( p0[0], p0[1] ) )
+                print( "P1: time={0}, value={1}".format( p1[0], p1[1] ) )
+                print( "P2: time={0}, value={1}".format( p2[0], p2[1] ) )
+                print( "P3: time={0}, value={1}".format( p3[0], p3[1] ) )
+
                 # Calculate t parameter and bezier value
                 t = ( time - p0[0] ) / gap
                 mt = 1.0 - t
@@ -282,6 +287,12 @@ class SplineTargetStrategy( TargetStrategy ):
                 # Clamp weights
                 in_length = min( max( in_length, 0.1 ), 10.0 )
                 out_length = min( max( out_length, 0.1 ), 10.0 )
+
+                print( "\nTarget Tangent Calculation:" )
+                print( "In Angle: {:.3f}".format( in_angle ) )
+                print( "Out Angle: {:.3f}".format( out_angle ) )
+                print( "In Weight: {:.3f}".format( in_length ) )
+                print( "Out Weight: {:.3f}".format( out_length ) )
 
                 negative_tangents = {
                     'in': ( in_angle, in_length ),
