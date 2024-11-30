@@ -336,6 +336,20 @@ class SplineTargetStrategy( TargetStrategy ):
 
     def _calculate_control_points( self, curve_data, p0, p3, prev_key, next_key ):
         """Calculate bezier control points P1 and P2"""
+        """
+        # TODO: below values relate to position of their associated key, x value is x*8, y value is y*(1/3.0)
+        # use this to get control points
+        print(cmds.getAttr(curve_node + ".keyTanInX[0]"))
+        print(cmds.getAttr(curve_node + ".keyTanInY[0]"))
+        print(cmds.getAttr(curve_node + ".keyTanOutX[0]"))
+        print(cmds.getAttr(curve_node + ".keyTanOutY[0]"))
+        # could use this to set them or reverse engineer the math for the raw weight value, 
+        # will actually need to figure out the math to set the target weight value
+        cmds.keyTangent(curve_node, ox= 0.0, t=(0.0,)) 
+        cmds.keyTangent(curve_node, oy= -3.0, t=(0.0,))
+        
+        
+        """
         gap = p3[0] - p0[0]
         mltp = 1.0 / 3.0
         tangent_data = curve_data.tangents
