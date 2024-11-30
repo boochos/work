@@ -209,11 +209,17 @@ class SplineTargetStrategy( TargetStrategy ):
                 curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
                 p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
 
+                '''
                 print( "P0: time={0}, value={1}".format( p0[0], p0[1] ) )
                 print( "P1: time={0}, value={1}".format( p1[0], p1[1] ) )
                 print( "P2: time={0}, value={1}".format( p2[0], p2[1] ) )
                 print( "P3: time={0}, value={1}".format( p3[0], p3[1] ) )
 
+                print( "p0=({0}, {1})".format( p0[0], p0[1] ) )
+                print( "p1=({0}, {1})".format( p1[0], p1[1] ) )
+                print( "p2=({0},{1})".format( p2[0], p2[1] ) )
+                print( "p3=({0}, {1})".format( p3[0], p3[1] ) )
+                '''
                 # Calculate t parameter and bezier value
                 t = ( time - p0[0] ) / gap
                 mt = 1.0 - t
@@ -287,13 +293,13 @@ class SplineTargetStrategy( TargetStrategy ):
                 # Clamp weights
                 in_length = min( max( in_length, 0.1 ), 10.0 )
                 out_length = min( max( out_length, 0.1 ), 10.0 )
-
+                '''
                 print( "\nTarget Tangent Calculation:" )
                 print( "In Angle: {:.3f}".format( in_angle ) )
                 print( "Out Angle: {:.3f}".format( out_angle ) )
                 print( "In Weight: {:.3f}".format( in_length ) )
                 print( "Out Weight: {:.3f}".format( out_length ) )
-
+                '''
                 negative_tangents = {
                     'in': ( in_angle, in_length ),
                     'out': ( out_angle, out_length )
@@ -341,6 +347,12 @@ class SplineTargetStrategy( TargetStrategy ):
         next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
         next_in_weight = tangent_data['in_weights'][next_key]
 
+        print( "\nTangent Values:" )
+        print( "prev_out_angle:", math.degrees( prev_out_angle ) )
+        print( "prev_out_weight:", prev_out_weight )
+        print( "next_in_angle:", math.degrees( next_in_angle ) )
+        print( "next_in_weight:", next_in_weight )
+
         # Calculate P1
         if using_weighted_tangents:
             adj = prev_out_weight
@@ -358,66 +370,3 @@ class SplineTargetStrategy( TargetStrategy ):
         p2 = [p3[0] - adj, p3[1] - opo]
 
         return p1, p2, gap
-
-    '''
-    def _bezier_value( self, t, p0, p1, p2, p3 ):
-        """Calculate point on standard bezier curve"""
-        mt = 1.0 - t
-        mt2 = mt * mt
-        mt3 = mt2 * mt
-        t2 = t * t
-        t3 = t2 * t
-
-        return ( mt3 * p0[1] +
-                3.0 * mt2 * t * p1[1] +
-                3.0 * mt * t2 * p2[1] +
-                t3 * p3[1] )
-
-    def _rational_bezier_value( self, t, p0, p1, p2, p3, w0, w1, w2, w3 ):
-        """Calculate point on rational bezier curve"""
-        mt = 1.0 - t
-        mt2 = mt * mt
-        mt3 = mt2 * mt
-        t2 = t * t
-        t3 = t2 * t
-
-        num = ( mt3 * w0 * p0[1] +
-               3.0 * mt2 * t * w1 * p1[1] +
-               3.0 * mt * t2 * w2 * p2[1] +
-               t3 * w3 * p3[1] )
-
-        den = ( mt3 * w0 +
-               3.0 * mt2 * t * w1 +
-               3.0 * mt * t2 * w2 +
-               t3 * w3 )
-
-        return num / den if den != 0 else p0[1]
-
-    def _calculate_weighted_tangent( self, t, p0, p_curr, p3, angle1, angle2, scale ):
-        """Calculate tangent vector for weighted tangents"""
-        # Calculate direction vectors
-        dir1 = np.array( [math.cos( angle1 ), math.sin( angle1 )] )
-        dir2 = np.array( [math.cos( angle2 ), math.sin( angle2 )] )
-
-        # Blend directions based on parameter
-        blend_dir = dir1 * ( 1.0 - t ) + dir2 * t
-        blend_dir = blend_dir / np.linalg.norm( blend_dir )
-
-        # Scale tangent
-        return blend_dir * scale
-
-    def _calculate_standard_tangent( self, t, p0, p_curr, p3, angle1, angle2, scale ):
-        """Calculate tangent vector for standard tangents"""
-        # Calculate directions
-        dir1 = np.array( [math.cos( angle1 ), math.sin( angle1 )] )
-        dir2 = np.array( [math.cos( angle2 ), math.sin( angle2 )] )
-
-        # Calculate tangent
-        tangent = dir1 * ( 1.0 - t ) + dir2 * t
-        length = np.linalg.norm( tangent )
-
-        if length > 0:
-            tangent = tangent / length * scale
-
-        return tangent
-        '''
