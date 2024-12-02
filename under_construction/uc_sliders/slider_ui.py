@@ -35,6 +35,7 @@ global custom_dialog
 # TODO: prep slider packages to be added to other dialogs
 # TODO: use code provided to imporove lock margin logic
 # TODO: update handle lable to properly use eased value, check code provided
+# TODO: add decimal increments to slider, could help chopyness OR optimize OR both, but still round the label value
 
 
 def cleanup_dialog():

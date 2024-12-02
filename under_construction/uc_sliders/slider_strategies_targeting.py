@@ -6,7 +6,9 @@ import maya.cmds as cmds
 import maya.mel as mel
 import numpy as np
 
-# TODO: add support for weighted tangents, investigate tangent weight issues when targeting
+# TODO: add support for weighted tangents. targeting needs to account for neighbhours for proper weight calculation
+# TODO: for now dont touch weights, just angles, maybe implement auto tangent weight
+# TODO: Linear and Direct are blending to tangent weight of 1.0 by default, fix it. maybe dont change weights for now until solution for spline is working
 
 
 class TargetStrategy:
@@ -132,6 +134,7 @@ class LinearTargetStrategy( TargetStrategy ):
             return None, None
 
     def calculate_target_tangents( self, curve, time ):
+        # TODO: account for weighted tangents when blending. need a weighted calculation.
         try:
             curve_data = self.core.get_curve_data( curve )
             current_idx = curve_data.get_key_index( time )
