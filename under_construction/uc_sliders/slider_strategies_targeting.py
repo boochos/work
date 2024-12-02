@@ -9,6 +9,7 @@ import numpy as np
 # TODO: add support for weighted tangents. targeting needs to account for neighbhours for proper weight calculation
 # TODO: for now dont touch weights, just angles, maybe implement auto tangent weight
 # TODO: Linear and Direct are blending to tangent weight of 1.0 by default, fix it. maybe dont change weights for now until solution for spline is working
+# TODO: maybe apart from the splineStrategy weighted tangents are blended to 1/3 rule.
 
 
 class TargetStrategy:
