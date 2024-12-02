@@ -221,7 +221,9 @@ class SplineTargetStrategy( TargetStrategy ):
                 print( "p3=({0}, {1})".format( p3[0], p3[1] ) )
                 '''
                 # Calculate t parameter and bezier value
-                t = ( time - p0[0] ) / gap
+                # t = ( time - p0[0] ) / gap
+                # Calculate correct t parameter using Newton's method
+                t = self._find_t_for_time( time, p0, p1, p2, p3 )
                 mt = 1.0 - t
                 mt2 = mt * mt
                 mt3 = mt2 * mt
@@ -254,7 +256,9 @@ class SplineTargetStrategy( TargetStrategy ):
                 p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
 
                 # Calculate t for current time
-                t = ( time - p0[0] ) / gap
+                # t = ( time - p0[0] ) / gap
+                # Calculate correct t parameter using Newton's method
+                t = self._find_t_for_time( time, p0, p1, p2, p3 )
                 mt = 1.0 - t
 
                 # Calculate intermediate points
@@ -351,7 +355,6 @@ class SplineTargetStrategy( TargetStrategy ):
         
         """
         gap = p3[0] - p0[0]
-        mltp = 1.0 / 3.0
         tangent_data = curve_data.tangents
         using_weighted_tangents = curve_data.is_weighted
 
@@ -369,18 +372,103 @@ class SplineTargetStrategy( TargetStrategy ):
 
         # Calculate P1
         if using_weighted_tangents:
-            adj = prev_out_weight
+            # First calculate relative offsets
+            time_offset = math.cos( prev_out_angle ) * prev_out_weight
+            # print( '__time offset', time_offset )
+            value_offset = math.sin( prev_out_angle ) * prev_out_weight
+            # print( '__value offset', value_offset )
+
+            x = p0[0] + time_offset
+            y = p0[1] + value_offset
+            p1 = [x, y]
         else:
-            adj = gap * mltp
-        opo = math.tan( prev_out_angle ) * adj
-        p1 = [p0[0] + adj, p0[1] + opo]
+            # Non-weighted uses standard 1/3 gap
+            time_adj = gap / 3.0
+            opo = math.tan( prev_out_angle ) * time_adj
+            p1 = [p0[0] + time_adj, p0[1] + opo]
 
         # Calculate P2
         if using_weighted_tangents:
-            adj = next_in_weight
+            # First calculate relative offsets
+            time_offset = math.cos( next_in_angle ) * next_in_weight
+            # print( '__time offset', time_offset )
+            value_offset = math.sin( next_in_angle ) * next_in_weight
+            # print( '__value offset', value_offset )
+
+            x = p3[0] - time_offset
+            y = p3[1] - value_offset
+            p2 = [x, y]
         else:
-            adj = gap * mltp
-        opo = math.tan( next_in_angle ) * adj
-        p2 = [p3[0] - adj, p3[1] - opo]
+            # Non-weighted uses standard 1/3 gap
+            time_adj = gap / 3.0
+            opo = math.tan( next_in_angle ) * time_adj
+            p2 = [p3[0] - time_adj, p3[1] - opo]
+
+        print( "\nCalculated Points:" )
+        print( "P0:", p0 )
+        print( "P1:", p1 )
+        print( "P2:", p2 )
+        print( "P3:", p3 )
 
         return p1, p2, gap
+
+    def _bezier_derivative( self, t, p0, p1, p2, p3 ):
+        """Calculate derivative of Bezier curve at t (for x component only)"""
+        mt = 1.0 - t
+        mt2 = mt * mt
+        t2 = t * t
+
+        dx = 3.0 * ( 
+            p1[0] * mt2 - p0[0] * mt2 +
+            p2[0] * 2 * mt * t - p1[0] * 2 * mt * t +
+            p3[0] * t2 - p2[0] * t2
+        )
+        return dx
+
+    def _find_t_for_time( self, time, p0, p1, p2, p3, tolerance = 1e-7, max_iterations = 10 ):
+        """Find t value for given time using Newton's method"""
+        # Initial guess using linear interpolation
+        t = ( time - p0[0] ) / ( p3[0] - p0[0] )
+
+        for _ in range( max_iterations ):
+            # Calculate current x value
+            mt = 1.0 - t
+            mt2 = mt * mt
+            mt3 = mt2 * mt
+            t2 = t * t
+            t3 = t2 * t
+
+            x = ( p0[0] * mt3 +
+                 3.0 * p1[0] * mt2 * t +
+                 3.0 * p2[0] * mt * t2 +
+                 p3[0] * t3 )
+
+            if abs( x - time ) < tolerance:
+                return t
+
+            dx = self._bezier_derivative( t, p0, p1, p2, p3 )
+            if abs( dx ) < 1e-10:  # Avoid division by zero
+                break
+
+            t = t - ( x - time ) / dx
+            t = max( 0.0, min( 1.0, t ) )  # Clamp to [0,1]
+
+        return t
+
+'''
+curve_node = 'pCube1_translateX109'
+#
+cmds.keyTangent(curve_node, ox= 0.0, t=(0.0,)) 
+cmds.keyTangent(curve_node, oy= -3.0, t=(0.0,))
+
+# left anchor key
+kxy = cmds.getAttr(curve_node + ".keyTimeValue[0]")[0]
+x = kxy[0] + (cmds.getAttr(curve_node + ".keyTanOutX[0]") *8)
+y = kxy[1] + (cmds.getAttr(curve_node + ".keyTanOutY[0]") *(1.0/3.0))
+print(x,y)
+# right anchor key
+kxy = cmds.getAttr(curve_node + ".keyTimeValue[2]")[0]
+x = kxy[0] - (cmds.getAttr(curve_node + ".keyTanInX[2]") *8)
+y = kxy[1] - ( cmds.getAttr( curve_node + ".keyTanInY[2]" ) * ( 1.0 / 3.0 ) )
+print( x, y )
+'''
