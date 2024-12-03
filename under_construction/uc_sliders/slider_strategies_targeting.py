@@ -594,6 +594,64 @@ class SplineTargetStrategy( TargetStrategy ):
             print( "Error calculating tangents: {0}".format( e ) )
             return None, None
 
+    def calculate_anchor_tangent_weights( self, curve, time ):
+        """
+        Calculate proper weights for anchor key tangents using the 1/3 rule.
+        Only affects the tangent weight pointing toward the selected keys:
+        - Left anchor: out tangent weight
+        - Right anchor: in tangent weight
+        
+        Args:
+            curve: The animation curve being processed
+            time: Current time being evaluated
+        
+        Returns:
+            tuple: (prev_anchor_data, next_anchor_data) where each is a dict with:
+                  'time': key time
+                  'weight': calculated weight
+                  'tangent': 'in' or 'out' indicating which tangent to affect
+        """
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            current_idx = curve_data.key_map[time]
+            all_keys = curve_data.keys
+
+            # Use existing method to find anchor keys
+            prev_key, next_key = self._find_anchor_keys( curve, current_idx )
+
+            if prev_key is None or next_key is None:
+                return None, None
+
+            # Calculate weights based on gaps to nearest selected key
+            prev_anchor_time = all_keys[prev_key]
+            next_anchor_time = all_keys[next_key]
+
+            # For left anchor's out tangent, use distance to next key
+            left_gap = all_keys[prev_key + 1] - prev_anchor_time
+            left_weight = left_gap / 3.0
+
+            # For right anchor's in tangent, use distance to previous key
+            right_gap = next_anchor_time - all_keys[next_key - 1]
+            right_weight = right_gap / 3.0
+
+            prev_anchor_data = {
+                'time': prev_anchor_time,
+                'weight': left_weight,
+                'tangent': 'out'  # We only adjust the out tangent of left anchor
+            }
+
+            next_anchor_data = {
+                'time': next_anchor_time,
+                'weight': right_weight,
+                'tangent': 'in'  # We only adjust the in tangent of right anchor
+            }
+
+            return prev_anchor_data, next_anchor_data
+
+        except Exception as e:
+            print( "Error calculating anchor tangent weights: {0}".format( e ) )
+            return None, None
+
     def _calculate_one_third( self, curve, current_idx ):
         """
         Calculate in and out weights based on the 1/3 rule using actual neighboring keys.
@@ -711,11 +769,13 @@ class SplineTargetStrategy( TargetStrategy ):
             opo = math.tan( next_in_angle ) * time_adj
             p2 = [p3[0] - time_adj, p3[1] - opo]
 
+        '''
         print( "\nCalculated Points:" )
         print( "P0:", p0 )
         print( "P1:", p1 )
         print( "P2:", p2 )
         print( "P3:", p3 )
+        '''
 
         return p1, p2, gap
 

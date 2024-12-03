@@ -147,6 +147,42 @@ class SliderCore( object ):
             prev_target, next_target = strategy.calculate_target_value( curve, time )
             prev_tangents, next_tangents = strategy.calculate_target_tangents( curve, time )
 
+            #
+            #
+            #
+            # If using spline strategy, calculate and apply anchor weights
+            if isinstance( strategy, slider_strategies_targeting.SplineTargetStrategy ):
+                prev_anchor, next_anchor = strategy.calculate_anchor_tangent_weights( curve, time )
+
+                # Get current blending strategy for anchor handling
+                current_strategy = self.get_current_blending_strategy()
+
+                # Blend anchor weights if they exist
+                if prev_anchor:
+                    blended_prev = current_strategy.blend_anchors( curve, prev_anchor, blend_factor )
+                    if blended_prev:
+                        self.update_queue.append( {
+                            'curve': curve,
+                            'time': blended_prev['time'],
+                            'is_anchor': True,
+                            'tangent': blended_prev['tangent'],
+                            'weight': blended_prev['weight']
+                        } )
+
+                if next_anchor:
+                    blended_next = current_strategy.blend_anchors( curve, next_anchor, blend_factor )
+                    if blended_next:
+                        self.update_queue.append( {
+                            'curve': curve,
+                            'time': blended_next['time'],
+                            'is_anchor': True,
+                            'tangent': blended_next['tangent'],
+                            'weight': blended_next['weight']
+                        } )
+            #
+            #
+            #
+
             # Determine blend direction and target
             is_forward = blend_factor >= 0
             target_value = next_target if is_forward else prev_target
@@ -293,29 +329,37 @@ class SliderCore( object ):
         for curve, updates in curve_updates.items():
             curve_data = self.curve_data[curve]
             for update in updates:
-                # Get key index to access stored data
-                time = update['time']
-                key_idx = curve_data.key_map[time]
-                cmds.setKeyframe( 
-                    curve,
-                    time = update['time'],
-                    value = update['value']
-                )
-
-                if update['tangents']:
-                    in_angle, in_weight = update['tangents']['in']
-                    out_angle, out_weight = update['tangents']['out']
-
-                    # Set both tangents in a single command
+                if update.get( 'is_anchor' ):
+                    # Handle anchor weight updates
+                    weight_arg = {update['tangent'] + 'Weight': update['weight']}
                     cmds.keyTangent( 
                         curve,
                         time = ( update['time'], update['time'] ),
-                        ia = in_angle,
-                        iw = in_weight,
-                        oa = out_angle,
-                        ow = out_weight,
-                        lock = curve_data.tangents['lock'][key_idx]
+                        **weight_arg
                     )
+                else:
+                    # Handle normal key updates
+                    time = update['time']
+                    key_idx = curve_data.key_map[time]
+                    cmds.setKeyframe( 
+                        curve,
+                        time = update['time'],
+                        value = update['value']
+                    )
+
+                    if update['tangents']:
+                        in_angle, in_weight = update['tangents']['in']
+                        out_angle, out_weight = update['tangents']['out']
+
+                        cmds.keyTangent( 
+                            curve,
+                            time = ( update['time'], update['time'] ),
+                            ia = in_angle,
+                            iw = in_weight,
+                            oa = out_angle,
+                            ow = out_weight,
+                            lock = curve_data.tangents['lock'][key_idx]
+                        )
 
     def on_handle_move( self, blend_factor ):
         """Core movement handler"""

@@ -3,7 +3,9 @@
 Provides blending strategies for animation curve manipulation.
 Handles interpolation of values and tangents between animation states.
 """
-# TODO: add support for weighted tangents,
+# TODO: add support for weighted tangents
+# TODO: add strategy to perform a staggered blend, useful for when blending to left or right keys,
+# TODO: cont. from above: should be able to designate a portion of the blend range to a key, portion would engage relative to the proximity in x of the anchor key
 import math
 
 import maya.cmds as cmds
@@ -60,6 +62,44 @@ class BlendStrategy( object ):
             result -= 360
 
         return result
+
+    def blend_anchors( self, curve, anchor_data, blend_factor ):
+        """
+        Handle blending of anchor tangent weights separately from main key blending.
+        Meant to be consistent across all blend strategies.
+        
+        Args:
+            curve: The animation curve being processed
+            anchor_data: Dictionary containing 'time', 'weight', and 'tangent' info
+            blend_factor: Current blend factor (0-1)
+            
+        Returns:
+            dict: Updated anchor data with blended weight
+        """
+        try:
+            if not anchor_data:
+                return None
+
+            curve_data = self.core.get_curve_data( curve )
+            if not curve_data:
+                return None
+
+            # Get current key index and tangent data
+            current_idx = curve_data.key_map[anchor_data['time']]
+            current_weight = curve_data.tangents[anchor_data['tangent'] + '_weights'][current_idx]
+
+            # Linear blend between current weight and target weight
+            abs_blend = abs( blend_factor )
+            new_weight = current_weight * ( 1.0 - abs_blend ) + anchor_data['weight'] * abs_blend
+
+            # Return updated anchor data
+            updated_anchor = anchor_data.copy()
+            updated_anchor['weight'] = new_weight
+            return updated_anchor
+
+        except Exception as e:
+            print( "Error in anchor weight blending: {0}".format( e ) )
+            return None
 
 
 class TriangleBlendStrategy( BlendStrategy ):
