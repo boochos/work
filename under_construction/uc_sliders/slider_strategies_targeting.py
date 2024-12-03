@@ -6,10 +6,12 @@ import maya.cmds as cmds
 import maya.mel as mel
 import numpy as np
 
+# TODO: add strategy to blend into tangent angle of anchor keys(L/R), a mix of direct and linear
 # TODO: add support for weighted tangents. targeting needs to account for neighbhours for proper weight calculation
 # TODO: for now dont touch weights, just angles, maybe implement auto tangent weight
 # TODO: Linear and Direct are blending to tangent weight of 1.0 by default, fix it. maybe dont change weights for now until solution for spline is working
 # TODO: maybe weighted tangents are blended to 1/3 rule, could solve all issues, if at full blend set to auto. if already set to 'auto' do nothing for Direct and Linear.
+# TODO: as a way to stop a collapsing curvature, if all tangents are already in 1/3 rule dont continue to blend
 
 
 class TargetStrategy:
@@ -195,7 +197,7 @@ class LinearTargetStrategy( TargetStrategy ):
             return None, None
 
 
-class SplineTargetStrategy( TargetStrategy ):
+class SplineTargetStrategy_bkp( TargetStrategy ):
     """Uses cubic bezier spline interpolation"""
 
     def __init__( self, core ):
@@ -393,6 +395,307 @@ class SplineTargetStrategy( TargetStrategy ):
 
         # Calculate P2
         if using_weighted_tangents:
+            # First calculate relative offsets
+            time_offset = math.cos( next_in_angle ) * next_in_weight
+            # print( '__time offset', time_offset )
+            value_offset = math.sin( next_in_angle ) * next_in_weight
+            # print( '__value offset', value_offset )
+
+            x = p3[0] - time_offset
+            y = p3[1] - value_offset
+            p2 = [x, y]
+        else:
+            # Non-weighted uses standard 1/3 gap
+            time_adj = gap / 3.0
+            opo = math.tan( next_in_angle ) * time_adj
+            p2 = [p3[0] - time_adj, p3[1] - opo]
+
+        print( "\nCalculated Points:" )
+        print( "P0:", p0 )
+        print( "P1:", p1 )
+        print( "P2:", p2 )
+        print( "P3:", p3 )
+
+        return p1, p2, gap
+
+    def _bezier_derivative( self, t, p0, p1, p2, p3 ):
+        """Calculate derivative of Bezier curve at t (for x component only)"""
+        mt = 1.0 - t
+        mt2 = mt * mt
+        t2 = t * t
+
+        dx = 3.0 * ( 
+            p1[0] * mt2 - p0[0] * mt2 +
+            p2[0] * 2 * mt * t - p1[0] * 2 * mt * t +
+            p3[0] * t2 - p2[0] * t2
+        )
+        return dx
+
+    def _find_t_for_time( self, time, p0, p1, p2, p3, tolerance = 1e-7, max_iterations = 10 ):
+        """Find t value for given time using Newton's method"""
+        # Initial guess using linear interpolation
+        t = ( time - p0[0] ) / ( p3[0] - p0[0] )
+
+        for _ in range( max_iterations ):
+            # Calculate current x value
+            mt = 1.0 - t
+            mt2 = mt * mt
+            mt3 = mt2 * mt
+            t2 = t * t
+            t3 = t2 * t
+
+            x = ( p0[0] * mt3 +
+                 3.0 * p1[0] * mt2 * t +
+                 3.0 * p2[0] * mt * t2 +
+                 p3[0] * t3 )
+
+            if abs( x - time ) < tolerance:
+                return t
+
+            dx = self._bezier_derivative( t, p0, p1, p2, p3 )
+            if abs( dx ) < 1e-10:  # Avoid division by zero
+                break
+
+            t = t - ( x - time ) / dx
+            t = max( 0.0, min( 1.0, t ) )  # Clamp to [0,1]
+
+        return t
+
+
+class SplineTargetStrategy( TargetStrategy ):
+    """Uses cubic bezier spline interpolation"""
+
+    def __init__( self, core ):
+        TargetStrategy.__init__( self, core )  # Python 2.7 style
+        self._cached_curves = {}
+        self._cached_controls = {}
+        self.force_non_weighted = True
+        self.is_weighted = False
+
+    def calculate_target_value( self, curve, time ):
+        """Calculate bezier-based value for blending"""
+        try:
+            current_idx = self.core.get_curve_data( curve ).key_map[time]
+
+            prev_key, next_key = self._find_anchor_keys( curve, current_idx )
+            if prev_key is not None and next_key is not None:
+                curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
+                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
+
+                '''
+                print( "P0: time={0}, value={1}".format( p0[0], p0[1] ) )
+                print( "P1: time={0}, value={1}".format( p1[0], p1[1] ) )
+                print( "P2: time={0}, value={1}".format( p2[0], p2[1] ) )
+                print( "P3: time={0}, value={1}".format( p3[0], p3[1] ) )
+
+                print( "p0=({0}, {1})".format( p0[0], p0[1] ) )
+                print( "p1=({0}, {1})".format( p1[0], p1[1] ) )
+                print( "p2=({0},{1})".format( p2[0], p2[1] ) )
+                print( "p3=({0}, {1})".format( p3[0], p3[1] ) )
+                '''
+                # Calculate t parameter and bezier value
+                # t = ( time - p0[0] ) / gap
+                # Calculate correct t parameter using Newton's method
+                t = self._find_t_for_time( time, p0, p1, p2, p3 )
+                mt = 1.0 - t
+                mt2 = mt * mt
+                mt3 = mt2 * mt
+                t2 = t * t
+                t3 = t2 * t
+
+                bezier_value = ( p0[1] * mt3 +
+                              3.0 * p1[1] * mt2 * t +
+                              3.0 * p2[1] * mt * t2 +
+                              p3[1] * t3 )
+
+                return bezier_value, bezier_value
+
+            return curve_data.values[current_idx], curve_data.values[current_idx]
+
+        except Exception as e:
+            print( "Error in spline target calculation: {0}".format( e ) )
+            return None, None
+
+    def calculate_target_tangents( self, curve, time ):
+        """Calculate tangents for the bezier curve"""
+        try:
+            current_idx = self.core.get_curve_data( curve ).key_map[time]
+            if not self.core.get_curve_data( curve ).tangents:
+                return None, None
+
+            prev_key, next_key = self._find_anchor_keys( curve, current_idx )
+            if prev_key is not None and next_key is not None:
+                curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
+                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
+
+                # Calculate t for current time
+                # t = ( time - p0[0] ) / gap
+                # Calculate correct t parameter using Newton's method
+                t = self._find_t_for_time( time, p0, p1, p2, p3 )
+                mt = 1.0 - t
+
+                # Calculate intermediate points
+                AB_x = ( mt * p0[0] ) + ( t * p1[0] )
+                AB_y = ( mt * p0[1] ) + ( t * p1[1] )
+
+                BC_x = ( mt * p1[0] ) + ( t * p2[0] )
+                BC_y = ( mt * p1[1] ) + ( t * p2[1] )
+
+                CD_x = ( mt * p2[0] ) + ( t * p3[0] )
+                CD_y = ( mt * p2[1] ) + ( t * p3[1] )
+
+                # Calculate tangent points
+                tan_in_x = ( mt * AB_x ) + ( t * BC_x )
+                tan_in_y = ( mt * AB_y ) + ( t * BC_y )
+
+                tan_out_x = ( mt * BC_x ) + ( t * CD_x )
+                tan_out_y = ( mt * BC_y ) + ( t * CD_y )
+
+                point_x = ( mt * tan_in_x ) + ( t * tan_out_x )
+                point_y = ( mt * tan_in_y ) + ( t * tan_out_y )
+
+                # Calculate x and y lengths once
+                in_xlength = point_x - tan_in_x
+                in_ylength = point_y - tan_in_y
+                out_xlength = tan_out_x - point_x
+                out_ylength = tan_out_y - point_y
+
+                # Calculate angles
+                in_tan = in_ylength / in_xlength
+                in_angle = math.degrees( math.atan( in_tan ) )
+
+                out_tan = out_ylength / out_xlength
+                out_angle = math.degrees( math.atan( out_tan ) )
+
+                # Calculate lengths based on scenario
+                if self.is_weighted and self.force_non_weighted:
+                    in_length, out_length = self._calculate_one_third( curve, current_idx )
+                else:
+                    # Calculate standard lengths using stored x/y values
+                    in_length = math.sqrt( in_xlength * in_xlength + in_ylength * in_ylength )
+                    out_length = math.sqrt( out_xlength * out_xlength + out_ylength * out_ylength )
+
+                    '''
+                    # Clamp weights, dont think this is right, no clamping to these values
+                    in_length = min( max( in_length, 0.1 ), 10.0 )
+                    out_length = min( max( out_length, 0.1 ), 10.0 )
+                    '''
+
+                negative_tangents = {
+                    'in': ( in_angle, in_length ),
+                    'out': ( out_angle, out_length )
+                }
+
+                return negative_tangents, negative_tangents
+
+            return None, None
+
+        except Exception as e:
+            print( "Error calculating tangents: {0}".format( e ) )
+            return None, None
+
+    def _calculate_one_third( self, curve, current_idx ):
+        """
+        Calculate in and out weights based on the 1/3 rule using actual neighboring keys.
+        Returns tuple of (in_length, out_length) representing the weights.
+        """
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            all_keys = curve_data.keys
+            current_time = all_keys[current_idx]
+
+            in_length = out_length = 1.0 / 3.0  # Default fallback
+
+            # Calculate in weight based on distance to previous key
+            if current_idx > 0:
+                time_gap = current_time - all_keys[current_idx - 1]
+                in_length = time_gap / 3.0
+
+            # Calculate out weight based on distance to next key
+            if current_idx < len( all_keys ) - 1:
+                time_gap = all_keys[current_idx + 1] - current_time
+                out_length = time_gap / 3.0
+
+            return in_length, out_length
+
+        except Exception as e:
+            print( "Error calculating one third weights: {0}".format( e ) )
+            return 1.0 / 3.0, 1.0 / 3.0  # Fallback to default if calculation fails
+
+    def _find_anchor_keys( self, curve, current_idx ):
+        """Find surrounding non-selected keys to use as anchors"""
+        curve_data = self.core.get_curve_data( curve )
+        all_keys = curve_data.keys
+        selected_keys = self.core.get_selected_keys( curve )
+
+        prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
+                      if all_keys[i] not in selected_keys ), None )
+        next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
+                      if all_keys[i] not in selected_keys ), None )
+
+        return prev_key, next_key
+
+    def _get_curve_points( self, curve, prev_key, next_key ):
+        """Get anchor points and curve data"""
+        curve_data = self.core.get_curve_data( curve )
+        p0 = [curve_data.keys[prev_key], curve_data.values[prev_key]]
+        p3 = [curve_data.keys[next_key], curve_data.values[next_key]]
+
+        return ( curve_data, p0, p3 )
+
+    def _calculate_control_points( self, curve_data, p0, p3, prev_key, next_key ):
+        """Calculate bezier control points P1 and P2"""
+        """
+        # TODO: below values relate to position of their associated key, x value is x*8, y value is y*(1/3.0)
+        # use this to get control points
+        print(cmds.getAttr(curve_node + ".keyTanInX[0]"))
+        print(cmds.getAttr(curve_node + ".keyTanInY[0]"))
+        print(cmds.getAttr(curve_node + ".keyTanOutX[0]"))
+        print(cmds.getAttr(curve_node + ".keyTanOutY[0]"))
+        # could use this to set them or reverse engineer the math for the raw weight value, 
+        # will actually need to figure out the math to set the target weight value
+        cmds.keyTangent(curve_node, ox= 0.0, t=(0.0,)) 
+        cmds.keyTangent(curve_node, oy= -3.0, t=(0.0,))
+        
+        
+        """
+        gap = p3[0] - p0[0]
+        tangent_data = curve_data.tangents
+        self.is_weighted = curve_data.is_weighted
+
+        # Get tangent data
+        prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
+        prev_out_weight = tangent_data['out_weights'][prev_key]
+        next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
+        next_in_weight = tangent_data['in_weights'][next_key]
+
+        '''
+        print( "\nTangent Values:" )
+        print( "prev_out_angle:", math.degrees( prev_out_angle ) )
+        print( "prev_out_weight:", prev_out_weight )
+        print( "next_in_angle:", math.degrees( next_in_angle ) )
+        print( "next_in_weight:", next_in_weight )
+        '''
+
+        # Calculate P1
+        if self.is_weighted and not self.force_non_weighted:
+            # First calculate relative offsets
+            time_offset = math.cos( prev_out_angle ) * prev_out_weight
+            # print( '__time offset', time_offset )
+            value_offset = math.sin( prev_out_angle ) * prev_out_weight
+            # print( '__value offset', value_offset )
+
+            x = p0[0] + time_offset
+            y = p0[1] + value_offset
+            p1 = [x, y]
+        else:
+            # Non-weighted uses standard 1/3 gap
+            time_adj = gap / 3.0
+            opo = math.tan( prev_out_angle ) * time_adj
+            p1 = [p0[0] + time_adj, p0[1] + opo]
+
+        # Calculate P2
+        if self.is_weighted and not self.force_non_weighted:
             # First calculate relative offsets
             time_offset = math.cos( next_in_angle ) * next_in_weight
             # print( '__time offset', time_offset )
