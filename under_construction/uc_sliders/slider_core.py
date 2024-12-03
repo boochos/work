@@ -146,39 +146,35 @@ class SliderCore( object ):
             strategy = self.get_current_targeting_strategy()
             prev_target, next_target = strategy.calculate_target_value( curve, time )
             prev_tangents, next_tangents = strategy.calculate_target_tangents( curve, time )
+            prev_anchor, next_anchor = strategy.calculate_anchor_weights( curve, time )  # Get anchor weights if strategy provides them
+
+            current_strategy = self.get_current_blending_strategy()
 
             #
             #
             #
-            # If using spline strategy, calculate and apply anchor weights
-            if isinstance( strategy, slider_strategies_targeting.SplineTargetStrategy ):
-                prev_anchor, next_anchor = strategy.calculate_anchor_tangent_weights( curve, time )
+            # Process anchor weights if they exist
+            if prev_anchor:
+                blended_prev = current_strategy.blend_anchors( curve, prev_anchor, blend_factor )
+                if blended_prev:
+                    self.update_queue.append( {
+                        'curve': curve,
+                        'time': blended_prev['time'],
+                        'is_anchor': True,
+                        'tangent': blended_prev['tangent'],
+                        'weight': blended_prev['weight']
+                    } )
 
-                # Get current blending strategy for anchor handling
-                current_strategy = self.get_current_blending_strategy()
-
-                # Blend anchor weights if they exist
-                if prev_anchor:
-                    blended_prev = current_strategy.blend_anchors( curve, prev_anchor, blend_factor )
-                    if blended_prev:
-                        self.update_queue.append( {
-                            'curve': curve,
-                            'time': blended_prev['time'],
-                            'is_anchor': True,
-                            'tangent': blended_prev['tangent'],
-                            'weight': blended_prev['weight']
-                        } )
-
-                if next_anchor:
-                    blended_next = current_strategy.blend_anchors( curve, next_anchor, blend_factor )
-                    if blended_next:
-                        self.update_queue.append( {
-                            'curve': curve,
-                            'time': blended_next['time'],
-                            'is_anchor': True,
-                            'tangent': blended_next['tangent'],
-                            'weight': blended_next['weight']
-                        } )
+            if next_anchor:
+                blended_next = current_strategy.blend_anchors( curve, next_anchor, blend_factor )
+                if blended_next:
+                    self.update_queue.append( {
+                        'curve': curve,
+                        'time': blended_next['time'],
+                        'is_anchor': True,
+                        'tangent': blended_next['tangent'],
+                        'weight': blended_next['weight']
+                    } )
             #
             #
             #
@@ -330,13 +326,26 @@ class SliderCore( object ):
             curve_data = self.curve_data[curve]
             for update in updates:
                 if update.get( 'is_anchor' ):
-                    # Handle anchor weight updates
-                    weight_arg = {update['tangent'] + 'Weight': update['weight']}
-                    cmds.keyTangent( 
-                        curve,
-                        time = ( update['time'], update['time'] ),
-                        **weight_arg
-                    )
+                # Get current key index and weights
+                    key_idx = curve_data.key_map[update['time']]
+                    current_in_weight = curve_data.tangents['in_weights'][key_idx]
+                    current_out_weight = curve_data.tangents['out_weights'][key_idx]
+
+                    # Update only the specified tangent weight, preserve the other
+                    if update['tangent'] == 'in':
+                        cmds.keyTangent( 
+                            curve,
+                            time = ( update['time'], update['time'] ),
+                            inWeight = update['weight'],
+                            outWeight = current_out_weight
+                        )
+                    else:  # 'out'
+                        cmds.keyTangent( 
+                            curve,
+                            time = ( update['time'], update['time'] ),
+                            inWeight = current_in_weight,
+                            outWeight = update['weight']
+                        )
                 else:
                     # Handle normal key updates
                     time = update['time']
