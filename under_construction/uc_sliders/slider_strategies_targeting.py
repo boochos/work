@@ -158,7 +158,7 @@ class DirectTargetStrategy( TargetStrategy ):
     def __init__( self, core ):
         TargetStrategy.__init__( self, core )  # Python 2.7 style
         self.force_one_third = True  # force construction of a curve that uses 1/3 rule, changes anchor tangent weights to a dif shape
-        self.force_one_third_anchor = False
+        self.force_one_third_anchor = True
 
     def calculate_target_value( self, curve, time ):
         try:
@@ -224,7 +224,7 @@ class LinearTargetStrategy( TargetStrategy ):
     def __init__( self, core ):
         TargetStrategy.__init__( self, core )  # Python 2.7 style
         self.force_one_third = True  # force construction of a curve that uses 1/3 rule, changes anchor tangent weights to a dif shape
-        self.force_one_third_anchor = False
+        self.force_one_third_anchor = True
 
     def calculate_target_value( self, curve, time ):
         try:
@@ -302,27 +302,32 @@ class LinearTargetStrategy( TargetStrategy ):
                 dy = curve_data.values[next_idx] - curve_data.values[prev_idx]
                 linear_angle = math.degrees( math.atan2( dy, dx ) )
 
-                # Get current tangent angles
-                curr_in_angle = curve_data.tangents['in_angles'][current_idx]
-                curr_out_angle = curve_data.tangents['out_angles'][current_idx]
+                #
+                #
+                # Handle weighted tangents
+                if curve_data.is_weighted:
+                    if self.force_one_third:
+                        # Calculate weights based on 1/3 rule
+                        in_weight, out_weight = self._calculate_one_third( curve, current_idx )
+                    else:
+                        # Preserve existing weights
+                        in_weight = curve_data.tangents['in_weights'][current_idx]
+                        out_weight = curve_data.tangents['out_weights'][current_idx]
+                else:
+                    # Use default unit weight for non-weighted curves
+                    in_weight = out_weight = 1.0
 
-                # Calculate angle differences from linear
-                in_diff = curr_in_angle - linear_angle
-                out_diff = curr_out_angle - linear_angle
-
-                # Calculate targets
-                negative_tangents = {
-                    'in': ( linear_angle, 1.0 ),
-                    'out': ( linear_angle, 1.0 )
+                # Create target tangents with calculated angle and weights
+                target_tangents = {
+                    'in': ( linear_angle, in_weight ),
+                    'out': ( linear_angle, out_weight )
                 }
+                #
+                #
+                #
 
-                positive_tangents = {
-                    'in': ( curr_in_angle + in_diff, 1.0 ),
-                    'out': ( curr_out_angle + out_diff, 1.0 )
-                }
-                # TODO: relic from direct methodology, both should be the same, likely only one should be returned, its causing issues in blending
-                # return negative_tangents, positive_tangents
-                return negative_tangents, negative_tangents
+                # return negative_tangents, negative_tangents # removed, refactor from adding wegihted tangent support
+                return target_tangents, target_tangents
 
             # Fallback to current tangents
             current_tangents = {
@@ -345,7 +350,7 @@ class SplineTargetStrategy( TargetStrategy ):
     def __init__( self, core ):
         TargetStrategy.__init__( self, core )  # Python 2.7 style
         self.force_one_third = True  # force construction of a curve that uses 1/3 rule, changes anchor tangent weights to a dif shape
-        self.force_one_third_anchor = False
+        self.force_one_third_anchor = True
 
     def calculate_target_value( self, curve, time ):
         """Calculate bezier-based value for blending"""
