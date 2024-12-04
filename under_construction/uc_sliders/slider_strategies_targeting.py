@@ -7,11 +7,6 @@ import maya.mel as mel
 import numpy as np
 
 # TODO: add strategy to blend into tangent angle of anchor keys(L/R), a mix of direct and linear
-# TODO: add support for weighted tangents. targeting needs to account for neighbhours for proper weight calculation
-# TODO: for now dont touch weights, just angles, maybe implement auto tangent weight
-# TODO: Linear and Direct are blending to tangent weight of 1.0 by default, fix it. maybe dont change weights for now until solution for spline is working
-# TODO: maybe weighted tangents are blended to 1/3 rule, could solve all issues, if at full blend set to auto. if already set to 'auto' do nothing for Direct and Linear.
-# TODO: as a way to stop a collapsing curvature, if all tangents are already in 1/3 rule dont continue to blend
 
 
 class TargetStrategy:
@@ -21,6 +16,12 @@ class TargetStrategy:
         self.core = core
         self.force_one_third = False  # force construction of a curve that uses 1/3 rule, changes anchor tangent weights to a dif shape
         self.force_one_third_anchor = False
+        #
+        self.lock_weights_beyond_negative = True
+        self.lock_weights_beyond_positive = True
+        self.preserve_weights_positive = False
+        self.preserve_weights_negative = False
+        self.preserve_opposing_anchor = False  # When True, preserve anchor weights not in blend direction
 
     def calculate_target_value( self, curve, time ):
         """
@@ -159,6 +160,13 @@ class DirectTargetStrategy( TargetStrategy ):
         TargetStrategy.__init__( self, core )  # Python 2.7 style
         self.force_one_third = True  # force construction of a curve that uses 1/3 rule, changes anchor tangent weights to a dif shape
         self.force_one_third_anchor = True
+        # shouldnt change for the most part
+        self.lock_weights_beyond_negative = True
+        self.lock_weights_beyond_positive = True
+        #
+        self.preserve_weights_positive = False
+        self.preserve_weights_negative = False
+        self.preserve_opposing_anchor = True  # Enable directional preservation for direct targeting
 
     def calculate_target_value( self, curve, time ):
         try:
@@ -225,6 +233,12 @@ class LinearTargetStrategy( TargetStrategy ):
         TargetStrategy.__init__( self, core )  # Python 2.7 style
         self.force_one_third = True  # force construction of a curve that uses 1/3 rule, changes anchor tangent weights to a dif shape
         self.force_one_third_anchor = True
+        # shouldnt change for the most part
+        self.lock_weights_beyond_negative = True
+        self.lock_weights_beyond_positive = True
+        #
+        self.preserve_weights_positive = True
+        self.preserve_weights_negative = False
 
     def calculate_target_value( self, curve, time ):
         try:
@@ -351,6 +365,12 @@ class SplineTargetStrategy( TargetStrategy ):
         TargetStrategy.__init__( self, core )  # Python 2.7 style
         self.force_one_third = True  # force construction of a curve that uses 1/3 rule, changes anchor tangent weights to a dif shape
         self.force_one_third_anchor = True
+        # shouldnt change for the most part
+        self.lock_weights_beyond_negative = True
+        self.lock_weights_beyond_positive = True
+        #
+        self.preserve_weights_positive = True
+        self.preserve_weights_negative = False
 
     def calculate_target_value( self, curve, time ):
         """Calculate bezier-based value for blending"""

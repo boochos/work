@@ -3,7 +3,6 @@
 Provides blending strategies for animation curve manipulation.
 Handles interpolation of values and tangents between animation states.
 """
-# TODO: add support for weighted tangents
 # TODO: add strategy to perform a staggered blend, useful for when blending to left or right keys,
 # TODO: cont. from above: should be able to designate a portion of the blend range to a key, portion would engage relative to the proximity in x of the anchor key
 import math
@@ -21,10 +20,20 @@ class BlendStrategy( object ):
         self.uses_signed_blend = False  # Default behavior ((+ / -) or abs)
         self.PARALLEL_THRESHOLD_DEG = 0.0001  # if initial and target angle are less than this range, snap to target.
         self.VALUE_MATCH_THRESHOLD = 0.000001  # when value matches, only blend tangent
-        self.lock_weights_beyond_negative = True  # Lock weights when going beyond -100%
-        self.lock_weights_beyond_positive = True  # Lock weights when going beyond +100%
-        self.preserve_weights_positive = True  # When True, don't change weights when blend_factor > 0
-        self.preserve_weights_negative = True  # When True, don't change weights when blend_factor < 0
+        self._sync_weight_settings()
+
+    def _get_targeting_strategy( self ):
+        """Get current targeting strategy from core"""
+        return self.core.get_current_targeting_strategy()
+
+    def _sync_weight_settings( self ):
+        """Sync weight control settings from targeting strategy"""
+        strategy = self.core.get_current_targeting_strategy()
+        self.lock_weights_beyond_negative = strategy.lock_weights_beyond_negative
+        self.lock_weights_beyond_positive = strategy.lock_weights_beyond_positive
+        self.preserve_weights_positive = strategy.preserve_weights_positive
+        self.preserve_weights_negative = strategy.preserve_weights_negative
+        self.preserve_opposing_anchor = strategy.preserve_opposing_anchor
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         """
@@ -99,16 +108,27 @@ class BlendStrategy( object ):
             beyond_positive = blend_factor >= 1.0
             abs_blend = abs( blend_factor )
 
-            # Determine new weight based on direction and settings
-            if ( self.preserve_weights_positive and is_positive ) or ( self.preserve_weights_negative and is_negative ):
-                # Keep original weight if preserving weights in current direction
+            # Determine if we should preserve the current weight
+            preserve_weight = False
+
+            # Check directional anchor preservation
+            if self.preserve_opposing_anchor:
+                preserve_weight = ( anchor_data['tangent'] == 'out' and is_positive ) or \
+                                ( anchor_data['tangent'] == 'in' and is_negative )
+
+            # Check other preservation conditions if not already preserving
+            if not preserve_weight:
+                preserve_weight = ( self.preserve_weights_positive and is_positive ) or \
+                                ( self.preserve_weights_negative and is_negative )
+
+            # Calculate new weight
+            if preserve_weight:
                 new_weight = current_weight
             elif beyond_negative and self.lock_weights_beyond_negative:
                 new_weight = anchor_data['weight']
             elif beyond_positive and self.lock_weights_beyond_positive:
                 new_weight = anchor_data['weight']
             else:
-                # Normal blending
                 if self.lock_weights_beyond_negative:
                     abs_blend = min( abs_blend, 1.0 ) if blend_factor < 0 else abs_blend
                 if self.lock_weights_beyond_positive:

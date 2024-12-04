@@ -9,7 +9,6 @@ import maya.mel as mel
 imp.reload( slider_strategies_targeting )
 imp.reload( slider_strategies_blending )
 
-# TODO: Add anchor weights handling when weighted tangents are used, mainly for SplineTargetStrategy, will need for others.
 # TODO: cleanup module, audit functions and data structures for usage
 # TODO: refactor how curves are gathered, should have 3 options, via selected vurves, active layers, selected objects, active char sets
 
@@ -32,6 +31,10 @@ class SliderCore( object ):
         self.cache_timeout = 5.0
         self.batch_size = 50
 
+        # set before strategies or error
+        self.current_targeting_strategy = 'linear'  # Set default
+        self.current_blending_strategy = 'linear'  # Set default
+
         self.targeting_strategies = {
             'direct': slider_strategies_targeting.DirectTargetStrategy( self ),
             'linear': slider_strategies_targeting.LinearTargetStrategy( self ),
@@ -43,8 +46,6 @@ class SliderCore( object ):
             'tria': slider_strategies_blending.TriangleBlendStrategy( self ),
             'triad': slider_strategies_blending.TriangleDirectBlendStrategy( self )
         }
-        self.current_targeting_strategy = 'linear'
-        self.current_blending_strategy = 'linear'
 
     def get_curve_tangents( self, curve ):
         return self.curve_data[curve].tangents
@@ -229,6 +230,9 @@ class SliderCore( object ):
         """Set current targeting strategy"""
         if strategy_name in self.targeting_strategies:
             self.current_targeting_strategy = strategy_name
+            # Get current blend strategy and resync its weights
+            current_blend = self.get_current_blending_strategy()
+            current_blend._sync_weight_settings()
             return True
         return False
 
@@ -241,6 +245,9 @@ class SliderCore( object ):
         # print( '___', strategy_name )
         if strategy_name in self.blending_strategies:
             self.current_blending_strategy = strategy_name
+            # Sync weights for new blend strategy
+            current_blend = self.get_current_blending_strategy()
+            current_blend._sync_weight_settings()
             return True
         return False
 
