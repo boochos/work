@@ -519,6 +519,114 @@ class TriangleDirectBlendStrategy( TriangleBlendStrategy ):
         return current_value * ( 1 - merge_mult ) + target_value * merge_mult
 
 
+class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
+    """
+    Blend strategy that staggers key movement based on proximity to target anchor.
+    Keys closer to the target anchor begin blending sooner than those further away.
+    """
+
+    def __init__( self, core ):
+        super( TriangleStaggeredBlendStrategy, self ).__init__( core )
+        self.range_portion = 0.6  # Default value for how much of the range each key uses
+        self.ease_power = 2.0  # Default ease out power (1.0 = linear, higher = stronger ease)
+        self.debug = False
+
+    def _ease_in( self, x ):
+        """
+        Apply ease in - starts slow and builds up speed.
+        Args:
+            x: Raw progress value (0-1)
+        Returns:
+            Eased value that starts slow and accelerates
+        """
+        if x <= 0.0:
+            return 0.0
+        if x >= 1.0:
+            return 1.0
+
+        # Ease in - raises x to the power, creating slow start
+        return pow( x, self.ease_power )
+
+    def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            if not curve_data: return current_value, None
+
+            selected_keys = self.core.get_selected_keys( curve )
+            current_time = curve_data.keys[current_idx]
+            print( "\n=== Key {0} ===".format( current_time ) )
+            print( "Blend factor: {0}".format( blend_factor ) )
+
+            is_positive = blend_factor >= 0
+            target_anchor_idx = None
+            for i in range( current_idx + ( 1 if is_positive else -1 ),
+                         len( curve_data.keys ) if is_positive else -1,
+                         1 if is_positive else -1 ):
+                if curve_data.keys[i] not in selected_keys:
+                    target_anchor_idx = i
+                    break
+
+            if target_anchor_idx is None: return current_value, None
+            target_time = curve_data.keys[target_anchor_idx]
+            print( "Target time: {0}".format( target_time ) )
+
+            # Calculate position within selection range
+            min_time = min( selected_keys )
+            max_time = max( selected_keys )
+            key_range = max_time - min_time
+
+            if key_range == 0: return current_value, None
+
+            if is_positive:
+                relative_distance = ( max_time - current_time ) / key_range
+            else:
+                relative_distance = ( current_time - min_time ) / key_range
+            start = relative_distance * ( 1.0 - self.range_portion )
+            range_end = start + self.range_portion
+
+            print( "Current time: {0}".format( current_time ) )
+            print( "Min time: {0}".format( min_time ) )
+            print( "Max time: {0}".format( max_time ) )
+            print( "Key range: {0}".format( key_range ) )
+            print( "Rel distance: {0}".format( relative_distance ) )
+            print( "Start: {0}".format( start ) )
+            print( "End: {0}".format( range_end ) )
+
+            abs_blend = abs( blend_factor )
+            print( "Abs blend: {0}".format( abs_blend ) )
+
+            if abs_blend <= start:
+                adjusted_blend = 0.0
+            elif abs_blend >= range_end:
+                adjusted_blend = 1.0 if blend_factor > 0 else -1.0
+            else:
+                local_progress = ( abs_blend - start ) / self.range_portion
+                eased_progress = self._ease_in( local_progress )
+                adjusted_blend = eased_progress if blend_factor > 0 else -eased_progress
+
+            print( "Adjusted blend: {0}".format( adjusted_blend ) )
+
+            return super( TriangleStaggeredBlendStrategy, self ).blend_values( 
+                curve, current_idx, current_value, target_value, target_tangents, adjusted_blend
+            )
+
+        except Exception as e:
+            print( "Error in staggered blend calculation: {0}".format( e ) )
+            return current_value, None
+
+    def set_range_portion( self, value ):
+        """Set how much of the slider range each key uses (0.1-1.0)"""
+        self.range_portion = max( 0.1, min( 1.0, value ) )
+
+    def set_ease_power( self, value ):
+        """
+        Set the power of the ease in effect.
+        Args:
+            value: Power value (1.0 = linear, higher values = stronger ease)
+        """
+        self.ease_power = max( 1.0, value )
+
+
 class RateBasedBlendStrategy( BlendStrategy ):
     """Blends using rate curve based on distance from target"""
 
