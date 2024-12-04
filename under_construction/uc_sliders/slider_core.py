@@ -164,6 +164,9 @@ class SliderCore( object ):
                         'tangent': blended_prev['tangent'],
                         'weight': blended_prev['weight']
                     } )
+            else:
+                # print( 'no', prev_anchor )
+                pass
 
             if next_anchor:
                 blended_next = current_strategy.blend_anchors( curve, next_anchor, blend_factor )
