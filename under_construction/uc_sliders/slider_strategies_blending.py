@@ -527,9 +527,9 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
-        self.range_portion = 1.0  # Default value for how much of the range each key uses
-        self.base_ease = 1.0  # Base easing power
-        self.ease_scale = 0.0  # How much distance affects easing power)
+        self.range_portion = 0.7  # Default value for how much of the range each key uses
+        self.base_ease = 0.0  # Base easing power
+        self.ease_scale = 80.0  # How much distance affects easing power)
         self.debug = False
 
     def _calculate_stagger_timing( self, curve_data, current_idx, current_time, selected_keys, is_positive ):
@@ -611,8 +611,12 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             else:
                 # Calculate local progress within this key's range
                 local_progress = ( abs_blend - start ) / self.range_portion
-                # Apply dynamic easing
-                eased_progress = pow( local_progress, dynamic_ease )
+                # Convert ease in/out circular
+                if local_progress < 0.5:
+                    eased_progress = 4.0 * pow( local_progress, 3 )
+                else:
+                    scaled = local_progress - 1.0
+                    eased_progress = 1.0 + ( 4.0 * pow( scaled, 3 ) )
                 adjusted_blend = eased_progress if blend_factor > 0 else -eased_progress
 
             if self.debug:
