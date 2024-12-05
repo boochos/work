@@ -519,9 +519,10 @@ class TriangleDirectBlendStrategy( TriangleBlendStrategy ):
         return current_value * ( 1 - merge_mult ) + target_value * merge_mult
 
 
-class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
+class TriangleStaggeredBlendStrategy__( TriangleDirectBlendStrategy ):
     """
-    Blend strategy that staggers key movement based on proximity to target anchor.
+    Blend strategy that staggers key movement based on proximity to targ
+     et anchor.
     Keys closer to the target anchor begin blending sooner than those further away.
     """
 
@@ -813,3 +814,294 @@ class LinearBlendStrategy( BlendStrategy ):
 def __DEV_STRATEGIES__():
     pass
 
+
+class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
+    """
+    Blend strategy that staggers key movement based on proximity to target anchor,
+    with Maya-style auto ease tangents during motion.
+    """
+
+    def __init__( self, core ):
+        super( TriangleStaggeredBlendStrategy, self ).__init__( core )
+        self.base_ease = 0.0
+        self.ease_scale = 80.0
+        self.debug = False
+
+        # Range portion parameters
+        self.min_range_portion = 0.3
+        self.max_range_portion = 0.7
+        self.distance_threshold_min = 3
+        self.distance_threshold_max = 100
+
+        # Auto tangent parameters
+        self.tangent_transition_start = 0.90  # Point where we start blending to target tangents
+
+    def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
+        try:
+            curve_data = self.core.get_curve_data( curve )
+            if not curve_data:
+                return current_value, None
+
+            selected_keys = self.core.get_selected_keys( curve )
+            current_time = curve_data.keys[current_idx]
+            is_positive = blend_factor >= 0
+
+            if self.debug:
+                print( "\n=== Key {0} ===".format( current_time ) )
+                print( "Blend factor: {0}".format( blend_factor ) )
+
+            # Get timing and easing values
+            normalized_distance, dynamic_ease, range_portion = self._calculate_stagger_timing( 
+                curve_data, current_idx, current_time, selected_keys, is_positive
+            )
+
+            # Calculate when this key should start/end moving using dynamic range_portion
+            start = normalized_distance * ( 1.0 - range_portion )
+            range_end = start + range_portion
+
+            abs_blend = abs( blend_factor )
+
+            # Calculate the adjusted blend factor for position
+            if abs_blend <= start:
+                adjusted_blend = 0.0
+            elif abs_blend >= range_end:
+                adjusted_blend = 1.0 if blend_factor > 0 else -1.0
+            else:
+                # Calculate local progress within this key's range
+                local_progress = ( abs_blend - start ) / range_portion
+                # Convert ease in/out circular
+                if local_progress < 0.5:
+                    eased_progress = 4.0 * pow( local_progress, 3 )
+                else:
+                    scaled = local_progress - 1.0
+                    eased_progress = 1.0 + ( 4.0 * pow( scaled, 3 ) )
+                adjusted_blend = eased_progress if blend_factor > 0 else -eased_progress
+
+            # Calculate position using parent class
+            new_value = super( TriangleStaggeredBlendStrategy, self ).blend_values( 
+                curve, current_idx, current_value, target_value, target_tangents, adjusted_blend
+            )[0]
+
+            # Calculate tangents with auto ease
+            new_tangents = self._blend_tangents_with_auto_ease( 
+                curve, current_idx, current_value, new_value, target_tangents,
+                abs( adjusted_blend )
+            )
+
+            if self.debug:
+                print( "Normalized distance: {0:.3f}".format( normalized_distance ) )
+                print( "Range portion: {0:.3f}".format( range_portion ) )
+                print( "Adjusted blend: {0:.3f}".format( adjusted_blend ) )
+
+            return new_value, new_tangents
+
+        except Exception as e:
+            print( "Error in staggered blend calculation: {0}".format( e ) )
+            return current_value, None
+
+    def _calculate_dynamic_range_portion( self, max_distance ):
+        """
+        Calculate range portion dynamically based on distance between keys.
+        
+        Args:
+            max_distance (float): Maximum distance between keys in frames
+            
+        Returns:
+            float: Calculated range portion between min_range_portion and max_range_portion
+        """
+        # Clamp distance to our threshold range
+        clamped_distance = max( self.distance_threshold_min,
+                             min( self.distance_threshold_max, max_distance ) )
+
+        # Calculate how far we are between min and max thresholds (0-1)
+        distance_ratio = ( clamped_distance - self.distance_threshold_min ) / \
+                        float( self.distance_threshold_max - self.distance_threshold_min )
+
+        # Invert ratio since we want higher values for smaller distances
+        distance_ratio = 1.0 - distance_ratio
+
+        # Smoothstep interpolation for a more natural transition
+        smoothed_ratio = distance_ratio * distance_ratio * ( 3 - 2 * distance_ratio )
+
+        # Lerp between min and max range portions
+        range_portion = ( self.min_range_portion +
+                        ( self.max_range_portion - self.min_range_portion ) * smoothed_ratio )
+
+        if self.debug:
+            print( "\n=== Dynamic Range Portion ===" )
+            print( "Max distance between keys: {0}".format( max_distance ) )
+            print( "Clamped distance: {0}".format( clamped_distance ) )
+            print( "Distance ratio: {0}".format( distance_ratio ) )
+            print( "Smoothed ratio: {0}".format( smoothed_ratio ) )
+            print( "Calculated range portion: {0}".format( range_portion ) )
+
+        return range_portion
+
+    def _calculate_stagger_timing( self, curve_data, current_idx, current_time, selected_keys, is_positive ):
+        """
+        Calculate timing values and dynamic easing for staggered movement.
+        Returns:
+            tuple: (normalized_distance, dynamic_ease_power, range_portion)
+        """
+        # Find the target anchor key
+        target_anchor_idx = None
+        for i in range( current_idx + ( 1 if is_positive else -1 ),
+                      len( curve_data.keys ) if is_positive else -1,
+                      1 if is_positive else -1 ):
+            if curve_data.keys[i] not in selected_keys:
+                target_anchor_idx = i
+                break
+
+        if target_anchor_idx is None:
+            return 0.0, self.base_ease, self.max_range_portion
+
+        target_time = curve_data.keys[target_anchor_idx]
+        max_distance = abs( max( selected_keys ) - min( selected_keys ) )
+
+        if max_distance == 0:
+            return 0.0, self.base_ease, self.max_range_portion
+
+        # Calculate distance from this key to target anchor
+        distance_to_target = abs( target_time - current_time )
+
+        # Calculate dynamic range portion based on max distance
+        range_portion = self._calculate_dynamic_range_portion( max_distance )
+
+        # Normalize distance: 0 = closest to target, 1 = furthest from target
+        normalized_distance = distance_to_target / max_distance
+
+        # Calculate dynamic ease power that increases with distance
+        dynamic_ease = self.base_ease + ( normalized_distance * self.ease_scale )
+
+        if self.debug:
+            print( "\n=== Stagger Timing ===" )
+            print( "Target time: {0}".format( target_time ) )
+            print( "Current time: {0}".format( current_time ) )
+            print( "Distance to target: {0}".format( distance_to_target ) )
+            print( "Max distance: {0}".format( max_distance ) )
+            print( "Normalized distance: {0}".format( normalized_distance ) )
+            print( "Dynamic ease power: {0}".format( dynamic_ease ) )
+            print( "Range portion: {0}".format( range_portion ) )
+
+        return normalized_distance, dynamic_ease, range_portion
+
+    def _blend_tangents_with_auto_ease( self, curve, current_idx, current_value, new_value, target_tangents, blend_factor ):
+        try:
+            # Calculate uniform angle and get deltas
+            uniform_angle, dt_prev, dt_next, dv_prev, dv_next = self._calculate_tangent_angles( 
+                curve, current_idx, new_value
+            )
+
+            # Calculate uniform weight
+            uniform_weight = self._calculate_tangent_weights( dt_prev, dt_next, dv_prev, dv_next )
+
+            # Blend to targets if needed
+            final_angle, final_weight = self._blend_to_targets( 
+                uniform_angle,
+                uniform_weight,
+                target_tangents,
+                blend_factor
+            )
+
+            # Use same values for in/out
+            return {
+                'in': ( final_angle, final_weight ),
+                'out': ( final_angle, final_weight )
+            }
+
+        except Exception as e:
+            print( "Error in auto ease tangent calculation: {0}".format( e ) )
+            return None
+
+    def _calculate_tangent_angles( self, curve, current_idx, new_value ):
+        curve_data = self.core.get_curve_data( curve )
+        keys = curve_data.keys
+
+        prev_time = keys[max( 0, current_idx - 1 )]
+        prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
+
+        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
+        next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
+
+        current_time = keys[current_idx]
+
+        dt_prev = current_time - prev_time
+        dt_next = next_time - current_time
+
+        # Weight based on time distance
+        prev_weight = dt_next / ( dt_prev + dt_next )
+        next_weight = dt_prev / ( dt_prev + dt_next )
+
+        # Calculate slopes instead of raw angles
+        prev_slope = ( new_value - prev_value ) / dt_prev if dt_prev != 0 else 0
+        next_slope = ( next_value - new_value ) / dt_next if dt_next != 0 else 0
+
+        # Weighted average of slopes
+        weighted_slope = prev_slope * prev_weight + next_slope * next_weight
+
+        # Convert to angle
+        uniform_angle = math.degrees( math.atan( weighted_slope ) )
+
+        return uniform_angle, dt_prev, dt_next, ( new_value - prev_value ), ( next_value - new_value )
+
+    def _calculate_tangent_weights( self, dt_prev, dt_next, dv_prev, dv_next ):
+        """Calculate weights based on time distances and value changes"""
+        # print( "\n=== Tangent Weight Calculation ===" )
+
+        base_weight_prev = dt_prev / 3.0
+        base_weight_next = dt_next / 3.0
+        '''
+        print( "Base weights (1/3 rule):" )
+        print( "prev: {0:.3f}".format( base_weight_prev ) )
+        print( "next: {0:.3f}".format( base_weight_next ) )
+        '''
+        value_rate_prev = abs( dv_prev / dt_prev ) if dt_prev != 0 else 0
+        value_rate_next = abs( dv_next / dt_next ) if dt_next != 0 else 0
+        '''
+        print( "\nValue rates:" )
+        print( "prev: {0:.3f}".format( value_rate_prev ) )
+        print( "next: {0:.3f}".format( value_rate_next ) )
+        '''
+        if value_rate_prev > 1.0:
+            base_weight_prev *= 1.0 / math.sqrt( value_rate_prev )
+        if value_rate_next > 1.0:
+            base_weight_next *= 1.0 / math.sqrt( value_rate_next )
+
+        weight_prev = min( max( base_weight_prev, 0.1 ), 10.0 )
+        weight_next = min( max( base_weight_next, 0.1 ), 10.0 )
+        '''
+        print( "\nAdjusted weights:" )
+        print( "prev: {0:.3f}".format( weight_prev ) )
+        print( "next: {0:.3f}".format( weight_next ) )
+        '''
+        uniform_weight = ( weight_prev + weight_next ) / 2.0
+        # print( "Uniform weight: {0:.3f}".format( uniform_weight ) )
+
+        return uniform_weight
+
+    def _blend_to_targets( self, auto_angle, auto_weight, target_tangents, blend_progress ):
+        """Blend from auto tangents to target tangents"""
+        '''
+        print( "\n=== Target Blending ===" )
+        print( "Auto angle: {0:.3f} degrees".format( auto_angle ) )
+        print( "Auto weight: {0:.3f}".format( auto_weight ) )
+        print( "Target in angle: {0:.3f} degrees".format( target_tangents['in'][0] ) )
+        print( "Target in weight: {0:.3f}".format( target_tangents['in'][1] ) )
+        print( "Blend progress: {0:.3f}".format( blend_progress ) )
+        '''
+
+        if blend_progress >= self.tangent_transition_start:
+            local_blend = ( blend_progress - self.tangent_transition_start ) / ( 1.0 - self.tangent_transition_start )
+            local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
+
+            final_angle = self._blend_angles( auto_angle, target_tangents['in'][0], local_blend )
+            final_weight = auto_weight * ( 1 - local_blend ) + target_tangents['in'][1] * local_blend
+            '''
+            print( "\nBlending to targets:" )
+            print( "Local blend: {0:.3f}".format( local_blend ) )
+            print( "Final angle: {0:.3f} degrees".format( final_angle ) )
+            print( "Final weight: {0:.3f}".format( final_weight ) )
+            '''
+            return final_angle, final_weight
+
+        return auto_angle, auto_weight
