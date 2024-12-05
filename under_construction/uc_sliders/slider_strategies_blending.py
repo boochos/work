@@ -525,20 +525,65 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
     Keys closer to the target anchor begin blending sooner than those further away.
     """
 
+    # TODO: create a blend to a theoretical curve the extends tangent to the x value of the opposing anchor,
+    # TODO: cont. the opposing anchor points its tangent vertically to the position in y from the first anchor,
+    # TODO: cont. the targets for the blending keys are positions along this curve.. may not be as useful as this one
+    # TODO: create a dynamic tangent targets, ie auto behaviour, current behaviour has no relation to the curve shape
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
-        self.range_portion = 0.7  # Default value for how much of the range each key uses
         self.base_ease = 0.0  # Base easing power
-        self.ease_scale = 80.0  # How much distance affects easing power)
+        self.ease_scale = 80.0  # How much distance affects easing power
         self.debug = False
+
+        # Range portion parameters
+        self.min_range_portion = 0.3  # Minimum range portion for large distances
+        self.max_range_portion = 0.7  # Maximum range portion for small distances
+        self.distance_threshold_min = 3  # Frame distance where we use max_range_portion
+        self.distance_threshold_max = 100  # Frame distance where we use min_range_portion
+
+    def _calculate_dynamic_range_portion( self, max_distance ):
+        """
+        Calculate range portion dynamically based on distance between keys.
+        
+        Args:
+            max_distance (float): Maximum distance between keys in frames
+            
+        Returns:
+            float: Calculated range portion between min_range_portion and max_range_portion
+        """
+        # Clamp distance to our threshold range
+        clamped_distance = max( self.distance_threshold_min,
+                             min( self.distance_threshold_max, max_distance ) )
+
+        # Calculate how far we are between min and max thresholds (0-1)
+        distance_ratio = ( clamped_distance - self.distance_threshold_min ) / \
+                        float( self.distance_threshold_max - self.distance_threshold_min )
+
+        # Invert ratio since we want higher values for smaller distances
+        distance_ratio = 1.0 - distance_ratio
+
+        # Smoothstep interpolation for a more natural transition
+        smoothed_ratio = distance_ratio * distance_ratio * ( 3 - 2 * distance_ratio )
+
+        # Lerp between min and max range portions
+        range_portion = ( self.min_range_portion +
+                        ( self.max_range_portion - self.min_range_portion ) * smoothed_ratio )
+
+        if self.debug:
+            print( "\n=== Dynamic Range Portion ===" )
+            print( "Max distance between keys: {0}".format( max_distance ) )
+            print( "Clamped distance: {0}".format( clamped_distance ) )
+            print( "Distance ratio: {0}".format( distance_ratio ) )
+            print( "Smoothed ratio: {0}".format( smoothed_ratio ) )
+            print( "Calculated range portion: {0}".format( range_portion ) )
+
+        return range_portion
 
     def _calculate_stagger_timing( self, curve_data, current_idx, current_time, selected_keys, is_positive ):
         """
         Calculate timing values and dynamic easing for staggered movement.
         Returns:
-            tuple: (normalized_distance, dynamic_ease_power)
-            normalized_distance: 0 = closest to target, 1 = furthest from target
-            dynamic_ease_power: Stronger easing for keys further from target
+            tuple: (normalized_distance, dynamic_ease_power, range_portion)
         """
         # Find the target anchor key
         target_anchor_idx = None
@@ -550,33 +595,37 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
                 break
 
         if target_anchor_idx is None:
-            return 0.0, self.base_ease
+            return 0.0, self.base_ease, self.max_range_portion
 
         target_time = curve_data.keys[target_anchor_idx]
         max_distance = abs( max( selected_keys ) - min( selected_keys ) )
 
         if max_distance == 0:
-            return 0.0, self.base_ease
+            return 0.0, self.base_ease, self.max_range_portion
 
         # Calculate distance from this key to target anchor
         distance_to_target = abs( target_time - current_time )
+
+        # Calculate dynamic range portion based on max distance
+        range_portion = self._calculate_dynamic_range_portion( max_distance )
 
         # Normalize distance: 0 = closest to target, 1 = furthest from target
         normalized_distance = distance_to_target / max_distance
 
         # Calculate dynamic ease power that increases with distance
-        # Keys further from target get stronger easing
         dynamic_ease = self.base_ease + ( normalized_distance * self.ease_scale )
 
         if self.debug:
+            print( "\n=== Stagger Timing ===" )
             print( "Target time: {0}".format( target_time ) )
             print( "Current time: {0}".format( current_time ) )
             print( "Distance to target: {0}".format( distance_to_target ) )
             print( "Max distance: {0}".format( max_distance ) )
             print( "Normalized distance: {0}".format( normalized_distance ) )
             print( "Dynamic ease power: {0}".format( dynamic_ease ) )
+            print( "Range portion: {0}".format( range_portion ) )
 
-        return normalized_distance, dynamic_ease
+        return normalized_distance, dynamic_ease, range_portion
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         try:
@@ -592,14 +641,14 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
                 print( "\n=== Key {0} ===".format( current_time ) )
                 print( "Blend factor: {0}".format( blend_factor ) )
 
-            # Get timing and easing values
-            normalized_distance, dynamic_ease = self._calculate_stagger_timing( 
+            # Get timing and easing values, now including dynamic range_portion
+            normalized_distance, dynamic_ease, range_portion = self._calculate_stagger_timing( 
                 curve_data, current_idx, current_time, selected_keys, is_positive
             )
 
-            # Calculate when this key should start/end moving
-            start = normalized_distance * ( 1.0 - self.range_portion )
-            range_end = start + self.range_portion
+            # Calculate when this key should start/end moving using dynamic range_portion
+            start = normalized_distance * ( 1.0 - range_portion )
+            range_end = start + range_portion
 
             abs_blend = abs( blend_factor )
 
@@ -610,7 +659,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
                 adjusted_blend = 1.0 if blend_factor > 0 else -1.0
             else:
                 # Calculate local progress within this key's range
-                local_progress = ( abs_blend - start ) / self.range_portion
+                local_progress = ( abs_blend - start ) / range_portion
                 # Convert ease in/out circular
                 if local_progress < 0.5:
                     eased_progress = 4.0 * pow( local_progress, 3 )
@@ -624,7 +673,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
                 print( "Dynamic ease power: {0:.3f}".format( dynamic_ease ) )
                 print( "Start: {0:.3f}".format( start ) )
                 print( "Range end: {0:.3f}".format( range_end ) )
-                print( "Local progress: {0:.3f}".format( local_progress if 'local_progress' in locals() else 0 ) )
+                print( "Local progress: {0:.3f}".format( 
+                    local_progress if 'local_progress' in locals() else 0 ) )
                 print( "Adjusted blend: {0:.3f}".format( adjusted_blend ) )
 
             return super( TriangleStaggeredBlendStrategy, self ).blend_values( 
@@ -635,17 +685,15 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             print( "Error in staggered blend calculation: {0}".format( e ) )
             return current_value, None
 
-    def set_range_portion( self, value ):
-        """Set how much of the slider range each key uses (0.1-1.0)"""
-        self.range_portion = max( 0.1, min( 1.0, value ) )
+    def set_range_portion_limits( self, min_val, max_val ):
+        """Set the minimum and maximum range portion values"""
+        self.min_range_portion = max( 0.1, min( 0.5, min_val ) )
+        self.max_range_portion = max( 0.5, min( 1.0, max_val ) )
 
-    def set_base_ease( self, value ):
-        """Set the base easing power before distance scaling"""
-        self.base_ease = max( 1.0, value )
-
-    def set_ease_scale( self, value ):
-        """Set how much distance affects easing power"""
-        self.ease_scale = max( 0.0, value )
+    def set_distance_thresholds( self, min_frames, max_frames ):
+        """Set the frame distance thresholds for range portion calculation"""
+        self.distance_threshold_min = max( 1, min_frames )
+        self.distance_threshold_max = max( min_frames + 1, max_frames )
 
 
 class RateBasedBlendStrategy( BlendStrategy ):
