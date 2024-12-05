@@ -527,84 +527,101 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
-        self.range_portion = 0.9  # Default value for how much of the range each key uses
-        self.ease_power = 1.0  # Default ease out power (1.0 = linear, higher = stronger ease)
+        self.range_portion = 1.0  # Default value for how much of the range each key uses
+        self.base_ease = 1.0  # Base easing power
+        self.ease_scale = 0.0  # How much distance affects easing power)
         self.debug = False
 
-    def _ease_in( self, x ):
+    def _calculate_stagger_timing( self, curve_data, current_idx, current_time, selected_keys, is_positive ):
         """
-        Apply ease in - starts slow and builds up speed.
-        Args:
-            x: Raw progress value (0-1)
+        Calculate timing values and dynamic easing for staggered movement.
         Returns:
-            Eased value that starts slow and accelerates
+            tuple: (normalized_distance, dynamic_ease_power)
+            normalized_distance: 0 = closest to target, 1 = furthest from target
+            dynamic_ease_power: Stronger easing for keys further from target
         """
-        if x <= 0.0:
-            return 0.0
-        if x >= 1.0:
-            return 1.0
+        # Find the target anchor key
+        target_anchor_idx = None
+        for i in range( current_idx + ( 1 if is_positive else -1 ),
+                      len( curve_data.keys ) if is_positive else -1,
+                      1 if is_positive else -1 ):
+            if curve_data.keys[i] not in selected_keys:
+                target_anchor_idx = i
+                break
 
-        # Ease in - raises x to the power, creating slow start
-        return pow( x, self.ease_power )
+        if target_anchor_idx is None:
+            return 0.0, self.base_ease
+
+        target_time = curve_data.keys[target_anchor_idx]
+        max_distance = abs( max( selected_keys ) - min( selected_keys ) )
+
+        if max_distance == 0:
+            return 0.0, self.base_ease
+
+        # Calculate distance from this key to target anchor
+        distance_to_target = abs( target_time - current_time )
+
+        # Normalize distance: 0 = closest to target, 1 = furthest from target
+        normalized_distance = distance_to_target / max_distance
+
+        # Calculate dynamic ease power that increases with distance
+        # Keys further from target get stronger easing
+        dynamic_ease = self.base_ease + ( normalized_distance * self.ease_scale )
+
+        if self.debug:
+            print( "Target time: {0}".format( target_time ) )
+            print( "Current time: {0}".format( current_time ) )
+            print( "Distance to target: {0}".format( distance_to_target ) )
+            print( "Max distance: {0}".format( max_distance ) )
+            print( "Normalized distance: {0}".format( normalized_distance ) )
+            print( "Dynamic ease power: {0}".format( dynamic_ease ) )
+
+        return normalized_distance, dynamic_ease
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         try:
             curve_data = self.core.get_curve_data( curve )
-            if not curve_data: return current_value, None
+            if not curve_data:
+                return current_value, None
 
             selected_keys = self.core.get_selected_keys( curve )
             current_time = curve_data.keys[current_idx]
-            print( "\n=== Key {0} ===".format( current_time ) )
-            print( "Blend factor: {0}".format( blend_factor ) )
-
-            # Find target anchor
             is_positive = blend_factor >= 0
-            target_anchor_idx = None
-            for i in range( current_idx + ( 1 if is_positive else -1 ),
-                          len( curve_data.keys ) if is_positive else -1,
-                          1 if is_positive else -1 ):
-                if curve_data.keys[i] not in selected_keys:
-                    target_anchor_idx = i
-                    break
 
-            if target_anchor_idx is None: return current_value, None
-            target_time = curve_data.keys[target_anchor_idx]
+            if self.debug:
+                print( "\n=== Key {0} ===".format( current_time ) )
+                print( "Blend factor: {0}".format( blend_factor ) )
 
-            # Calculate distance from target key along X axis
-            distance_to_target = abs( target_time - current_time )
-            # Get the maximum possible distance for normalization
-            max_distance = abs( max( selected_keys ) - min( selected_keys ) )
+            # Get timing and easing values
+            normalized_distance, dynamic_ease = self._calculate_stagger_timing( 
+                curve_data, current_idx, current_time, selected_keys, is_positive
+            )
 
-            if max_distance == 0: return current_value, None
-
-            # Square the distance ratio to get exponential scaling
-            distance_ratio = pow( distance_to_target / max_distance, 2 )
-            dynamic_ease_power = self.ease_power * ( 1.0 + 10.0 * distance_ratio )
-
-            print( "Distance to target: {0}".format( distance_to_target ) )
-            print( "Distance ratio: {0}".format( distance_ratio ) )
-            print( "Dynamic ease power: {0}".format( dynamic_ease_power ) )
+            # Calculate when this key should start/end moving
+            start = normalized_distance * ( 1.0 - self.range_portion )
+            range_end = start + self.range_portion
 
             abs_blend = abs( blend_factor )
 
-            # Calculate staggered timing as before
-            if is_positive:
-                relative_distance = ( max( selected_keys ) - current_time ) / max_distance
-            else:
-                relative_distance = ( current_time - min( selected_keys ) ) / max_distance
-
-            start = relative_distance * ( 1.0 - self.range_portion )
-            range_end = start + self.range_portion
-
+            # Determine blend amount based on position in range
             if abs_blend <= start:
                 adjusted_blend = 0.0
             elif abs_blend >= range_end:
                 adjusted_blend = 1.0 if blend_factor > 0 else -1.0
             else:
+                # Calculate local progress within this key's range
                 local_progress = ( abs_blend - start ) / self.range_portion
-                # Use distance-based dynamic ease power
-                eased_progress = pow( local_progress, dynamic_ease_power )
+                # Apply dynamic easing
+                eased_progress = pow( local_progress, dynamic_ease )
                 adjusted_blend = eased_progress if blend_factor > 0 else -eased_progress
+
+            if self.debug:
+                print( "Normalized distance: {0:.3f}".format( normalized_distance ) )
+                print( "Dynamic ease power: {0:.3f}".format( dynamic_ease ) )
+                print( "Start: {0:.3f}".format( start ) )
+                print( "Range end: {0:.3f}".format( range_end ) )
+                print( "Local progress: {0:.3f}".format( local_progress if 'local_progress' in locals() else 0 ) )
+                print( "Adjusted blend: {0:.3f}".format( adjusted_blend ) )
 
             return super( TriangleStaggeredBlendStrategy, self ).blend_values( 
                 curve, current_idx, current_value, target_value, target_tangents, adjusted_blend
@@ -618,13 +635,13 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         """Set how much of the slider range each key uses (0.1-1.0)"""
         self.range_portion = max( 0.1, min( 1.0, value ) )
 
-    def set_ease_power( self, value ):
-        """
-        Set the power of the ease in effect.
-        Args:
-            value: Power value (1.0 = linear, higher values = stronger ease)
-        """
-        self.ease_power = max( 1.0, value )
+    def set_base_ease( self, value ):
+        """Set the base easing power before distance scaling"""
+        self.base_ease = max( 1.0, value )
+
+    def set_ease_scale( self, value ):
+        """Set how much distance affects easing power"""
+        self.ease_scale = max( 0.0, value )
 
 
 class RateBasedBlendStrategy( BlendStrategy ):
