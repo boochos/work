@@ -527,8 +527,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
-        self.range_portion = 0.6  # Default value for how much of the range each key uses
-        self.ease_power = 2.0  # Default ease out power (1.0 = linear, higher = stronger ease)
+        self.range_portion = 0.9  # Default value for how much of the range each key uses
+        self.ease_power = 1.0  # Default ease out power (1.0 = linear, higher = stronger ease)
         self.debug = False
 
     def _ease_in( self, x ):
@@ -557,43 +557,44 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             print( "\n=== Key {0} ===".format( current_time ) )
             print( "Blend factor: {0}".format( blend_factor ) )
 
+            # Find target anchor
             is_positive = blend_factor >= 0
             target_anchor_idx = None
             for i in range( current_idx + ( 1 if is_positive else -1 ),
-                         len( curve_data.keys ) if is_positive else -1,
-                         1 if is_positive else -1 ):
+                          len( curve_data.keys ) if is_positive else -1,
+                          1 if is_positive else -1 ):
                 if curve_data.keys[i] not in selected_keys:
                     target_anchor_idx = i
                     break
 
             if target_anchor_idx is None: return current_value, None
             target_time = curve_data.keys[target_anchor_idx]
-            print( "Target time: {0}".format( target_time ) )
 
-            # Calculate position within selection range
-            min_time = min( selected_keys )
-            max_time = max( selected_keys )
-            key_range = max_time - min_time
+            # Calculate distance from target key along X axis
+            distance_to_target = abs( target_time - current_time )
+            # Get the maximum possible distance for normalization
+            max_distance = abs( max( selected_keys ) - min( selected_keys ) )
 
-            if key_range == 0: return current_value, None
+            if max_distance == 0: return current_value, None
 
-            if is_positive:
-                relative_distance = ( max_time - current_time ) / key_range
-            else:
-                relative_distance = ( current_time - min_time ) / key_range
-            start = relative_distance * ( 1.0 - self.range_portion )
-            range_end = start + self.range_portion
+            # Square the distance ratio to get exponential scaling
+            distance_ratio = pow( distance_to_target / max_distance, 2 )
+            dynamic_ease_power = self.ease_power * ( 1.0 + 10.0 * distance_ratio )
 
-            print( "Current time: {0}".format( current_time ) )
-            print( "Min time: {0}".format( min_time ) )
-            print( "Max time: {0}".format( max_time ) )
-            print( "Key range: {0}".format( key_range ) )
-            print( "Rel distance: {0}".format( relative_distance ) )
-            print( "Start: {0}".format( start ) )
-            print( "End: {0}".format( range_end ) )
+            print( "Distance to target: {0}".format( distance_to_target ) )
+            print( "Distance ratio: {0}".format( distance_ratio ) )
+            print( "Dynamic ease power: {0}".format( dynamic_ease_power ) )
 
             abs_blend = abs( blend_factor )
-            print( "Abs blend: {0}".format( abs_blend ) )
+
+            # Calculate staggered timing as before
+            if is_positive:
+                relative_distance = ( max( selected_keys ) - current_time ) / max_distance
+            else:
+                relative_distance = ( current_time - min( selected_keys ) ) / max_distance
+
+            start = relative_distance * ( 1.0 - self.range_portion )
+            range_end = start + self.range_portion
 
             if abs_blend <= start:
                 adjusted_blend = 0.0
@@ -601,10 +602,9 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
                 adjusted_blend = 1.0 if blend_factor > 0 else -1.0
             else:
                 local_progress = ( abs_blend - start ) / self.range_portion
-                eased_progress = self._ease_in( local_progress )
+                # Use distance-based dynamic ease power
+                eased_progress = pow( local_progress, dynamic_ease_power )
                 adjusted_blend = eased_progress if blend_factor > 0 else -eased_progress
-
-            print( "Adjusted blend: {0}".format( adjusted_blend ) )
 
             return super( TriangleStaggeredBlendStrategy, self ).blend_values( 
                 curve, current_idx, current_value, target_value, target_tangents, adjusted_blend
