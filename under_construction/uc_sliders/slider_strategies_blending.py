@@ -835,14 +835,19 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         # Auto tangent parameters
         self.transition_to_auto_end = 0.05  # Point where we finish blending to auto tangents
-        self.transition_to_target_start = 0.90  # Point where we start blending to target tangents
+        self.transition_to_target_start = 0.99  # Point where we start blending to target tangents
 
         # Set auto tangent behavior
         # self.auto_tangent_behavior = AutoSmoothBehavior()
         # self.auto_tangent_behavior = AutoCatmullRomBehavior()
-        self.auto_tangent_behavior = AutoFlattenedBehavior()
-        # self.auto_tangent_behavior = AutoEaseBehavior()
+        # self.auto_tangent_behavior = AutoFlattenedBehavior()
+        self.auto_tangent_behavior = AutoEaseBehavior()
 
+        # TODO: gloablly try to integrate buffer curve snapshot before editing
+        # TODO: doesnt pick up non selected key
+        # TODO: matching to parallel angle to quickly, and doesnt seem to match in some instances
+        # TODO: odd behaviour when first key isnt near the anchor
+        # TODO: tangent calc isnt right. investigate running data.
         # TODO: anchor should reach weight the same time as the first key hits its target, not at the end of the blend
         # TODO: track down how weights are set and make sure they blend into targets and arent altered by the auto tangent class, which is wrong
         # TODO: dont use uniform tangents from auto class unless theyre not uniform and based on 1/3 rule. weights should mostly come from targets
