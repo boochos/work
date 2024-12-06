@@ -837,6 +837,12 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self.transition_to_auto_end = 0.05  # Point where we finish blending to auto tangents
         self.transition_to_target_start = 0.90  # Point where we start blending to target tangents
 
+        # Set auto tangent behavior
+        # self.auto_tangent_behavior = AutoSmoothBehavior()
+        # self.auto_tangent_behavior = AutoCatmullRomBehavior()
+        self.auto_tangent_behavior = AutoFlattenedBehavior()
+        # self.auto_tangent_behavior = AutoEaseBehavior()
+
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         try:
             curve_data = self.core.get_curve_data( curve )
@@ -987,50 +993,35 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         return normalized_distance, dynamic_ease, range_portion
 
     def _blend_tangents_with_auto_ease( self, curve, current_idx, current_value, new_value, target_tangents, blend_factor ):
-        """
-        Calculate tangents with auto ease behavior, smoothly transitioning between:
-        1. Initial tangents -> Auto tangents (first 10%)
-        2. Auto tangents (10%-90%) 
-        3. Auto tangents -> Target tangents (final 10%)
-        """
         try:
             curve_data = self.core.get_curve_data( curve )
+            if not curve_data:
+                return None
 
-            # Get initial tangents
-            initial_angle = curve_data.tangents['in_angles'][current_idx]
-            initial_weight = curve_data.tangents['in_weights'][current_idx]
+            # Get blended in/out auto tangents
+            ( auto_in_angle, auto_in_weight ), ( auto_out_angle, auto_out_weight ) = \
+                self._blend_to_auto_tangents( curve, curve_data, current_idx, new_value, blend_factor )
 
-            # Calculate auto tangents
-            uniform_angle, dt_prev, dt_next, dv_prev, dv_next = self._calculate_tangent_angles( 
-                curve, current_idx, new_value )
-            uniform_weight = self._calculate_tangent_weights( dt_prev, dt_next, dv_prev, dv_next )
-
-            # Blend to auto tangents during first 10%
-            if blend_factor <= self.transition_to_auto_end:
-                local_blend = blend_factor / self.transition_to_auto_end
-                # Smooth step interpolation
-                local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
-
-                final_angle = self._blend_angles( initial_angle, uniform_angle, local_blend )
-                final_weight = initial_weight * ( 1 - local_blend ) + uniform_weight * local_blend
-
-            # Use auto tangents between 10% and 90%
-            elif blend_factor < self.transition_to_target_start:
-                final_angle = uniform_angle
-                final_weight = uniform_weight
-
-            # Blend to target tangents in final 10%
-            else:
+            # Handle final target blend
+            if blend_factor >= self.transition_to_target_start:
                 local_blend = ( blend_factor - self.transition_to_target_start ) / ( 1.0 - self.transition_to_target_start )
                 local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
 
-                final_angle = self._blend_angles( uniform_angle, target_tangents['in'][0], local_blend )
-                final_weight = uniform_weight * ( 1 - local_blend ) + target_tangents['in'][1] * local_blend
+                final_in_angle = self._blend_angles( auto_in_angle, target_tangents['in'][0], local_blend )
+                final_in_weight = auto_in_weight * ( 1 - local_blend ) + target_tangents['in'][1] * local_blend
 
-            # Use same values for in/out tangents
+                final_out_angle = self._blend_angles( auto_out_angle, target_tangents['out'][0], local_blend )
+                final_out_weight = auto_out_weight * ( 1 - local_blend ) + target_tangents['out'][1] * local_blend
+
+            else:
+                final_in_angle = auto_in_angle
+                final_in_weight = auto_in_weight
+                final_out_angle = auto_out_angle
+                final_out_weight = auto_out_weight
+
             return {
-                'in': ( final_angle, final_weight ),
-                'out': ( final_angle, final_weight )
+                'in': ( final_in_angle, final_in_weight ),
+                'out': ( final_out_angle, final_out_weight )
             }
 
         except Exception as e:
@@ -1133,6 +1124,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
     def _blend_to_auto_tangents( self, curve, curve_data, current_idx, new_value, blend_progress ):
         """
         Blend from initial tangents to auto-calculated tangents during the first portion of motion.
+        Also handles blending in/out tangents to match each other during this transition.
         
         Args:
             curve: The animation curve
@@ -1142,16 +1134,17 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             blend_progress: Current blend progress (0-1)
             
         Returns:
-            tuple: (blended_angle, blended_weight)
+            tuple: ((in_angle, in_weight), (out_angle, out_weight))
         """
-        # Get initial tangents
-        initial_angle = curve_data.tangents['in_angles'][current_idx]
-        initial_weight = curve_data.tangents['in_weights'][current_idx]
+        # Get initial in/out tangents separately
+        initial_in_angle = curve_data.tangents['in_angles'][current_idx]
+        initial_in_weight = curve_data.tangents['in_weights'][current_idx]
+        initial_out_angle = curve_data.tangents['out_angles'][current_idx]
+        initial_out_weight = curve_data.tangents['out_weights'][current_idx]
 
-        # Calculate auto tangents
-        uniform_angle, dt_prev, dt_next, dv_prev, dv_next = self._calculate_tangent_angles( 
-            curve, current_idx, new_value )
-        uniform_weight = self._calculate_tangent_weights( dt_prev, dt_next, dv_prev, dv_next )
+        # Calculate auto tangents using current behavior
+        uniform_angle, uniform_weight = self.auto_tangent_behavior.calculate_tangents( 
+            curve, current_idx, new_value, curve_data )
 
         # Blend during first portion
         if blend_progress <= self.transition_to_auto_end:
@@ -1159,8 +1152,281 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             # Smooth step interpolation
             local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
 
-            final_angle = self._blend_angles( initial_angle, uniform_angle, local_blend )
-            final_weight = initial_weight * ( 1 - local_blend ) + uniform_weight * local_blend
-            return final_angle, final_weight
+            # Blend in tangents from initial to auto
+            in_angle = self._blend_angles( initial_in_angle, uniform_angle, local_blend )
+            in_weight = initial_in_weight * ( 1 - local_blend ) + uniform_weight * local_blend
+
+            # Blend out tangents from initial to auto
+            out_angle = self._blend_angles( initial_out_angle, uniform_angle, local_blend )
+            out_weight = initial_out_weight * ( 1 - local_blend ) + uniform_weight * local_blend
+
+            return ( in_angle, in_weight ), ( out_angle, out_weight )
+
+        # After transition, use uniform auto tangents
+        return ( uniform_angle, uniform_weight ), ( uniform_angle, uniform_weight )
+
+
+class AutoTangentBehavior( object ):
+    """Base class for auto tangent calculation behaviors"""
+
+    def __init__( self ):
+        # Common settings that could be adjusted
+        self.debug = False
+
+    def calculate_tangents( self, curve, current_idx, new_value, curve_data ):
+        """
+        Calculate auto tangents using this behavior.
+        
+        Args:
+            curve: The animation curve
+            current_idx: Index of current key
+            new_value: The new value being calculated
+            curve_data: The curve data object
+            
+        Returns:
+            tuple: (angle, weight) for the auto tangent
+        """
+        raise NotImplementedError
+
+
+class AutoSmoothBehavior( AutoTangentBehavior ):
+    """Maya-style auto smooth tangent behavior using weighted averaging of slopes"""
+
+    def calculate_tangents( self, curve, current_idx, new_value, curve_data ):
+        # Calculate angles and deltas
+        uniform_angle, dt_prev, dt_next, dv_prev, dv_next = self._calculate_tangent_angles( 
+            curve, current_idx, new_value, curve_data )
+
+        # Calculate weights
+        uniform_weight = self._calculate_tangent_weights( dt_prev, dt_next, dv_prev, dv_next )
 
         return uniform_angle, uniform_weight
+
+    def _calculate_tangent_angles( self, curve, current_idx, new_value, curve_data ):
+        """Calculate angles based on weighted average of surrounding slopes"""
+        keys = curve_data.keys
+
+        prev_time = keys[max( 0, current_idx - 1 )]
+        prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
+
+        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
+        next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
+
+        current_time = keys[current_idx]
+
+        dt_prev = current_time - prev_time
+        dt_next = next_time - current_time
+
+        # Weight based on time distance
+        prev_weight = dt_next / ( dt_prev + dt_next )
+        next_weight = dt_prev / ( dt_prev + dt_next )
+
+        # Calculate slopes instead of raw angles
+        prev_slope = ( new_value - prev_value ) / dt_prev if dt_prev != 0 else 0
+        next_slope = ( next_value - new_value ) / dt_next if dt_next != 0 else 0
+
+        # Weighted average of slopes
+        weighted_slope = prev_slope * prev_weight + next_slope * next_weight
+
+        # Convert to angle
+        uniform_angle = math.degrees( math.atan( weighted_slope ) )
+
+        return uniform_angle, dt_prev, dt_next, ( new_value - prev_value ), ( next_value - new_value )
+
+    def _calculate_tangent_weights( self, dt_prev, dt_next, dv_prev, dv_next ):
+        """Calculate weights based on time distances and value changes"""
+        base_weight_prev = dt_prev / 3.0
+        base_weight_next = dt_next / 3.0
+
+        value_rate_prev = abs( dv_prev / dt_prev ) if dt_prev != 0 else 0
+        value_rate_next = abs( dv_next / dt_next ) if dt_next != 0 else 0
+
+        if value_rate_prev > 1.0:
+            base_weight_prev *= 1.0 / math.sqrt( value_rate_prev )
+        if value_rate_next > 1.0:
+            base_weight_next *= 1.0 / math.sqrt( value_rate_next )
+
+        weight_prev = min( max( base_weight_prev, 0.1 ), 10.0 )
+        weight_next = min( max( base_weight_next, 0.1 ), 10.0 )
+
+        uniform_weight = ( weight_prev + weight_next ) / 2.0
+
+        return uniform_weight
+
+
+class AutoCatmullRomBehavior( AutoTangentBehavior ):
+    """
+    Catmull-Rom spline tangent behavior. 
+    Creates C1 continuous curves passing through keyframe points.
+    Uses surrounding points to determine slopes with tension parameter.
+    """
+
+    def __init__( self ):
+        super( AutoCatmullRomBehavior, self ).__init__()
+        self.tension = 0.0  # 0.5 is standard Catmull-Rom, 0.0 is tighter curves, 1.0 is looser
+
+    def calculate_tangents( self, curve, current_idx, new_value, curve_data ):
+        keys = curve_data.keys
+        num_keys = len( keys )
+
+        # Get surrounding key times and values, handling edge cases
+        if current_idx > 0:
+            prev_time = keys[current_idx - 1]
+            prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[current_idx - 1]
+        else:
+            # For first key, extrapolate previous point
+            prev_time = keys[0] - ( keys[1] - keys[0] )
+            prev_value = curve_data.values[0] - ( curve_data.values[1] - curve_data.values[0] )
+
+        current_time = keys[current_idx]
+
+        if current_idx < num_keys - 1:
+            next_time = keys[current_idx + 1]
+            next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[current_idx + 1]
+        else:
+            # For last key, extrapolate next point
+            next_time = keys[-1] + ( keys[-1] - keys[-2] )
+            next_value = curve_data.values[-1] + ( curve_data.values[-1] - curve_data.values[-2] )
+
+        # Calculate Catmull-Rom slope
+        dt_prev = current_time - prev_time
+        dt_next = next_time - current_time
+
+        if dt_prev == 0 or dt_next == 0:
+            return 0.0, 1.0  # Fallback for coincident keys
+
+        # Catmull-Rom slope calculation with tension parameter
+        slope = ( ( 1.0 - self.tension ) *
+                ( ( next_value - new_value ) / dt_next +
+                 ( new_value - prev_value ) / dt_prev ) / 2.0 )
+
+        # Convert slope to angle
+        angle = math.degrees( math.atan( slope ) )
+
+        # Calculate weight using standard 1/3 rule
+        weight = min( dt_prev, dt_next ) / 3.0
+
+        # Clamp weight to Maya's valid range
+        weight = min( max( weight, 0.1 ), 10.0 )
+
+        return angle, weight
+
+    def set_tension( self, value ):
+        """
+        Set the tension parameter for the Catmull-Rom spline.
+        
+        Args:
+            value (float): Tension value. 
+                          0.0 gives tighter curves
+                          0.5 is standard Catmull-Rom
+                          1.0 gives looser curves
+        """
+        self.tension = max( 0.0, min( 1.0, value ) )
+
+
+class AutoFlattenedBehavior( AutoTangentBehavior ):
+    """
+    Auto tangent behavior that calculates slopes similar to auto smooth
+    but flattens extreme slopes to reduce overshoot.
+    Higher flatten_factor = more flattening effect.
+    """
+
+    def __init__( self ):
+        super( AutoFlattenedBehavior, self ).__init__()
+        self.flatten_factor = 0.5  # 0.0-1.0, higher means more flattening
+
+    def calculate_tangents( self, curve, current_idx, new_value, curve_data ):
+        keys = curve_data.keys
+
+        # Get surrounding values
+        prev_time = keys[max( 0, current_idx - 1 )]
+        prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
+
+        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
+        next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
+
+        current_time = keys[current_idx]
+
+        dt_prev = current_time - prev_time
+        dt_next = next_time - current_time
+
+        if dt_prev == 0 or dt_next == 0:
+            return 0.0, 1.0
+
+        # Calculate slopes
+        prev_slope = ( new_value - prev_value ) / dt_prev
+        next_slope = ( next_value - new_value ) / dt_next
+
+        # Flatten extreme slopes
+        prev_slope *= ( 1.0 - ( self.flatten_factor * abs( prev_slope ) / ( 1.0 + abs( prev_slope ) ) ) )
+        next_slope *= ( 1.0 - ( self.flatten_factor * abs( next_slope ) / ( 1.0 + abs( next_slope ) ) ) )
+
+        # Weight based on time distance
+        prev_weight = dt_next / ( dt_prev + dt_next )
+        next_weight = dt_prev / ( dt_prev + dt_next )
+
+        # Weighted average of flattened slopes
+        avg_slope = prev_slope * prev_weight + next_slope * next_weight
+
+        angle = math.degrees( math.atan( avg_slope ) )
+        weight = min( dt_prev, dt_next ) / 3.0
+        weight = min( max( weight, 0.1 ), 10.0 )
+
+        return angle, weight
+
+
+class AutoEaseBehavior( AutoTangentBehavior ):
+    """
+    Auto tangent behavior that creates ease-in/out curves
+    with minimal overshoot by reducing tangent angles
+    near value extremes.
+    """
+
+    def __init__( self ):
+        super( AutoEaseBehavior, self ).__init__()
+        self.ease_strength = 0.1  # Controls how much to reduce angles
+
+    def calculate_tangents( self, curve, current_idx, new_value, curve_data ):
+        keys = curve_data.keys
+
+        # Get surrounding values
+        prev_time = keys[max( 0, current_idx - 1 )]
+        prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
+
+        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
+        next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
+
+        current_time = keys[current_idx]
+
+        dt_prev = current_time - prev_time
+        dt_next = next_time - current_time
+
+        if dt_prev == 0 or dt_next == 0:
+            return 0.0, 1.0
+
+        # Find if current point is at a local extreme
+        is_peak = ( new_value >= prev_value and new_value >= next_value )
+        is_valley = ( new_value <= prev_value and new_value <= next_value )
+
+        # Calculate basic slope
+        prev_slope = ( new_value - prev_value ) / dt_prev
+        next_slope = ( next_value - new_value ) / dt_next
+
+        # Reduce slopes near extremes
+        if is_peak or is_valley:
+            reduction = self.ease_strength
+            prev_slope *= ( 1.0 - reduction )
+            next_slope *= ( 1.0 - reduction )
+
+        # Weight based on time distance
+        prev_weight = dt_next / ( dt_prev + dt_next )
+        next_weight = dt_prev / ( dt_prev + dt_next )
+
+        # Weighted average of slopes
+        avg_slope = prev_slope * prev_weight + next_slope * next_weight
+
+        angle = math.degrees( math.atan( avg_slope ) )
+        weight = min( dt_prev, dt_next ) / 3.0
+        weight = min( max( weight, 0.1 ), 10.0 )
+
+        return angle, weight
