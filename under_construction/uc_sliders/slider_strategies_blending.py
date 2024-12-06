@@ -834,7 +834,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self.distance_threshold_max = 100
 
         # Auto tangent parameters
-        self.tangent_transition_start = 0.90  # Point where we start blending to target tangents
+        self.transition_to_auto_end = 0.05  # Point where we finish blending to auto tangents
+        self.transition_to_target_start = 0.90  # Point where we start blending to target tangents
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         try:
@@ -986,24 +987,47 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         return normalized_distance, dynamic_ease, range_portion
 
     def _blend_tangents_with_auto_ease( self, curve, current_idx, current_value, new_value, target_tangents, blend_factor ):
+        """
+        Calculate tangents with auto ease behavior, smoothly transitioning between:
+        1. Initial tangents -> Auto tangents (first 10%)
+        2. Auto tangents (10%-90%) 
+        3. Auto tangents -> Target tangents (final 10%)
+        """
         try:
-            # Calculate uniform angle and get deltas
-            uniform_angle, dt_prev, dt_next, dv_prev, dv_next = self._calculate_tangent_angles( 
-                curve, current_idx, new_value
-            )
+            curve_data = self.core.get_curve_data( curve )
 
-            # Calculate uniform weight
+            # Get initial tangents
+            initial_angle = curve_data.tangents['in_angles'][current_idx]
+            initial_weight = curve_data.tangents['in_weights'][current_idx]
+
+            # Calculate auto tangents
+            uniform_angle, dt_prev, dt_next, dv_prev, dv_next = self._calculate_tangent_angles( 
+                curve, current_idx, new_value )
             uniform_weight = self._calculate_tangent_weights( dt_prev, dt_next, dv_prev, dv_next )
 
-            # Blend to targets if needed
-            final_angle, final_weight = self._blend_to_targets( 
-                uniform_angle,
-                uniform_weight,
-                target_tangents,
-                blend_factor
-            )
+            # Blend to auto tangents during first 10%
+            if blend_factor <= self.transition_to_auto_end:
+                local_blend = blend_factor / self.transition_to_auto_end
+                # Smooth step interpolation
+                local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
 
-            # Use same values for in/out
+                final_angle = self._blend_angles( initial_angle, uniform_angle, local_blend )
+                final_weight = initial_weight * ( 1 - local_blend ) + uniform_weight * local_blend
+
+            # Use auto tangents between 10% and 90%
+            elif blend_factor < self.transition_to_target_start:
+                final_angle = uniform_angle
+                final_weight = uniform_weight
+
+            # Blend to target tangents in final 10%
+            else:
+                local_blend = ( blend_factor - self.transition_to_target_start ) / ( 1.0 - self.transition_to_target_start )
+                local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
+
+                final_angle = self._blend_angles( uniform_angle, target_tangents['in'][0], local_blend )
+                final_weight = uniform_weight * ( 1 - local_blend ) + target_tangents['in'][1] * local_blend
+
+            # Use same values for in/out tangents
             return {
                 'in': ( final_angle, final_weight ),
                 'out': ( final_angle, final_weight )
@@ -1105,3 +1129,38 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             return final_angle, final_weight
 
         return auto_angle, auto_weight
+
+    def _blend_to_auto_tangents( self, curve, curve_data, current_idx, new_value, blend_progress ):
+        """
+        Blend from initial tangents to auto-calculated tangents during the first portion of motion.
+        
+        Args:
+            curve: The animation curve
+            curve_data: Current curve data
+            current_idx: Index of current key
+            new_value: The new value being blended to
+            blend_progress: Current blend progress (0-1)
+            
+        Returns:
+            tuple: (blended_angle, blended_weight)
+        """
+        # Get initial tangents
+        initial_angle = curve_data.tangents['in_angles'][current_idx]
+        initial_weight = curve_data.tangents['in_weights'][current_idx]
+
+        # Calculate auto tangents
+        uniform_angle, dt_prev, dt_next, dv_prev, dv_next = self._calculate_tangent_angles( 
+            curve, current_idx, new_value )
+        uniform_weight = self._calculate_tangent_weights( dt_prev, dt_next, dv_prev, dv_next )
+
+        # Blend during first portion
+        if blend_progress <= self.transition_to_auto_end:
+            local_blend = blend_progress / self.transition_to_auto_end
+            # Smooth step interpolation
+            local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
+
+            final_angle = self._blend_angles( initial_angle, uniform_angle, local_blend )
+            final_weight = initial_weight * ( 1 - local_blend ) + uniform_weight * local_blend
+            return final_angle, final_weight
+
+        return uniform_angle, uniform_weight
