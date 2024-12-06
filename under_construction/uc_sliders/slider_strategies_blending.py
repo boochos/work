@@ -823,8 +823,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
-        self.base_ease = 0.0
-        self.ease_scale = 80.0
+        self.base_ease = 1.0
+        self.ease_scale = 0.0
         self.debug = False
 
         # Range portion parameters
@@ -842,6 +842,11 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         # self.auto_tangent_behavior = AutoCatmullRomBehavior()
         self.auto_tangent_behavior = AutoFlattenedBehavior()
         # self.auto_tangent_behavior = AutoEaseBehavior()
+
+        # TODO: anchor should reach weight the same time as the first key hits its target, not at the end of the blend
+        # TODO: track down how weights are set and make sure they blend into targets and arent altered by the auto tangent class, which is wrong
+        # TODO: dont use uniform tangents from auto class unless theyre not uniform and based on 1/3 rule. weights should mostly come from targets
+        # TODO: work in tangent weight rules from target class, preserve tangents when sliding in opposite direction and so on
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         try:
@@ -876,7 +881,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             else:
                 # Calculate local progress within this key's range
                 local_progress = ( abs_blend - start ) / range_portion
-                # Convert ease in/out circular
+                # easeInOutCubic
                 if local_progress < 0.5:
                     eased_progress = 4.0 * pow( local_progress, 3 )
                 else:
@@ -916,6 +921,11 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         Returns:
             float: Calculated range portion between min_range_portion and max_range_portion
         """
+        # TODO: this returns the same value no matter what, alaways maximum 0.7ish
+        # TODO: theres no input for what keys its operating on or how it relates to ditance from target
+
+        print( max_distance )
+
         # Clamp distance to our threshold range
         clamped_distance = max( self.distance_threshold_min,
                              min( self.distance_threshold_max, max_distance ) )
@@ -926,6 +936,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         # Invert ratio since we want higher values for smaller distances
         distance_ratio = 1.0 - distance_ratio
+        print( distance_ratio )
 
         # Smoothstep interpolation for a more natural transition
         smoothed_ratio = distance_ratio * distance_ratio * ( 3 - 2 * distance_ratio )
@@ -942,6 +953,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             print( "Smoothed ratio: {0}".format( smoothed_ratio ) )
             print( "Calculated range portion: {0}".format( range_portion ) )
 
+        print( "Calculated range portion: {0}".format( range_portion ) )
         return range_portion
 
     def _calculate_stagger_timing( self, curve_data, current_idx, current_time, selected_keys, is_positive ):
@@ -972,6 +984,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         distance_to_target = abs( target_time - current_time )
 
         # Calculate dynamic range portion based on max distance
+        # TODO: !!! FLAWED
         range_portion = self._calculate_dynamic_range_portion( max_distance )
 
         # Normalize distance: 0 = closest to target, 1 = furthest from target
