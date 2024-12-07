@@ -824,24 +824,24 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
         self.base_ease = 1.0
-        self.ease_scale = 0.0
+        self.ease_scale = 80.0
         self.debug = False
 
         # Range portion parameters
-        self.min_range_portion = 0.3
-        self.max_range_portion = 0.7
+        self.min_range_portion = 0.45
+        self.max_range_portion = 0.45
         self.distance_threshold_min = 3
         self.distance_threshold_max = 100
 
         # Auto tangent parameters
-        self.transition_to_auto_end = 0.05  # Point where we finish blending to auto tangents
-        self.transition_to_target_start = 0.99  # Point where we start blending to target tangents
+        # self.transition_to_auto_end = 0.05  # Point where we finish blending to auto tangents
+        # self.transition_to_target_start = 0.99  # Point where we start blending to target tangents
 
         # Set auto tangent behavior
         # self.auto_tangent_behavior = AutoSmoothBehavior()
-        # self.auto_tangent_behavior = AutoCatmullRomBehavior()
+        self.auto_tangent_behavior = AutoCatmullRomBehavior()
         # self.auto_tangent_behavior = AutoFlattenedBehavior()
-        self.auto_tangent_behavior = AutoEaseBehavior()
+        # self.auto_tangent_behavior = AutoEaseBehavior()
 
         # TODO: gloablly try to integrate buffer curve snapshot before editing
         # TODO: doesnt pick up non selected key
@@ -916,7 +916,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             print( "Error in staggered blend calculation: {0}".format( e ) )
             return current_value, None
 
-    def _calculate_dynamic_range_portion( self, max_distance ):
+    def _calculate_dynamic_range_portion( self, key_distance, max_distance ):
         """
         Calculate range portion dynamically based on distance between keys.
         
@@ -931,32 +931,40 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         print( max_distance )
 
-        # Clamp distance to our threshold range
-        clamped_distance = max( self.distance_threshold_min,
-                             min( self.distance_threshold_max, max_distance ) )
+        # Prevent division by zero
+        if max_distance == 0:
+            return self.min_range_portion
 
-        # Calculate how far we are between min and max thresholds (0-1)
-        distance_ratio = ( clamped_distance - self.distance_threshold_min ) / \
-                        float( self.distance_threshold_max - self.distance_threshold_min )
+        # Calculate relative distance (0-1)
+        # Keys closer to target = smaller ratio
+        distance_ratio = key_distance / max_distance
+        '''
+        print( "\nDebug:" )
+        print( "key_distance: {0}".format( key_distance ) )
+        print( "max_distance: {0}".format( max_distance ) )
+        print( "distance_ratio: {0}".format( distance_ratio ) )
+        '''
 
-        # Invert ratio since we want higher values for smaller distances
-        distance_ratio = 1.0 - distance_ratio
-        print( distance_ratio )
-
-        # Smoothstep interpolation for a more natural transition
+        # Smooth step interpolation for natural easing
         smoothed_ratio = distance_ratio * distance_ratio * ( 3 - 2 * distance_ratio )
+        smoothed_ratio = distance_ratio
 
-        # Lerp between min and max range portions
+        # Closer keys get smaller range portions, distant keys get larger portions
         range_portion = ( self.min_range_portion +
                         ( self.max_range_portion - self.min_range_portion ) * smoothed_ratio )
 
         if self.debug:
             print( "\n=== Dynamic Range Portion ===" )
             print( "Max distance between keys: {0}".format( max_distance ) )
-            print( "Clamped distance: {0}".format( clamped_distance ) )
             print( "Distance ratio: {0}".format( distance_ratio ) )
             print( "Smoothed ratio: {0}".format( smoothed_ratio ) )
             print( "Calculated range portion: {0}".format( range_portion ) )
+
+        # Ensure furthest key reaches max
+        '''
+        if abs( distance_ratio - 1.0 ) < 0.0001:
+            return self.max_range_portion
+            '''
 
         print( "Calculated range portion: {0}".format( range_portion ) )
         return range_portion
@@ -980,23 +988,27 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             return 0.0, self.base_ease, self.max_range_portion
 
         target_time = curve_data.keys[target_anchor_idx]
-        max_distance = abs( max( selected_keys ) - min( selected_keys ) )
 
-        if max_distance == 0:
-            return 0.0, self.base_ease, self.max_range_portion
+        # Calculate distances from each selected key to its target
+        key_distances = []
+        for key_time in selected_keys:
+            distance = abs( target_time - key_time )
+            key_distances.append( distance )
 
-        # Calculate distance from this key to target anchor
+        # Get max of actual distances
+        max_distance = max( key_distances )
+
+        # Calculate distance for current key
         distance_to_target = abs( target_time - current_time )
-
-        # Calculate dynamic range portion based on max distance
-        # TODO: !!! FLAWED
-        range_portion = self._calculate_dynamic_range_portion( max_distance )
 
         # Normalize distance: 0 = closest to target, 1 = furthest from target
         normalized_distance = distance_to_target / max_distance
 
         # Calculate dynamic ease power that increases with distance
         dynamic_ease = self.base_ease + ( normalized_distance * self.ease_scale )
+
+        # Calculate dynamic range portion using this key's actual distance
+        range_portion = self._calculate_dynamic_range_portion( distance_to_target, max_distance )
 
         if self.debug:
             print( "\n=== Stagger Timing ===" )
@@ -1351,7 +1363,7 @@ class AutoFlattenedBehavior( AutoTangentBehavior ):
 
     def __init__( self ):
         super( AutoFlattenedBehavior, self ).__init__()
-        self.flatten_factor = 0.5  # 0.0-1.0, higher means more flattening
+        self.flatten_factor = 0.7  # 0.0-1.0, higher means more flattening
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data ):
         keys = curve_data.keys
