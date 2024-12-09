@@ -642,6 +642,9 @@ def __AUTO_TANGENT_STRATEGIES__():
 
 class AutoTangentStrategy( object ):
     """Base class for auto tangent calculation behaviors"""
+    # TODO: implement weight calculation, should behave as good as mayas,
+    # TODO: cont. as anchor approaches y value of neighboring key, weight reduces to 1/3 rule, pins weight at y value
+    # TODO: non-weighted tangent should start flattening when control point of tangent meets the y value of a neighbhouring key
 
     def __init__( self, core ):
         # Common settings that could be adjusted
@@ -699,23 +702,23 @@ class AutoSmoothStrategy( AutoTangentStrategy ):
             if is_first_selected:
                 prev_time = all_keys[left_anchor_idx]
                 prev_value = curve_data.values[left_anchor_idx]
-                print( "Key {0}: using time {1} (anchor)".format( all_keys[current_idx], prev_time ) )
+                # print( "Key {0}: using time {1} (anchor)".format( all_keys[current_idx], prev_time ) )
             else:
                 prev_time = all_keys[max( 0, current_idx - 1 )]
                 prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
                             else curve_data.values[max( 0, current_idx - 1 )] )
-                print( "Key {0}: using time {1}".format( all_keys[current_idx], prev_time ) )
+                # print( "Key {0}: using time {1}".format( all_keys[current_idx], prev_time ) )
 
             # Get next key/value
             if is_last_selected:
                 next_time = all_keys[right_anchor_idx]
                 next_value = curve_data.values[right_anchor_idx]
-                print( "and {0} (anchor)".format( next_time ) )
+                # print( "and {0} (anchor)".format( next_time ) )
             else:
                 next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
                 next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
                             else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
-                print( "and {0}".format( next_time ) )
+                # print( "and {0}".format( next_time ) )
 
             dt_prev = all_keys[current_idx] - prev_time
             dt_next = next_time - all_keys[current_idx]
@@ -805,23 +808,6 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
     Creates C1 continuous curves passing through keyframe points.
     Uses surrounding points to determine slopes with tension parameter.
     """
-    """
-    # TODO: 
-    Where:
-    * A1 = left anchor
-    * K1, K2, K3 = blended keys
-    * A2 = right anchor
-    When blending toward A1 (negative):
-    * K1 should use A1 and K2
-    * K2 should use K1 and K3
-    * K3 should use K2 and A2
-    When blending toward A2 (positive):
-    * K1 should use A1 and K2
-    * K2 should use K1 and K3
-    * K3 should use A2 and K2
-    
-    # TODO: analyze what is happening in the original code. does it match this behaviour
-    """
 
     def __init__( self, core ):
         super( AutoCatmullRomStrategy, self ).__init__( core )
@@ -849,7 +835,7 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
                                 else curve_data.values[current_idx - 1] )
                     next_time = all_keys[right_anchor_idx]
                     next_value = curve_data.values[right_anchor_idx]
-                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
+                    # print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
                 else:
                     # Other keys (K1, K2) - use adjacent keys
                     prev_time = all_keys[max( 0, current_idx - 1 )]
@@ -858,7 +844,7 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
                     next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
                     next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
                                 else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
-                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
+                    # print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
             else:  # Blending toward left anchor (A1)
                 first_selected_idx = min( i for i, t in enumerate( all_keys ) if t in selected_keys )
                 if current_idx == first_selected_idx:
@@ -868,7 +854,7 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
                     next_time = all_keys[current_idx + 1]
                     next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
                                 else curve_data.values[current_idx + 1] )
-                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
+                    # print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
                 else:
                     # Other keys (K2, K3) - use adjacent keys
                     prev_time = all_keys[max( 0, current_idx - 1 )]
@@ -877,7 +863,7 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
                     next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
                     next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
                                 else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
-                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
+                    # print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
 
             # Calculate time intervals
             dt_prev = all_keys[current_idx] - prev_time
@@ -923,6 +909,9 @@ class AutoEaseStrategy( AutoTangentStrategy ):
     with minimal overshoot by reducing tangent angles
     near value extremes.
     """
+    # TODO: implement easing to flat strategy on this one in particular.
+    # TODO: tangents stay flat whe theyre a peak or valley.
+    # TODO: need to ease into flats via tangent control point meeting y value with approaching key
 
     def __init__( self, core ):
         super( AutoEaseStrategy, self ).__init__( core )
@@ -947,23 +936,23 @@ class AutoEaseStrategy( AutoTangentStrategy ):
             if is_first_selected:
                 prev_time = all_keys[left_anchor_idx]
                 prev_value = curve_data.values[left_anchor_idx]
-                print( "Key {0}: using time {1} (anchor)".format( all_keys[current_idx], prev_time ) )
+                # print( "Key {0}: using time {1} (anchor)".format( all_keys[current_idx], prev_time ) )
             else:
                 prev_time = all_keys[max( 0, current_idx - 1 )]
                 prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
                             else curve_data.values[max( 0, current_idx - 1 )] )
-                print( "Key {0}: using time {1}".format( all_keys[current_idx], prev_time ) )
+                # print( "Key {0}: using time {1}".format( all_keys[current_idx], prev_time ) )
 
             # Get next key/value
             if is_last_selected:
                 next_time = all_keys[right_anchor_idx]
                 next_value = curve_data.values[right_anchor_idx]
-                print( "and {0} (anchor)".format( next_time ) )
+                # print( "and {0} (anchor)".format( next_time ) )
             else:
                 next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
                 next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
                             else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
-                print( "and {0}".format( next_time ) )
+                # print( "and {0}".format( next_time ) )
 
             dt_prev = all_keys[current_idx] - prev_time
             dt_next = next_time - all_keys[current_idx]
@@ -1018,7 +1007,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self.ease_scale = 0.0
         self.debug = False
 
-        # Range portion parameters
+        # Range portion parameters, possibly make this more automated, less ditance = higher value, more ditance = smaller value
         self.min_range_portion = 0.45
         self.max_range_portion = 0.45
         # Local overrides for dynamic range calculation
@@ -1035,7 +1024,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         # Auto tangent parameters
         self.transition_to_auto_end = 0.025  # Point where we finish blending to auto tangents
-        self.transition_to_target_start = 1.0  # Point where we start blending to target tangents, 1.0 means stay auto
+        self.transition_to_target_start = 0.98  # Point where we start blending to target tangents, 1.0 means stay auto
 
         # Set auto tangent behavior
         # self.auto_tangent_behavior = AutoSmoothStrategy( core )
@@ -1334,8 +1323,6 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         Returns:
             float: Calculated range portion between min_range_portion and max_range_portion
         """
-        # TODO: this returns the same value no matter what, alaways maximum 0.7ish
-        # TODO: theres no input for what keys its operating on or how it relates to ditance from target
 
         # print( max_distance )
 
@@ -1484,183 +1471,3 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         if current_idx in self._cached_positions:
             print( "Cached Position: {0}".format( self._cached_positions[current_idx] ) )
-
-    '''
-    def _blend_tangents_with_auto_ease( self, curve, current_idx, current_value, new_value, target_tangents, blend_factor ):
-        try:
-            curve_data = self.core.get_curve_data( curve )
-            if not curve_data:
-                return None
-
-            # Get blended in/out auto tangents
-            ( auto_in_angle, auto_in_weight ), ( auto_out_angle, auto_out_weight ) = \
-                self._blend_to_auto_tangents( curve, curve_data, current_idx, new_value, blend_factor )
-
-            # Handle final target blend
-            if blend_factor >= self.transition_to_target_start:
-                local_blend = ( blend_factor - self.transition_to_target_start ) / ( 1.0 - self.transition_to_target_start )
-                local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
-
-                final_in_angle = self._blend_angles( auto_in_angle, target_tangents['in'][0], local_blend )
-                final_in_weight = auto_in_weight * ( 1 - local_blend ) + target_tangents['in'][1] * local_blend
-
-                final_out_angle = self._blend_angles( auto_out_angle, target_tangents['out'][0], local_blend )
-                final_out_weight = auto_out_weight * ( 1 - local_blend ) + target_tangents['out'][1] * local_blend
-
-            else:
-                final_in_angle = auto_in_angle
-                final_in_weight = auto_in_weight
-                final_out_angle = auto_out_angle
-                final_out_weight = auto_out_weight
-
-            return {
-                'in': ( final_in_angle, final_in_weight ),
-                'out': ( final_out_angle, final_out_weight )
-            }
-
-        except Exception as e:
-            print( "Error in auto ease tangent calculation: {0}".format( e ) )
-            return None
-    '''
-    '''
-    def _calculate_tangent_angles( self, curve, current_idx, new_value ):
-        curve_data = self.core.get_curve_data( curve )
-        keys = curve_data.keys
-
-        prev_time = keys[max( 0, current_idx - 1 )]
-        prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
-
-        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
-        next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
-
-        current_time = keys[current_idx]
-
-        dt_prev = current_time - prev_time
-        dt_next = next_time - current_time
-
-        # Weight based on time distance
-        prev_weight = dt_next / ( dt_prev + dt_next )
-        next_weight = dt_prev / ( dt_prev + dt_next )
-
-        # Calculate slopes instead of raw angles
-        prev_slope = ( new_value - prev_value ) / dt_prev if dt_prev != 0 else 0
-        next_slope = ( next_value - new_value ) / dt_next if dt_next != 0 else 0
-
-        # Weighted average of slopes
-        weighted_slope = prev_slope * prev_weight + next_slope * next_weight
-
-        # Convert to angle
-        uniform_angle = math.degrees( math.atan( weighted_slope ) )
-
-        return uniform_angle, dt_prev, dt_next, ( new_value - prev_value ), ( next_value - new_value )
-    '''
-    '''
-    def _calculate_tangent_weights( self, dt_prev, dt_next, dv_prev, dv_next ):
-        """Calculate weights based on time distances and value changes"""
-        # print( "\n=== Tangent Weight Calculation ===" )
-
-        base_weight_prev = dt_prev / 3.0
-        base_weight_next = dt_next / 3.0
-        """
-        print( "Base weights (1/3 rule):" )
-        print( "prev: {0:.3f}".format( base_weight_prev ) )
-        print( "next: {0:.3f}".format( base_weight_next ) )
-        """
-        value_rate_prev = abs( dv_prev / dt_prev ) if dt_prev != 0 else 0
-        value_rate_next = abs( dv_next / dt_next ) if dt_next != 0 else 0
-        """
-        print( "\nValue rates:" )
-        print( "prev: {0:.3f}".format( value_rate_prev ) )
-        print( "next: {0:.3f}".format( value_rate_next ) )
-        """
-        if value_rate_prev > 1.0:
-            base_weight_prev *= 1.0 / math.sqrt( value_rate_prev )
-        if value_rate_next > 1.0:
-            base_weight_next *= 1.0 / math.sqrt( value_rate_next )
-
-        weight_prev = min( max( base_weight_prev, 0.1 ), 10.0 )
-        weight_next = min( max( base_weight_next, 0.1 ), 10.0 )
-        """
-        print( "\nAdjusted weights:" )
-        print( "prev: {0:.3f}".format( weight_prev ) )
-        print( "next: {0:.3f}".format( weight_next ) )
-        """
-        uniform_weight = ( weight_prev + weight_next ) / 2.0
-        # print( "Uniform weight: {0:.3f}".format( uniform_weight ) )
-
-        return uniform_weight
-    '''
-    '''
-    def _blend_to_targets( self, auto_angle, auto_weight, target_tangents, blend_progress ):
-        """Blend from auto tangents to target tangents"""
-        """
-        print( "\n=== Target Blending ===" )
-        print( "Auto angle: {0:.3f} degrees".format( auto_angle ) )
-        print( "Auto weight: {0:.3f}".format( auto_weight ) )
-        print( "Target in angle: {0:.3f} degrees".format( target_tangents['in'][0] ) )
-        print( "Target in weight: {0:.3f}".format( target_tangents['in'][1] ) )
-        print( "Blend progress: {0:.3f}".format( blend_progress ) )
-        """
-
-        if blend_progress >= self.tangent_transition_start:
-            local_blend = ( blend_progress - self.tangent_transition_start ) / ( 1.0 - self.tangent_transition_start )
-            local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
-
-            final_angle = self._blend_angles( auto_angle, target_tangents['in'][0], local_blend )
-            final_weight = auto_weight * ( 1 - local_blend ) + target_tangents['in'][1] * local_blend
-            """
-            print( "\nBlending to targets:" )
-            print( "Local blend: {0:.3f}".format( local_blend ) )
-            print( "Final angle: {0:.3f} degrees".format( final_angle ) )
-            print( "Final weight: {0:.3f}".format( final_weight ) )
-            """
-            return final_angle, final_weight
-
-        return auto_angle, auto_weight
-    '''
-    '''
-    def _blend_to_auto_tangents( self, curve, curve_data, current_idx, new_value, blend_progress ):
-        """
-        Blend from initial tangents to auto-calculated tangents during the first portion of motion.
-        Also handles blending in/out tangents to match each other during this transition.
-        
-        Args:
-            curve: The animation curve
-            curve_data: Current curve data
-            current_idx: Index of current key
-            new_value: The new value being blended to
-            blend_progress: Current blend progress (0-1)
-            
-        Returns:
-            tuple: ((in_angle, in_weight), (out_angle, out_weight))
-        """
-        # Get initial in/out tangents separately
-        initial_in_angle = curve_data.tangents['in_angles'][current_idx]
-        initial_in_weight = curve_data.tangents['in_weights'][current_idx]
-        initial_out_angle = curve_data.tangents['out_angles'][current_idx]
-        initial_out_weight = curve_data.tangents['out_weights'][current_idx]
-
-        # Calculate auto tangents using current behavior
-        uniform_angle, uniform_weight = self.auto_tangent_behavior.calculate_tangents( 
-            curve, current_idx, new_value, curve_data )
-
-        # Blend during first portion
-        if blend_progress <= self.transition_to_auto_end:
-            local_blend = blend_progress / self.transition_to_auto_end
-            # Smooth step interpolation
-            local_blend = local_blend * local_blend * ( 3 - 2 * local_blend )
-
-            # Blend in tangents from initial to auto
-            in_angle = self._blend_angles( initial_in_angle, uniform_angle, local_blend )
-            in_weight = initial_in_weight * ( 1 - local_blend ) + uniform_weight * local_blend
-
-            # Blend out tangents from initial to auto
-            out_angle = self._blend_angles( initial_out_angle, uniform_angle, local_blend )
-            out_weight = initial_out_weight * ( 1 - local_blend ) + uniform_weight * local_blend
-
-            return ( in_angle, in_weight ), ( out_angle, out_weight )
-
-        # After transition, use uniform auto tangents
-        return ( uniform_angle, uniform_weight ), ( uniform_angle, uniform_weight )
-    '''
-
