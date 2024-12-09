@@ -663,49 +663,89 @@ class AutoTangentStrategy( object ):
         """
         raise NotImplementedError
 
+    def _find_anchor_keys( self, curve, current_idx ):
+        """Find surrounding non-selected keys to use as anchors"""
+        curve_data = self.core.get_curve_data( curve )
+        all_keys = curve_data.keys
+        selected_keys = self.core.get_selected_keys( curve )
+
+        prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
+                      if all_keys[i] not in selected_keys ), None )
+        next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
+                      if all_keys[i] not in selected_keys ), None )
+
+        return prev_key, next_key
+
 
 class AutoSmoothStrategy( AutoTangentStrategy ):
     """Maya-style auto smooth tangent behavior using weighted averaging of slopes"""
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
         """Calculate angles based on weighted average of surrounding slopes"""
-        keys = curve_data.keys
+        try:
+            all_keys = curve_data.keys
+            selected_keys = self.core.get_selected_keys( curve )
 
-        # Get previous key values, prioritizing cached positions
-        prev_time = keys[max( 0, current_idx - 1 )]
-        if cached_positions and current_idx - 1 in cached_positions:
-            prev_value = cached_positions[current_idx - 1]
-        else:
-            prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
+            # Find anchor keys
+            left_anchor_idx, right_anchor_idx = self._find_anchor_keys( curve, current_idx )
+            if left_anchor_idx is None or right_anchor_idx is None:
+                return 0.0, 1.0
 
-        # Get next key values
-        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
-        if cached_positions and current_idx + 1 in cached_positions:
-            next_value = cached_positions[current_idx + 1]
-        else:
-            next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
+            # Determine if this is first or last selected key
+            is_first_selected = current_idx == min( i for i, t in enumerate( all_keys ) if t in selected_keys )
+            is_last_selected = current_idx == max( i for i, t in enumerate( all_keys ) if t in selected_keys )
 
-        current_time = keys[current_idx]
+            # Get previous key/value
+            if is_first_selected:
+                prev_time = all_keys[left_anchor_idx]
+                prev_value = curve_data.values[left_anchor_idx]
+                print( "Key {0}: using time {1} (anchor)".format( all_keys[current_idx], prev_time ) )
+            else:
+                prev_time = all_keys[max( 0, current_idx - 1 )]
+                prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
+                            else curve_data.values[max( 0, current_idx - 1 )] )
+                print( "Key {0}: using time {1}".format( all_keys[current_idx], prev_time ) )
 
-        dt_prev = current_time - prev_time
-        dt_next = next_time - current_time
+            # Get next key/value
+            if is_last_selected:
+                next_time = all_keys[right_anchor_idx]
+                next_value = curve_data.values[right_anchor_idx]
+                print( "and {0} (anchor)".format( next_time ) )
+            else:
+                next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
+                next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
+                            else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
+                print( "and {0}".format( next_time ) )
 
-        # Weight based on time distance
-        prev_weight = dt_next / ( dt_prev + dt_next )
-        next_weight = dt_prev / ( dt_prev + dt_next )
+            dt_prev = all_keys[current_idx] - prev_time
+            dt_next = next_time - all_keys[current_idx]
 
-        # Calculate slopes instead of raw angles
-        prev_slope = ( new_value - prev_value ) / dt_prev if dt_prev != 0 else 0
-        next_slope = ( next_value - new_value ) / dt_next if dt_next != 0 else 0
+            if dt_prev == 0 or dt_next == 0:
+                return 0.0, 1.0
 
-        # Weighted average of slopes
-        weighted_slope = prev_slope * prev_weight + next_slope * next_weight
+            # Weight based on time distance
+            prev_weight = dt_next / ( dt_prev + dt_next )
+            next_weight = dt_prev / ( dt_prev + dt_next )
 
-        # Convert to angle
-        uniform_angle = math.degrees( math.atan( weighted_slope ) )
+            # Calculate slopes
+            prev_slope = ( new_value - prev_value ) / dt_prev if dt_prev != 0 else 0
+            next_slope = ( next_value - new_value ) / dt_next if dt_next != 0 else 0
 
-        return uniform_angle, self._calculate_tangent_weights( dt_prev, dt_next,
-            ( new_value - prev_value ), ( next_value - new_value ) )
+            # Weighted average of slopes
+            weighted_slope = prev_slope * prev_weight + next_slope * next_weight
+
+            # Convert to angle
+            uniform_angle = math.degrees( math.atan( weighted_slope ) )
+
+            # Calculate uniform weight using 1/3 rule
+            weight = min( dt_prev, dt_next ) / 3.0
+            weight = min( max( weight, 0.1 ), 10.0 )  # Clamp to Maya's valid range
+
+            return uniform_angle, weight
+
+        except Exception as e:
+            print( "Error calculating smooth tangents: {0}".format( e ) )
+            return 0.0, 1.0
 
     def _calculate_tangent_angles( self, curve, current_idx, new_value, curve_data ):
         """Calculate angles based on weighted average of surrounding slopes"""
@@ -788,66 +828,81 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
         self.tension = 0.0  # 0.5 is standard Catmull-Rom, 0.0 is tighter curves, 1.0 is looser
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
-        """
-        Calculate tangents using Catmull-Rom spline, using cached positions when available.
-        """
-        keys = curve_data.keys
-        num_keys = len( keys )
+        """Calculate tangents using Catmull-Rom spline with proper anchor handling"""
+        try:
+            all_keys = curve_data.keys
+            selected_keys = self.core.get_selected_keys( curve )
+            is_positive = self.core.current_blending_strategy == 'positive'
 
-        # Get surrounding key values, prioritizing cached positions
-        if current_idx > 0:
-            prev_time = keys[current_idx - 1]
-            if cached_positions and current_idx - 1 in cached_positions:
-                prev_value = cached_positions[current_idx - 1]
-            else:
-                prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[current_idx - 1]
-        else:
-            # For first key, extrapolate previous point, SHOULD USE ANCHOR AND NEIGHBHORING KEY
-            prev_time = keys[0] - ( keys[1] - keys[0] )
-            if cached_positions and 0 in cached_positions:
-                first_val = cached_positions[0]
-                second_val = cached_positions[1] if 1 in cached_positions else curve_data.values[1]
-                prev_value = first_val - ( second_val - first_val )
-            else:
-                prev_value = curve_data.values[0] - ( curve_data.values[1] - curve_data.values[0] )
+            # Find anchor keys
+            left_anchor_idx, right_anchor_idx = self._find_anchor_keys( curve, current_idx )
+            if left_anchor_idx is None or right_anchor_idx is None:
+                return 0.0, 1.0
 
-        current_time = keys[current_idx]
+            # Get the values for surrounding points based on blend direction
+            if is_positive:  # Blending toward right anchor (A2)
+                last_selected_idx = max( i for i, t in enumerate( all_keys ) if t in selected_keys )
+                if current_idx == last_selected_idx:
+                    # Last selected key (K3) - use A2 and K2
+                    prev_time = all_keys[current_idx - 1]
+                    prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
+                                else curve_data.values[current_idx - 1] )
+                    next_time = all_keys[right_anchor_idx]
+                    next_value = curve_data.values[right_anchor_idx]
+                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
+                else:
+                    # Other keys (K1, K2) - use adjacent keys
+                    prev_time = all_keys[max( 0, current_idx - 1 )]
+                    prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
+                                else curve_data.values[max( 0, current_idx - 1 )] )
+                    next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
+                    next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
+                                else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
+                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
+            else:  # Blending toward left anchor (A1)
+                first_selected_idx = min( i for i, t in enumerate( all_keys ) if t in selected_keys )
+                if current_idx == first_selected_idx:
+                    # First selected key (K1) - use A1 and K2
+                    prev_time = all_keys[left_anchor_idx]
+                    prev_value = curve_data.values[left_anchor_idx]
+                    next_time = all_keys[current_idx + 1]
+                    next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
+                                else curve_data.values[current_idx + 1] )
+                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
+                else:
+                    # Other keys (K2, K3) - use adjacent keys
+                    prev_time = all_keys[max( 0, current_idx - 1 )]
+                    prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
+                                else curve_data.values[max( 0, current_idx - 1 )] )
+                    next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
+                    next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
+                                else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
+                    print( "Key {0}: using time {1} and {2}".format( all_keys[current_idx], prev_time, next_time ) )
 
-        if current_idx < num_keys - 1:
-            next_time = keys[current_idx + 1]
-            if cached_positions and current_idx + 1 in cached_positions:
-                next_value = cached_positions[current_idx + 1]
-            else:
-                next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[current_idx + 1]
-        else:
-            # For last key, extrapolate next point, SHOULD USE ANCHOR AND NEIGHBHOURING KEY
-            next_time = keys[-1] + ( keys[-1] - keys[-2] )
-            if cached_positions and num_keys - 1 in cached_positions:
-                last_val = cached_positions[num_keys - 1]
-                second_last_val = cached_positions[num_keys - 2] if num_keys - 2 in cached_positions else curve_data.values[-2]
-                next_value = last_val + ( last_val - second_last_val )
-            else:
-                next_value = curve_data.values[-1] + ( curve_data.values[-1] - curve_data.values[-2] )
+            # Calculate time intervals
+            dt_prev = all_keys[current_idx] - prev_time
+            dt_next = next_time - all_keys[current_idx]
 
-        dt_prev = current_time - prev_time
-        dt_next = next_time - current_time
+            if dt_prev == 0 or dt_next == 0:
+                return 0.0, 1.0
 
-        if dt_prev == 0 or dt_next == 0:
-            return 0.0, 1.0  # Fallback for coincident keys
+            # Calculate Catmull-Rom slope with tension parameter
+            slope = ( ( 1.0 - self.tension ) *
+                    ( ( next_value - new_value ) / dt_next +
+                     ( new_value - prev_value ) / dt_prev ) / 2.0 )
 
-        # Calculate Catmull-Rom slope with tension parameter
-        slope = ( ( 1.0 - self.tension ) *
-                ( ( next_value - new_value ) / dt_next +
-                 ( new_value - prev_value ) / dt_prev ) / 2.0 )
+            # Convert slope to angle
+            angle = math.degrees( math.atan( slope ) )
 
-        # Convert slope to angle
-        angle = math.degrees( math.atan( slope ) )
+            # Calculate weight using standard 1/3 rule
+            weight = min( dt_prev, dt_next ) / 3.0
+            weight = min( max( weight, 0.1 ), 10.0 )  # Clamp to Maya's valid range
 
-        # Calculate weight using standard 1/3 rule
-        weight = min( dt_prev, dt_next ) / 3.0
-        weight = min( max( weight, 0.1 ), 10.0 )  # Clamp to Maya's valid range
+            return angle, weight
 
-        return angle, weight
+        except Exception as e:
+            print( "Error calculating Catmull-Rom tangents: {0}".format( e ) )
+            return 0.0, 1.0
 
     def set_tension( self, value ):
         """
@@ -861,68 +916,6 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
         """
         self.tension = max( 0.0, min( 1.0, value ) )
 
-    def _find_anchor_keys( self, curve, current_idx ):
-        pass
-
-
-class AutoFlattenedStrategy( AutoTangentStrategy ):
-    """
-    Auto tangent behavior that calculates slopes similar to auto smooth
-    but flattens extreme slopes to reduce overshoot.
-    Higher flatten_factor = more flattening effect.
-    """
-
-    def __init__( self, core ):
-        super( AutoFlattenedStrategy, self ).__init__( core )
-        self.flatten_factor = 0.7  # 0.0-1.0, higher means more flattening
-
-    def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
-        """Calculate tangents that flatten extreme slopes to reduce overshoot"""
-        keys = curve_data.keys
-
-        # Get previous key values, prioritizing cached positions
-        prev_time = keys[max( 0, current_idx - 1 )]
-        if cached_positions and current_idx - 1 in cached_positions:
-            prev_value = cached_positions[current_idx - 1]
-        else:
-            prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
-
-        # Get next key values
-        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
-        if cached_positions and current_idx + 1 in cached_positions:
-            next_value = cached_positions[current_idx + 1]
-        else:
-            next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
-
-        current_time = keys[current_idx]
-
-        dt_prev = current_time - prev_time
-        dt_next = next_time - current_time
-
-        if dt_prev == 0 or dt_next == 0:
-            return 0.0, 1.0
-
-        # Calculate slopes
-        prev_slope = ( new_value - prev_value ) / dt_prev
-        next_slope = ( next_value - new_value ) / dt_next
-
-        # Flatten extreme slopes
-        prev_slope *= ( 1.0 - ( self.flatten_factor * abs( prev_slope ) / ( 1.0 + abs( prev_slope ) ) ) )
-        next_slope *= ( 1.0 - ( self.flatten_factor * abs( next_slope ) / ( 1.0 + abs( next_slope ) ) ) )
-
-        # Weight based on time distance
-        prev_weight = dt_next / ( dt_prev + dt_next )
-        next_weight = dt_prev / ( dt_prev + dt_next )
-
-        # Weighted average of flattened slopes
-        avg_slope = prev_slope * prev_weight + next_slope * next_weight
-
-        angle = math.degrees( math.atan( avg_slope ) )
-        weight = min( dt_prev, dt_next ) / 3.0
-        weight = min( max( weight, 0.1 ), 10.0 )
-
-        return angle, weight
-
 
 class AutoEaseStrategy( AutoTangentStrategy ):
     """
@@ -933,60 +926,80 @@ class AutoEaseStrategy( AutoTangentStrategy ):
 
     def __init__( self, core ):
         super( AutoEaseStrategy, self ).__init__( core )
-        self.ease_strength = 0.1  # Controls how much to reduce angles
+        self.ease_strength = 1.0  # Controls how much to reduce angles
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
         """Calculate ease-in/out tangents with reduced angles near value extremes"""
-        keys = curve_data.keys
+        try:
+            all_keys = curve_data.keys
+            selected_keys = self.core.get_selected_keys( curve )
 
-        # Get previous key values, prioritizing cached positions
-        prev_time = keys[max( 0, current_idx - 1 )]
-        if cached_positions and current_idx - 1 in cached_positions:
-            prev_value = cached_positions[current_idx - 1]
-        else:
-            prev_value = curve_data.get_running_value( current_idx - 1 ) or curve_data.values[max( 0, current_idx - 1 )]
+            # Find anchor keys
+            left_anchor_idx, right_anchor_idx = self._find_anchor_keys( curve, current_idx )
+            if left_anchor_idx is None or right_anchor_idx is None:
+                return 0.0, 1.0
 
-        # Get next key values
-        next_time = keys[min( len( keys ) - 1, current_idx + 1 )]
-        if cached_positions and current_idx + 1 in cached_positions:
-            next_value = cached_positions[current_idx + 1]
-        else:
-            next_value = curve_data.get_running_value( current_idx + 1 ) or curve_data.values[min( len( keys ) - 1, current_idx + 1 )]
+            # Determine if this is first or last selected key
+            is_first_selected = current_idx == min( i for i, t in enumerate( all_keys ) if t in selected_keys )
+            is_last_selected = current_idx == max( i for i, t in enumerate( all_keys ) if t in selected_keys )
 
-        current_time = keys[current_idx]
+            # Get previous key/value
+            if is_first_selected:
+                prev_time = all_keys[left_anchor_idx]
+                prev_value = curve_data.values[left_anchor_idx]
+                print( "Key {0}: using time {1} (anchor)".format( all_keys[current_idx], prev_time ) )
+            else:
+                prev_time = all_keys[max( 0, current_idx - 1 )]
+                prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
+                            else curve_data.values[max( 0, current_idx - 1 )] )
+                print( "Key {0}: using time {1}".format( all_keys[current_idx], prev_time ) )
 
-        dt_prev = current_time - prev_time
-        dt_next = next_time - current_time
+            # Get next key/value
+            if is_last_selected:
+                next_time = all_keys[right_anchor_idx]
+                next_value = curve_data.values[right_anchor_idx]
+                print( "and {0} (anchor)".format( next_time ) )
+            else:
+                next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
+                next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
+                            else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
+                print( "and {0}".format( next_time ) )
 
-        if dt_prev == 0 or dt_next == 0:
+            dt_prev = all_keys[current_idx] - prev_time
+            dt_next = next_time - all_keys[current_idx]
+
+            if dt_prev == 0 or dt_next == 0:
+                return 0.0, 1.0
+
+            # Calculate basic slopes
+            prev_slope = ( new_value - prev_value ) / dt_prev
+            next_slope = ( next_value - new_value ) / dt_next
+
+            # Find if current point is at a local extreme
+            is_peak = ( new_value > prev_value and new_value > next_value ) or ( new_value >= prev_value and new_value >= next_value )
+            is_valley = ( new_value < prev_value and new_value < next_value ) or ( new_value <= prev_value and new_value <= next_value )
+
+            # Reduce slopes near extremes using ease_strength
+            if is_peak or is_valley:
+                prev_slope *= ( 1.0 - self.ease_strength )
+                next_slope *= ( 1.0 - self.ease_strength )
+
+            # Weight based on time distance
+            prev_weight = dt_next / ( dt_prev + dt_next )
+            next_weight = dt_prev / ( dt_prev + dt_next )
+
+            # Weighted average of slopes
+            avg_slope = prev_slope * prev_weight + next_slope * next_weight
+
+            angle = math.degrees( math.atan( avg_slope ) )
+            weight = min( dt_prev, dt_next ) / 3.0
+            weight = min( max( weight, 0.1 ), 10.0 )
+
+            return angle, weight
+
+        except Exception as e:
+            print( "Error calculating ease tangents: {0}".format( e ) )
             return 0.0, 1.0
-
-        # Find if current point is at a local extreme
-        is_peak = ( new_value >= prev_value and new_value >= next_value )
-        is_valley = ( new_value <= prev_value and new_value <= next_value )
-
-        # Calculate basic slope
-        prev_slope = ( new_value - prev_value ) / dt_prev
-        next_slope = ( next_value - new_value ) / dt_next
-
-        # Reduce slopes near extremes
-        if is_peak or is_valley:
-            reduction = self.ease_strength
-            prev_slope *= ( 1.0 - reduction )
-            next_slope *= ( 1.0 - reduction )
-
-        # Weight based on time distance
-        prev_weight = dt_next / ( dt_prev + dt_next )
-        next_weight = dt_prev / ( dt_prev + dt_next )
-
-        # Weighted average of slopes
-        avg_slope = prev_slope * prev_weight + next_slope * next_weight
-
-        angle = math.degrees( math.atan( avg_slope ) )
-        weight = min( dt_prev, dt_next ) / 3.0
-        weight = min( max( weight, 0.1 ), 10.0 )
-
-        return angle, weight
 
 
 def __DEV_STRATEGIES__():
@@ -1022,13 +1035,12 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         # Auto tangent parameters
         self.transition_to_auto_end = 0.025  # Point where we finish blending to auto tangents
-        self.transition_to_target_start = 0.999  # Point where we start blending to target tangents, 1.0 means stay auto
+        self.transition_to_target_start = 1.0  # Point where we start blending to target tangents, 1.0 means stay auto
 
         # Set auto tangent behavior
-        # self.auto_tangent_behavior = AutoSmoothStrategy(core)
+        # self.auto_tangent_behavior = AutoSmoothStrategy( core )
         # self.auto_tangent_behavior = AutoCatmullRomStrategy( core )
-        self.auto_tangent_behavior = AutoFlattenedStrategy( core )
-        # self.auto_tangent_behavior = AutoEaseStrategy(core)
+        self.auto_tangent_behavior = AutoEaseStrategy( core )
 
         # TODO: gloablly try to integrate buffer curve snapshot before editing
         # TODO: doesnt pick up non selected key
