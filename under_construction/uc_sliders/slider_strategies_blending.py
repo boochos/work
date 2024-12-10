@@ -915,7 +915,8 @@ class AutoEaseStrategy( AutoTangentStrategy ):
 
     def __init__( self, core ):
         super( AutoEaseStrategy, self ).__init__( core )
-        self.ease_strength = 1.0  # Controls how much to reduce angles
+        self.ease_strength = 0.5  # Controls how much to reduce angles
+        self.debug = True
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
         """Calculate ease-in/out tangents with reduced angles near value extremes"""
@@ -1019,7 +1020,75 @@ class AutoEaseStrategy( AutoTangentStrategy ):
         # Weighted average of slopes
         avg_slope = prev_slope * prev_weight + next_slope * next_weight
 
-        return math.degrees( math.atan( avg_slope ) )
+        base_auto_angle = math.degrees( math.atan( avg_slope ) )
+
+        # Apply flattening behavior
+        in_angle, out_angle = self._calculate_tangent_angle_flattening( 
+            times_values, base_auto_angle
+        )
+
+        return out_angle
+
+    def _calculate_tangent_angle_flattening( self, times_values, base_auto_angle ):
+        """
+        Calculate flattened angles by detecting when control points cross neighbor y-values.
+        Returns tuple of (in_angle, out_angle)
+        """
+        try:
+            # Get key values and times
+            current_y = times_values['current_value']
+            prev_y = times_values['prev_value']
+            next_y = times_values['next_value']
+
+            dt_prev = times_values['current_time'] - times_values['prev_time']
+            dt_next = times_values['next_time'] - times_values['current_time']
+
+            # print( prev_y, next_y, dt_prev, dt_next )
+
+            # Get standard 1/3 distances for control points
+            cp_in_x = dt_prev / 3.0
+            cp_out_x = dt_next / 3.0
+
+            def get_cp_y( angle, cp_x ):
+                """Calculate control point y position given angle and x offset"""
+                rad = math.radians( angle )
+                dy = math.tan( rad ) * cp_x
+                return current_y - dy  # Subtract for in tangent, add for out
+
+            def get_angle_to_y( target_y, cp_x, current_y ):
+                """Calculate angle needed to hit target y value"""
+                dy = current_y - target_y
+                return math.degrees( math.atan( dy / cp_x ) )
+
+            # Check in tangent
+            in_cp_y = get_cp_y( base_auto_angle, cp_in_x )
+            in_angle = base_auto_angle
+
+            # Test if control point crosses prev key's y value
+            if ( ( current_y > prev_y and in_cp_y < prev_y ) or
+                ( current_y < prev_y and in_cp_y > prev_y ) ):
+                flat_in_angle = get_angle_to_y( prev_y, cp_in_x, current_y )
+                # Only use flattened angle if it's less extreme than base angle
+                if abs( flat_in_angle ) < abs( base_auto_angle ):
+                    in_angle = flat_in_angle
+
+            # Check out tangent similarly
+            out_cp_y = get_cp_y( base_auto_angle, cp_out_x )
+            out_angle = base_auto_angle
+
+            print( prev_y, in_cp_y, out_cp_y, next_y )
+
+            if ( ( current_y > next_y and out_cp_y > next_y ) or
+                ( current_y < next_y and out_cp_y < next_y ) ):
+                flat_out_angle = get_angle_to_y( next_y, cp_out_x, current_y )
+                if abs( flat_out_angle ) < abs( base_auto_angle ):
+                    out_angle = flat_out_angle
+
+            return in_angle, out_angle
+
+        except Exception as e:
+            print( "Error calculating flattened angles: {0}".format( e ) )
+            return base_auto_angle, base_auto_angle
 
     def _calculate_tangent_weights( self, times_values ):
         """
@@ -1067,9 +1136,6 @@ class AutoEaseStrategy( AutoTangentStrategy ):
 
         return in_weight, out_weight
 
-    def _calculate_tangent_angle_flattening( self ):
-        pass
-
     def _calculate_tangent_weight_flattening( self ):
         pass
 
@@ -1107,7 +1173,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         # Auto tangent parameters
         self.transition_to_auto_end = 0.025  # Point where we finish blending to auto tangents
-        self.transition_to_target_start = 0.98  # Point where we start blending to target tangents, 1.0 means stay auto
+        self.transition_to_target_start = 1.0  # Point where we start blending to target tangents, 1.0 means stay auto
 
         # Set auto tangent behavior
         # self.auto_tangent_behavior = AutoSmoothStrategy( core )
