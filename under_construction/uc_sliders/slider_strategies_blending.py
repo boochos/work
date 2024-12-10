@@ -920,6 +920,7 @@ class AutoEaseStrategy( AutoTangentStrategy ):
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
         """Calculate ease-in/out tangents with reduced angles near value extremes"""
         try:
+            # Get key values and times
             all_keys = curve_data.keys
             selected_keys = self.core.get_selected_keys( curve )
 
@@ -928,6 +929,32 @@ class AutoEaseStrategy( AutoTangentStrategy ):
             if left_anchor_idx is None or right_anchor_idx is None:
                 return 0.0, 1.0
 
+            # Get previous/next key info
+            times_values = self._get_surrounding_keys_info( curve_data, current_idx,
+                                                         left_anchor_idx, right_anchor_idx,
+                                                         all_keys, selected_keys,
+                                                         cached_positions, new_value )
+            if not times_values:
+                return 0.0, 1.0
+
+            # Calculate angle using helper method
+            angle = self._calculate_tangent_angles( times_values, new_value )
+
+            # Calculate separate in/out weights using helper method
+            in_weight, out_weight = self._calculate_tangent_weights( times_values )
+
+            # Return angle and weights as tuple for both in and out tangents
+            return angle, in_weight, out_weight
+
+        except Exception as e:
+            print( "Error calculating ease tangents: {0}".format( e ) )
+            return 0.0, 1.0
+
+    def _get_surrounding_keys_info( self, curve_data, current_idx, left_anchor_idx,
+                                 right_anchor_idx, all_keys, selected_keys,
+                                 cached_positions, new_value ):
+        """Get information about surrounding keys needed for calculations"""
+        try:
             # Determine if this is first or last selected key
             is_first_selected = current_idx == min( i for i, t in enumerate( all_keys ) if t in selected_keys )
             is_last_selected = current_idx == max( i for i, t in enumerate( all_keys ) if t in selected_keys )
@@ -936,64 +963,114 @@ class AutoEaseStrategy( AutoTangentStrategy ):
             if is_first_selected:
                 prev_time = all_keys[left_anchor_idx]
                 prev_value = curve_data.values[left_anchor_idx]
-                # print( "Key {0}: using time {1} (anchor)".format( all_keys[current_idx], prev_time ) )
             else:
                 prev_time = all_keys[max( 0, current_idx - 1 )]
                 prev_value = ( cached_positions[current_idx - 1] if cached_positions and current_idx - 1 in cached_positions
                             else curve_data.values[max( 0, current_idx - 1 )] )
-                # print( "Key {0}: using time {1}".format( all_keys[current_idx], prev_time ) )
 
             # Get next key/value
             if is_last_selected:
                 next_time = all_keys[right_anchor_idx]
                 next_value = curve_data.values[right_anchor_idx]
-                # print( "and {0} (anchor)".format( next_time ) )
             else:
                 next_time = all_keys[min( len( all_keys ) - 1, current_idx + 1 )]
                 next_value = ( cached_positions[current_idx + 1] if cached_positions and current_idx + 1 in cached_positions
                             else curve_data.values[min( len( all_keys ) - 1, current_idx + 1 )] )
-                # print( "and {0}".format( next_time ) )
 
-            dt_prev = all_keys[current_idx] - prev_time
-            dt_next = next_time - all_keys[current_idx]
-
-            if dt_prev == 0 or dt_next == 0:
-                return 0.0, 1.0
-
-            # Calculate basic slopes
-            prev_slope = ( new_value - prev_value ) / dt_prev
-            next_slope = ( next_value - new_value ) / dt_next
-
-            # Find if current point is at a local extreme
-            is_peak = ( new_value > prev_value and new_value > next_value ) or ( new_value >= prev_value and new_value >= next_value )
-            is_valley = ( new_value < prev_value and new_value < next_value ) or ( new_value <= prev_value and new_value <= next_value )
-
-            # Reduce slopes near extremes using ease_strength
-            if is_peak or is_valley:
-                prev_slope *= ( 1.0 - self.ease_strength )
-                next_slope *= ( 1.0 - self.ease_strength )
-
-            # Weight based on time distance
-            prev_weight = dt_next / ( dt_prev + dt_next )
-            next_weight = dt_prev / ( dt_prev + dt_next )
-
-            # Weighted average of slopes
-            avg_slope = prev_slope * prev_weight + next_slope * next_weight
-
-            angle = math.degrees( math.atan( avg_slope ) )
-            weight = min( dt_prev, dt_next ) / 3.0
-            weight = min( max( weight, 0.1 ), 10.0 )
-
-            return angle, weight
-
+            return {
+                'prev_time': prev_time,
+                'prev_value': prev_value,
+                'next_time': next_time,
+                'next_value': next_value,
+                'current_time': all_keys[current_idx],
+                'current_value': new_value
+            }
         except Exception as e:
-            print( "Error calculating ease tangents: {0}".format( e ) )
-            return 0.0, 1.0
+            print( "Error getting surrounding keys info: {0}".format( e ) )
+            return None
 
-    def _calculate_tangent_angles( self ):
+    def _calculate_tangent_angles( self, times_values, new_value ):
+        """Calculate angle considering ease in/out near extremes"""
+        dt_prev = times_values['current_time'] - times_values['prev_time']
+        dt_next = times_values['next_time'] - times_values['current_time']
+
+        if dt_prev == 0 or dt_next == 0:
+            return 0.0
+
+        # Calculate basic slopes
+        prev_slope = ( new_value - times_values['prev_value'] ) / dt_prev
+        next_slope = ( times_values['next_value'] - new_value ) / dt_next
+
+        # Find if current point is at a local extreme
+        is_peak = ( ( new_value > times_values['prev_value'] and new_value > times_values['next_value'] ) or
+                   ( new_value >= times_values['prev_value'] and new_value >= times_values['next_value'] ) )
+        is_valley = ( ( new_value < times_values['prev_value'] and new_value < times_values['next_value'] ) or
+                     ( new_value <= times_values['prev_value'] and new_value <= times_values['next_value'] ) )
+
+        # Reduce slopes near extremes using ease_strength
+        if is_peak or is_valley:
+            prev_slope *= ( 1.0 - self.ease_strength )
+            next_slope *= ( 1.0 - self.ease_strength )
+
+        # Weight based on time distance
+        prev_weight = dt_next / ( dt_prev + dt_next )
+        next_weight = dt_prev / ( dt_prev + dt_next )
+
+        # Weighted average of slopes
+        avg_slope = prev_slope * prev_weight + next_slope * next_weight
+
+        return math.degrees( math.atan( avg_slope ) )
+
+    def _calculate_tangent_weights( self, times_values ):
+        """
+        Calculate in/out weights based on time distances and value differences to neighboring keys.
+        Weights will not go below 1/3 of their respective distances.
+        """
+        dt_prev = times_values['current_time'] - times_values['prev_time']
+        dt_next = times_values['next_time'] - times_values['current_time']
+
+        # Calculate value differences
+        dv_prev = abs( times_values['current_value'] - times_values['prev_value'] )
+        dv_next = abs( times_values['next_value'] - times_values['current_value'] )
+
+        # Base weights with 1/3 rule
+        base_in_weight = dt_prev / 3.0
+        base_out_weight = dt_next / 3.0
+
+        # Calculate value change rates
+        value_rate_prev = dv_prev / dt_prev if dt_prev != 0 else 0
+        value_rate_next = dv_next / dt_next if dt_next != 0 else 0
+
+        # Adjust weights based on value rates, but don't go below 1/3
+        in_weight = base_in_weight
+        out_weight = base_out_weight
+
+        if value_rate_prev > 1.0:
+            in_weight = max( base_in_weight * ( 1.0 / math.sqrt( value_rate_prev ) ), base_in_weight )
+        if value_rate_next > 1.0:
+            out_weight = max( base_out_weight * ( 1.0 / math.sqrt( value_rate_next ) ), base_out_weight )
+
+        # Calculate proximity but don't let it reduce below 1/3
+        value_range_prev = max( abs( times_values['next_value'] - times_values['prev_value'] ), 0.001 )
+        value_range_next = value_range_prev
+
+        proximity_prev = 1.0 - min( dv_prev / value_range_prev, 1.0 )
+        proximity_next = 1.0 - min( dv_next / value_range_next, 1.0 )
+
+        # Apply proximity scaling but ensure we don't go below base weights
+        in_weight = max( in_weight * ( 0.5 + 0.5 * ( 1.0 - proximity_prev ) ), base_in_weight )
+        out_weight = max( out_weight * ( 0.5 + 0.5 * ( 1.0 - proximity_next ) ), base_out_weight )
+
+        # Final clamping to Maya's valid range
+        in_weight = min( max( in_weight, 0.1 ), 10.0 )
+        out_weight = min( max( out_weight, 0.1 ), 10.0 )
+
+        return in_weight, out_weight
+
+    def _calculate_tangent_angle_flattening( self ):
         pass
 
-    def _calculate_tangent_weights( self ):
+    def _calculate_tangent_weight_flattening( self ):
         pass
 
 
@@ -1186,15 +1263,17 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             # Get initial tangent values
             initial_tangents = self._get_initial_tangents( curve_data, current_idx )
 
-            # Calculate auto tangents
-            auto_tangents = self._calculate_auto_tangents( curve, current_idx, new_value,
-                                                        curve_data )
+            # Calculate auto tangents - now returns angle and separate weights
+            auto_tangents = self._calculate_auto_tangents( curve, current_idx, new_value, curve_data )
             if not auto_tangents:
                 return None
 
+            auto_angle, auto_in_weight, auto_out_weight = auto_tangents
+
             # Calculate final tangents based on progress
             return self._calculate_final_tangents( local_progress, initial_tangents,
-                                                auto_tangents, timing_data )
+                                               auto_angle, auto_in_weight, auto_out_weight,
+                                               timing_data )
 
         except Exception as e:
             print( "Error calculating tangents: {0}".format( e ) )
@@ -1252,21 +1331,20 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             print( "Error calculating auto tangents: {0}".format( e ) )
             return None
 
-    def _calculate_final_tangents( self, local_progress, initial_tangents, auto_tangents,
-                                timing_data ):
+    def _calculate_final_tangents( self, local_progress, initial_tangents,
+                                auto_angle, auto_in_weight, auto_out_weight, timing_data ):
         """Calculate final tangents based on transition phase."""
-        auto_angle, auto_weight = auto_tangents
-
         # Phase 1: Initial to auto transition
         if local_progress <= self.transition_to_auto_end:
             return self._calculate_initial_to_auto_transition( 
-                local_progress, initial_tangents, auto_angle, auto_weight )
+                local_progress, initial_tangents,
+                auto_angle, auto_in_weight, auto_out_weight )
 
         # Phase 2: Pure auto tangents
         if local_progress < self.transition_to_target_start:
             return {
-                'in': ( auto_angle, auto_weight ),
-                'out': ( auto_angle, auto_weight )
+                'in': ( auto_angle, auto_in_weight ),
+                'out': ( auto_angle, auto_out_weight )
             }
 
         # Phase 3: Auto to target transition
@@ -1274,45 +1352,50 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             local_progress >= self.transition_to_target_start and
             'target_tangents' in timing_data ):
             return self._calculate_auto_to_target_transition( 
-                local_progress, auto_angle, auto_weight, timing_data['target_tangents'] )
+                local_progress, auto_angle, auto_in_weight, auto_out_weight,
+                timing_data['target_tangents'] )
 
         # Fallback to auto tangents
         return {
-            'in': ( auto_angle, auto_weight ),
-            'out': ( auto_angle, auto_weight )
+            'in': ( auto_angle, auto_in_weight ),
+            'out': ( auto_angle, auto_out_weight )
         }
 
     def _calculate_initial_to_auto_transition( self, progress, initial_tangents,
-                                            auto_angle, auto_weight ):
+                                            auto_angle, auto_in_weight, auto_out_weight ):
         """Calculate transition from initial to auto tangents."""
         blend_factor = progress / self.transition_to_auto_end
         blend_factor = blend_factor * blend_factor * ( 3 - 2 * blend_factor )
 
+        # Blend angles
         in_angle = self._blend_angles( initial_tangents['in_angle'], auto_angle, blend_factor )
-        in_weight = ( initial_tangents['in_weight'] * ( 1 - blend_factor ) +
-                    auto_weight * blend_factor )
-
         out_angle = self._blend_angles( initial_tangents['out_angle'], auto_angle, blend_factor )
+
+        # Blend weights separately for in/out
+        in_weight = ( initial_tangents['in_weight'] * ( 1 - blend_factor ) +
+                    auto_in_weight * blend_factor )
         out_weight = ( initial_tangents['out_weight'] * ( 1 - blend_factor ) +
-                     auto_weight * blend_factor )
+                     auto_out_weight * blend_factor )
 
         return {
             'in': ( in_angle, in_weight ),
             'out': ( out_angle, out_weight )
         }
 
-    def _calculate_auto_to_target_transition( self, progress, auto_angle, auto_weight,
-                                           target_tangents ):
+    def _calculate_auto_to_target_transition( self, progress, auto_angle, auto_in_weight,
+                                           auto_out_weight, target_tangents ):
         """Calculate transition from auto to target tangents."""
         blend_factor = ( ( progress - self.transition_to_target_start ) /
                        ( 1.0 - self.transition_to_target_start ) )
         blend_factor = blend_factor * blend_factor * ( 3 - 2 * blend_factor )
 
+        # Blend angles
         in_angle = self._blend_angles( auto_angle, target_tangents['in'][0], blend_factor )
-        in_weight = auto_weight * ( 1 - blend_factor ) + target_tangents['in'][1] * blend_factor
-
         out_angle = self._blend_angles( auto_angle, target_tangents['out'][0], blend_factor )
-        out_weight = auto_weight * ( 1 - blend_factor ) + target_tangents['out'][1] * blend_factor
+
+        # Blend weights separately for in/out
+        in_weight = auto_in_weight * ( 1 - blend_factor ) + target_tangents['in'][1] * blend_factor
+        out_weight = auto_out_weight * ( 1 - blend_factor ) + target_tangents['out'][1] * blend_factor
 
         return {
             'in': ( in_angle, in_weight ),
