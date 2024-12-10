@@ -990,6 +990,12 @@ class AutoEaseStrategy( AutoTangentStrategy ):
             print( "Error calculating ease tangents: {0}".format( e ) )
             return 0.0, 1.0
 
+    def _calculate_tangent_angles( self ):
+        pass
+
+    def _calculate_tangent_weights( self ):
+        pass
+
 
 def __DEV_STRATEGIES__():
     pass
@@ -1008,8 +1014,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self.debug = False
 
         # Range portion parameters, possibly make this more automated, less ditance = higher value, more ditance = smaller value
-        self.min_range_portion = 0.45
-        self.max_range_portion = 0.45
+        self.min_range_portion = 0.75
+        self.max_range_portion = 0.75
         # Local overrides for dynamic range calculation
         self._local_min_range_portion = self.min_range_portion
         self._local_max_range_portion = self.max_range_portion
