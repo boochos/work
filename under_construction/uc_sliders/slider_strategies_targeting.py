@@ -23,6 +23,8 @@ class TargetStrategy:
         self.preserve_weights_negative = False
         self.preserve_opposing_anchor = False  # When True, preserve anchor weights not in blend direction
 
+        self.preserve_anchor_auto_tangents = False  # used for blending strategies
+
     def calculate_target_value( self, curve, time ):
         """
         Calculate target values for a curve at given time
@@ -167,6 +169,7 @@ class DirectTargetStrategy( TargetStrategy ):
         self.preserve_weights_positive = False
         self.preserve_weights_negative = False
         self.preserve_opposing_anchor = True  # Enable directional preservation for direct targeting
+        self.preserve_anchor_auto_tangents = True
 
     def calculate_target_value( self, curve, time ):
         try:
@@ -239,6 +242,7 @@ class LinearTargetStrategy( TargetStrategy ):
         #
         self.preserve_weights_positive = True
         self.preserve_weights_negative = False
+        self.preserve_anchor_auto_tangents = True
 
     def calculate_target_value( self, curve, time ):
         try:
@@ -293,7 +297,6 @@ class LinearTargetStrategy( TargetStrategy ):
             return None, None
 
     def calculate_target_tangents( self, curve, time ):
-        # TODO: account for weighted tangents when blending. need a weighted calculation.
         try:
             curve_data = self.core.get_curve_data( curve )
             current_idx = curve_data.get_key_index( time )
@@ -596,7 +599,7 @@ class SplineTargetStrategy( TargetStrategy ):
     def _calculate_control_points( self, curve_data, p0, p3, prev_key, next_key ):
         """Calculate bezier control points P1 and P2"""
         """
-        # TODO: below values relate to position of their associated key, x value is x*8, y value is y*(1/3.0)
+        # Alternate method. Below values relate to position of their associated key, x value is x*8, y value is y*(1/3.0)
         # use this to get control points
         print(cmds.getAttr(curve_node + ".keyTanInX[0]"))
         print(cmds.getAttr(curve_node + ".keyTanInY[0]"))

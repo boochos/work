@@ -25,19 +25,6 @@ class BlendStrategy( object ):
         self.VALUE_MATCH_THRESHOLD = 0.000001  # when value matches, only blend tangent
         self._sync_weight_settings()
 
-    def _get_targeting_strategy( self ):
-        """Get current targeting strategy from core"""
-        return self.core.get_current_targeting_strategy()
-
-    def _sync_weight_settings( self ):
-        """Sync weight control settings from targeting strategy"""
-        strategy = self.core.get_current_targeting_strategy()
-        self.lock_weights_beyond_negative = strategy.lock_weights_beyond_negative
-        self.lock_weights_beyond_positive = strategy.lock_weights_beyond_positive
-        self.preserve_weights_positive = strategy.preserve_weights_positive
-        self.preserve_weights_negative = strategy.preserve_weights_negative
-        self.preserve_opposing_anchor = strategy.preserve_opposing_anchor
-
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         """
         Calculate blended values and tangents
@@ -104,6 +91,11 @@ class BlendStrategy( object ):
             current_idx = curve_data.key_map[anchor_data['time']]
             current_weight = curve_data.tangents[anchor_data['tangent'] + '_weights'][current_idx]
 
+            if self.preserve_anchor_auto_tangents:
+                if self._is_tangent_type( curve_data, current_idx, anchor_data['tangent'], 'auto' ):
+                    # print( 'dont blend' )
+                    return None
+
             # Check direction
             is_positive = blend_factor > 0
             is_negative = blend_factor < 0
@@ -147,6 +139,39 @@ class BlendStrategy( object ):
         except Exception as e:
             print( "Error in anchor weight blending: {0}".format( e ) )
             return None
+
+    def _is_tangent_type( self, curve_data, current_idx, tangent_direction, type_to_check ):
+        """
+        Check if a specific tangent is of the given type.
+        
+        Args:
+            curve_data: CurveData instance containing tangent information
+            current_idx: Index of key to check
+            tangent_direction: Direction to check ('in' or 'out')
+            type_to_check: Tangent type to check for (e.g. 'auto', 'linear', etc)
+        
+        Returns:
+            bool: True if tangent matches type, False otherwise
+        """
+        tangent_types = curve_data.tangents[tangent_direction + '_types']
+        if type_to_check in tangent_types[current_idx]:
+            return True
+        else:
+            return False
+
+    def _get_targeting_strategy( self ):
+        """Get current targeting strategy from core"""
+        return self.core.get_current_targeting_strategy()
+
+    def _sync_weight_settings( self ):
+        """Sync weight control settings from targeting strategy"""
+        strategy = self.core.get_current_targeting_strategy()
+        self.lock_weights_beyond_negative = strategy.lock_weights_beyond_negative
+        self.lock_weights_beyond_positive = strategy.lock_weights_beyond_positive
+        self.preserve_weights_positive = strategy.preserve_weights_positive
+        self.preserve_weights_negative = strategy.preserve_weights_negative
+        self.preserve_opposing_anchor = strategy.preserve_opposing_anchor
+        self.preserve_anchor_auto_tangents = strategy.preserve_anchor_auto_tangents
 
 
 class TriangleBlendStrategy( BlendStrategy ):
@@ -900,7 +925,7 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
         self.tension = max( 0.0, min( 1.0, value ) )
 
 
-class AutoEaseStrategy( AutoTangentStrategy ):
+class AutoFlatteningStrategy( AutoTangentStrategy ):
     """
     Auto tangent behavior that creates ease-in/out curves
     with minimal overshoot by reducing tangent angles
@@ -909,8 +934,8 @@ class AutoEaseStrategy( AutoTangentStrategy ):
     # TODO: errors if whole curve is selected, core issue
 
     def __init__( self, core ):
-        super( AutoEaseStrategy, self ).__init__( core )
-        self.ease_strength = 0.5  # Controls how much to reduce angles
+        super( AutoFlatteningStrategy, self ).__init__( core )
+        self.ease_strength = 0.0  # Controls how much to reduce angles
         self.debug = True
         self.in_weight = None
         self.out_weight = None
@@ -937,7 +962,6 @@ class AutoEaseStrategy( AutoTangentStrategy ):
 
             # Calculate separate in/out weights using helper method
             if curve_data.is_weighted:
-                # print( 'weighted' )
                 self.in_weight, self.out_weight = self._calculate_tangent_weights( times_values )
 
             # Calculate angle using helper method
@@ -1009,8 +1033,9 @@ class AutoEaseStrategy( AutoTangentStrategy ):
 
         # Reduce slopes near extremes using ease_strength
         if is_peak or is_valley:
-            prev_slope *= ( 1.0 - self.ease_strength )
-            next_slope *= ( 1.0 - self.ease_strength )
+            prev_slope = 0.0
+            next_slope = 0.0
+            # TODO: if next key hasnt been activated yet to move, check if tangent needs to adjust relative to this y value blending
 
         # Weight based on time distance
         prev_weight = dt_next / ( dt_prev + dt_next )
@@ -1160,10 +1185,6 @@ class AutoEaseStrategy( AutoTangentStrategy ):
 
         return in_weight, out_weight
 
-    def _calculate_tangent_weight_flattening( self ):
-        # may not be necessaryu as an extra step
-        pass
-
 
 def __DEV_STRATEGIES__():
     pass
@@ -1197,18 +1218,17 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self._cached_timings = {}
 
         # Auto tangent parameters
-        self.transition_to_auto_end = 0.025  # Point where we finish blending to auto tangents
+        self.transition_to_auto_end = 0.02  # Point where we finish blending to auto tangents
         self.transition_to_target_start = 0.999  # Point where we start blending to target tangents, 1.0 means stay auto
 
         # Set auto tangent behavior
         # self.auto_tangent_behavior = AutoSmoothStrategy( core )
         # self.auto_tangent_behavior = AutoCatmullRomStrategy( core )
-        self.auto_tangent_behavior = AutoEaseStrategy( core )
+        self.auto_tangent_behavior = AutoFlatteningStrategy( core )
 
         # TODO: gloablly try to integrate buffer curve snapshot before editing
         # TODO: doesnt pick up non selected key
-        # TODO: anchor should reach weight the same time as the first key hits its target, not at the end of the blend
-        # TODO: work in tangent weight rules from target class, preserve tangents when sliding in opposite direction and so on
+        # TODO: for any given key blending, force the next keys tangent to adjust
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
         """
