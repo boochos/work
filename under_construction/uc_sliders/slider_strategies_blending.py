@@ -642,9 +642,6 @@ def __AUTO_TANGENT_STRATEGIES__():
 
 class AutoTangentStrategy( object ):
     """Base class for auto tangent calculation behaviors"""
-    # TODO: implement weight calculation, should behave as good as mayas,
-    # TODO: cont. as anchor approaches y value of neighboring key, weight reduces to 1/3 rule, pins weight at y value
-    # TODO: non-weighted tangent should start flattening when control point of tangent meets the y value of a neighbhouring key
 
     def __init__( self, core ):
         # Common settings that could be adjusted
@@ -909,9 +906,9 @@ class AutoEaseStrategy( AutoTangentStrategy ):
     with minimal overshoot by reducing tangent angles
     near value extremes.
     """
-    # TODO: implement easing to flat strategy on this one in particular.
-    # TODO: tangents stay flat whe theyre a peak or valley.
-    # TODO: need to ease into flats via tangent control point meeting y value with approaching key
+    # TODO: check broken tangent behaviour
+    # TODO: add weighted tangent support to flattening function
+    # TODO: cont. as anchor approaches y value of neighboring key, weight reduces to 1/3 rule, pins weight at y value
 
     def __init__( self, core ):
         super( AutoEaseStrategy, self ).__init__( core )
@@ -938,11 +935,11 @@ class AutoEaseStrategy( AutoTangentStrategy ):
             if not times_values:
                 return 0.0, 1.0
 
-            # Calculate angle using helper method
-            angle = self._calculate_tangent_angles( times_values, new_value )
-
             # Calculate separate in/out weights using helper method
             in_weight, out_weight = self._calculate_tangent_weights( times_values )
+
+            # Calculate angle using helper method
+            angle = self._calculate_tangent_angles( times_values, new_value )
 
             # Return angle and weights as tuple for both in and out tangents
             return angle, in_weight, out_weight
@@ -1192,7 +1189,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         # Auto tangent parameters
         self.transition_to_auto_end = 0.025  # Point where we finish blending to auto tangents
-        self.transition_to_target_start = 0.99  # Point where we start blending to target tangents, 1.0 means stay auto
+        self.transition_to_target_start = 0.999  # Point where we start blending to target tangents, 1.0 means stay auto
 
         # Set auto tangent behavior
         # self.auto_tangent_behavior = AutoSmoothStrategy( core )
