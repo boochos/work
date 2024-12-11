@@ -906,14 +906,14 @@ class AutoEaseStrategy( AutoTangentStrategy ):
     with minimal overshoot by reducing tangent angles
     near value extremes.
     """
-    # TODO: check broken tangent behaviour
-    # TODO: add weighted tangent support to flattening function
-    # TODO: cont. as anchor approaches y value of neighboring key, weight reduces to 1/3 rule, pins weight at y value
+    # TODO: errors if whole curve is selected, core issue
 
     def __init__( self, core ):
         super( AutoEaseStrategy, self ).__init__( core )
         self.ease_strength = 0.5  # Controls how much to reduce angles
         self.debug = True
+        self.in_weight = None
+        self.out_weight = None
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
         """Calculate ease-in/out tangents with reduced angles near value extremes"""
@@ -936,13 +936,15 @@ class AutoEaseStrategy( AutoTangentStrategy ):
                 return 0.0, 1.0
 
             # Calculate separate in/out weights using helper method
-            in_weight, out_weight = self._calculate_tangent_weights( times_values )
+            if curve_data.is_weighted:
+                # print( 'weighted' )
+                self.in_weight, self.out_weight = self._calculate_tangent_weights( times_values )
 
             # Calculate angle using helper method
             angle = self._calculate_tangent_angles( times_values, new_value )
 
             # Return angle and weights as tuple for both in and out tangents
-            return angle, in_weight, out_weight
+            return angle, self.in_weight, self.out_weight
 
         except Exception as e:
             print( "Error calculating ease tangents: {0}".format( e ) )
@@ -1024,7 +1026,7 @@ class AutoEaseStrategy( AutoTangentStrategy ):
             times_values, base_auto_angle
         )
 
-        return in_angle
+        return in_angle  # only return one angle, they should match at this point, this after blending to full auto
 
     def _calculate_tangent_angle_flattening( self, times_values, base_auto_angle ):
         """
@@ -1045,9 +1047,15 @@ class AutoEaseStrategy( AutoTangentStrategy ):
             dt_prev = times_values['current_time'] - times_values['prev_time']  # correct
             dt_next = times_values['next_time'] - times_values['current_time']  # correct
 
-            # Get standard 1/3 distances for control points
-            cp_in_x = dt_prev / 3.0 * -1  # flip to negative for in, accomodates get_cp_y method
-            cp_out_x = dt_next / 3.0
+            # control points, aka weights
+            if self.in_weight:
+                # weighted case, use weight as control point
+                cp_in_x = self.in_weight * -1  # flip to negative for in, accomodates get_cp_y method
+                cp_out_x = self.out_weight
+            else:
+                # non-weighted case, use 1/3 weight
+                cp_in_x = dt_prev / 3.0 * -1  # flip to negative for in, accomodates get_cp_y method
+                cp_out_x = dt_next / 3.0
 
             def get_cp_y( angle, cp_x ):
                 """In tangent is assumed to flipped to negative"""
@@ -1153,6 +1161,7 @@ class AutoEaseStrategy( AutoTangentStrategy ):
         return in_weight, out_weight
 
     def _calculate_tangent_weight_flattening( self ):
+        # may not be necessaryu as an extra step
         pass
 
 
@@ -1173,8 +1182,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self.debug = False
 
         # Range portion parameters, possibly make this more automated, less ditance = higher value, more ditance = smaller value
-        self.min_range_portion = 0.7
-        self.max_range_portion = 0.7
+        self.min_range_portion = 0.47
+        self.max_range_portion = 0.47
         # Local overrides for dynamic range calculation
         self._local_min_range_portion = self.min_range_portion
         self._local_max_range_portion = self.max_range_portion
@@ -1199,8 +1208,6 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         # TODO: gloablly try to integrate buffer curve snapshot before editing
         # TODO: doesnt pick up non selected key
         # TODO: anchor should reach weight the same time as the first key hits its target, not at the end of the blend
-        # TODO: track down how weights are set and make sure they blend into targets and arent altered by the auto tangent class, which is wrong
-        # TODO: dont use uniform tangents from auto class unless theyre not uniform and based on 1/3 rule. weights should mostly come from targets
         # TODO: work in tangent weight rules from target class, preserve tangents when sliding in opposite direction and so on
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
