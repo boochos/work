@@ -7,6 +7,7 @@ import maya.mel as mel
 import numpy as np
 
 # TODO: add strategy to blend into tangent angle of anchor keys(L/R), a mix of direct and linear
+# TODO: add strategy to blend into tangent but easing out to next keys position, theoretical curve, control points meet.
 
 
 class TargetStrategy:
