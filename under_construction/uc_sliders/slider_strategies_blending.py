@@ -577,7 +577,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self._cached_timings = {}
 
         # Auto tangent parameters
-        self.transition_to_auto_end = 0.0001  # Point where we finish blending to auto tangents
+        self.transition_to_auto_end = 0.025  # Point where we finish blending to auto tangents
         self.transition_to_target_start = 0.999  # Point where we start blending to target tangents, 1.0 means stay auto
 
         # Set auto tangent behavior
@@ -1549,7 +1549,7 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
 
         return base_auto_angle
 
-    def _calculate_tangent_angle_flattening( self, times_values, base_auto_angle ):
+    def _calculate_tangent_angle_flattening__( self, times_values, base_auto_angle ):
         """
         Calculate flattened angles by detecting when control points cross neighbor y-values.
         Returns tuple of (in_angle, out_angle)
@@ -1649,6 +1649,125 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
             print( "Error calculating flattened angles: {0}".format( e ) )
             return base_auto_angle, base_auto_angle
 
+    def _calculate_tangent_angle_flattening( self, times_values, base_auto_angle ):
+        """
+        Calculate flattened angles and weights when control points intersect neighbor y-values.
+        Ensures control points remain at 1/3 distance when flattened.
+        """
+        try:
+            in_triggered = False
+            out_triggered = False
+
+            # Get key values and times
+            current_y = times_values['current_value']
+            current_time = times_values['current_time']
+            prev_y = times_values['prev_value']
+            next_y = times_values['next_value']
+            prev_time = times_values['prev_time']
+            next_time = times_values['next_time']
+
+            # Calculate 1/3 distances
+            dt_prev = current_time - prev_time
+            dt_next = next_time - current_time
+            third_prev = dt_prev / 3.0
+            third_next = dt_next / 3.0
+
+            def get_cp_y( angle, tangent_length ):
+                """Calculate y-coordinate of control point"""
+                rad = math.radians( angle )
+                dy = math.sin( rad ) * tangent_length
+                return current_y + dy
+
+            def get_angle_and_weight__( target_y, current_y, time_gap ):
+                """
+                Calculate angle and weight needed to place control point at target y
+                while maintaining 1/3 distance on x-axis
+                """
+                dx = time_gap / 3.0  # Force x distance to be 1/3
+                dy = target_y - current_y
+                angle = math.degrees( math.atan2( dy, dx ) )
+                weight = math.sqrt( dx * dx + dy * dy )  # Calculate weight using Pythagorean theorem
+                return angle, weight
+
+            def get_angle_and_weight( target_y, current_y, time_gap, is_in_tangent = False ):
+                """
+                Calculate angle and weight needed to place control point at target y
+                while maintaining 1/3 distance on x-axis
+                """
+                dx = time_gap / 3.0  # Force x distance to be 1/3
+                dy = target_y - current_y
+                angle = math.degrees( math.atan2( dy, dx ) )
+                if is_in_tangent:
+                    if base_auto_angle > 0:
+                        angle = 180 + angle
+                    else:
+                        angle = -180 + angle
+                weight = math.sqrt( dx * dx + dy * dy )  # Calculate weight using Pythagorean theorem
+                return angle, weight
+
+            # Check in tangent
+            inw = self.in_weight * -1
+            in_cp_y = get_cp_y( base_auto_angle, inw )
+            # print( in_cp_y )
+            in_angle = base_auto_angle
+            in_weight = self.in_weight
+            weight_mltp = 1.0
+
+            # Test if control point crosses prev key's y value
+            if ( ( current_y >= prev_y and in_cp_y < prev_y ) or
+                ( current_y <= prev_y and in_cp_y > prev_y ) ):
+                flat_in_angle, new_in_weight = get_angle_and_weight( 
+                    prev_y, current_y, -dt_prev, is_in_tangent = True )  # Negative for in tangent
+
+                if abs( flat_in_angle ) < abs( base_auto_angle ):
+                    in_angle = flat_in_angle
+                    weight_mltp = new_in_weight / self.in_weight
+                    in_weight = new_in_weight
+                    in_triggered = True
+                else:
+                    print( 'no', base_auto_angle, flat_in_angle )
+
+            # Check out tangent
+            out_cp_y = get_cp_y( base_auto_angle, self.out_weight )
+            out_angle = base_auto_angle
+            out_weight = self.out_weight
+
+            # Test if control point crosses next key's y value
+            if ( ( current_y >= next_y and out_cp_y < next_y ) or
+                ( current_y <= next_y and out_cp_y > next_y ) ):
+                flat_out_angle, new_out_weight = get_angle_and_weight( 
+                    next_y, current_y, dt_next )
+
+                if abs( flat_out_angle ) < abs( base_auto_angle ):
+                    out_angle = flat_out_angle
+                    weight_mltp = new_out_weight / self.out_weight
+                    out_weight = new_out_weight
+                    out_triggered = True
+
+            # Clamp weights to Maya's valid range (0.1 - 10.0)
+            # in_weight = min( max( in_weight, 0.1 ), 10.0 )
+            # out_weight = min( max( out_weight, 0.1 ), 10.0 )
+
+            self.in_weight = self.in_weight * weight_mltp
+            self.out_weight = self.out_weight * weight_mltp
+
+            if in_triggered:
+                '''print( 'IN___key y__:', prev_y, 'cp y__:', in_cp_y,
+                      '___base___:', base_auto_angle, 'flatter___:', in_angle,
+                      'weight___:', in_weight )'''
+                return in_angle, in_angle
+            if out_triggered:
+                '''print( 'OUT___key y__:', next_y, 'cp y__:', out_cp_y,
+                      '___base___:', base_auto_angle, 'flatter___:', out_angle,
+                      'weight___:', out_weight )'''
+                return out_angle, out_angle
+
+            return in_angle, out_angle
+
+        except Exception as e:
+            print( "Error calculating flattened angles: {0}".format( e ) )
+            return base_auto_angle, base_auto_angle
+
     def _calculate_tangent_weights( self, times_values, angle, weighted ):
         """
         Calculate in/out weights based on time distances and value differences to neighboring keys.
@@ -1663,20 +1782,21 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
         base_in_weight = dt_prev / 3.0
         base_out_weight = dt_next / 3.0
         if not weighted:
-            print( '____' )
+            # print( '____' )
             # TODO: SHOULDNT BE HERE, TANGENT IS THE WRONG SCALE
-            return base_in_weight, base_out_weight
+            # return base_in_weight, base_out_weight
+            pass
 
         # math with triangle scale
         prev_key = ( times_values['prev_time'], times_values['prev_value'] )
         current_key = ( times_values['current_time'], times_values['current_value'] )
         next_key = ( times_values['next_time'], times_values['next_value'] )
         #
-        in_weight, out_weight = self._calculate_tangent_weightS_scaled( prev_key, current_key, next_key, angle )
+        in_weight, out_weight = self._calculate_tangent_weights_scaled( prev_key, current_key, next_key, angle )
 
         return in_weight, out_weight
 
-    def _calculate_tangent_weightS_scaled( self, prev_key, current_key, next_key, angle ):
+    def _calculate_tangent_weights_scaled( self, prev_key, current_key, next_key, angle ):
         """
         Calculates Maya-style auto tangent weights using right triangle solving.
         
