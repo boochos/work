@@ -576,7 +576,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self._cached_timings = {}
 
         # Auto tangent parameters
-        self.transition_to_auto_end = 0.02  # Point where we finish blending to auto tangents
+        self.transition_to_auto_end = 0.0001  # Point where we finish blending to auto tangents
         self.transition_to_target_start = 0.999  # Point where we start blending to target tangents, 1.0 means stay auto
 
         # Set auto tangent behavior
@@ -584,7 +584,6 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         # self.auto_tangent_behavior = AutoCatmullRomStrategy( core )
         self.auto_tangent_behavior = AutoFlatteningStrategy( core )
 
-        # TODO: gloablly try to integrate buffer curve snapshot before editing
         # TODO: doesnt pick up non selected key
         # TODO: for any given key blending, force the next keys tangent to adjust
 
@@ -1423,8 +1422,8 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
         super( AutoFlatteningStrategy, self ).__init__( core )
         self.ease_strength = 0.0  # Controls how much to reduce angles
         self.debug = True
-        self.in_weight = None
-        self.out_weight = None
+        self.in_weight = 1.0
+        self.out_weight = 1.0
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
         """Calculate ease-in/out tangents with reduced angles near value extremes"""
@@ -1446,15 +1445,19 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
             if not times_values:
                 return 0.0, 1.0
 
+            # Calculate angle using helper method
+            base_auto_angle = self._calculate_tangent_angles( times_values, new_value )
+
             # Calculate separate in/out weights using helper method
             if curve_data.is_weighted:
-                self.in_weight, self.out_weight = self._calculate_tangent_weights( times_values )
+                self.in_weight, self.out_weight = self._calculate_tangent_weights( times_values, base_auto_angle )  # needs angles to weight properly
 
-            # Calculate angle using helper method
-            angle = self._calculate_tangent_angles( times_values, new_value )
+            in_angle, out_angle = self._calculate_tangent_angle_flattening( 
+                times_values, base_auto_angle
+            )
 
             # Return angle and weights as tuple for both in and out tangents
-            return angle, self.in_weight, self.out_weight
+            return in_angle, self.in_weight, self.out_weight
 
         except Exception as e:
             print( "Error calculating ease tangents: {0}".format( e ) )
@@ -1532,12 +1535,16 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
 
         base_auto_angle = math.degrees( math.atan( avg_slope ) )
 
+        '''
         # Apply flattening behavior
         in_angle, out_angle = self._calculate_tangent_angle_flattening( 
             times_values, base_auto_angle
         )
 
         return in_angle  # only return one angle, they should match at this point, this after blending to full auto
+        '''
+
+        return base_auto_angle
 
     def _calculate_tangent_angle_flattening( self, times_values, base_auto_angle ):
         """
@@ -1625,11 +1632,14 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
             print( "Error calculating flattened angles: {0}".format( e ) )
             return base_auto_angle, base_auto_angle
 
-    def _calculate_tangent_weights( self, times_values ):
+    def _calculate_tangent_weights( self, times_values, angle ):
         """
         Calculate in/out weights based on time distances and value differences to neighboring keys.
         Weights will not go below 1/3 of their respective distances.
         """
+        # TODO: scaling issue. tangents scale lower than mayas, when y change is great but frames are small
+        # TODO: cont. seems like a proportional scale issue, rate of change needs arethink, otherwise the tangents perfectly match mayas 'mixed'
+
         dt_prev = times_values['current_time'] - times_values['prev_time']
         dt_next = times_values['next_time'] - times_values['current_time']
 
@@ -1644,6 +1654,7 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
         # Calculate value change rates
         value_rate_prev = dv_prev / dt_prev if dt_prev != 0 else 0
         value_rate_next = dv_next / dt_next if dt_next != 0 else 0
+        # print( value_rate_prev, value_rate_next )
 
         # Adjust weights based on value rates, but don't go below 1/3
         in_weight = base_in_weight
@@ -1669,9 +1680,93 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
         in_weight = min( max( in_weight, 0.1 ), 10.0 )
         out_weight = min( max( out_weight, 0.1 ), 10.0 )
 
+        print( times_values['prev_time'], times_values['prev_value'] )
+        print( times_values['current_time'], times_values['current_value'] )
+        print( times_values['next_time'], times_values['next_value'] )
+        prev_key = ( times_values['prev_time'], times_values['prev_value'] )
+        current_key = ( times_values['current_time'], times_values['current_value'] )
+        next_key = ( times_values['next_time'], times_values['next_value'] )
+        in_weight, out_weight = calculate_auto_tangents( prev_key, current_key, next_key, angle )
+
         return in_weight, out_weight
 
 
 def __DEV_STRATEGIES__():
     pass
 
+
+def calculate_auto_tangents( prev_key, current_key, next_key, angle ):
+    """
+    Calculates Maya-style auto tangent weights using right triangle solving.
+    
+    Args:
+        prev_key: Tuple of (time, value) for the previous key, or None if no previous key
+        current_key: Tuple of (time, value) for the current key
+        next_key: Tuple of (time, value) for the next key, or None if no next key
+        angle: Angle in degrees to use for triangle calculation
+        
+    Returns:
+        Tuple of (in_weight, out_weight) for the current key
+    """
+
+    def solve_right_triangle( point_a, point_b, point_c ):
+        """
+        Solves right triangle given three points where C forms the right angle.
+        Returns the ratio of AB/AC.
+        """
+        # Calculate lengths of triangle sides
+        ac_length = abs( point_a[0] - point_c[0] )  # horizontal distance
+        bc_length = abs( point_b[1] - point_c[1] )  # vertical distance
+
+        # Convert input angle to radians
+        angle_rad = math.radians( angle )
+
+        # Calculate AB length using trigonometry
+        # In a right triangle: tan(θ) = opposite/adjacent = BC/AC
+        # Therefore: AB = AC/cos(θ)
+        ab_length = ac_length / math.cos( angle_rad )
+
+        # Return multiplier ratio
+        return ab_length / ac_length if ac_length != 0 else 1.0
+
+    print( "\nCalculating weights for key at time %s value %s" % ( current_key[0], current_key[1] ) )
+    if prev_key:
+        print( "Prev key: time %s value %s" % ( prev_key[0], prev_key[1] ) )
+    if next_key:
+        print( "Next key: time %s value %s" % ( next_key[0], next_key[1] ) )
+
+    in_weight = out_weight = 0
+
+    if prev_key and next_key:
+        # Determine if current key is closer to prev or halfway between prev and next
+        mid_y = prev_key[1] + ( next_key[1] - prev_key[1] ) / 2
+        use_prev = current_key[1] <= mid_y
+
+        if use_prev:
+            # Use prev_key and current_key for calculation
+            point_a = prev_key
+            point_b = current_key
+            point_c = ( current_key[0], prev_key[1] )  # right angle point
+        else:
+            # Use current_key and next_key for calculation
+            point_a = next_key
+            point_b = current_key
+            point_c = ( current_key[0], next_key[1] )  # right angle point
+
+        multiplier = solve_right_triangle( point_a, point_b, point_c )
+
+        # Calculate in_weight and out_weight using multiplier
+        dt_in = current_key[0] - prev_key[0] if prev_key else 0
+        dt_out = next_key[0] - current_key[0] if next_key else 0
+
+        # Base weights (similar to original 1/3 rule)
+        base_in = dt_in / 3.0 if prev_key else 0
+        base_out = dt_out / 3.0 if next_key else 0
+
+        in_weight = base_in * multiplier
+        out_weight = base_out * multiplier
+
+        print( "Triangle multiplier: %s" % multiplier )
+
+    print( "Final weights: in = %s, out = %s\n" % ( in_weight, out_weight ) )
+    return in_weight, out_weight
