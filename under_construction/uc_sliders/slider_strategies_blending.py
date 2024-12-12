@@ -554,6 +554,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
     Blend strategy that staggers key movement based on proximity to target anchor,
     with Maya-style auto ease tangents during motion.
     """
+    # TODO: pre-cacle isnt per curve, doesnt check if dif curve is being processed
 
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
@@ -1846,6 +1847,49 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
 
         # print( "Final weights: in = %s, out = %s\n" % ( in_weight, out_weight ) )
         return in_weight, out_weight
+
+
+def __DATA__():
+    pass
+
+
+class CurveCache:
+    """Dedicated cache object for storing per-curve data in staggered strategy"""
+
+    def __init__( self ):
+        self.positions = {}  # Map of key index to cached position
+        self.timings = {}  # Map of key index to timing data
+        self.last_blend_factor = None
+
+    def clear( self ):
+        """Clear all cached data"""
+        self.positions.clear()
+        self.timings.clear()
+        self.last_blend_factor = None
+
+    def store_timing( self, key_idx, timing_data ):
+        """Store timing data for a key"""
+        self.timings[key_idx] = timing_data
+
+    def store_position( self, key_idx, position ):
+        """Store position data for a key"""
+        self.positions[key_idx] = position
+
+    def get_timing( self, key_idx ):
+        """Get timing data for a key if it exists"""
+        return self.timings.get( key_idx )
+
+    def get_position( self, key_idx ):
+        """Get position data for a key if it exists"""
+        return self.positions.get( key_idx )
+
+    def has_data( self, key_idx ):
+        """Check if we have both timing and position data for a key"""
+        return key_idx in self.positions and key_idx in self.timings
+
+
+def __MISC__():
+    pass
 
 
 def solve_right_triangle( point_a, point_b, point_c, angle ):
