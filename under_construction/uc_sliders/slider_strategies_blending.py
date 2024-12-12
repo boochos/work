@@ -5,6 +5,7 @@ Handles interpolation of values and tangents between animation states.
 """
 
 import math
+import math
 
 import maya.cmds as cmds
 import maya.mel as mel
@@ -1424,10 +1425,12 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
         self.debug = True
         self.in_weight = 1.0
         self.out_weight = 1.0
+        self.weighted = False
 
     def calculate_tangents( self, curve, current_idx, new_value, curve_data, cached_positions = None ):
         """Calculate ease-in/out tangents with reduced angles near value extremes"""
         try:
+            self.weighted = curve_data.is_weighted
             # Get key values and times
             all_keys = curve_data.keys
             selected_keys = self.core.get_selected_keys( curve )
@@ -1447,10 +1450,10 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
 
             # Calculate angle using helper method
             base_auto_angle = self._calculate_tangent_angles( times_values, new_value )
+            # print( base_auto_angle )
 
             # Calculate separate in/out weights using helper method
-            if curve_data.is_weighted:
-                self.in_weight, self.out_weight = self._calculate_tangent_weights( times_values, base_auto_angle )  # needs angles to weight properly
+            self.in_weight, self.out_weight = self._calculate_tangent_weights( times_values, base_auto_angle, curve_data.is_weighted )  # needs angles to weight properly
 
             in_angle, out_angle = self._calculate_tangent_angle_flattening( 
                 times_values, base_auto_angle
@@ -1571,33 +1574,45 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
                 cp_in_x = self.in_weight * -1  # flip to negative for in, accomodates get_cp_y method
                 cp_out_x = self.out_weight
             else:
+                return
                 # non-weighted case, use 1/3 weight
                 cp_in_x = dt_prev / 3.0 * -1  # flip to negative for in, accomodates get_cp_y method
                 cp_out_x = dt_next / 3.0
 
-            def get_cp_y( angle, cp_x ):
-                """In tangent is assumed to flipped to negative"""
+            def get_cp_y( angle, tangent_length ):
+                """
+                Calculate y-coordinate of control point given angle and tangent length.
+                Angle in degrees, positive angles go counter-clockwise from horizontal.
+                """
                 rad = math.radians( angle )
-                dy = math.tan( rad ) * cp_x
+                dy = math.sin( rad ) * tangent_length
+                print( tangent_length, current_y + dy )
                 return current_y + dy
 
-            def get_angle_to_y( target_y, cp_x, current_y ):
+            def get_angle_to_y( target_y, tangent_length, current_y, current_angle ):
                 """Calculate angle needed to hit target y value"""
                 dy = target_y - current_y
-                return math.degrees( math.atan( dy / cp_x ) )
+                base_angle = math.degrees( math.asin( dy / tangent_length ) )
+
+                # If current angle is > 90 or < -90, we want the supplementary angle
+                if abs( current_angle ) > 90:
+                    return 180 - base_angle if current_angle > 0 else -180 + base_angle
+                return base_angle
 
             # Check in tangent
+            # print( '___cp_in_x__', cp_in_x )
             in_cp_y = get_cp_y( base_auto_angle, cp_in_x )
             in_angle = base_auto_angle
 
             # Test if control point crosses prev key's y value
             if ( ( current_y >= prev_y and in_cp_y < prev_y ) or
                 ( current_y <= prev_y and in_cp_y > prev_y ) ):
-                flat_in_angle = get_angle_to_y( prev_y, cp_in_x, current_y )
+                flat_in_angle = get_angle_to_y( prev_y, cp_in_x, current_y, base_auto_angle )
                 #
                 if abs( flat_in_angle ) < abs( base_auto_angle ):
                     in_angle = flat_in_angle
                     in_triggered = True
+                    # print( 'in yes', base_auto_angle, flat_in_angle )
                 else:
                     # print( 'no - in' )
                     pass
@@ -1610,20 +1625,22 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
             if ( ( current_y >= next_y and out_cp_y < next_y ) or
                 ( current_y <= next_y and out_cp_y > next_y ) ):
                 # print( 'qualified out' )
-                flat_out_angle = get_angle_to_y( next_y, cp_out_x, current_y )
+                flat_out_angle = get_angle_to_y( next_y, cp_out_x, current_y, base_auto_angle )
                 #
                 if abs( flat_out_angle ) < abs( base_auto_angle ):
                     out_angle = flat_out_angle
                     out_triggered = True
-                    # print( 'yes' )
+                    # print( 'out yes', base_auto_angle, flat_out_angle )
                 else:
                     # print( 'no - out' )
                     pass
 
             #
             if in_triggered:
+                print( 'IN___key y__:', prev_y, 'cp y__:', in_cp_y, '___base___:', base_auto_angle, 'flatter___:', flat_in_angle )
                 return in_angle, in_angle
             if out_triggered:
+                print( 'OUT___key y__:', next_y, 'cp y__:', out_cp_y, '___base___:', base_auto_angle, 'flatter___:', flat_out_angle )
                 return out_angle, out_angle
             #
             return in_angle, out_angle
@@ -1632,7 +1649,7 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
             print( "Error calculating flattened angles: {0}".format( e ) )
             return base_auto_angle, base_auto_angle
 
-    def _calculate_tangent_weights( self, times_values, angle ):
+    def _calculate_tangent_weights( self, times_values, angle, weighted ):
         """
         Calculate in/out weights based on time distances and value differences to neighboring keys.
         Weights will not go below 1/3 of their respective distances.
@@ -1642,131 +1659,97 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
 
         dt_prev = times_values['current_time'] - times_values['prev_time']
         dt_next = times_values['next_time'] - times_values['current_time']
-
-        # Calculate value differences
-        dv_prev = abs( times_values['current_value'] - times_values['prev_value'] )
-        dv_next = abs( times_values['next_value'] - times_values['current_value'] )
-
         # Base weights with 1/3 rule
         base_in_weight = dt_prev / 3.0
         base_out_weight = dt_next / 3.0
+        if not weighted:
+            print( '____' )
+            # TODO: SHOULDNT BE HERE, TANGENT IS THE WRONG SCALE
+            return base_in_weight, base_out_weight
 
-        # Calculate value change rates
-        value_rate_prev = dv_prev / dt_prev if dt_prev != 0 else 0
-        value_rate_next = dv_next / dt_next if dt_next != 0 else 0
-        # print( value_rate_prev, value_rate_next )
-
-        # Adjust weights based on value rates, but don't go below 1/3
-        in_weight = base_in_weight
-        out_weight = base_out_weight
-
-        if value_rate_prev > 1.0:
-            in_weight = max( base_in_weight * ( 1.0 / math.sqrt( value_rate_prev ) ), base_in_weight )
-        if value_rate_next > 1.0:
-            out_weight = max( base_out_weight * ( 1.0 / math.sqrt( value_rate_next ) ), base_out_weight )
-
-        # Calculate proximity but don't let it reduce below 1/3
-        value_range_prev = max( abs( times_values['next_value'] - times_values['prev_value'] ), 0.001 )
-        value_range_next = value_range_prev
-
-        proximity_prev = 1.0 - min( dv_prev / value_range_prev, 1.0 )
-        proximity_next = 1.0 - min( dv_next / value_range_next, 1.0 )
-
-        # Apply proximity scaling but ensure we don't go below base weights
-        in_weight = max( in_weight * ( 0.5 + 0.5 * ( 1.0 - proximity_prev ) ), base_in_weight )
-        out_weight = max( out_weight * ( 0.5 + 0.5 * ( 1.0 - proximity_next ) ), base_out_weight )
-
-        # Final clamping to Maya's valid range
-        in_weight = min( max( in_weight, 0.1 ), 10.0 )
-        out_weight = min( max( out_weight, 0.1 ), 10.0 )
-
-        print( times_values['prev_time'], times_values['prev_value'] )
-        print( times_values['current_time'], times_values['current_value'] )
-        print( times_values['next_time'], times_values['next_value'] )
+        # math with triangle scale
         prev_key = ( times_values['prev_time'], times_values['prev_value'] )
         current_key = ( times_values['current_time'], times_values['current_value'] )
         next_key = ( times_values['next_time'], times_values['next_value'] )
-        in_weight, out_weight = calculate_auto_tangents( prev_key, current_key, next_key, angle )
+        #
+        in_weight, out_weight = self._calculate_tangent_weightS_scaled( prev_key, current_key, next_key, angle )
 
         return in_weight, out_weight
+
+    def _calculate_tangent_weightS_scaled( self, prev_key, current_key, next_key, angle ):
+        """
+        Calculates Maya-style auto tangent weights using right triangle solving.
+        
+        Args:
+            prev_key: Tuple of (time, value) for the previous key, or None if no previous key
+            current_key: Tuple of (time, value) for the current key
+            next_key: Tuple of (time, value) for the next key, or None if no next key
+            angle: Angle in degrees to use for triangle calculation
+            
+        Returns:
+            Tuple of (in_weight, out_weight) for the current key
+        """
+
+        in_weight = out_weight = 0
+
+        if prev_key and next_key:
+            # Determine if current key is closer to prev or halfway between prev and next
+            mid_y = prev_key[1] + ( next_key[1] - prev_key[1] ) / 2
+            use_prev = current_key[1] <= mid_y
+
+            if use_prev:
+                # Use prev_key and current_key for calculation
+                point_a = prev_key
+                point_b = current_key
+                point_c = ( current_key[0], prev_key[1] )  # right angle point
+            else:
+                # Use current_key and next_key for calculation
+                point_a = next_key
+                point_b = current_key
+                point_c = ( current_key[0], next_key[1] )  # right angle point
+
+            multiplier = solve_right_triangle( point_a, point_b, point_c, angle )
+            # print( 'mlt:', multiplier, current_key )
+
+            # Calculate in_weight and out_weight using multiplier
+            dt_in = current_key[0] - prev_key[0] if prev_key else 0
+            dt_out = next_key[0] - current_key[0] if next_key else 0
+
+            # Base weights (similar to original 1/3 rule)
+            base_in = dt_in / 3.0 if prev_key else 0
+            base_out = dt_out / 3.0 if next_key else 0
+
+            in_weight = base_in * multiplier
+            out_weight = base_out * multiplier
+
+            # print( "Triangle multiplier: %s" % multiplier )
+
+        # print( "Final weights: in = %s, out = %s\n" % ( in_weight, out_weight ) )
+        return in_weight, out_weight
+
+
+def solve_right_triangle( point_a, point_b, point_c, angle ):
+    """
+    Solves right triangle given three points where C forms the right angle.
+    Returns the ratio of AB/AC.
+    """
+    # Calculate lengths of triangle sides
+    ac_length = abs( point_a[0] - point_c[0] )  # horizontal distance
+    bc_length = abs( point_b[1] - point_c[1] )  # vertical distance
+
+    # Convert input angle to radians
+    angle_rad = math.radians( angle )
+
+    # Calculate AB length using trigonometry
+    # In a right triangle: tan(θ) = opposite/adjacent = BC/AC
+    # Therefore: AB = AC/cos(θ)
+    ab_length = ac_length / math.cos( angle_rad )
+    # print( angle_rad, ab_length, angle )
+
+    # Return multiplier ratio
+    return ab_length / ac_length if ac_length != 0 else 1.0
 
 
 def __DEV_STRATEGIES__():
     pass
 
-
-def calculate_auto_tangents( prev_key, current_key, next_key, angle ):
-    """
-    Calculates Maya-style auto tangent weights using right triangle solving.
-    
-    Args:
-        prev_key: Tuple of (time, value) for the previous key, or None if no previous key
-        current_key: Tuple of (time, value) for the current key
-        next_key: Tuple of (time, value) for the next key, or None if no next key
-        angle: Angle in degrees to use for triangle calculation
-        
-    Returns:
-        Tuple of (in_weight, out_weight) for the current key
-    """
-
-    def solve_right_triangle( point_a, point_b, point_c ):
-        """
-        Solves right triangle given three points where C forms the right angle.
-        Returns the ratio of AB/AC.
-        """
-        # Calculate lengths of triangle sides
-        ac_length = abs( point_a[0] - point_c[0] )  # horizontal distance
-        bc_length = abs( point_b[1] - point_c[1] )  # vertical distance
-
-        # Convert input angle to radians
-        angle_rad = math.radians( angle )
-
-        # Calculate AB length using trigonometry
-        # In a right triangle: tan(θ) = opposite/adjacent = BC/AC
-        # Therefore: AB = AC/cos(θ)
-        ab_length = ac_length / math.cos( angle_rad )
-
-        # Return multiplier ratio
-        return ab_length / ac_length if ac_length != 0 else 1.0
-
-    print( "\nCalculating weights for key at time %s value %s" % ( current_key[0], current_key[1] ) )
-    if prev_key:
-        print( "Prev key: time %s value %s" % ( prev_key[0], prev_key[1] ) )
-    if next_key:
-        print( "Next key: time %s value %s" % ( next_key[0], next_key[1] ) )
-
-    in_weight = out_weight = 0
-
-    if prev_key and next_key:
-        # Determine if current key is closer to prev or halfway between prev and next
-        mid_y = prev_key[1] + ( next_key[1] - prev_key[1] ) / 2
-        use_prev = current_key[1] <= mid_y
-
-        if use_prev:
-            # Use prev_key and current_key for calculation
-            point_a = prev_key
-            point_b = current_key
-            point_c = ( current_key[0], prev_key[1] )  # right angle point
-        else:
-            # Use current_key and next_key for calculation
-            point_a = next_key
-            point_b = current_key
-            point_c = ( current_key[0], next_key[1] )  # right angle point
-
-        multiplier = solve_right_triangle( point_a, point_b, point_c )
-
-        # Calculate in_weight and out_weight using multiplier
-        dt_in = current_key[0] - prev_key[0] if prev_key else 0
-        dt_out = next_key[0] - current_key[0] if next_key else 0
-
-        # Base weights (similar to original 1/3 rule)
-        base_in = dt_in / 3.0 if prev_key else 0
-        base_out = dt_out / 3.0 if next_key else 0
-
-        in_weight = base_in * multiplier
-        out_weight = base_out * multiplier
-
-        print( "Triangle multiplier: %s" % multiplier )
-
-    print( "Final weights: in = %s, out = %s\n" % ( in_weight, out_weight ) )
-    return in_weight, out_weight
