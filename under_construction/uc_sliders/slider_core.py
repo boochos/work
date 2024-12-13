@@ -11,6 +11,7 @@ imp.reload( slider_strategies_blending )
 
 # TODO: cleanup module, audit functions and data structures for usage
 # TODO: refactor how curves are gathered, should have 3 options, via selected vurves, active layers, selected objects, active char sets
+# TODO: optimize processing, gets really bogged down with many curves, figure out where the issue is
 
 
 class SliderCore( object ):
@@ -19,7 +20,7 @@ class SliderCore( object ):
     def __init__( self ):
         # Data management
         self.curve_data = {}  # Map of curve to CurveData
-        self.blend_data = BlendData()
+        # self.blend_data = BlendData()
         self.update_queue = []  # Add this line to initialize update_queue
 
         # State tracking
@@ -44,21 +45,19 @@ class SliderCore( object ):
             'rate': slider_strategies_blending.RateBasedBlendStrategy( self ),
             'linear': slider_strategies_blending.LinearBlendStrategy( self ),
             'tria': slider_strategies_blending.TriangleBlendStrategy( self ),
-            'triad': slider_strategies_blending.TriangleDirectBlendStrategy( self )
+            'triad': slider_strategies_blending.TriangleDirectBlendStrategy( self ),
+            'trias': slider_strategies_blending.TriangleStaggeredBlendStrategy( self )
         }
 
-    def get_curve_tangents( self, curve ):
-        return self.curve_data[curve].tangents
-
-    def get_curve_value( self, curve, idx ):
-        return self.curve_data[curve].values[idx]
+    def __INITIALIZE__( self ):
+        pass
 
     def initialize_blend_session( self ):
         """Initialize data for a new blend operation"""
         # print( '___current blend strategy', self.current_blending_strategy )
-        # Clear previous data
-        self.curve_data.clear()
-        self.blend_data.clear()
+        # Clear previous data, should already be cleared
+        # self.curve_data.clear()
+        # self.blend_data.clear()
 
         # Get current state
         curves = self.get_curves()
@@ -96,14 +95,10 @@ class SliderCore( object ):
                 curve_data = CurveData.from_curve( curve )
 
             self.curve_data[curve] = curve_data
-            self.blend_data.add_curve( curve, curve_data )
+            # self.blend_data.add_curve( curve, curve_data )
 
         except Exception as e:
             print( "Error processing curve {0}: {1}".format( curve, e ) )
-
-    def has_curve_data( self, curve ):
-        """Check if curve data exists"""
-        return curve in self.curve_data
 
     def _insert_current_time_key( self, curve ):
         """Insert a key at current time"""
@@ -131,6 +126,125 @@ class SliderCore( object ):
             if blends:
                 blend_nodes.extend( blends )
         return blend_nodes
+
+    def __MANAGE_DATA__( self ):
+        pass
+
+    def get_curve_tangents( self, curve ):
+        return self.curve_data[curve].tangents
+
+    def get_curve_value( self, curve, idx ):
+        return self.curve_data[curve].values[idx]
+
+    def has_curve_data( self, curve ):
+        """Check if curve data exists"""
+        return curve in self.curve_data
+
+    def get_curves( self ):
+        """Get visible/selected animation curves"""
+        curves = cmds.keyframe( q = True, name = True, sl = True ) or []
+        if not curves:
+            ge = 'graphEditor1GraphEd'
+            if cmds.animCurveEditor( ge, exists = True ):
+                curves = cmds.animCurveEditor( ge, q = True, curvesShown = True ) or []
+        return curves
+
+    def get_selected_keys( self, curve ):
+        """Get selected keys as a list"""
+        return list( cmds.keyframe( curve, q = True, sl = True, tc = True ) or [] )  # Convert to list
+
+    def get_curve_data( self, curve ):
+        """Get cached curve data"""
+        return self.curve_data.get( curve )
+
+    def __MANAGE_STRATEGY__( self ):
+        pass
+
+    # Strategy Management
+    def get_current_targeting_strategy( self ):
+        """Get current targeting strategy instance"""
+        return self.targeting_strategies[self.current_targeting_strategy]
+
+    def set_targeting_strategy( self, strategy_name ):
+        """Set current targeting strategy"""
+        if strategy_name in self.targeting_strategies:
+            self.current_targeting_strategy = strategy_name
+            # Get current blend strategy and resync its weights
+            current_blend = self.get_current_blending_strategy()
+            current_blend._sync_weight_settings()
+            return True
+        return False
+
+    def get_current_blending_strategy( self ):
+        """Get current blending strategy instance"""
+        return self.blending_strategies[self.current_blending_strategy]
+
+    def set_blending_strategy( self, strategy_name ):
+        """Set current blending strategy"""
+        # print( '___', strategy_name )
+        if strategy_name in self.blending_strategies:
+            self.current_blending_strategy = strategy_name
+            # Sync weights for new blend strategy
+            current_blend = self.get_current_blending_strategy()
+            current_blend._sync_weight_settings()
+            return True
+        return False
+
+    def __BLEND__( self ):
+        pass
+
+    def on_handle_move( self, blend_factor ):
+        """Core movement handler"""
+        if self._prepare_handle_move():
+            # Process updates
+            for obj in self.selected_objects:
+                self._process_object_updates( obj, blend_factor )
+
+            if self.update_queue:
+                self._execute_batch_updates()
+
+            if self.blend_nodes:
+                cmds.dgeval( self.blend_nodes )
+
+    def _prepare_handle_move( self ):
+        """Prepare for handle movement"""
+        if not self.curve_data:
+            return False
+
+        if not self.moved:
+            self.moved = True
+            cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
+
+        return True
+
+    def _process_object_updates( self, obj, blend_factor ):
+        """Process updates for a single object"""
+        # print( '___', blend_factor )
+        for curve in self.curve_data:
+            if curve not in self.curve_data:
+                continue
+
+            # Get keys to update
+            selected_keys = self.get_selected_keys( curve )  # Use core method
+            times_to_update = selected_keys if selected_keys else [self.current_time]
+
+            # Process in batches
+            for i in range( 0, len( times_to_update ), self.batch_size ):
+                batch = times_to_update[i:i + self.batch_size]
+                for time in batch:
+                    new_value, new_tangents = self.calculate_blend( # Use core calculation
+                        curve,
+                        time,
+                        blend_factor
+                    )
+                    # print( '___', blend_factor, new_value )
+                    if new_value is not None:
+                        self.update_queue.append( {
+                            'curve': curve,
+                            'time': time,
+                            'value': new_value,
+                            'tangents': new_tangents
+                        } )
 
     def calculate_blend( self, curve, time, blend_factor ):
         """Calculate blended values for a curve at given time"""
@@ -221,108 +335,6 @@ class SliderCore( object ):
         strategy = self.get_current_blending_strategy()
         return strategy.blend_values( curve, current_idx, current_value, target_value, target_tangents, blend_factor )
 
-    # Strategy Management
-    def get_current_targeting_strategy( self ):
-        """Get current targeting strategy instance"""
-        return self.targeting_strategies[self.current_targeting_strategy]
-
-    def set_targeting_strategy( self, strategy_name ):
-        """Set current targeting strategy"""
-        if strategy_name in self.targeting_strategies:
-            self.current_targeting_strategy = strategy_name
-            # Get current blend strategy and resync its weights
-            current_blend = self.get_current_blending_strategy()
-            current_blend._sync_weight_settings()
-            return True
-        return False
-
-    def get_current_blending_strategy( self ):
-        """Get current blending strategy instance"""
-        return self.blending_strategies[self.current_blending_strategy]
-
-    def set_blending_strategy( self, strategy_name ):
-        """Set current blending strategy"""
-        # print( '___', strategy_name )
-        if strategy_name in self.blending_strategies:
-            self.current_blending_strategy = strategy_name
-            # Sync weights for new blend strategy
-            current_blend = self.get_current_blending_strategy()
-            current_blend._sync_weight_settings()
-            return True
-        return False
-
-    def get_curves( self ):
-        """Get visible/selected animation curves"""
-        curves = cmds.keyframe( q = True, name = True, sl = True ) or []
-        if not curves:
-            ge = 'graphEditor1GraphEd'
-            if cmds.animCurveEditor( ge, exists = True ):
-                curves = cmds.animCurveEditor( ge, q = True, curvesShown = True ) or []
-        return curves
-
-    # Data Access Methods
-    def get_selected_keys( self, curve ):
-        """Get selected keys as a list"""
-        return list( cmds.keyframe( curve, q = True, sl = True, tc = True ) or [] )  # Convert to list
-
-    def get_curve_data( self, curve ):
-        """Get cached curve data"""
-        return self.curve_data.get( curve )
-
-    def clear_caches( self ):
-        """Clear all cached data"""
-        self.curve_data.clear()
-        self.blend_data.clear()
-        self.moved = False
-        self.update_queue = []
-
-    def prepare_handle_move( self ):
-        """Prepare for handle movement"""
-        if not self.curve_data:
-            return False
-
-        if not self.moved:
-            self.moved = True
-            cmds.undoInfo( openChunk = True, cn = 'Blend_N' )
-
-        return True
-
-    def finish_blend( self ):
-        """Clean up after blend operation"""
-        if self.moved:
-            cmds.undoInfo( closeChunk = True, cn = 'Blend_N' )
-            self.moved = False
-        self.clear_caches()
-
-    def _process_object_updates( self, obj, blend_factor ):
-        """Process updates for a single object"""
-        # print( '___', blend_factor )
-        for curve in self.curve_data:
-            if curve not in self.curve_data:
-                continue
-
-            # Get keys to update
-            selected_keys = self.get_selected_keys( curve )  # Use core method
-            times_to_update = selected_keys if selected_keys else [self.current_time]
-
-            # Process in batches
-            for i in range( 0, len( times_to_update ), self.batch_size ):
-                batch = times_to_update[i:i + self.batch_size]
-                for time in batch:
-                    new_value, new_tangents = self.calculate_blend( # Use core calculation
-                        curve,
-                        time,
-                        blend_factor
-                    )
-                    # print( '___', blend_factor, new_value )
-                    if new_value is not None:
-                        self.update_queue.append( {
-                            'curve': curve,
-                            'time': time,
-                            'value': new_value,
-                            'tangents': new_tangents
-                        } )
-
     def _execute_batch_updates( self ):
         """Execute queued updates in optimized batches"""
         curve_updates = {}
@@ -333,6 +345,7 @@ class SliderCore( object ):
             curve_updates[curve].append( update )
 
         for curve, updates in curve_updates.items():
+            self._buffer_curve( curve )
             curve_data = self.curve_data[curve]
             for update in updates:
                 if update.get( 'is_anchor' ):
@@ -380,24 +393,30 @@ class SliderCore( object ):
                             lock = curve_data.tangents['lock'][key_idx]
                         )
 
-    def on_handle_move( self, blend_factor ):
-        """Core movement handler"""
-        if self.prepare_handle_move():
-            # Process updates
-            for obj in self.selected_objects:
-                self._process_object_updates( obj, blend_factor )
+    def _buffer_curve( self, curve ):
+        """create a buffer curve if ti doesnt exist"""
+        buf = cmds.bufferCurve( curve, ex = True, q = True )
+        if not buf:
+            cmds.bufferCurve( curve, overwrite = True, index = ( 0, ) )
 
-            if self.update_queue:
-                self._execute_batch_updates()
-
-            if self.blend_nodes:
-                cmds.dgeval( self.blend_nodes )
-
-    def __NOT_SURE_THIS_ARE_STILL_NEEDED___start( self ):
+    def __RESET__( self ):
         pass
 
-    def __NOT_SURE_THIS_ARE_STILL_NEEDED___end( self ):
-        pass
+    def finish_blend( self ):
+        """Clean up after blend operation"""
+        if self.moved:
+            cmds.undoInfo( closeChunk = True, cn = 'Blend_N' )
+            self.moved = False
+        self.clear_caches()
+        current_strategy = self.get_current_blending_strategy()
+        current_strategy.reset()
+
+    def clear_caches( self ):
+        """Clear all cached data"""
+        self.curve_data.clear()
+        # self.blend_data.clear()
+        self.moved = False
+        self.update_queue = []
 
 
 # data_structures.py
@@ -603,7 +622,7 @@ class CurveData:
             return False
         return ( time.time() - self.cache_timestamp ) < timeout
 
-
+'''
 class BlendData:
     """
     Manages data for current blend operation
@@ -642,3 +661,4 @@ class BlendData:
         self.target_values = {}
         self.target_tangents = {}
         self.update_queue = []  # Reset to empty list instead of using clear()
+'''

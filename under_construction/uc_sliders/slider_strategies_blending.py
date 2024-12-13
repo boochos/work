@@ -1231,7 +1231,7 @@ class AutoTangentStrategy( object ):
         """
         raise NotImplementedError
 
-    def _find_anchor_keys( self, curve, current_idx ):
+    def _get_anchor_indices( self, curve, current_idx ):
         """Find surrounding non-selected keys to use as anchors"""
         curve_data = self.core.get_curve_data( curve )
         all_keys = curve_data.keys
@@ -1255,7 +1255,7 @@ class AutoSmoothStrategy( AutoTangentStrategy ):
             selected_keys = self.core.get_selected_keys( curve )
 
             # Find anchor keys
-            left_anchor_idx, right_anchor_idx = self._find_anchor_keys( curve, current_idx )
+            left_anchor_idx, right_anchor_idx = self._get_anchor_indices( curve, current_idx )
             if left_anchor_idx is None or right_anchor_idx is None:
                 return 0.0, 1.0
 
@@ -1386,7 +1386,7 @@ class AutoCatmullRomStrategy( AutoTangentStrategy ):
             is_positive = self.core.current_blending_strategy == 'positive'
 
             # Find anchor keys
-            left_anchor_idx, right_anchor_idx = self._find_anchor_keys( curve, current_idx )
+            left_anchor_idx, right_anchor_idx = self._get_anchor_indices( curve, current_idx )
             if left_anchor_idx is None or right_anchor_idx is None:
                 return 0.0, 1.0
 
@@ -1493,7 +1493,7 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
             selected_keys = self.core.get_selected_keys( curve )
 
             # Find anchor keys
-            left_anchor_idx, right_anchor_idx = self._find_anchor_keys( curve, current_idx )
+            left_anchor_idx, right_anchor_idx = self._get_anchor_indices( curve, current_idx )
             if left_anchor_idx is None or right_anchor_idx is None:
                 return 0.0, 1.0
 

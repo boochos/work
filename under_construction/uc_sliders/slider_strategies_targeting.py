@@ -96,7 +96,7 @@ class TargetStrategy:
                 all_keys = curve_data.keys
 
                 # Use existing method to find anchor keys
-                prev_key, next_key = self._find_anchor_keys( curve, current_idx )
+                prev_key, next_key = self._get_anchor_indices( curve, current_idx )
 
                 if prev_key is None or next_key is None:
                     return None, None
@@ -134,8 +134,8 @@ class TargetStrategy:
             print( "Error calculating anchor tangent weights: {0}".format( e ) )
             return None, None
 
-    def _find_anchor_keys( self, curve, current_idx ):
-        """Find surrounding non-selected keys to use as anchors"""
+    def _get_anchor_indices( self, curve, current_idx ):
+        """Find surrounding non-selected keys to use as anchors, returns indices"""
         curve_data = self.core.get_curve_data( curve )
         all_keys = curve_data.keys
         selected_keys = self.core.get_selected_keys( curve )
@@ -146,6 +146,20 @@ class TargetStrategy:
                       if all_keys[i] not in selected_keys ), None )
 
         return prev_key, next_key
+
+    def _get_neighbouring_points( self, curve, current_idx ):
+        """ returns 2 points (x,y), left and right of current index"""
+        left_index = max( 0, current_idx - 1 )  # Ensures we don't go below 0
+        left_time = self.core.curve_data[curve].keys[left_index]
+        left_value = self.core.curve_data[curve].values[left_index]
+        left_point = [left_time, left_value]
+
+        right_index = max( 0, current_idx + 1 )  # Ensures we don't go below 0
+        right_time = self.core.curve_data[curve].keys[right_index]
+        right_value = self.core.curve_data[curve].values[right_index]
+        right_point = [right_time, right_value]
+
+        return left_point, right_point
 
     def _calculate_one_third( self, curve, current_idx ):
         """
@@ -462,10 +476,10 @@ class SplineTargetStrategy( TargetStrategy ):
         try:
             current_idx = self.core.get_curve_data( curve ).key_map[time]
 
-            prev_key, next_key = self._find_anchor_keys( curve, current_idx )
-            if prev_key is not None and next_key is not None:
-                curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
-                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
+            left_anchor_idx, right_anchor_idx = self._get_anchor_indices( curve, current_idx )
+            if left_anchor_idx is not None and right_anchor_idx is not None:
+                curve_data, p0, p3 = self._get_curve_points( curve, left_anchor_idx, right_anchor_idx )
+                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, left_anchor_idx, right_anchor_idx )
 
                 '''
                 print( "P0: time={0}, value={1}".format( p0[0], p0[1] ) )
@@ -508,10 +522,10 @@ class SplineTargetStrategy( TargetStrategy ):
             if not self.core.get_curve_data( curve ).tangents:
                 return None, None
 
-            prev_key, next_key = self._find_anchor_keys( curve, current_idx )
-            if prev_key is not None and next_key is not None:
-                curve_data, p0, p3 = self._get_curve_points( curve, prev_key, next_key )
-                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, prev_key, next_key )
+            left_anchor_idx, right_anchor_idx = self._get_anchor_indices( curve, current_idx )
+            if left_anchor_idx is not None and right_anchor_idx is not None:
+                curve_data, p0, p3 = self._get_curve_points( curve, left_anchor_idx, right_anchor_idx )
+                p1, p2, gap = self._calculate_control_points( curve_data, p0, p3, left_anchor_idx, right_anchor_idx )
 
                 # Calculate t for current time
                 # t = ( time - p0[0] ) / gap
@@ -556,6 +570,8 @@ class SplineTargetStrategy( TargetStrategy ):
                 if curve_data.is_weighted:
                     if self.force_one_third:
                         in_length, out_length = self._calculate_one_third( curve, current_idx )
+                        # left_point, right_point = self._get_neighbouring_points( curve, current_idx )
+                        # in_length, out_length = self._calculate_tangent_weights_scaled( left_point, [ point_x, point_y ], right_point, in_angle )
                     else:
                         # TODO: this should use 1/3 rule on all but tangents facing the anchors. likely need a dif calculation
                         in_length, out_length = self._calculate_one_third( curve, current_idx )
@@ -605,11 +621,11 @@ class SplineTargetStrategy( TargetStrategy ):
             print( "Error calculating one third weights: {0}".format( e ) )
             return 1.0 / 3.0, 1.0 / 3.0  # Fallback to default if calculation fails
 
-    def _get_curve_points( self, curve, prev_key, next_key ):
+    def _get_curve_points( self, curve, prev_idx, next_idx ):
         """Get anchor points and curve data"""
         curve_data = self.core.get_curve_data( curve )
-        p0 = [curve_data.keys[prev_key], curve_data.values[prev_key]]
-        p3 = [curve_data.keys[next_key], curve_data.values[next_key]]
+        p0 = [curve_data.keys[prev_idx], curve_data.values[prev_idx]]
+        p3 = [curve_data.keys[next_idx], curve_data.values[next_idx]]
 
         return ( curve_data, p0, p3 )
 
