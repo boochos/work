@@ -197,11 +197,10 @@ class SliderCore( object ):
         """Core movement handler"""
         if self._prepare_handle_move():
             # Process updates
-            for obj in self.selected_objects:
-                self._process_object_updates( obj, blend_factor )
+            self._process_blend( blend_factor )
 
             if self.update_queue:
-                self._execute_batch_updates()
+                self._execute_blend()
 
             if self.blend_nodes:
                 cmds.dgeval( self.blend_nodes )
@@ -217,7 +216,7 @@ class SliderCore( object ):
 
         return True
 
-    def _process_object_updates( self, obj, blend_factor ):
+    def _process_blend( self, blend_factor ):
         """Process updates for a single object"""
         # print( '___', blend_factor )
         for curve in self.curve_data:
@@ -232,7 +231,7 @@ class SliderCore( object ):
             for i in range( 0, len( times_to_update ), self.batch_size ):
                 batch = times_to_update[i:i + self.batch_size]
                 for time in batch:
-                    new_value, new_tangents = self.calculate_blend( # Use core calculation
+                    new_value, new_tangents = self._calculate_blend( # Use core calculation
                         curve,
                         time,
                         blend_factor
@@ -246,7 +245,7 @@ class SliderCore( object ):
                             'tangents': new_tangents
                         } )
 
-    def calculate_blend( self, curve, time, blend_factor ):
+    def _calculate_blend( self, curve, time, blend_factor ):
         """Calculate blended values for a curve at given time"""
         try:
             curve_data = self.curve_data.get( curve )
@@ -258,19 +257,19 @@ class SliderCore( object ):
                 return None, None
 
             # Get target values using targeting strategy
-            strategy = self.get_current_targeting_strategy()
-            prev_target, next_target = strategy.calculate_target_value( curve, time )
-            prev_tangents, next_tangents = strategy.calculate_target_tangents( curve, time )
-            prev_anchor, next_anchor = strategy.calculate_anchor_weights( curve, time )  # Get anchor weights if strategy provides them
+            targeting_strategy = self.get_current_targeting_strategy()
+            prev_target, next_target = targeting_strategy.calculate_target_value( curve, time )
+            prev_tangents, next_tangents = targeting_strategy.calculate_target_tangents( curve, time )
+            prev_anchor, next_anchor = targeting_strategy.calculate_anchor_weights( curve, time )  # Get anchor weights if strategy provides them
 
-            current_strategy = self.get_current_blending_strategy()
+            blending_strategy = self.get_current_blending_strategy()
 
             #
             #
             #
             # Process anchor weights if they exist
             if prev_anchor:
-                blended_prev = current_strategy.blend_anchors( curve, prev_anchor, blend_factor )
+                blended_prev = blending_strategy.blend_anchors( curve, prev_anchor, blend_factor )
                 if blended_prev:
                     self.update_queue.append( {
                         'curve': curve,
@@ -284,7 +283,7 @@ class SliderCore( object ):
                 pass
 
             if next_anchor:
-                blended_next = current_strategy.blend_anchors( curve, next_anchor, blend_factor )
+                blended_next = blending_strategy.blend_anchors( curve, next_anchor, blend_factor )
                 if blended_next:
                     self.update_queue.append( {
                         'curve': curve,
@@ -302,9 +301,7 @@ class SliderCore( object ):
             target_value = next_target if is_forward else prev_target
             target_tangents = next_tangents if is_forward else prev_tangents
 
-            # Get current strategy to determine how to handle blend_factor
-            current_strategy = self.get_current_blending_strategy()
-            if current_strategy.uses_signed_blend:
+            if blending_strategy.uses_signed_blend:
                 # Pass original signed value for geometric strategy
                 abs_blend = blend_factor
             else:
@@ -315,7 +312,7 @@ class SliderCore( object ):
             # print( "___is_forward:", is_forward )
 
             # Calculate blend using appropriate blend factor
-            return self._blend_values( 
+            return self._calculate_keys( 
                 curve,
                 current_idx,
                 target_value = target_value,
@@ -327,15 +324,15 @@ class SliderCore( object ):
             print( "Error calculating blend: {0}".format( e ) )
             return None, None
 
-    def _blend_values( self, curve, current_idx, target_value, target_tangents, blend_factor ):
+    def _calculate_keys( self, curve, current_idx, target_value, target_tangents, blend_factor ):
         """Calculate blended values using current blend strategy"""
         curve_data = self.curve_data[curve]
         current_value = curve_data.values[current_idx]
 
-        strategy = self.get_current_blending_strategy()
-        return strategy.blend_values( curve, current_idx, current_value, target_value, target_tangents, blend_factor )
+        blending_strategy = self.get_current_blending_strategy()
+        return blending_strategy.blend_values( curve, current_idx, current_value, target_value, target_tangents, blend_factor )
 
-    def _execute_batch_updates( self ):
+    def _execute_blend( self ):
         """Execute queued updates in optimized batches"""
         curve_updates = {}
         for update in self.update_queue:
@@ -407,11 +404,11 @@ class SliderCore( object ):
         if self.moved:
             cmds.undoInfo( closeChunk = True, cn = 'Blend_N' )
             self.moved = False
-        self.clear_caches()
+        self._clear_caches()
         current_strategy = self.get_current_blending_strategy()
         current_strategy.reset()
 
-    def clear_caches( self ):
+    def _clear_caches( self ):
         """Clear all cached data"""
         self.curve_data.clear()
         # self.blend_data.clear()
