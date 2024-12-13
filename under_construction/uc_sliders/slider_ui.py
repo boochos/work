@@ -1195,6 +1195,7 @@ class CustomDialog( QDialog ):
 
         # Create initial slider
         self.add_slider( "Dir", "direct", "magenta", "triad" )
+        self.add_slider( "Stg", "direct", "purple", "trias" )
         self.add_slider( "Lin", "linear", "pink", "tria" )
         self.add_slider( "Spl", "spline", "blue", "tria" )
 
