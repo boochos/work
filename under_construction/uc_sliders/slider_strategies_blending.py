@@ -12,6 +12,32 @@ import maya.mel as mel
 import numpy as np
 
 
+def __UTIL__():
+    pass
+
+
+def solve_right_triangle( point_a, point_b, point_c, angle ):
+    """
+    Solves right triangle given three points where C forms the right angle.
+    Returns the ratio of AB/AC.
+    """
+    # Calculate lengths of triangle sides
+    ac_length = abs( point_a[0] - point_c[0] )  # horizontal distance
+    bc_length = abs( point_b[1] - point_c[1] )  # vertical distance
+
+    # Convert input angle to radians
+    angle_rad = math.radians( angle )
+
+    # Calculate AB length using trigonometry
+    # In a right triangle: tan(θ) = opposite/adjacent = BC/AC
+    # Therefore: AB = AC/cos(θ)
+    ab_length = ac_length / math.cos( angle_rad )
+    # print( angle_rad, ab_length, angle )
+
+    # Return multiplier ratio
+    return ab_length / ac_length if ac_length != 0 else 1.0
+
+
 def __BLENDING_STRATEGIES__():
     pass
 
@@ -554,7 +580,6 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
     Blend strategy that staggers key movement based on proximity to target anchor,
     with Maya-style auto ease tangents during motion.
     """
-    # TODO: pre-cacle isnt per curve, doesnt check if dif curve is being processed
 
     def __init__( self, core ):
         super( TriangleStaggeredBlendStrategy, self ).__init__( core )
@@ -573,9 +598,11 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self.distance_threshold_max = 100
 
         # Cache for pre-calculated values
-        self._last_blend_factor = None
-        self._cached_positions = {}
-        self._cached_timings = {}
+        self._cached_data = {
+            'positions': {},  # {curve_name: {key_idx: position}}
+            'timings': {},  # {curve_name: {key_idx: timing_data}}
+            'last_blend_factor': None
+        }
 
         # Auto tangent parameters
         self.transition_to_auto_end = 0.025  # Point where we finish blending to auto tangents
@@ -590,20 +617,28 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         # TODO: for any given key blending, force the next keys tangent to adjust
 
     def blend_values( self, curve, current_idx, current_value, target_value, target_tangents, blend_factor ):
-        """
-        Main blend method using pre-calculation for position and tangents.
-        """
+        """Main blend method using pre-calculation for position and tangents."""
         try:
-            # Skip pre-calculation if blend factor hasn't changed
-            if self._last_blend_factor != blend_factor:
+            # Check if we need to precalculate:
+            # - If blend factor has changed
+            # - If this is a new curve we haven't seen yet
+            # - If curve exists but was previously reset/cleared
+            needs_precalc = ( 
+                self._cached_data['last_blend_factor'] != blend_factor or  # Blend factor changed
+                curve not in self._cached_data['positions']  # First time seeing this curve
+            )
+            if needs_precalc:
+                if self._cached_data['last_blend_factor'] != blend_factor:
+                    self.reset()  # Reset all caches if blend factor changed
                 self._precalculate_curve_positions( curve, blend_factor )
-                self._last_blend_factor = blend_factor
+                self._cached_data['last_blend_factor'] = blend_factor
 
-            # Get pre-calculated position
-            if current_idx not in self._cached_positions:
+            # Verify we have cached data after potential precalculation
+            if ( curve not in self._cached_data['positions'] or
+                current_idx not in self._cached_data['positions'][curve] ):
                 return current_value, None
 
-            new_value = self._cached_positions[current_idx]
+            new_value = self._cached_data['positions'][curve][current_idx]
 
             # Calculate tangents using pre-calculated positions
             curve_data = self.core.get_curve_data( curve )
@@ -614,7 +649,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
                 new_tangents = target_tangents
 
             if self.debug:
-                self._log_debug_info( current_idx, blend_factor )
+                self._log_debug_info( curve, current_idx, blend_factor )
 
             return new_value, new_tangents
 
@@ -642,12 +677,20 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
         except Exception as e:
             print( "Error in position pre-calculation: {0}".format( e ) )
-            self._reset_caches()
+            self.reset()  # Use reset instead of _reset_caches
 
     def _initialize_precalculation( self, curve ):
         """Initialize caches and get curve data."""
-        self._cached_positions.clear()
-        self._cached_timings.clear()
+        # Initialize dictionaries for this curve if they don't exist
+        if curve not in self._cached_data['positions']:
+            self._cached_data['positions'][curve] = {}
+        if curve not in self._cached_data['timings']:
+            self._cached_data['timings'][curve] = {}
+        else:
+            # Clear existing data for this curve
+            self._cached_data['positions'][curve].clear()
+            self._cached_data['timings'][curve].clear()
+
         return self.core.get_curve_data( curve )
 
     def _calculate_timing_data( self, curve, curve_data, selected_keys, is_positive ):
@@ -665,14 +708,17 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             # Get target tangents
             _, target_tangents = target_strategy.calculate_target_tangents( curve, time )
 
-            # Store timing data
-            self._store_timing_data( current_idx, normalized_distance, dynamic_ease,
-                                  range_portion, target_tangents )
+            # Store timing data with curve parameter
+            self._store_timing_data( curve, current_idx, normalized_distance, dynamic_ease,
+                                range_portion, target_tangents )
 
-    def _store_timing_data( self, current_idx, normalized_distance, dynamic_ease,
-                          range_portion, target_tangents ):
-        """Store calculated timing data in cache."""
-        self._cached_timings[current_idx] = {
+    def _store_timing_data( self, curve, current_idx, normalized_distance, dynamic_ease,
+                        range_portion, target_tangents ):
+        """Store timing data in the curve-specific cache."""
+        if curve not in self._cached_data['timings']:
+            self._cached_data['timings'][curve] = {}
+
+        self._cached_data['timings'][curve][current_idx] = {
             'normalized_distance': normalized_distance,
             'dynamic_ease': dynamic_ease,
             'range_portion': range_portion,
@@ -696,15 +742,15 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
             # Calculate new position
             target = next_target if blend_factor >= 0 else prev_target
-            new_position = self._calculate_new_position( current_idx, current_value,
-                                                      target, blend_factor )
+            new_position = self._calculate_new_position( curve, current_idx, current_value,
+                                                    target, blend_factor )
 
-            # Update states
-            self._update_position_states( curve_data, current_idx, new_position )
+            # Update states with curve parameter
+            self._update_position_states( curve, curve_data, current_idx, new_position )
 
-    def _calculate_new_position( self, current_idx, current_value, target_value, blend_factor ):
+    def _calculate_new_position( self, curve, current_idx, current_value, target_value, blend_factor ):
         """Calculate new position using timing data."""
-        timing = self._cached_timings[current_idx]
+        timing = self._cached_data['timings'][curve][current_idx]
         return self._calculate_staggered_position( 
             current_value,
             target_value,
@@ -712,26 +758,29 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             timing
         )
 
-    def _update_position_states( self, curve_data, current_idx, new_position ):
+    def _update_position_states( self, curve, curve_data, current_idx, new_position ):
         """Update cached position and curve running state."""
-        self._cached_positions[current_idx] = new_position
+        if curve not in self._cached_data['positions']:
+            self._cached_data['positions'][curve] = {}
+
+        self._cached_data['positions'][curve][current_idx] = new_position
         curve_data.update_running_state( current_idx, new_position, None )
 
     def _calculate_tangents_with_precalc( self, curve, current_idx, curve_data ):
         """Calculate tangents with transitions using cached data."""
         try:
             # Validate and get basic data
-            if not self._validate_tangent_calculation( current_idx ):
+            if not self._validate_tangent_calculation( curve, current_idx ):
                 return None
 
-            timing_data = self._cached_timings[current_idx]
-            new_value = self._cached_positions[current_idx]
+            timing_data = self._cached_data['timings'][curve][current_idx]
+            new_value = self._cached_data['positions'][curve][current_idx]
             local_progress = self._calculate_local_progress( timing_data )
 
             # Get initial tangent values
             initial_tangents = self._get_initial_tangents( curve_data, current_idx )
 
-            # Calculate auto tangents - now returns angle and separate weights
+            # Calculate auto tangents
             auto_tangents = self._calculate_auto_tangents( curve, current_idx, new_value, curve_data )
             if not auto_tangents:
                 return None
@@ -740,21 +789,23 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
             # Calculate final tangents based on progress
             return self._calculate_final_tangents( local_progress, initial_tangents,
-                                               auto_angle, auto_in_weight, auto_out_weight,
-                                               timing_data )
+                                             auto_angle, auto_in_weight, auto_out_weight,
+                                             timing_data )
 
         except Exception as e:
             print( "Error calculating tangents: {0}".format( e ) )
             return None
 
-    def _validate_tangent_calculation( self, current_idx ):
+    def _validate_tangent_calculation( self, curve, current_idx ):
         """Validate cached data exists for tangent calculation."""
-        return ( current_idx in self._cached_positions and
-                current_idx in self._cached_timings )
+        return ( curve in self._cached_data['positions'] and
+                current_idx in self._cached_data['positions'][curve] and
+                curve in self._cached_data['timings'] and
+                current_idx in self._cached_data['timings'][curve] )
 
     def _calculate_local_progress( self, timing_data ):
         """Calculate progress within key's motion range."""
-        abs_blend = abs( self._last_blend_factor )
+        abs_blend = abs( self._cached_data['last_blend_factor'] )
 
         # Before motion
         if abs_blend <= timing_data['start']:
@@ -788,12 +839,14 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
     def _calculate_auto_tangents( self, curve, current_idx, new_value, curve_data ):
         """Calculate auto tangents using current behavior."""
         try:
+            # Pass curve-specific cached positions
+            curve_positions = self._cached_data['positions'].get( curve, {} )
             return self.auto_tangent_behavior.calculate_tangents( 
                 curve,
                 current_idx,
                 new_value,
                 curve_data,
-                self._cached_positions  # Pass cached positions for better accuracy
+                curve_positions  # Pass only positions for this curve
             )
         except Exception as e:
             print( "Error calculating auto tangents: {0}".format( e ) )
@@ -1003,22 +1056,25 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
 
     def reset( self ):
         """Reset cached data"""
-        self._last_blend_factor = None
-        self._cached_positions.clear()
-        self._cached_timings.clear()
+        # print( 'reset' )
+        self._cached_data['positions'].clear()
+        self._cached_data['timings'].clear()
+        self._cached_data['last_blend_factor'] = None
         super( TriangleStaggeredBlendStrategy, self ).reset()
 
-    def _log_debug_info( self, current_idx, blend_factor ):
+    def _log_debug_info( self, curve, current_idx, blend_factor ):
         """Log debug information if debug mode is enabled"""
         if not self.debug:
             return
 
         print( "\n=== Staggered Blend Debug ===" )
+        print( "Curve: {0}".format( curve ) )
         print( "Current Index: {0}".format( current_idx ) )
         print( "Blend Factor: {0}".format( blend_factor ) )
+        print( "Last Blend Factor: {0}".format( self._cached_data['last_blend_factor'] ) )
 
-        if current_idx in self._cached_timings:
-            timing = self._cached_timings[current_idx]
+        if curve in self._cached_data['timings'] and current_idx in self._cached_data['timings'][curve]:
+            timing = self._cached_data['timings'][curve][current_idx]
             print( "Timing Data:" )
             print( "  Normalized Distance: {0:.3f}".format( timing['normalized_distance'] ) )
             print( "  Dynamic Ease: {0:.3f}".format( timing['dynamic_ease'] ) )
@@ -1026,8 +1082,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             print( "  Start: {0:.3f}".format( timing['start'] ) )
             print( "  Range End: {0:.3f}".format( timing['range_end'] ) )
 
-        if current_idx in self._cached_positions:
-            print( "Cached Position: {0}".format( self._cached_positions[current_idx] ) )
+        if curve in self._cached_data['positions'] and current_idx in self._cached_data['positions'][curve]:
+            print( "Cached Position: {0}".format( self._cached_data['positions'][curve][current_idx] ) )
 
 
 def __BLENDING_SIMPLE_STRATEGIES__():
@@ -1886,32 +1942,6 @@ class CurveCache:
     def has_data( self, key_idx ):
         """Check if we have both timing and position data for a key"""
         return key_idx in self.positions and key_idx in self.timings
-
-
-def __MISC__():
-    pass
-
-
-def solve_right_triangle( point_a, point_b, point_c, angle ):
-    """
-    Solves right triangle given three points where C forms the right angle.
-    Returns the ratio of AB/AC.
-    """
-    # Calculate lengths of triangle sides
-    ac_length = abs( point_a[0] - point_c[0] )  # horizontal distance
-    bc_length = abs( point_b[1] - point_c[1] )  # vertical distance
-
-    # Convert input angle to radians
-    angle_rad = math.radians( angle )
-
-    # Calculate AB length using trigonometry
-    # In a right triangle: tan(θ) = opposite/adjacent = BC/AC
-    # Therefore: AB = AC/cos(θ)
-    ab_length = ac_length / math.cos( angle_rad )
-    # print( angle_rad, ab_length, angle )
-
-    # Return multiplier ratio
-    return ab_length / ac_length if ac_length != 0 else 1.0
 
 
 def __DEV_STRATEGIES__():

@@ -10,6 +10,36 @@ import numpy as np
 # TODO: add strategy to blend into tangent but easing out to next keys position, theoretical curve, control points meet.
 
 
+def __UTIL__():
+    pass
+
+
+def solve_right_triangle( point_a, point_b, point_c, angle ):
+    """
+    Solves right triangle given three points where C forms the right angle.
+    Returns the ratio of AB/AC.
+    """
+    # Calculate lengths of triangle sides
+    ac_length = abs( point_a[0] - point_c[0] )  # horizontal distance
+    bc_length = abs( point_b[1] - point_c[1] )  # vertical distance
+
+    # Convert input angle to radians
+    angle_rad = math.radians( angle )
+
+    # Calculate AB length using trigonometry
+    # In a right triangle: tan(θ) = opposite/adjacent = BC/AC
+    # Therefore: AB = AC/cos(θ)
+    ab_length = ac_length / math.cos( angle_rad )
+    # print( angle_rad, ab_length, angle )
+
+    # Return multiplier ratio
+    return ab_length / ac_length if ac_length != 0 else 1.0
+
+
+def __TARGETING_STRATEGIES__():
+    pass
+
+
 class TargetStrategy:
     """Base class for targeting strategies"""
 
@@ -150,6 +180,57 @@ class TargetStrategy:
         except Exception as e:
             print( "Error calculating one third weights: {0}".format( e ) )
             return 1.0 / 3.0, 1.0 / 3.0  # Fallback to default if calculation fails
+
+    def _calculate_tangent_weights_scaled( self, prev_key, current_key, next_key, angle ):
+        """
+        Calculates Maya-style auto tangent weights using right triangle solving.
+        
+        Args:
+            prev_key: Tuple of (time, value) for the previous key, or None if no previous key
+            current_key: Tuple of (time, value) for the current key
+            next_key: Tuple of (time, value) for the next key, or None if no next key
+            angle: Angle in degrees to use for triangle calculation
+            
+        Returns:
+            Tuple of (in_weight, out_weight) for the current key
+        """
+
+        in_weight = out_weight = 0
+
+        if prev_key and next_key:
+            # Determine if current key is closer to prev or halfway between prev and next
+            mid_y = prev_key[1] + ( next_key[1] - prev_key[1] ) / 2
+            use_prev = current_key[1] <= mid_y
+
+            if use_prev:
+                # Use prev_key and current_key for calculation
+                point_a = prev_key
+                point_b = current_key
+                point_c = ( current_key[0], prev_key[1] )  # right angle point
+            else:
+                # Use current_key and next_key for calculation
+                point_a = next_key
+                point_b = current_key
+                point_c = ( current_key[0], next_key[1] )  # right angle point
+
+            multiplier = solve_right_triangle( point_a, point_b, point_c, angle )
+            # print( 'mlt:', multiplier, current_key )
+
+            # Calculate in_weight and out_weight using multiplier
+            dt_in = current_key[0] - prev_key[0] if prev_key else 0
+            dt_out = next_key[0] - current_key[0] if next_key else 0
+
+            # Base weights (similar to original 1/3 rule)
+            base_in = dt_in / 3.0 if prev_key else 0
+            base_out = dt_out / 3.0 if next_key else 0
+
+            in_weight = base_in * multiplier
+            out_weight = base_out * multiplier
+
+            # print( "Triangle multiplier: %s" % multiplier )
+
+        # print( "Final weights: in = %s, out = %s\n" % ( in_weight, out_weight ) )
+        return in_weight, out_weight
 
     def reset( self ):
         """Reset any stored state"""
@@ -495,71 +576,6 @@ class SplineTargetStrategy( TargetStrategy ):
         except Exception as e:
             print( "Error calculating tangents: {0}".format( e ) )
             return None, None
-
-    '''
-    def calculate_anchor_weights( self, curve, time ):
-        """
-        Calculate proper weights for anchor key tangents using the 1/3 rule.
-        Only affects the tangent weight pointing toward the selected keys:
-        - Left anchor: out tangent weight
-        - Right anchor: in tangent weight
-        
-        Args:
-            curve: The animation curve being processed
-            time: Current time being evaluated
-        
-        Returns:
-            tuple: (prev_anchor_data, next_anchor_data) where each is a dict with:
-                  'time': key time
-                  'weight': calculated weight
-                  'tangent': 'in' or 'out' indicating which tangent to affect
-        """
-        # TODO: delete this in favour of the one in Base class, they should be the same
-        try:
-            curve_data = self.core.get_curve_data( curve )
-            if curve_data.is_weighted and self.force_one_third_anchor:
-                current_idx = curve_data.key_map[time]
-                all_keys = curve_data.keys
-
-                # Use existing method to find anchor keys
-                prev_key, next_key = self._find_anchor_keys( curve, current_idx )
-
-                if prev_key is None or next_key is None:
-                    return None, None
-
-                # Calculate weights based on gaps to nearest selected key
-                prev_anchor_time = all_keys[prev_key]
-                next_anchor_time = all_keys[next_key]
-
-                # For left anchor's out tangent, use distance to next key
-                left_gap = all_keys[prev_key + 1] - prev_anchor_time
-                left_weight = left_gap / 3.0
-
-                # For right anchor's in tangent, use distance to previous key
-                right_gap = next_anchor_time - all_keys[next_key - 1]
-                right_weight = right_gap / 3.0
-
-                prev_anchor_data = {
-                    'time': prev_anchor_time,
-                    'weight': left_weight,
-                    'tangent': 'out'  # We only adjust the out tangent of left anchor
-                }
-
-                next_anchor_data = {
-                    'time': next_anchor_time,
-                    'weight': right_weight,
-                    'tangent': 'in'  # We only adjust the in tangent of right anchor
-                }
-
-                return prev_anchor_data, next_anchor_data
-            else:
-                # TODO: Not implemented. anchor needs to adjust but not to 1/3 rule
-                return None, None
-
-        except Exception as e:
-            print( "Error calculating anchor tangent weights: {0}".format( e ) )
-            return None, None
-            '''
 
     def _calculate_one_third( self, curve, current_idx ):
         """
