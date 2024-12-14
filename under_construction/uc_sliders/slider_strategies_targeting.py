@@ -102,30 +102,30 @@ class TargetStrategy:
                     return None, None
 
                 # Calculate weights based on gaps to nearest selected key
-                prev_anchor_time = all_keys[prev_key]
-                next_anchor_time = all_keys[next_key]
+                left_anchor_time = all_keys[prev_key]
+                right_anchor_time = all_keys[next_key]
 
                 # For left anchor's out tangent, use distance to next key
-                left_gap = all_keys[prev_key + 1] - prev_anchor_time
+                left_gap = all_keys[prev_key + 1] - left_anchor_time
                 left_weight = left_gap / 3.0
 
                 # For right anchor's in tangent, use distance to previous key
-                right_gap = next_anchor_time - all_keys[next_key - 1]
+                right_gap = right_anchor_time - all_keys[next_key - 1]
                 right_weight = right_gap / 3.0
 
-                prev_anchor_data = {
-                    'time': prev_anchor_time,
+                left_anchor_data = {
+                    'time': left_anchor_time,
                     'weight': left_weight,
                     'tangent': 'out'  # We only adjust the out tangent of left anchor
                 }
 
-                next_anchor_data = {
-                    'time': next_anchor_time,
+                right_anchor_data = {
+                    'time': right_anchor_time,
                     'weight': right_weight,
                     'tangent': 'in'  # We only adjust the in tangent of right anchor
                 }
 
-                return prev_anchor_data, next_anchor_data
+                return left_anchor_data, right_anchor_data
             else:
                 # TODO: Not implemented. anchor needs to adjust but not to 1/3 rule
                 return None, None
@@ -140,12 +140,12 @@ class TargetStrategy:
         all_keys = curve_data.keys
         selected_keys = self.core.get_selected_keys( curve )
 
-        prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
+        left_anchor_idx = next( ( i for i in range( current_idx - 1, -1, -1 )
                       if all_keys[i] not in selected_keys ), None )
-        next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
+        right_anchor_idx = next( ( i for i in range( current_idx + 1, len( all_keys ) )
                       if all_keys[i] not in selected_keys ), None )
 
-        return prev_key, next_key
+        return left_anchor_idx, right_anchor_idx
 
     def _get_neighbouring_points( self, curve, current_idx ):
         """ returns 2 points (x,y), left and right of current index"""
@@ -195,14 +195,14 @@ class TargetStrategy:
             print( "Error calculating one third weights: {0}".format( e ) )
             return 1.0 / 3.0, 1.0 / 3.0  # Fallback to default if calculation fails
 
-    def _calculate_tangent_weights_scaled( self, prev_key, current_key, next_key, angle ):
+    def _calculate_tangent_weights_scaled( self, left_anchor_point, current_key, right_anchor_point, angle ):
         """
         Calculates Maya-style auto tangent weights using right triangle solving.
         
         Args:
-            prev_key: Tuple of (time, value) for the previous key, or None if no previous key
+            left_anchor_point: Tuple of (time, value) for the previous key, or None if no previous key
             current_key: Tuple of (time, value) for the current key
-            next_key: Tuple of (time, value) for the next key, or None if no next key
+            right_anchor_point: Tuple of (time, value) for the next key, or None if no next key
             angle: Angle in degrees to use for triangle calculation
             
         Returns:
@@ -211,32 +211,32 @@ class TargetStrategy:
 
         in_weight = out_weight = 0
 
-        if prev_key and next_key:
+        if left_anchor_point and right_anchor_point:
             # Determine if current key is closer to prev or halfway between prev and next
-            mid_y = prev_key[1] + ( next_key[1] - prev_key[1] ) / 2
+            mid_y = left_anchor_point[1] + ( right_anchor_point[1] - left_anchor_point[1] ) / 2
             use_prev = current_key[1] <= mid_y
 
             if use_prev:
-                # Use prev_key and current_key for calculation
-                point_a = prev_key
+                # Use left_anchor_point and current_key for calculation
+                point_a = left_anchor_point
                 point_b = current_key
-                point_c = ( current_key[0], prev_key[1] )  # right angle point
+                point_c = ( current_key[0], left_anchor_point[1] )  # right angle point
             else:
-                # Use current_key and next_key for calculation
-                point_a = next_key
+                # Use current_key and right_anchor_point for calculation
+                point_a = right_anchor_point
                 point_b = current_key
-                point_c = ( current_key[0], next_key[1] )  # right angle point
+                point_c = ( current_key[0], right_anchor_point[1] )  # right angle point
 
             multiplier = solve_right_triangle( point_a, point_b, point_c, angle )
             # print( 'mlt:', multiplier, current_key )
 
             # Calculate in_weight and out_weight using multiplier
-            dt_in = current_key[0] - prev_key[0] if prev_key else 0
-            dt_out = next_key[0] - current_key[0] if next_key else 0
+            dt_in = current_key[0] - left_anchor_point[0] if left_anchor_point else 0
+            dt_out = right_anchor_point[0] - current_key[0] if right_anchor_point else 0
 
             # Base weights (similar to original 1/3 rule)
-            base_in = dt_in / 3.0 if prev_key else 0
-            base_out = dt_out / 3.0 if next_key else 0
+            base_in = dt_in / 3.0 if left_anchor_point else 0
+            base_out = dt_out / 3.0 if right_anchor_point else 0
 
             in_weight = base_in * multiplier
             out_weight = base_out * multiplier
@@ -275,21 +275,21 @@ class DirectTargetStrategy( TargetStrategy ):
 
             # Start with current value as default targets
             current_value = curve_data.get_value( current_idx )
-            prev_target = next_target = current_value
+            left_target = right_target = current_value
 
             # Find previous non-selected key
             for i in range( current_idx - 1, -1, -1 ):
                 if curve_data.keys[i] not in selected_keys:
-                    prev_target = curve_data.values[i]
+                    left_target = curve_data.values[i]
                     break
 
             # Find next non-selected key
             for i in range( current_idx + 1, len( curve_data.keys ) ):
                 if curve_data.keys[i] not in selected_keys:
-                    next_target = curve_data.values[i]
+                    right_target = curve_data.values[i]
                     break
 
-            return prev_target, next_target
+            return left_target, right_target
 
         except Exception as e:
             print( "Error in direct target calculation: {0}".format( e ) )
@@ -349,31 +349,31 @@ class LinearTargetStrategy( TargetStrategy ):
             current_value = curve_data.get_value( current_idx )
 
             # Find surrounding non-selected keys
-            prev_idx = next_idx = None
-            prev_time = prev_value = None
-            next_time = next_value = None
+            left_anchor_idx = right_anchor_idx = None
+            left_anchor_time = left_anchor_value = None
+            right_anchor_time = right_anchor_value = None
 
             # Find previous non-selected key
             for i in range( current_idx - 1, -1, -1 ):
                 if curve_data.keys[i] not in selected_keys:
-                    prev_idx = i
-                    prev_time = curve_data.keys[i]
-                    prev_value = curve_data.values[i]
+                    left_anchor_idx = i
+                    left_anchor_time = curve_data.keys[i]
+                    left_anchor_value = curve_data.values[i]
                     break
 
             # Find next non-selected key
             for i in range( current_idx + 1, len( curve_data.keys ) ):
                 if curve_data.keys[i] not in selected_keys:
-                    next_idx = i
-                    next_time = curve_data.keys[i]
-                    next_value = curve_data.values[i]
+                    right_anchor_idx = i
+                    right_anchor_time = curve_data.keys[i]
+                    right_anchor_value = curve_data.values[i]
                     break
 
             # Calculate targets if we found both surrounding keys
-            if prev_idx is not None and next_idx is not None:
+            if left_anchor_idx is not None and right_anchor_idx is not None:
                 # Calculate linear interpolation
-                time_ratio = ( time - prev_time ) / ( next_time - prev_time )
-                linear_value = prev_value + ( next_value - prev_value ) * time_ratio
+                time_ratio = ( time - left_anchor_time ) / ( right_anchor_time - left_anchor_time )
+                linear_value = left_anchor_value + ( right_anchor_value - left_anchor_value ) * time_ratio
 
                 # Calculate delta from linear
                 delta = current_value - linear_value
@@ -399,20 +399,20 @@ class LinearTargetStrategy( TargetStrategy ):
             selected_keys = self.core.get_selected_keys( curve )
 
             # Find surrounding non-selected keys
-            prev_idx = next_idx = None
+            left_anchor_idx = right_anchor_idx = None
             for i in range( current_idx - 1, -1, -1 ):
                 if curve_data.keys[i] not in selected_keys:
-                    prev_idx = i
+                    left_anchor_idx = i
                     break
             for i in range( current_idx + 1, len( curve_data.keys ) ):
                 if curve_data.keys[i] not in selected_keys:
-                    next_idx = i
+                    right_anchor_idx = i
                     break
 
-            if prev_idx is not None and next_idx is not None:
+            if left_anchor_idx is not None and right_anchor_idx is not None:
                 # Calculate angle of linear path
-                dx = curve_data.keys[next_idx] - curve_data.keys[prev_idx]
-                dy = curve_data.values[next_idx] - curve_data.values[prev_idx]
+                dx = curve_data.keys[right_anchor_idx] - curve_data.keys[left_anchor_idx]
+                dy = curve_data.values[right_anchor_idx] - curve_data.values[left_anchor_idx]
                 linear_angle = math.degrees( math.atan2( dy, dx ) )
 
                 #
@@ -629,7 +629,7 @@ class SplineTargetStrategy( TargetStrategy ):
 
         return ( curve_data, p0, p3 )
 
-    def _calculate_control_points( self, curve_data, p0, p3, prev_key, next_key ):
+    def _calculate_control_points( self, curve_data, p0, p3, left_anchor_idx, right_anchor_idx ):
         """Calculate bezier control points P1 and P2"""
         """
         # Alternate method. Below values relate to position of their associated key, x value is x*8, y value is y*(1/3.0)
@@ -649,25 +649,25 @@ class SplineTargetStrategy( TargetStrategy ):
         tangent_data = curve_data.tangents
 
         # Get tangent data
-        prev_out_angle = math.radians( tangent_data['out_angles'][prev_key] )
-        prev_out_weight = tangent_data['out_weights'][prev_key]
-        next_in_angle = math.radians( tangent_data['in_angles'][next_key] )
-        next_in_weight = tangent_data['in_weights'][next_key]
+        left_anchor_out_angle = math.radians( tangent_data['out_angles'][left_anchor_idx] )
+        left_anchor_out_weight = tangent_data['out_weights'][left_anchor_idx]
+        right_anchor_in_angle = math.radians( tangent_data['in_angles'][right_anchor_idx] )
+        right_anchor_in_weight = tangent_data['in_weights'][right_anchor_idx]
 
         '''
         print( "\nTangent Values:" )
-        print( "prev_out_angle:", math.degrees( prev_out_angle ) )
-        print( "prev_out_weight:", prev_out_weight )
-        print( "next_in_angle:", math.degrees( next_in_angle ) )
-        print( "next_in_weight:", next_in_weight )
+        print( "left_anchor_out_angle:", math.degrees( left_anchor_out_angle ) )
+        print( "left_anchor_out_weight :", left_anchor_out_weight  )
+        print( "right_anchor_in_angle:", math.degrees( right_anchor_in_angle ) )
+        print( "right_anchor_in_weight :", right_anchor_in_weight  )
         '''
 
         # Calculate P1
         if curve_data.is_weighted and not self.force_one_third:
             # First calculate relative offsets
-            time_offset = math.cos( prev_out_angle ) * prev_out_weight
+            time_offset = math.cos( left_anchor_out_angle ) * left_anchor_out_weight
             # print( '__time offset', time_offset )
-            value_offset = math.sin( prev_out_angle ) * prev_out_weight
+            value_offset = math.sin( left_anchor_out_angle ) * left_anchor_out_weight
             # print( '__value offset', value_offset )
 
             x = p0[0] + time_offset
@@ -676,15 +676,15 @@ class SplineTargetStrategy( TargetStrategy ):
         else:
             # Non-weighted uses standard 1/3 gap
             time_adj = gap / 3.0
-            opo = math.tan( prev_out_angle ) * time_adj
+            opo = math.tan( left_anchor_out_angle ) * time_adj
             p1 = [p0[0] + time_adj, p0[1] + opo]
 
         # Calculate P2
         if curve_data.is_weighted and not self.force_one_third:
             # First calculate relative offsets
-            time_offset = math.cos( next_in_angle ) * next_in_weight
+            time_offset = math.cos( right_anchor_in_angle ) * right_anchor_in_weight
             # print( '__time offset', time_offset )
-            value_offset = math.sin( next_in_angle ) * next_in_weight
+            value_offset = math.sin( right_anchor_in_angle ) * right_anchor_in_weight
             # print( '__value offset', value_offset )
 
             x = p3[0] - time_offset
@@ -693,7 +693,7 @@ class SplineTargetStrategy( TargetStrategy ):
         else:
             # Non-weighted uses standard 1/3 gap
             time_adj = gap / 3.0
-            opo = math.tan( next_in_angle ) * time_adj
+            opo = math.tan( right_anchor_in_angle ) * time_adj
             p2 = [p3[0] - time_adj, p3[1] - opo]
 
         '''

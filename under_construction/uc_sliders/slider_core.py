@@ -256,51 +256,10 @@ class SliderCore( object ):
             if current_idx is None:
                 return None, None
 
-            # Get target values using targeting strategy
-            targeting_strategy = self.get_current_targeting_strategy()
-            prev_target, next_target = targeting_strategy.calculate_target_value( curve, time )
-            prev_tangents, next_tangents = targeting_strategy.calculate_target_tangents( curve, time )
-            prev_anchor, next_anchor = targeting_strategy.calculate_anchor_weights( curve, time )  # Get anchor weights if strategy provides them
+            # Process anchor weights if they exist
+            self._calculate_anchor_weights( curve, time, blend_factor )
 
             blending_strategy = self.get_current_blending_strategy()
-
-            #
-            #
-            #
-            # Process anchor weights if they exist
-            if prev_anchor:
-                blended_prev = blending_strategy.blend_anchors( curve, prev_anchor, blend_factor )
-                if blended_prev:
-                    self.update_queue.append( {
-                        'curve': curve,
-                        'time': blended_prev['time'],
-                        'is_anchor': True,
-                        'tangent': blended_prev['tangent'],
-                        'weight': blended_prev['weight']
-                    } )
-            else:
-                # print( 'no', prev_anchor )
-                pass
-
-            if next_anchor:
-                blended_next = blending_strategy.blend_anchors( curve, next_anchor, blend_factor )
-                if blended_next:
-                    self.update_queue.append( {
-                        'curve': curve,
-                        'time': blended_next['time'],
-                        'is_anchor': True,
-                        'tangent': blended_next['tangent'],
-                        'weight': blended_next['weight']
-                    } )
-            #
-            #
-            #
-
-            # Determine blend direction and target
-            is_forward = blend_factor >= 0
-            target_value = next_target if is_forward else prev_target
-            target_tangents = next_tangents if is_forward else prev_tangents
-
             if blending_strategy.uses_signed_blend:
                 # Pass original signed value for geometric strategy
                 abs_blend = blend_factor
@@ -308,8 +267,15 @@ class SliderCore( object ):
                 # Use absolute value for other strategies
                 abs_blend = abs( blend_factor )
 
-            # print( "___blend_factor:", blend_factor )
-            # print( "___is_forward:", is_forward )
+            # Get target values using targeting strategy
+            targeting_strategy = self.get_current_targeting_strategy()
+            left_target, right_target = targeting_strategy.calculate_target_value( curve, time )
+            left_tangents, right_tangents = targeting_strategy.calculate_target_tangents( curve, time )
+
+            # Determine blend direction and target
+            is_forward = blend_factor >= 0
+            target_value = right_target if is_forward else left_target
+            target_tangents = right_tangents if is_forward else left_tangents
 
             # Calculate blend using appropriate blend factor
             return self._calculate_keys( 
@@ -323,6 +289,41 @@ class SliderCore( object ):
         except Exception as e:
             print( "Error calculating blend: {0}".format( e ) )
             return None, None
+
+    def _calculate_anchor_weights( self, curve, time, blend_factor ):
+        """Process and update anchor key weights."""
+        try:
+            targeting_strategy = self.get_current_targeting_strategy()
+            left_anchor, right_anchor = targeting_strategy.calculate_anchor_weights( curve, time )
+
+            blending_strategy = self.get_current_blending_strategy()
+
+            # Process previous anchor weights if they exist
+            if left_anchor:
+                blended_prev = blending_strategy.blend_anchors( curve, left_anchor, blend_factor )
+                if blended_prev:
+                    self.update_queue.append( {
+                        'curve': curve,
+                        'time': blended_prev['time'],
+                        'is_anchor': True,
+                        'tangent': blended_prev['tangent'],
+                        'weight': blended_prev['weight']
+                    } )
+
+            # Process next anchor weights if they exist
+            if right_anchor:
+                blended_next = blending_strategy.blend_anchors( curve, right_anchor, blend_factor )
+                if blended_next:
+                    self.update_queue.append( {
+                        'curve': curve,
+                        'time': blended_next['time'],
+                        'is_anchor': True,
+                        'tangent': blended_next['tangent'],
+                        'weight': blended_next['weight']
+                    } )
+
+        except Exception as e:
+            print( "Error processing anchor weights: {0}".format( e ) )
 
     def _calculate_keys( self, curve, current_idx, target_value, target_tangents, blend_factor ):
         """Calculate blended values using current blend strategy"""

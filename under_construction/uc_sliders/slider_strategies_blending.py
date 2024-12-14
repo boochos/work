@@ -588,8 +588,8 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
         self.debug = False
 
         # Range portion parameters, possibly make this more automated, less ditance = higher value, more ditance = smaller value
-        self.min_range_portion = 0.47
-        self.max_range_portion = 0.47
+        self.min_range_portion = 0.7
+        self.max_range_portion = 0.7
         # Local overrides for dynamic range calculation
         self._local_min_range_portion = self.min_range_portion
         self._local_max_range_portion = self.max_range_portion
@@ -1232,17 +1232,17 @@ class AutoTangentStrategy( object ):
         raise NotImplementedError
 
     def _get_anchor_indices( self, curve, current_idx ):
-        """Find surrounding non-selected keys to use as anchors"""
+        """Find surrounding non-selected keys to use as anchors, returns indices"""
         curve_data = self.core.get_curve_data( curve )
         all_keys = curve_data.keys
         selected_keys = self.core.get_selected_keys( curve )
 
-        prev_key = next( ( i for i in range( current_idx - 1, -1, -1 )
+        left_anchor_idx = next( ( i for i in range( current_idx - 1, -1, -1 )
                       if all_keys[i] not in selected_keys ), None )
-        next_key = next( ( i for i in range( current_idx + 1, len( all_keys ) )
+        right_anchor_idx = next( ( i for i in range( current_idx + 1, len( all_keys ) )
                       if all_keys[i] not in selected_keys ), None )
 
-        return prev_key, next_key
+        return left_anchor_idx, right_anchor_idx
 
 
 class AutoSmoothStrategy( AutoTangentStrategy ):
