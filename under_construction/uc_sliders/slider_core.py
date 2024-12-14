@@ -300,26 +300,26 @@ class SliderCore( object ):
 
             # Process previous anchor weights if they exist
             if left_anchor:
-                blended_prev = blending_strategy.blend_anchors( curve, left_anchor, blend_factor )
-                if blended_prev:
+                left_anchor_weight_blended = blending_strategy.blend_anchors( curve, left_anchor, blend_factor )
+                if left_anchor_weight_blended:
                     self.update_queue.append( {
                         'curve': curve,
-                        'time': blended_prev['time'],
+                        'time': left_anchor_weight_blended['time'],
                         'is_anchor': True,
-                        'tangent': blended_prev['tangent'],
-                        'weight': blended_prev['weight']
+                        'tangent': left_anchor_weight_blended['tangent'],
+                        'weight': left_anchor_weight_blended['weight']
                     } )
 
             # Process next anchor weights if they exist
             if right_anchor:
-                blended_next = blending_strategy.blend_anchors( curve, right_anchor, blend_factor )
-                if blended_next:
+                right_anchor_weight_blended = blending_strategy.blend_anchors( curve, right_anchor, blend_factor )
+                if right_anchor_weight_blended:
                     self.update_queue.append( {
                         'curve': curve,
-                        'time': blended_next['time'],
+                        'time': right_anchor_weight_blended['time'],
                         'is_anchor': True,
-                        'tangent': blended_next['tangent'],
-                        'weight': blended_next['weight']
+                        'tangent': right_anchor_weight_blended['tangent'],
+                        'weight': right_anchor_weight_blended['weight']
                     } )
 
         except Exception as e:
