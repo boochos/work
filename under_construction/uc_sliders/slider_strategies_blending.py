@@ -16,14 +16,17 @@ def __UTIL__():
     pass
 
 
-def solve_right_triangle( point_a, point_b, point_c, angle ):
+def calculate_angle_multiplier( point_a, point_c, angle ):
     """
-    Solves right triangle given three points where C forms the right angle.
-    Returns the ratio of AB/AC.
+    Calculate how much longer an angled line would be compared to a horizontal line.
+    Returns the ratio of angled_length/horizontal_length.
+    
+    Args:
+        horizontal_distance: The base horizontal distance
+        angle: The angle in degrees to calculate for
     """
     # Calculate lengths of triangle sides
     ac_length = abs( point_a[0] - point_c[0] )  # horizontal distance
-    bc_length = abs( point_b[1] - point_c[1] )  # vertical distance
 
     # Convert input angle to radians
     angle_rad = math.radians( angle )
@@ -1885,7 +1888,7 @@ class AutoFlatteningStrategy( AutoTangentStrategy ):
                 point_b = current_key
                 point_c = ( current_key[0], next_key[1] )  # right angle point
 
-            multiplier = solve_right_triangle( point_a, point_b, point_c, angle )
+            multiplier = calculate_angle_multiplier( point_a, point_c, angle )
             # print( 'mlt:', multiplier, current_key )
 
             # Calculate in_weight and out_weight using multiplier
