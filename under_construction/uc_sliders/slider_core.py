@@ -294,13 +294,13 @@ class SliderCore( object ):
         """Process and update anchor key weights."""
         try:
             targeting_strategy = self.get_current_targeting_strategy()
-            left_anchor, right_anchor = targeting_strategy.calculate_anchor_weights( curve, time )
+            left_anchor_weight_target, right_anchor_weight_target = targeting_strategy.calculate_anchor_weights( curve, time )
 
             blending_strategy = self.get_current_blending_strategy()
 
             # Process previous anchor weights if they exist
-            if left_anchor:
-                left_anchor_weight_blended = blending_strategy.blend_anchors( curve, left_anchor, blend_factor )
+            if left_anchor_weight_target:
+                left_anchor_weight_blended = blending_strategy.blend_anchors( curve, left_anchor_weight_target, blend_factor )
                 if left_anchor_weight_blended:
                     self.update_queue.append( {
                         'curve': curve,
@@ -311,8 +311,8 @@ class SliderCore( object ):
                     } )
 
             # Process next anchor weights if they exist
-            if right_anchor:
-                right_anchor_weight_blended = blending_strategy.blend_anchors( curve, right_anchor, blend_factor )
+            if right_anchor_weight_target:
+                right_anchor_weight_blended = blending_strategy.blend_anchors( curve, right_anchor_weight_target, blend_factor )
                 if right_anchor_weight_blended:
                     self.update_queue.append( {
                         'curve': curve,
