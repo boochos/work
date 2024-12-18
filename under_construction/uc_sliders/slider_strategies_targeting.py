@@ -752,6 +752,7 @@ class SplineTargetStrategy( TargetStrategy ):
 
         return t
 
+
 '''
 curve_node = 'pCube1_translateX109'
 #

@@ -1,10 +1,10 @@
 import imp
 import time
 
-from under_construction.uc_sliders import slider_strategies_blending
-from under_construction.uc_sliders import slider_strategies_targeting
 import maya.cmds as cmds
 import maya.mel as mel
+from under_construction.uc_sliders import slider_strategies_blending
+from under_construction.uc_sliders import slider_strategies_targeting
 
 imp.reload( slider_strategies_targeting )
 imp.reload( slider_strategies_blending )
@@ -30,7 +30,6 @@ class SliderCore( object ):
         self.current_time = None
         self.moved = False
         self.cache_timeout = 5.0
-        self.batch_size = 50
 
         # set before strategies or error
         self.current_targeting_strategy = 'linear'  # Set default
@@ -227,23 +226,9 @@ class SliderCore( object ):
             selected_keys = self.get_selected_keys( curve )  # Use core method
             times_to_update = selected_keys if selected_keys else [self.current_time]
 
-            # Process in batches
-            for i in range( 0, len( times_to_update ), self.batch_size ):
-                batch = times_to_update[i:i + self.batch_size]
-                for time in batch:
-                    new_value, new_tangents = self._calculate_blend( # Use core calculation
-                        curve,
-                        time,
-                        blend_factor
-                    )
-                    # print( '___', blend_factor, new_value )
-                    if new_value is not None:
-                        self.update_queue.append( {
-                            'curve': curve,
-                            'time': time,
-                            'value': new_value,
-                            'tangents': new_tangents
-                        } )
+            # Process each time
+            for time in times_to_update:
+                self._calculate_blend( curve, time, blend_factor )
 
     def _calculate_blend( self, curve, time, blend_factor ):
         """Calculate blended values for a curve at given time"""
@@ -278,7 +263,7 @@ class SliderCore( object ):
             target_tangents = right_tangents if is_forward else left_tangents
 
             # Calculate blend using appropriate blend factor
-            return self._calculate_keys( 
+            self._calculate_keys( 
                 curve,
                 current_idx,
                 target_value = target_value,
@@ -327,11 +312,26 @@ class SliderCore( object ):
 
     def _calculate_keys( self, curve, current_idx, target_value, target_tangents, blend_factor ):
         """Calculate blended values using current blend strategy"""
-        curve_data = self.curve_data[curve]
-        current_value = curve_data.values[current_idx]
+        try:
+            curve_data = self.curve_data[curve]
+            current_value = curve_data.values[current_idx]
+            current_time = curve_data.keys[current_idx]
 
-        blending_strategy = self.get_current_blending_strategy()
-        return blending_strategy.blend_values( curve, current_idx, current_value, target_value, target_tangents, blend_factor )
+            blending_strategy = self.get_current_blending_strategy()
+            new_value, new_tangents = blending_strategy.blend_values( 
+                curve, current_idx, current_value, target_value, target_tangents, blend_factor )
+
+            # Add to update queue directly instead of returning
+            if new_value is not None:
+                self.update_queue.append( {
+                    'curve': curve,
+                    'time': current_time,
+                    'value': new_value,
+                    'tangents': new_tangents
+                } )
+
+        except Exception as e:
+            print( "Error in key calculation: {0}".format( e ) )
 
     def _execute_blend( self ):
         """Execute queued updates in optimized batches"""
@@ -619,6 +619,7 @@ class CurveData:
         if self.cache_timestamp is None:
             return False
         return ( time.time() - self.cache_timestamp ) < timeout
+
 
 '''
 class BlendData:

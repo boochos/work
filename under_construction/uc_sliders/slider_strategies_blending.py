@@ -63,6 +63,10 @@ class BlendStrategy( object ):
         """
         raise NotImplementedError
 
+    def blend_tangents( self, ):
+        """calcualte tangents separately from values"""
+        pass
+
     def reset( self ):
         """Reset any stored state"""
         pass
