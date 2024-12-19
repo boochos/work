@@ -73,7 +73,34 @@ class SliderCore( object ):
         for curve in curves:
             self._process_curve( curve )
 
-        return bool( self.curve_data )
+        if not self.curve_data:
+            return False
+
+        # Initialize target data for each curve
+        self.target_data = {}
+        targeting_strategy = self.get_current_targeting_strategy()
+        
+        for curve in self.curve_data:
+            key_targets = KeyTargets()
+            selected_keys = self.get_selected_keys(curve)
+
+            # Calculate targets for each selected key
+            for time in selected_keys:
+                left_target, right_target = targeting_strategy.calculate_target_value(curve, time)
+                left_tangents, right_tangents = targeting_strategy.calculate_target_tangents(curve, time)
+                
+                # Store per-time targets
+                key_targets.times[time] = {
+                    'left': left_target,
+                    'right': right_target,
+                    'left_tangents': left_tangents,
+                    'right_tangents': right_tangents
+                }
+                #print(time)
+
+            self.target_data[curve] = key_targets
+
+        return True
 
     def _process_curve( self, curve ):
         """Process and cache curve data"""
@@ -253,9 +280,16 @@ class SliderCore( object ):
                 abs_blend = abs( blend_factor )
 
             # Get target values using targeting strategy
+            '''
             targeting_strategy = self.get_current_targeting_strategy()
             left_target, right_target = targeting_strategy.calculate_target_value( curve, time )
             left_tangents, right_tangents = targeting_strategy.calculate_target_tangents( curve, time )
+            '''
+            time_targets = self.target_data[curve].times[time]
+            left_target = time_targets['left']
+            right_target = time_targets['right']
+            left_tangents = time_targets['left_tangents'] 
+            right_tangents = time_targets['right_tangents']
 
             # Determine blend direction and target
             is_forward = blend_factor >= 0
@@ -623,6 +657,19 @@ class CurveData:
             return False
         return ( time.time() - self.cache_timestamp ) < timeout
 
+
+class KeyTargets:
+    """Holds target data for a blend operation"""
+    def __init__(self):
+        self.times = {}  # {
+                        #     time1: {
+                        #         'left': value,
+                        #         'right': value, 
+                        #         'left_tangents': tangents,
+                        #         'right_tangents': tangents
+                        #     },
+                        #     time2: {...}
+                        # }
 
 '''
 class BlendData:
