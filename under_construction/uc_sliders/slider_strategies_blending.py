@@ -229,9 +229,9 @@ class TriangleBlendStrategy( BlendStrategy ):
         try:
             curve_data = self.core.get_curve_data( curve )
             point_c_time = curve_data.keys[current_idx]
-            running_value = curve_data.get_running_value( current_idx )
+            #running_value = curve_data.get_running_value( current_idx )
 
-            self._log_initial_state( blend_factor, point_c_time, initial_value, running_value, target_value )
+            self._log_initial_state( blend_factor, point_c_time, initial_value, target_value )
 
             # Get initial tangents at C's position (both in and out)
             initial_in_tangent = curve_data.tangents['in_angles'][current_idx]
@@ -281,7 +281,7 @@ class TriangleBlendStrategy( BlendStrategy ):
             tangents = self._prepare_tangent_result( angles, target_tangents )
 
             # Update curve state
-            self._update_curve_state( curve_data, current_idx, moving_c_value, tangents )
+            #self._update_curve_state( curve_data, current_idx, moving_c_value, tangents )
             self._log_final_result( moving_c_value, angles )
 
             return moving_c_value, tangents
@@ -470,22 +470,20 @@ class TriangleBlendStrategy( BlendStrategy ):
             'in': ( angles['running_calculated_in'], angles['running_calculated_in_weight'] ),
             'out': ( angles['running_calculated_out'], angles['running_calculated_out_weight'] )
         }
-
+    '''
     def _update_curve_state( self, curve_data, current_idx, moving_c_value, tangents ):
         """Update the running state of the curve"""
         curve_data.update_running_state( current_idx, moving_c_value, tangents )
-
+    '''
     def __LOG__( self ):
         """  [Logging methods remain the same]"""
 
-    def _log_initial_state( self, blend_factor, point_c_time, current_value,
-                          running_value, target_value ):
+    def _log_initial_state( self, blend_factor, point_c_time, current_value, target_value ):
         if self.debug:
             print( "\n=== Geometric4 Frame Start ===" )
             print( "Blend Factor: {0}".format( blend_factor ) )
             print( "Time C: {0}".format( point_c_time ) )
             print( "Value C (current): {0}".format( current_value ) )
-            print( "Value C (running): {0}".format( running_value ) )
             print( "Value A (target): {0}".format( target_value ) )
 
     def _log_anchor_info( self, point_b ):  # Updated
@@ -771,7 +769,7 @@ class TriangleStaggeredBlendStrategy( TriangleDirectBlendStrategy ):
             self._cached_data['positions'][curve] = {}
 
         self._cached_data['positions'][curve][current_idx] = new_position
-        curve_data.update_running_state( current_idx, new_position, None )
+        #curve_data.update_running_state( current_idx, new_position, None )
 
     def _calculate_tangents_with_precalc( self, curve, current_idx, curve_data ):
         """Calculate tangents with transitions using cached data."""

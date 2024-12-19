@@ -448,6 +448,7 @@ class CurveData:
         self.next_indices = {}
         self.cache_timestamp = None
 
+        '''
         # Add running state tracking at curve level
         self.running_values = []  # Tracks current values during blending
         self.running_tangents = {  # Tracks current tangent state
@@ -456,6 +457,7 @@ class CurveData:
             'out_angles': [],
             'out_weights': []
         }
+        '''
 
     @classmethod
     def from_curve( cls, curve ):
@@ -471,10 +473,10 @@ class CurveData:
 
         # Initialize running state for selected and anchor keys
         selected_keys = set( cmds.keyframe( curve, q = True, sl = True, tc = True ) or [] )
-        instance._init_running_state( selected_keys )
+        #instance._init_running_state( selected_keys )
 
         return instance
-
+    '''
     def _init_running_state( self, selected_keys ):
         """Initialize running state including selected keys and their anchors"""
         # First, create full arrays initialized to None
@@ -554,6 +556,7 @@ class CurveData:
                 )
             }
         return None
+    '''
 
     def _collect_tangents( self, curve ):
         """Collect all tangent data for the curve"""
