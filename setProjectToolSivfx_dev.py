@@ -11,6 +11,8 @@ from PySide2 import QtCore, QtGui, QtWidgets
 import maya
 import maya.cmds as cmds
 
+print( '__local' )
+
 # from PyQt4 import QtCore, QtGui, QtWidgets
 a = cmds.unknownPlugin( q = True, l = True )
 if a:
